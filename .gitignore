@@ -1,0 +1,24 @@
+bin/
+output
+**/*.coverprofile
+**/coverage.out
+**/coverage.txt
+**/*.log
+
+*.iml
+.idea/
+**/*junit.xml
+**/*.exe
+**/*.tgz
+
+vendor/**
+!vendor/manifest
+
+# for local UT
+**/conf/
+!etc/conf/
+etc/data/
+etc/ssl/
+tmp/
+glide.lock
+go.sum
