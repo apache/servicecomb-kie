@@ -23,14 +23,6 @@ import (
 
 type Labels map[string]string
 
-//func (m Labels) ToString() string {
-//	sb := strings.Builder{}
-//	for k, v := range m {
-//		sb.WriteString(k + "=" + v + ",")
-//	}
-//	return sb.String()
-//}
-
 type KV struct {
 	ID        primitive.ObjectID `json:"_id,omitempty" bson:"_id,omitempty"`
 	Key       string             `json:"key"`
