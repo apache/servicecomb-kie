@@ -15,21 +15,35 @@
  * limitations under the License.
  */
 
-package kv
+package dao
 
-import (
-	"errors"
-	"fmt"
+import "github.com/apache/servicecomb-kie/pkg/model"
 
-	"github.com/apache/servicecomb-kie/pkg/model"
-	"github.com/go-mesh/openlogging"
-)
+type FindOptions struct {
+	ExactLabels bool
+	Key         string
+	Labels      model.Labels
+}
 
-//ErrAction will wrap raw error to biz error and return
-//it record audit log for mongodb operation failure like find, insert, update, deletion
-func ErrAction(action, key string, labels model.Labels, domain string, err error) error {
-	msg := fmt.Sprintf("can not [%s] [%s] in [%s] with [%s],err: %s", action, key, domain, labels, err.Error())
-	openlogging.Error(msg)
-	return errors.New(msg)
+type FindOption func(*FindOptions)
 
+//WithExactLabels tell model service to return only one kv matches the labels
+func WithExactLabels() FindOption {
+	return func(o *FindOptions) {
+		o.ExactLabels = true
+	}
+}
+
+//WithKey find by key
+func WithKey(key string) FindOption {
+	return func(o *FindOptions) {
+		o.Key = key
+	}
+}
+
+//WithLabels find kv by labels
+func WithLabels(labels model.Labels) FindOption {
+	return func(o *FindOptions) {
+		o.Labels = labels
+	}
 }

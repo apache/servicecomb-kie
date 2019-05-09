@@ -1,6 +1,6 @@
 # Apache-ServiceComb-Kie
 
-A service for key value management in distributed system.
+A service for configuration management in distributed system.
 
 ## Conceptions
 
@@ -62,6 +62,10 @@ to a distributed system in separated views.
 - consul compatible: partially compatible with consul kv management API
 - kv change history: all kv changes is recorded and can be easily roll back by UI
 ## Quick Start
+
+
+## Development
+To see how to build a local dev environment, check [here](examples/dev)
 
 ## Contact
 

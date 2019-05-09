@@ -15,7 +15,7 @@
  * limitations under the License.
  */
 
-package kv
+package dao
 
 import (
 	"context"
@@ -141,8 +141,8 @@ func (s *MongodbService) Exist(key, domain string, labels model.Labels) (string,
 //Find get kvs by key, labels
 //because labels has a a lot of combination,
 //you can use WithExactLabels to return only one kv which's labels exactly match the criteria
-func (s *MongodbService) Find(domain string, options ...CallOption) ([]*model.KV, error) {
-	opts := CallOptions{}
+func (s *MongodbService) Find(domain string, options ...FindOption) ([]*model.KV, error) {
+	opts := FindOptions{}
 	for _, o := range options {
 		o(&opts)
 	}
@@ -271,7 +271,7 @@ func (s *MongodbService) getLatest(id primitive.ObjectID) (*model.KVHistory, err
 	}
 	return h, nil
 }
-func NewMongoService(opts Options) (Service, error) {
+func NewMongoService(opts Options) (KV, error) {
 	if opts.Timeout == 0 {
 		opts.Timeout = DefaultTimeout
 	}

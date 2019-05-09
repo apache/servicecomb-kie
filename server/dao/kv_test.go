@@ -15,21 +15,21 @@
  * limitations under the License.
  */
 
-package kv_test
+package dao_test
 
 import (
+	"github.com/apache/servicecomb-kie/pkg/model"
 	. "github.com/apache/servicecomb-kie/pkg/model"
+	"github.com/apache/servicecomb-kie/server/dao"
 	. "github.com/onsi/ginkgo"
 	. "github.com/onsi/gomega"
-	"github.com/apache/servicecomb-kie/pkg/model"
-	"github.com/apache/servicecomb-kie/server/kv"
 )
 
 var _ = Describe("Kv mongodb service", func() {
-	var s kv.Service
+	var s dao.KV
 	var err error
 	Describe("connecting db", func() {
-		s, err = kv.NewMongoService(kv.Options{
+		s, err = dao.NewMongoService(dao.Options{
 			URI: "mongodb://kie:123@127.0.0.1:27017",
 		})
 		It("should not return err", func() {
@@ -100,9 +100,9 @@ var _ = Describe("Kv mongodb service", func() {
 			It("should not return err", func() {
 				Expect(err).Should(BeNil())
 			})
-			kvs1, err := s.Find("default", kv.WithKey("timeout"), kv.WithLabels(map[string]string{
+			kvs1, err := s.Find("default", dao.WithKey("timeout"), dao.WithLabels(map[string]string{
 				"app": "mall",
-			}), kv.WithExactLabels())
+			}), dao.WithExactLabels())
 			It("should be 1s", func() {
 				Expect(kvs1[0].Value).Should(Equal(beforeKV.Value))
 			})
@@ -123,9 +123,9 @@ var _ = Describe("Kv mongodb service", func() {
 			It("should exists", func() {
 				Expect(oid).Should(Equal(beforeKV.ID.Hex()))
 			})
-			kvs, err := s.Find("default", kv.WithKey("timeout"), kv.WithLabels(map[string]string{
+			kvs, err := s.Find("default", dao.WithKey("timeout"), dao.WithLabels(map[string]string{
 				"app": "mall",
-			}), kv.WithExactLabels())
+			}), dao.WithExactLabels())
 			It("should be 3s", func() {
 				Expect(kvs[0].Value).Should(Equal(afterKV.Value))
 			})
@@ -134,7 +134,7 @@ var _ = Describe("Kv mongodb service", func() {
 
 	Describe("greedy find by kv and labels", func() {
 		Context("with labels app ", func() {
-			kvs, err := s.Find("default", kv.WithKey("timeout"), kv.WithLabels(map[string]string{
+			kvs, err := s.Find("default", dao.WithKey("timeout"), dao.WithLabels(map[string]string{
 				"app": "mall",
 			}))
 			It("should not return err", func() {
@@ -148,9 +148,9 @@ var _ = Describe("Kv mongodb service", func() {
 	})
 	Describe("exact find by kv and labels", func() {
 		Context("with labels app ", func() {
-			kvs, err := s.Find("default", kv.WithKey("timeout"), kv.WithLabels(map[string]string{
+			kvs, err := s.Find("default", dao.WithKey("timeout"), dao.WithLabels(map[string]string{
 				"app": "mall",
-			}), kv.WithExactLabels())
+			}), dao.WithExactLabels())
 			It("should not return err", func() {
 				Expect(err).Should(BeNil())
 			})
@@ -162,9 +162,9 @@ var _ = Describe("Kv mongodb service", func() {
 	})
 	Describe("exact find by labels", func() {
 		Context("with labels app ", func() {
-			kvs, err := s.Find("default", kv.WithLabels(map[string]string{
+			kvs, err := s.Find("default", dao.WithLabels(map[string]string{
 				"app": "mall",
-			}), kv.WithExactLabels())
+			}), dao.WithExactLabels())
 			It("should not return err", func() {
 				Expect(err).Should(BeNil())
 			})
@@ -176,7 +176,7 @@ var _ = Describe("Kv mongodb service", func() {
 	})
 	Describe("greedy find by labels", func() {
 		Context("with labels app ans service ", func() {
-			kvs, err := s.Find("default", kv.WithLabels(map[string]string{
+			kvs, err := s.Find("default", dao.WithLabels(map[string]string{
 				"app":     "mall",
 				"service": "cart",
 			}))

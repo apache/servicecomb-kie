@@ -10,12 +10,10 @@ output
 **/*junit.xml
 **/*.exe
 **/*.tgz
-
 vendor/**
 !vendor/manifest
 
-# for local UT
-**/conf/
+**/conf/servicecomb-kie/
 !etc/conf/
 etc/data/
 etc/ssl/

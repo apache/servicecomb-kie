@@ -15,35 +15,14 @@
  * limitations under the License.
  */
 
-package kv
+package v1
 
-import "github.com/apache/servicecomb-kie/pkg/model"
-
-type CallOptions struct {
-	ExactLabels bool
-	Key         string
-	Labels      model.Labels
+type KVBody struct {
+	Labels    map[string]string `json:"labels"`
+	ValueType string            `json:"valueType"`
+	Value     string            `json:"value"`
 }
 
-type CallOption func(*CallOptions)
-
-//WithExactLabels tell model service to return only one kv matches the labels
-func WithExactLabels() CallOption {
-	return func(o *CallOptions) {
-		o.ExactLabels = true
-	}
-}
-
-//WithKey find by key
-func WithKey(key string) CallOption {
-	return func(o *CallOptions) {
-		o.Key = key
-	}
-}
-
-//WithLabels find kv by labels
-func WithLabels(labels model.Labels) CallOption {
-	return func(o *CallOptions) {
-		o.Labels = labels
-	}
+type ErrorMsg struct {
+	Msg string `json:"msg"`
 }
