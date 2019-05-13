@@ -15,7 +15,8 @@
  * limitations under the License.
  */
 
-package kv
+//package dao is a persis layer of kie
+package dao
 
 import (
 	"crypto/tls"
@@ -30,13 +31,13 @@ var ErrNotExists = errors.New("key with labels does not exits")
 var ErrTooMany = errors.New("key with labels should be only one")
 var ErrKeyMustNotEmpty = errors.New("must supply key if you want to get exact one result")
 
-type Service interface {
+type KV interface {
 	CreateOrUpdate(kv *model.KV) (*model.KV, error)
 	//do not use primitive.ObjectID as return to decouple with mongodb, we can afford perf lost
 	Exist(key, domain string, labels model.Labels) (string, error)
 	DeleteByID(id string) error
 	Delete(key, domain string, labels model.Labels) error
-	Find(domain string, options ...CallOption) ([]*model.KV, error)
+	Find(domain string, options ...FindOption) ([]*model.KV, error)
 	AddHistory(kv *model.KV) error
 	//RollBack(kv *KV, version string) error
 }
@@ -49,7 +50,7 @@ type Options struct {
 	Timeout  time.Duration
 }
 
-func NewKVService() (Service, error) {
+func NewKVService() (KV, error) {
 	opts := Options{
 		URI:      config.GetDB().URI,
 		PoolSize: config.GetDB().PoolSize,

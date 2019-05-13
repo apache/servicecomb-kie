@@ -15,30 +15,21 @@
  * limitations under the License.
  */
 
-package kv_test
+package dao
 
 import (
-	"testing"
+	"errors"
+	"fmt"
 
-	"github.com/go-chassis/paas-lager"
+	"github.com/apache/servicecomb-kie/pkg/model"
 	"github.com/go-mesh/openlogging"
-	. "github.com/onsi/ginkgo"
-	"github.com/onsi/ginkgo/reporters"
-	. "github.com/onsi/gomega"
 )
 
-func TestModel(t *testing.T) {
-	RegisterFailHandler(Fail)
-	junitReporter := reporters.NewJUnitReporter("junit.xml")
-	RunSpecsWithDefaultAndCustomReporters(t, "Model Suite", []Reporter{junitReporter})
+//ErrAction will wrap raw error to biz error and return
+//it record audit log for mongodb operation failure like find, insert, update, deletion
+func ErrAction(action, key string, labels model.Labels, domain string, err error) error {
+	msg := fmt.Sprintf("can not [%s] [%s] in [%s] with [%s],err: %s", action, key, domain, labels, err.Error())
+	openlogging.Error(msg)
+	return errors.New(msg)
+
 }
-
-var _ = BeforeSuite(func() {
-	log.Init(log.Config{
-		Writers:     []string{"stdout"},
-		LoggerLevel: "DEBUG",
-	})
-
-	logger := log.NewLogger("ut")
-	openlogging.SetLogger(logger)
-})

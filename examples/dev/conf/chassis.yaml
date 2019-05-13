@@ -1,0 +1,24 @@
+---
+cse:
+  service:
+    registry:
+      disabled: true
+      address: http://127.0.0.1:30100
+  protocols:
+    rest:
+      listenAddress: 127.0.0.1:30108
+    rest-consul: #consul compatible API
+      listenAddress: 127.0.0.1:8500
+  handler:
+    chain:
+      Provider:
+        default: auth-handler,ratelimiter-provider
+# ssl:
+#   Provider.cipherPlugin: default
+#   Provider.verifyPeer: false
+#   Provider.cipherSuits: TLS_ECDHE_RSA_WITH_AES_128_GCM_SHA256,TLS_ECDHE_RSA_WITH_AES_256_GCM_SHA384
+#   Provider.protocol: TLSv1.2
+#   Provider.caFile:
+#   Provider.certFile:
+#   Provider.keyFile:
+#   Provider.certPwdFile:
