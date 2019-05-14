@@ -6,7 +6,7 @@ cse:
       address: http://127.0.0.1:30100
   protocols:
     rest:
-      listenAddress: 127.0.0.1:30108
+      listenAddress: 127.0.0.1:30110
     rest-consul: #consul compatible API
       listenAddress: 127.0.0.1:8500
   handler:

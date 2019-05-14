@@ -36,11 +36,12 @@ based on template language
 - frontend: web console for kie
 
 ## Features
-
-TODO
 - simple key name with rich labels: user can define labels for a key, 
 that distinguish from key to another key.  
-a key will not be stringed by fixed schema. 
+
+TODO
+
+- a key will not be stringed by fixed schema. 
 labels for a key is like "env=test, service=cart, version=1.0" or "cluster=xxx"  
 or "env=test, service=cart, version=1.0, ip=x.x.x.x"
 - validator: value can be checked by user defined python script, 
@@ -63,9 +64,31 @@ to a distributed system in separated views.
 - kv change history: all kv changes is recorded and can be easily roll back by UI
 ## Quick Start
 
+### Run locally with Docker compose
+
+```bash
+git clone git@github.com:apache/servicecomb-kie.git
+cd servicecomb-kie/deployments/docker
+sudo docker-compose up
+```
+it will launch 3 components 
+- mongodb: 127.0.0.1:27017
+- mongodb UI:http://127.0.0.1:8081
+- servicecomb-kie: http://127.0.0.1:30110
+
 
 ## Development
 To see how to build a local dev environment, check [here](examples/dev)
+
+### Build
+```bash
+cd build
+export VERSION=0.0.1
+./build_server.sh
+```
+
+this will generate a "servicecomb-kie-0.0.1-linux-amd64.tar" in "release" folder,
+and a docker image "servicecomb/kie:0.0.1"
 
 ## Contact
 
