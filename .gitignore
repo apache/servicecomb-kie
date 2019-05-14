@@ -14,6 +14,7 @@ vendor/**
 !vendor/manifest
 
 **/conf/servicecomb-kie/
+release
 !etc/conf/
 etc/data/
 etc/ssl/

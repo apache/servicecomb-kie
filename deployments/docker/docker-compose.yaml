@@ -17,14 +17,16 @@
 version: '3.1'
 services:
   mongo:
-    image: mongo
+    image: mongo:3.4
     restart: always
     ports:
       - 27017:27017
     environment:
+      MONGO_INITDB_DATABASE: kie
       MONGO_INITDB_ROOT_USERNAME: kie
       MONGO_INITDB_ROOT_PASSWORD: 123
-
+    volumes:
+      - ./db.js:/docker-entrypoint-initdb.d/db.js:ro
   mongo-express:
     image: mongo-express
     restart: always
@@ -33,3 +35,12 @@ services:
     environment:
       ME_CONFIG_MONGODB_ADMINUSERNAME: kie
       ME_CONFIG_MONGODB_ADMINPASSWORD: 123
+  servicecomb-kie:
+    image: servicecomb/kie:latest
+    restart: always
+    ports:
+      - 30110:30110
+    environment:
+      MONGODB_USER: kie
+      MONGODB_PWD: 123
+      MONGODB_ADDR: mongo
