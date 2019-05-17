@@ -15,7 +15,7 @@
  * limitations under the License.
  */
 
-package dao_test
+package client_test
 
 import (
 	"testing"
@@ -27,10 +27,10 @@ import (
 	. "github.com/onsi/gomega"
 )
 
-func TestModel(t *testing.T) {
+func TestClient(t *testing.T) {
 	RegisterFailHandler(Fail)
 	junitReporter := reporters.NewJUnitReporter("junit.xml")
-	RunSpecsWithDefaultAndCustomReporters(t, "Model Suite", []Reporter{junitReporter})
+	RunSpecsWithDefaultAndCustomReporters(t, "Client Suite", []Reporter{junitReporter})
 }
 
 var _ = BeforeSuite(func() {
