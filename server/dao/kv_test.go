@@ -189,4 +189,57 @@ var _ = Describe("Kv mongodb service", func() {
 
 		})
 	})
+
+	Describe("delete key", func() {
+		Context("delete key by id,seperated by ',' ", func() {
+			kv1, err := s.CreateOrUpdate(&model.KV{
+				Key:    "timeout",
+				Value:  "20s",
+				Domain: "default",
+				Labels: map[string]string{
+					"env": "test",
+				},
+			})
+			It("should not return err", func() {
+				Expect(err).Should(BeNil())
+			})
+
+			kv2, err := s.CreateOrUpdate(&model.KV{
+				Key:    "times",
+				Value:  "3",
+				Domain: "default",
+				Labels: map[string]string{
+					"env": "test",
+				},
+			})
+			It("should not return err", func() {
+				Expect(err).Should(BeNil())
+			})
+
+			ids := []string{kv1.ID.Hex(), kv2.ID.Hex()}
+			err = s.Delete(ids, "default")
+			It("should not return err", func() {
+				Expect(err).Should(BeNil())
+			})
+
+		})
+		Context("test miss ids, no panic", func() {
+			err := s.Delete(nil, "default")
+			It("should not return err", func() {
+				Expect(err).Should(BeNil())
+			})
+		})
+		Context("Test encode error ", func() {
+			err := s.Delete([]string{"12312312321"}, "default")
+			It("should return err", func() {
+				Expect(err).To(HaveOccurred())
+			})
+		})
+		Context("Test miss domain error ", func() {
+			err := s.Delete([]string{"5ce3602381fc6e33708b9621"}, "")
+			It("should return err", func() {
+				Expect(err).Should(Equal(dao.ErrMissingDomain))
+			})
+		})
+	})
 })

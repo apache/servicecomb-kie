@@ -20,6 +20,7 @@ package v1
 
 import (
 	"encoding/json"
+	"fmt"
 	"github.com/apache/servicecomb-kie/pkg/common"
 	"github.com/apache/servicecomb-kie/pkg/model"
 	"github.com/apache/servicecomb-kie/server/dao"
@@ -27,6 +28,7 @@ import (
 	"github.com/go-chassis/go-chassis/server/restful"
 	"github.com/go-mesh/openlogging"
 	"net/http"
+	"strings"
 )
 
 type KVResource struct {
@@ -159,7 +161,28 @@ func (r *KVResource) FindByLabels(context *restful.Context) {
 
 }
 func (r *KVResource) Delete(context *restful.Context) {
-
+	domain := ReadDomain(context)
+	if domain == nil {
+		WriteErrResponse(context, http.StatusInternalServerError, MsgDomainMustNotBeEmpty)
+	}
+	ids := context.ReadPathParameter("ids")
+	if ids == "" {
+		WriteErrResponse(context, http.StatusBadRequest, ErrIDMustNotEmpty)
+		return
+	}
+	idArray := strings.Split(ids, ",")
+	s, err := dao.NewKVService()
+	if err != nil {
+		WriteErrResponse(context, http.StatusInternalServerError, err.Error())
+		return
+	}
+	err = s.Delete(idArray, domain.(string))
+	if err != nil {
+		openlogging.Error(fmt.Sprintf("delete ids=%s,err=%s", ids, err.Error()))
+		WriteErrResponse(context, http.StatusInternalServerError, err.Error())
+		return
+	}
+	context.WriteHeader(http.StatusNoContent)
 }
 
 //URLPatterns defined config operations
@@ -253,6 +276,38 @@ func (r *KVResource) URLPatterns() []restful.Route {
 			},
 			Consumes: []string{"application/json"},
 			Produces: []string{"application/json"},
+		}, {
+			Method:           http.MethodDelete,
+			Path:             "/v1/kv/{ids}",
+			ResourceFuncName: "Delete",
+			FuncDesc:         "delete key by id,seperated by ','",
+			Parameters: []*restful.Parameters{
+				{
+					DataType:  "string",
+					Name:      "X-Domain-Name",
+					ParamType: goRestful.HeaderParameterKind,
+				}, {
+					DataType:  "string",
+					Name:      "ids",
+					ParamType: goRestful.PathParameterKind,
+					Desc: "The id strings to be removed are separated by ',',If the actual number of deletions " +
+						"and the number of parameters are not equal, no error will be returned and only warn log will be printed.",
+				},
+			},
+			Returns: []*restful.Returns{
+				{
+					Code:    http.StatusNoContent,
+					Message: "Delete success",
+				},
+				{
+					Code:    http.StatusBadRequest,
+					Message: "Failed,check url",
+				},
+				{
+					Code:    http.StatusInternalServerError,
+					Message: "Server error",
+				},
+			},
 		},
 	}
 }
