@@ -27,10 +27,13 @@ import (
 )
 
 const (
+	FindExact               = "exact"
+	FindMany                = "greedy"
 	MsgDomainMustNotBeEmpty = "domain must not be empty"
-	MsgIllegalFindPolicy    = "value of header "+common.HeaderMatch+" can be greedy or exact"
+	MsgIllegalFindPolicy    = "value of header " + common.HeaderMatch + " can be greedy or exact"
 	MsgIllegalLabels        = "label's value can not be empty, " +
 		"label can not be duplicated, please check your query parameters"
+	ErrIDMustNotEmpty = "must supply id if you want to remove key"
 )
 
 func ReadDomain(context *restful.Context) interface{} {

@@ -224,7 +224,43 @@ func (s *MongodbService) DeleteByID(id string) error {
 	return nil
 }
 
-func (s *MongodbService) Delete(key, domain string, labels model.Labels) error {
+func (s *MongodbService) Delete(ids []string, domain string) error {
+	if len(ids) == 0 {
+		openlogging.Warn("delete error,ids is blank")
+		return nil
+	}
+	if domain == "" {
+		return ErrMissingDomain
+	}
+	collection := s.c.Database(DB).Collection(CollectionKV)
+	//transfer id
+	var oid []primitive.ObjectID
+	for _, v := range ids {
+		if v == "" {
+			openlogging.Warn("ids contains continuous ','")
+			continue
+		}
+		hex, err := primitive.ObjectIDFromHex(v)
+		if err != nil {
+			openlogging.Error(fmt.Sprintf("convert %s ,err:%s", v, err))
+			return err
+		}
+		oid = append(oid, hex)
+	}
+	//use in filter
+	filter := &bson.M{"_id": &bson.M{"$in": oid}, "domain": domain}
+	ctx, _ := context.WithTimeout(context.Background(), DefaultTimeout)
+	dr, err := collection.DeleteMany(ctx, filter)
+	//check error and delete number
+	if err != nil {
+		openlogging.Error(fmt.Sprintf("delete [%s] failed : [%s]", filter, err))
+		return err
+	}
+	if dr.DeletedCount != int64(len(oid)) {
+		openlogging.Warn(fmt.Sprintf(" The actual number of deletions[%d] is not equal to the parameters[%d].", dr.DeletedCount, len(oid)))
+	} else {
+		openlogging.Info(fmt.Sprintf("delete success,count=%d", dr.DeletedCount))
+	}
 	return nil
 }
 func (s *MongodbService) AddHistory(kv *model.KV) error {

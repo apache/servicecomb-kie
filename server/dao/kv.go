@@ -21,9 +21,9 @@ package dao
 import (
 	"crypto/tls"
 	"errors"
-	"time"
-	"github.com/apache/servicecomb-kie/server/config"
 	"github.com/apache/servicecomb-kie/pkg/model"
+	"github.com/apache/servicecomb-kie/server/config"
+	"time"
 )
 
 var ErrMissingDomain = errors.New("domain info missing, illegal access")
@@ -35,8 +35,7 @@ type KV interface {
 	CreateOrUpdate(kv *model.KV) (*model.KV, error)
 	//do not use primitive.ObjectID as return to decouple with mongodb, we can afford perf lost
 	Exist(key, domain string, labels model.Labels) (string, error)
-	DeleteByID(id string) error
-	Delete(key, domain string, labels model.Labels) error
+	Delete(ids []string, domain string) error
 	Find(domain string, options ...FindOption) ([]*model.KV, error)
 	AddHistory(kv *model.KV) error
 	//RollBack(kv *KV, version string) error
