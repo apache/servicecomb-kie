@@ -20,6 +20,7 @@ package v1
 
 import (
 	"encoding/json"
+	"github.com/apache/servicecomb-kie/pkg/common"
 	"github.com/apache/servicecomb-kie/pkg/model"
 	"github.com/apache/servicecomb-kie/server/dao"
 	goRestful "github.com/emicklei/go-restful"
@@ -62,7 +63,7 @@ func (r *KVResource) Put(context *restful.Context) {
 	context.WriteHeaderAndJSON(http.StatusOK, kv, goRestful.MIME_JSON)
 
 }
-func (r *KVResource) Find(context *restful.Context) {
+func (r *KVResource) FindWithKey(context *restful.Context) {
 	var err error
 	key := context.ReadPathParameter("key")
 	if key == "" {
@@ -88,16 +89,20 @@ func (r *KVResource) Find(context *restful.Context) {
 		WriteErrResponse(context, http.StatusInternalServerError, MsgDomainMustNotBeEmpty)
 		return
 	}
-	policy := ReadFindPolicy(context)
+	policy := ReadMatchPolicy(context)
 	var kvs []*model.KV
 	switch policy {
-	case FindMany:
+	case common.MatchGreedy:
 		kvs, err = s.Find(domain.(string), dao.WithKey(key), dao.WithLabels(labels))
-	case FindExact:
+	case common.MatchExact:
 		kvs, err = s.Find(domain.(string), dao.WithKey(key), dao.WithLabels(labels),
 			dao.WithExactLabels())
 	default:
 		WriteErrResponse(context, http.StatusBadRequest, MsgIllegalFindPolicy)
+		return
+	}
+	if err == dao.ErrNotExists {
+		WriteErrResponse(context, http.StatusNotFound, err.Error())
 		return
 	}
 	if err != nil {
@@ -131,16 +136,20 @@ func (r *KVResource) FindByLabels(context *restful.Context) {
 		WriteErrResponse(context, http.StatusInternalServerError, MsgDomainMustNotBeEmpty)
 		return
 	}
-	policy := ReadFindPolicy(context)
+	policy := ReadMatchPolicy(context)
 	var kvs []*model.KV
 	switch policy {
-	case FindMany:
+	case common.MatchGreedy:
 		kvs, err = s.Find(domain.(string), dao.WithLabels(labels))
-	case FindExact:
+	case common.MatchExact:
 		kvs, err = s.Find(domain.(string), dao.WithLabels(labels),
 			dao.WithExactLabels())
 	default:
 		WriteErrResponse(context, http.StatusBadRequest, MsgIllegalFindPolicy)
+		return
+	}
+	if err == dao.ErrNotExists {
+		WriteErrResponse(context, http.StatusNotFound, err.Error())
 		return
 	}
 	err = context.WriteHeaderAndJSON(http.StatusOK, kvs, goRestful.MIME_JSON)
@@ -190,7 +199,7 @@ func (r *KVResource) URLPatterns() []restful.Route {
 		}, {
 			Method:           http.MethodGet,
 			Path:             "/v1/kv/{key}",
-			ResourceFuncName: "Find",
+			ResourceFuncName: "FindWithKey",
 			FuncDesc:         "get key values by key and labels",
 			Parameters: []*restful.Parameters{
 				{
@@ -203,7 +212,7 @@ func (r *KVResource) URLPatterns() []restful.Route {
 					ParamType: goRestful.HeaderParameterKind,
 				}, {
 					DataType:  "string",
-					Name:      "X-Find",
+					Name:      common.HeaderMatch,
 					ParamType: goRestful.HeaderParameterKind,
 					Desc:      "greedy or exact",
 				},
@@ -230,7 +239,7 @@ func (r *KVResource) URLPatterns() []restful.Route {
 					ParamType: goRestful.HeaderParameterKind,
 				}, {
 					DataType:  "string",
-					Name:      "X-Find",
+					Name:      common.HeaderMatch,
 					ParamType: goRestful.HeaderParameterKind,
 					Desc:      "greedy or exact",
 				},

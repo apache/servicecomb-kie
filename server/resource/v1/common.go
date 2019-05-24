@@ -20,16 +20,15 @@ package v1
 import (
 	"encoding/json"
 	"fmt"
+	"github.com/apache/servicecomb-kie/pkg/common"
 	"github.com/apache/servicecomb-kie/pkg/model"
 	"github.com/go-chassis/go-chassis/server/restful"
 	"github.com/go-mesh/openlogging"
 )
 
 const (
-	FindExact               = "exact"
-	FindMany                = "greedy"
 	MsgDomainMustNotBeEmpty = "domain must not be empty"
-	MsgIllegalFindPolicy    = "value of header X-Find can be greedy or exact"
+	MsgIllegalFindPolicy    = "value of header "+common.HeaderMatch+" can be greedy or exact"
 	MsgIllegalLabels        = "label's value can not be empty, " +
 		"label can not be duplicated, please check your query parameters"
 )
@@ -37,10 +36,11 @@ const (
 func ReadDomain(context *restful.Context) interface{} {
 	return context.ReadRestfulRequest().Attribute("domain")
 }
-func ReadFindPolicy(context *restful.Context) string {
-	policy := context.ReadRestfulRequest().HeaderParameter("X-Find")
+func ReadMatchPolicy(context *restful.Context) string {
+	policy := context.ReadRestfulRequest().HeaderParameter(common.HeaderMatch)
 	if policy == "" {
-		return FindMany
+		//default is exact to reduce network traffic
+		return common.MatchExact
 	}
 	return policy
 }
