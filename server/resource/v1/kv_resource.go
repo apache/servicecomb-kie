@@ -200,7 +200,7 @@ func (r *KVResource) URLPatterns() []restful.Route {
 					ParamType: goRestful.PathParameterKind,
 				}, {
 					DataType:  "string",
-					Name:      "X-Domain-Name",
+					Name:      TenantHeaderParam,
 					ParamType: goRestful.HeaderParameterKind,
 					Desc:      "set kv to other tenant",
 				}, {
@@ -216,8 +216,8 @@ func (r *KVResource) URLPatterns() []restful.Route {
 					Message: "true",
 				},
 			},
-			Consumes: []string{"application/json"},
-			Produces: []string{"application/json"},
+			Consumes: []string{goRestful.MIME_JSON},
+			Produces: []string{goRestful.MIME_JSON},
 			Read:     &KVBody{},
 		}, {
 			Method:           http.MethodGet,
@@ -231,7 +231,7 @@ func (r *KVResource) URLPatterns() []restful.Route {
 					ParamType: goRestful.PathParameterKind,
 				}, {
 					DataType:  "string",
-					Name:      "X-Domain-Name",
+					Name:      TenantHeaderParam,
 					ParamType: goRestful.HeaderParameterKind,
 				}, {
 					DataType:  "string",
@@ -247,8 +247,8 @@ func (r *KVResource) URLPatterns() []restful.Route {
 					Model:   []*KVBody{},
 				},
 			},
-			Consumes: []string{"application/json"},
-			Produces: []string{"application/json"},
+			Consumes: []string{goRestful.MIME_JSON},
+			Produces: []string{goRestful.MIME_JSON},
 			Read:     &KVBody{},
 		}, {
 			Method:           http.MethodGet,
@@ -258,7 +258,7 @@ func (r *KVResource) URLPatterns() []restful.Route {
 			Parameters: []*restful.Parameters{
 				{
 					DataType:  "string",
-					Name:      "X-Domain-Name",
+					Name:      TenantHeaderParam,
 					ParamType: goRestful.HeaderParameterKind,
 				}, {
 					DataType:  "string",
@@ -274,8 +274,8 @@ func (r *KVResource) URLPatterns() []restful.Route {
 					Model:   []*KVBody{},
 				},
 			},
-			Consumes: []string{"application/json"},
-			Produces: []string{"application/json"},
+			Consumes: []string{goRestful.MIME_JSON},
+			Produces: []string{goRestful.MIME_JSON},
 		}, {
 			Method:           http.MethodDelete,
 			Path:             "/v1/kv/{ids}",
@@ -284,7 +284,7 @@ func (r *KVResource) URLPatterns() []restful.Route {
 			Parameters: []*restful.Parameters{
 				{
 					DataType:  "string",
-					Name:      "X-Domain-Name",
+					Name:      TenantHeaderParam,
 					ParamType: goRestful.HeaderParameterKind,
 				}, {
 					DataType:  "string",
