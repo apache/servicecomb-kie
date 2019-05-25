@@ -27,6 +27,7 @@ import (
 )
 
 const (
+	TenantHeaderParam       = "X-Domain-Name"
 	FindExact               = "exact"
 	FindMany                = "greedy"
 	MsgDomainMustNotBeEmpty = "domain must not be empty"
