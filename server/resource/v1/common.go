@@ -54,11 +54,11 @@ func WriteErrResponse(context *restful.Context, status int, msg string) {
 	context.Write(b)
 }
 
-func ErrLog(action string, kv *model.KV, err error) {
+func ErrLog(action string, kv *model.KVDoc, err error) {
 	openlogging.Error(fmt.Sprintf("[%s] [%v] err:%s", action, kv, err.Error()))
 }
 
-func InfoLog(action string, kv *model.KV) {
+func InfoLog(action string, kv *model.KVDoc) {
 	openlogging.Info(
 		fmt.Sprintf("[%s] [%s:%s] in [%s] success", action, kv.Key, kv.Value, kv.Domain))
 }

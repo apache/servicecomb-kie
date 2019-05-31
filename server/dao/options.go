@@ -17,12 +17,12 @@
 
 package dao
 
-import "github.com/apache/servicecomb-kie/pkg/model"
-
 type FindOptions struct {
 	ExactLabels bool
 	Key         string
-	Labels      model.Labels
+	Labels      map[string]string
+	LabelID     string
+	ClearLabel  bool
 }
 
 type FindOption func(*FindOptions)
@@ -42,8 +42,22 @@ func WithKey(key string) FindOption {
 }
 
 //WithLabels find kv by labels
-func WithLabels(labels model.Labels) FindOption {
+func WithLabels(labels map[string]string) FindOption {
 	return func(o *FindOptions) {
 		o.Labels = labels
+	}
+}
+
+//WithLabels find kv by labelID
+func WithLabelID(label string) FindOption {
+	return func(o *FindOptions) {
+		o.LabelID = label
+	}
+}
+
+//WithOutLabelField will clear all labels attributes in kv doc
+func WithOutLabelField() FindOption {
+	return func(o *FindOptions) {
+		o.ClearLabel = true
 	}
 }

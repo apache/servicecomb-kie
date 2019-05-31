@@ -15,20 +15,7 @@
  * limitations under the License.
  */
 
-package dao
+package v1
 
-import (
-	"errors"
-	"fmt"
-
-	"github.com/go-mesh/openlogging"
-)
-
-//ErrAction will wrap raw error to biz error and return
-//it record audit log for mongodb operation failure like find, insert, updateKey, deletion
-func ErrAction(action, filter interface{}, err error) error {
-	msg := fmt.Sprintf("can not [%s] [%v],err: %s", action, filter, err.Error())
-	openlogging.Error(msg)
-	return errors.New(msg)
-
+type HistoryResource struct {
 }

@@ -25,11 +25,15 @@ type GetOptions struct {
 	MatchMode string
 }
 
-func WithLables(l map[string]string) GetOption {
+//WithLabels query kv by labels
+func WithLabels(l map[string]string) GetOption {
 	return func(options *GetOptions) {
 		options.Labels = l
 	}
 }
+
+//WithMatchMode has 2 modes
+//exact and greedy
 func WithMatchMode(m string) GetOption {
 	return func(options *GetOptions) {
 		options.MatchMode = m

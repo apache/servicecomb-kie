@@ -37,7 +37,7 @@ type KVResource struct {
 func (r *KVResource) Put(context *restful.Context) {
 	var err error
 	key := context.ReadPathParameter("key")
-	kv := new(model.KV)
+	kv := new(model.KVDoc)
 	decoder := json.NewDecoder(context.ReadRequest().Body)
 	if err = decoder.Decode(kv); err != nil {
 		WriteErrResponse(context, http.StatusInternalServerError, err.Error())
@@ -48,13 +48,12 @@ func (r *KVResource) Put(context *restful.Context) {
 		WriteErrResponse(context, http.StatusInternalServerError, MsgDomainMustNotBeEmpty)
 	}
 	kv.Key = key
-	kv.Domain = domain.(string)
 	s, err := dao.NewKVService()
 	if err != nil {
 		WriteErrResponse(context, http.StatusInternalServerError, err.Error())
 		return
 	}
-	kv, err = s.CreateOrUpdate(kv)
+	kv, err = s.CreateOrUpdate(context.Ctx, domain.(string), kv)
 	if err != nil {
 		ErrLog("put", kv, err)
 		WriteErrResponse(context, http.StatusInternalServerError, err.Error())
@@ -92,18 +91,18 @@ func (r *KVResource) FindWithKey(context *restful.Context) {
 		return
 	}
 	policy := ReadMatchPolicy(context)
-	var kvs []*model.KV
+	var kvs []*model.KVDoc
 	switch policy {
 	case common.MatchGreedy:
-		kvs, err = s.Find(domain.(string), dao.WithKey(key), dao.WithLabels(labels))
+		kvs, err = s.FindKV(context.Ctx, domain.(string), dao.WithKey(key), dao.WithLabels(labels))
 	case common.MatchExact:
-		kvs, err = s.Find(domain.(string), dao.WithKey(key), dao.WithLabels(labels),
+		kvs, err = s.FindKV(context.Ctx, domain.(string), dao.WithKey(key), dao.WithLabels(labels),
 			dao.WithExactLabels())
 	default:
 		WriteErrResponse(context, http.StatusBadRequest, MsgIllegalFindPolicy)
 		return
 	}
-	if err == dao.ErrNotExists {
+	if err == dao.ErrKeyNotExists {
 		WriteErrResponse(context, http.StatusNotFound, err.Error())
 		return
 	}
@@ -139,18 +138,18 @@ func (r *KVResource) FindByLabels(context *restful.Context) {
 		return
 	}
 	policy := ReadMatchPolicy(context)
-	var kvs []*model.KV
+	var kvs []*model.KVDoc
 	switch policy {
 	case common.MatchGreedy:
-		kvs, err = s.Find(domain.(string), dao.WithLabels(labels))
+		kvs, err = s.FindKV(context.Ctx, domain.(string), dao.WithLabels(labels))
 	case common.MatchExact:
-		kvs, err = s.Find(domain.(string), dao.WithLabels(labels),
+		kvs, err = s.FindKV(context.Ctx, domain.(string), dao.WithLabels(labels),
 			dao.WithExactLabels())
 	default:
 		WriteErrResponse(context, http.StatusBadRequest, MsgIllegalFindPolicy)
 		return
 	}
-	if err == dao.ErrNotExists {
+	if err == dao.ErrKeyNotExists {
 		WriteErrResponse(context, http.StatusNotFound, err.Error())
 		return
 	}
@@ -280,7 +279,7 @@ func (r *KVResource) URLPatterns() []restful.Route {
 			Method:           http.MethodDelete,
 			Path:             "/v1/kv/{ids}",
 			ResourceFuncName: "Delete",
-			FuncDesc:         "delete key by id,seperated by ','",
+			FuncDesc:         "delete key by id,separated by ','",
 			Parameters: []*restful.Parameters{
 				{
 					DataType:  "string",

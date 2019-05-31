@@ -74,7 +74,7 @@ func New(config Config) (*Client, error) {
 }
 
 //GetValue get value of a key
-func (c *Client) Get(ctx context.Context, key string, opts ...GetOption) ([]*model.KV, error) {
+func (c *Client) Get(ctx context.Context, key string, opts ...GetOption) ([]*model.KVDoc, error) {
 	options := GetOptions{}
 	for _, o := range opts {
 		o(&options)
@@ -84,7 +84,7 @@ func (c *Client) Get(ctx context.Context, key string, opts ...GetOption) ([]*mod
 	if options.MatchMode != "" {
 		h.Set(common.HeaderMatch, options.MatchMode)
 	}
-	resp, err := c.c.HTTPDo("GET", url, h, nil)
+	resp, err := c.c.HTTPDoWithContext(ctx, "GET", url, h, nil)
 	if err != nil {
 		return nil, err
 	}
@@ -96,7 +96,7 @@ func (c *Client) Get(ctx context.Context, key string, opts ...GetOption) ([]*mod
 		return nil, fmt.Errorf("get %s failed,http status [%s], body [%s]", key, resp.Status, b)
 	}
 
-	kvs := make([]*model.KV, 0)
+	kvs := make([]*model.KVDoc, 0)
 	err = json.Unmarshal(b, kvs)
 	if err != nil {
 		openlogging.Error("unmarshal kv failed:" + err.Error())

@@ -25,6 +25,7 @@ import (
 	. "github.com/onsi/ginkgo"
 	"github.com/onsi/ginkgo/reporters"
 	. "github.com/onsi/gomega"
+	"os"
 )
 
 func TestClient(t *testing.T) {
@@ -41,4 +42,5 @@ var _ = BeforeSuite(func() {
 
 	logger := log.NewLogger("ut")
 	openlogging.SetLogger(logger)
+	os.Setenv("HTTP_DEBUG","1")
 })
