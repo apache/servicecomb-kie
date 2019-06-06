@@ -229,15 +229,14 @@ func (s *MongodbService) FindKV(ctx context.Context, domain string, options ...F
 			}
 			if len(curKV.Labels) == len(opts.Labels) {
 				openlogging.Debug("hit exact labels")
-				curKV.Domain = ""
-				curKV.Labels = nil //exact match don't need to return labels
 				labelGroup := &model.KVResponse{
-					LabelDoc: &model.LabelDoc{
-						Labels: opts.Labels,
-						ID:     primitive.NilObjectID,
+					LabelDoc: &model.LabelDocResponse{
+						Labels:  opts.Labels,
+						LabelID: curKV.LabelID,
 					},
 					Data: make([]*model.KVDoc, 0),
 				}
+				clearKV(curKV)
 				labelGroup.Data = append(labelGroup.Data, curKV)
 				kvResp = append(kvResp, labelGroup)
 				return kvResp, nil
@@ -268,6 +267,7 @@ func (s *MongodbService) FindKV(ctx context.Context, domain string, options ...F
 			for _, labelGroup = range kvResp {
 				if reflect.DeepEqual(labelGroup.LabelDoc.Labels, curKV.Labels) {
 					groupExist = true
+					clearKV(curKV)
 					labelGroup.Data = append(labelGroup.Data, curKV)
 					break
 				}
@@ -275,14 +275,17 @@ func (s *MongodbService) FindKV(ctx context.Context, domain string, options ...F
 			}
 			if !groupExist {
 				labelGroup = &model.KVResponse{
-					LabelDoc: &model.LabelDoc{
-						Labels: curKV.Labels,
+					LabelDoc: &model.LabelDocResponse{
+						Labels:  curKV.Labels,
+						LabelID: curKV.LabelID,
 					},
 					Data: []*model.KVDoc{curKV},
 				}
+				clearKV(curKV)
 				openlogging.Debug("add new label group")
+				kvResp = append(kvResp, labelGroup)
 			}
-			kvResp = append(kvResp, labelGroup)
+
 		}
 		if len(kvResp) == 0 {
 			return nil, ErrKeyNotExists
