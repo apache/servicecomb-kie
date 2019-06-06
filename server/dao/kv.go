@@ -99,7 +99,7 @@ func (s *MongodbService) KVExist(ctx context.Context, domain, key string, option
 			return primitive.NilObjectID, ErrTooMany
 		}
 
-		return kvs[0].ID, nil
+		return kvs[0].Data[0].ID, nil
 	}
 
 }

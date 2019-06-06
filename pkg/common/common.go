@@ -24,4 +24,5 @@ const (
 
 const (
 	HeaderMatch = "X-Match"
+	HeaderDepth = "X-Depth"
 )

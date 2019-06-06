@@ -22,7 +22,7 @@ import "go.mongodb.org/mongo-driver/bson/primitive"
 type LabelDoc struct {
 	ID       primitive.ObjectID `json:"_id,omitempty" bson:"_id,omitempty"`
 	Labels   map[string]string  `json:"labels,omitempty"`
-	Revision int                `json:"revision"`
+	Revision int                `json:"revision,omitempty"`
 	Domain   string             `json:"domain,omitempty"` //tenant info
 }
 type KVDoc struct {

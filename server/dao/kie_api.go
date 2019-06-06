@@ -26,6 +26,7 @@ import (
 	"go.mongodb.org/mongo-driver/bson/primitive"
 	"go.mongodb.org/mongo-driver/mongo"
 	"go.mongodb.org/mongo-driver/mongo/options"
+	"reflect"
 	"time"
 )
 
@@ -184,7 +185,7 @@ func (s *MongodbService) FindKVByLabelID(ctx context.Context, domain, labelID, k
 //FindKV get kvs by key, labels
 //because labels has a a lot of combination,
 //you can use WithExactLabels to return only one kv which's labels exactly match the criteria
-func (s *MongodbService) FindKV(ctx context.Context, domain string, options ...FindOption) ([]*model.KVDoc, error) {
+func (s *MongodbService) FindKV(ctx context.Context, domain string, options ...FindOption) ([]*model.KVResponse, error) {
 	opts := FindOptions{}
 	for _, o := range options {
 		o(&opts)
@@ -213,9 +214,11 @@ func (s *MongodbService) FindKV(ctx context.Context, domain string, options ...F
 	if cur.Err() != nil {
 		return nil, err
 	}
+	kvResp := make([]*model.KVResponse, 0)
 	if opts.ExactLabels {
 		openlogging.Debug(fmt.Sprintf("find one [%s] with lables [%s] in [%s]", opts.Key, opts.Labels, domain))
 		curKV := &model.KVDoc{} //reuse this pointer to reduce GC, only clear label
+
 		//check label length to get the exact match
 		for cur.Next(ctx) { //although complexity is O(n), but there won't be so much labels for one key
 			curKV.Labels = nil
@@ -226,27 +229,65 @@ func (s *MongodbService) FindKV(ctx context.Context, domain string, options ...F
 			}
 			if len(curKV.Labels) == len(opts.Labels) {
 				openlogging.Debug("hit exact labels")
+				curKV.Domain = ""
 				curKV.Labels = nil //exact match don't need to return labels
-				return []*model.KVDoc{curKV}, nil
+				labelGroup := &model.KVResponse{
+					LabelDoc: &model.LabelDoc{
+						Labels: opts.Labels,
+						ID:     primitive.NilObjectID,
+					},
+					Data: make([]*model.KVDoc, 0),
+				}
+				labelGroup.Data = append(labelGroup.Data, curKV)
+				kvResp = append(kvResp, labelGroup)
+				return kvResp, nil
 			}
 
 		}
 		return nil, ErrKeyNotExists
 	} else {
-		kvs := make([]*model.KVDoc, 0)
+		if opts.Depth == 0 {
+			opts.Depth = 1
+		}
 		for cur.Next(ctx) {
 			curKV := &model.KVDoc{}
+
 			if err := cur.Decode(curKV); err != nil {
 				openlogging.Error("decode to KVs error: " + err.Error())
 				return nil, err
 			}
-			kvs = append(kvs, curKV)
+			if (len(curKV.Labels) - len(opts.Labels)) > opts.Depth {
+				//because it is query by labels, so result can not be minus
+				//so many labels,then continue
+				openlogging.Debug("so deep, skip this key")
+				continue
+			}
+			openlogging.Info(fmt.Sprintf("%v", curKV))
+			var groupExist bool
+			var labelGroup *model.KVResponse
+			for _, labelGroup = range kvResp {
+				if reflect.DeepEqual(labelGroup.LabelDoc.Labels, curKV.Labels) {
+					groupExist = true
+					labelGroup.Data = append(labelGroup.Data, curKV)
+					break
+				}
 
+			}
+			if !groupExist {
+				labelGroup = &model.KVResponse{
+					LabelDoc: &model.LabelDoc{
+						Labels: curKV.Labels,
+					},
+					Data: []*model.KVDoc{curKV},
+				}
+				openlogging.Debug("add new label group")
+			}
+			kvResp = append(kvResp, labelGroup)
 		}
-		if len(kvs) == 0 {
+		if len(kvResp) == 0 {
 			return nil, ErrKeyNotExists
 		}
-		return kvs, nil
+		return kvResp, nil
 	}
 
 }

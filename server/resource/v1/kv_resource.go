@@ -91,10 +91,15 @@ func (r *KVResource) FindWithKey(context *restful.Context) {
 		return
 	}
 	policy := ReadMatchPolicy(context)
-	var kvs []*model.KVDoc
+	d, err := ReadFindDepth(context)
+	if err != nil {
+		WriteErrResponse(context, http.StatusBadRequest, MsgIllegalDepth)
+		return
+	}
+	var kvs []*model.KVResponse
 	switch policy {
 	case common.MatchGreedy:
-		kvs, err = s.FindKV(context.Ctx, domain.(string), dao.WithKey(key), dao.WithLabels(labels))
+		kvs, err = s.FindKV(context.Ctx, domain.(string), dao.WithKey(key), dao.WithLabels(labels), dao.WithDepth(d))
 	case common.MatchExact:
 		kvs, err = s.FindKV(context.Ctx, domain.(string), dao.WithKey(key), dao.WithLabels(labels),
 			dao.WithExactLabels())
@@ -138,10 +143,15 @@ func (r *KVResource) FindByLabels(context *restful.Context) {
 		return
 	}
 	policy := ReadMatchPolicy(context)
-	var kvs []*model.KVDoc
+	d, err := ReadFindDepth(context)
+	if err != nil {
+		WriteErrResponse(context, http.StatusBadRequest, MsgIllegalDepth)
+		return
+	}
+	var kvs []*model.KVResponse
 	switch policy {
 	case common.MatchGreedy:
-		kvs, err = s.FindKV(context.Ctx, domain.(string), dao.WithLabels(labels))
+		kvs, err = s.FindKV(context.Ctx, domain.(string), dao.WithLabels(labels), dao.WithDepth(d))
 	case common.MatchExact:
 		kvs, err = s.FindKV(context.Ctx, domain.(string), dao.WithLabels(labels),
 			dao.WithExactLabels())
@@ -199,7 +209,7 @@ func (r *KVResource) URLPatterns() []restful.Route {
 					ParamType: goRestful.PathParameterKind,
 				}, {
 					DataType:  "string",
-					Name:      TenantHeaderParam,
+					Name:      HeaderTenant,
 					ParamType: goRestful.HeaderParameterKind,
 					Desc:      "set kv to other tenant",
 				}, {
@@ -230,7 +240,7 @@ func (r *KVResource) URLPatterns() []restful.Route {
 					ParamType: goRestful.PathParameterKind,
 				}, {
 					DataType:  "string",
-					Name:      TenantHeaderParam,
+					Name:      HeaderTenant,
 					ParamType: goRestful.HeaderParameterKind,
 				}, {
 					DataType:  "string",
@@ -257,7 +267,7 @@ func (r *KVResource) URLPatterns() []restful.Route {
 			Parameters: []*restful.Parameters{
 				{
 					DataType:  "string",
-					Name:      TenantHeaderParam,
+					Name:      HeaderTenant,
 					ParamType: goRestful.HeaderParameterKind,
 				}, {
 					DataType:  "string",
@@ -283,7 +293,7 @@ func (r *KVResource) URLPatterns() []restful.Route {
 			Parameters: []*restful.Parameters{
 				{
 					DataType:  "string",
-					Name:      TenantHeaderParam,
+					Name:      HeaderTenant,
 					ParamType: goRestful.HeaderParameterKind,
 				}, {
 					DataType:  "string",

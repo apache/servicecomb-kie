@@ -17,9 +17,7 @@
 
 package model
 
-
-
-
-
 type KVResponse struct {
+	LabelDoc *LabelDoc `json:"labels"`
+	Data     []*KVDoc `json:"data"`
 }

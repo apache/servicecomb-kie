@@ -96,7 +96,7 @@ var _ = Describe("Kv mongodb service", func() {
 				"app": "mall",
 			}), dao.WithExactLabels())
 			It("should be 1s", func() {
-				Expect(kvs1[0].Value).Should(Equal(beforeKV.Value))
+				Expect(kvs1[0].Data[0].Value).Should(Equal(beforeKV.Value))
 			})
 			afterKV, err := s.CreateOrUpdate(context.Background(), "default", &model.KVDoc{
 				Key:    "timeout",
@@ -119,16 +119,30 @@ var _ = Describe("Kv mongodb service", func() {
 				"app": "mall",
 			}), dao.WithExactLabels())
 			It("should be 3s", func() {
-				Expect(kvs[0].Value).Should(Equal(afterKV.Value))
+				Expect(kvs[0].Data[0].Value).Should(Equal(afterKV.Value))
 			})
 		})
 	})
 
 	Describe("greedy find by kv and labels", func() {
-		Context("with labels app ", func() {
+		Context("with labels app,depth is 1 ", func() {
 			kvs, err := s.FindKV(context.Background(), "default", dao.WithKey("timeout"), dao.WithLabels(map[string]string{
 				"app": "mall",
 			}))
+			It("should not return err", func() {
+				Expect(err).Should(BeNil())
+			})
+			It("should has 2 records", func() {
+				Expect(len(kvs)).Should(Equal(2))
+			})
+
+		})
+		Context("with labels app,depth is 2 ", func() {
+			kvs, err := s.FindKV(context.Background(), "default", dao.WithKey("timeout"),
+				dao.WithLabels(map[string]string{
+					"app": "mall",
+				}),
+				dao.WithDepth(2))
 			It("should not return err", func() {
 				Expect(err).Should(BeNil())
 			})

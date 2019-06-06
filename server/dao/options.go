@@ -19,6 +19,7 @@ package dao
 
 type FindOptions struct {
 	ExactLabels bool
+	Depth       int
 	Key         string
 	Labels      map[string]string
 	LabelID     string
@@ -52,6 +53,13 @@ func WithLabels(labels map[string]string) FindOption {
 func WithLabelID(label string) FindOption {
 	return func(o *FindOptions) {
 		o.LabelID = label
+	}
+}
+
+//WithDepth if you use greedy match this can specify the match depth
+func WithDepth(d int) FindOption {
+	return func(o *FindOptions) {
+		o.Depth = d
 	}
 }
 
