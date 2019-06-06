@@ -15,9 +15,13 @@
  * limitations under the License.
  */
 
-package model
+package dao
 
-type KVResponse struct {
-	LabelDoc *LabelDocResponse `json:"label"`
-	Data     []*KVDoc          `json:"data"`
+import "github.com/apache/servicecomb-kie/pkg/model"
+
+//clearKV clean attr which don't need to return to client side
+func clearKV(kv *model.KVDoc) {
+	kv.Domain = ""
+	kv.Labels = nil
+	kv.LabelID = ""
 }
