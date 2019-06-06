@@ -24,21 +24,35 @@ import (
 	"github.com/apache/servicecomb-kie/pkg/model"
 	"github.com/go-chassis/go-chassis/server/restful"
 	"github.com/go-mesh/openlogging"
+	"strconv"
 )
 
 const (
-	TenantHeaderParam       = "X-Domain-Name"
+	HeaderTenant = "X-Domain-Name"
+
 	FindExact               = "exact"
 	FindMany                = "greedy"
 	MsgDomainMustNotBeEmpty = "domain must not be empty"
 	MsgIllegalFindPolicy    = "value of header " + common.HeaderMatch + " can be greedy or exact"
 	MsgIllegalLabels        = "label's value can not be empty, " +
 		"label can not be duplicated, please check your query parameters"
+	MsgIllegalDepth   = "X-Depth must be number"
 	ErrIDMustNotEmpty = "must supply id if you want to remove key"
 )
 
 func ReadDomain(context *restful.Context) interface{} {
 	return context.ReadRestfulRequest().Attribute("domain")
+}
+func ReadFindDepth(context *restful.Context) (int, error) {
+	d := context.ReadRestfulRequest().HeaderParameter(common.HeaderDepth)
+	if d == "" {
+		return 1, nil
+	}
+	depth, err := strconv.Atoi(d)
+	if err != nil {
+		return 0, err
+	}
+	return depth, nil
 }
 func ReadMatchPolicy(context *restful.Context) string {
 	policy := context.ReadRestfulRequest().HeaderParameter(common.HeaderMatch)
@@ -54,11 +68,11 @@ func WriteErrResponse(context *restful.Context, status int, msg string) {
 	context.Write(b)
 }
 
-func ErrLog(action string, kv *model.KV, err error) {
+func ErrLog(action string, kv *model.KVDoc, err error) {
 	openlogging.Error(fmt.Sprintf("[%s] [%v] err:%s", action, kv, err.Error()))
 }
 
-func InfoLog(action string, kv *model.KV) {
+func InfoLog(action string, kv *model.KVDoc) {
 	openlogging.Info(
 		fmt.Sprintf("[%s] [%s:%s] in [%s] success", action, kv.Key, kv.Value, kv.Domain))
 }

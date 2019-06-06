@@ -25,7 +25,7 @@ import (
 )
 
 func TestKV_UnmarshalJSON(t *testing.T) {
-	kv := &model.KV{
+	kv := &model.KVDoc{
 		Value: "test",
 		Labels: map[string]string{
 			"test": "env",
@@ -34,7 +34,7 @@ func TestKV_UnmarshalJSON(t *testing.T) {
 	b, _ := json.Marshal(kv)
 	t.Log(string(b))
 
-	var kv2 model.KV
+	var kv2 model.KVDoc
 	err := json.Unmarshal([]byte(` 
         {"value": "1","labels":{"test":"env"}}
     `), &kv2)

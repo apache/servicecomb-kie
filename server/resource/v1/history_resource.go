@@ -15,9 +15,7 @@
  * limitations under the License.
  */
 
-package model
+package v1
 
-type KVResponse struct {
-	LabelDoc *LabelDoc `json:"labels"`
-	Data     []*KVDoc `json:"data"`
+type HistoryResource struct {
 }

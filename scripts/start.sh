@@ -19,7 +19,9 @@
 root_dir=/opt/servicecomb-kie
 net_name=$(ip -o -4 route show to default | awk '{print $5}')
 listen_addr=$(ifconfig ${net_name} | grep -E 'inet\W' | grep -o -E [0-9]+.[0-9]+.[0-9]+.[0-9]+ | head -n 1)
-
+if [ -z "${LOG_LEVEL}" ]; then
+ export LOG_LEVEL="DEBUG"
+fi
 
 writeConfig(){
 echo "write template config..."
@@ -38,7 +40,21 @@ cse:
       Provider:
         default: auth-handler,ratelimiter-provider
 EOM
+cat <<EOM > ${root_dir}/conf/lager.yaml
+logger_level: ${LOG_LEVEL}
 
+logger_file: log/chassis.log
+
+log_format_text: true
+
+rollingPolicy: size
+
+log_rotate_date: 1
+
+log_rotate_size: 10
+
+log_backup_count: 7
+EOM
 cat <<EOM > /etc/servicecomb-kie/kie-conf.yaml
 db:
   uri: mongodb://${MONGODB_USER}:${MONGODB_PWD}@${MONGODB_ADDR}/kie

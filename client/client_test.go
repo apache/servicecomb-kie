@@ -53,7 +53,7 @@ var _ = Describe("Client", func() {
 
 		})
 		Context("by key and labels", func() {
-			_, err := c1.Get(context.TODO(), "app.properties", WithLables(map[string]string{
+			_, err := c1.Get(context.TODO(), "app.properties", WithLabels(map[string]string{
 				"app": "mall",
 			}))
 			It("should be 404 error", func() {

@@ -21,14 +21,13 @@ import (
 	"errors"
 	"fmt"
 
-	"github.com/apache/servicecomb-kie/pkg/model"
 	"github.com/go-mesh/openlogging"
 )
 
 //ErrAction will wrap raw error to biz error and return
-//it record audit log for mongodb operation failure like find, insert, update, deletion
-func ErrAction(action, key string, labels model.Labels, domain string, err error) error {
-	msg := fmt.Sprintf("can not [%s] [%s] in [%s] with [%s],err: %s", action, key, domain, labels, err.Error())
+//it record audit log for mongodb operation failure like find, insert, updateKey, deletion
+func ErrAction(action, filter interface{}, err error) error {
+	msg := fmt.Sprintf("can not [%s] [%v],err: %s", action, filter, err.Error())
 	openlogging.Error(msg)
 	return errors.New(msg)
 
