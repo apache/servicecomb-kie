@@ -18,6 +18,7 @@
 package main
 
 import (
+	"github.com/apache/servicecomb-kie/cmd/kie"
 	_ "github.com/apache/servicecomb-kie/server/handler"
 
 	"github.com/apache/servicecomb-kie/server/config"
@@ -28,7 +29,7 @@ import (
 )
 
 func main() {
-	if err := Init(); err != nil {
+	if err := kie.Init(); err != nil {
 		openlogging.Fatal(err.Error())
 	}
 	chassis.RegisterSchema("rest", &v1.KVResource{})
@@ -36,7 +37,7 @@ func main() {
 		openlogging.Error(err.Error())
 		os.Exit(1)
 	}
-	if err := config.Init(Configs.ConfigFile); err != nil {
+	if err := config.Init(kie.Configs.ConfigFile); err != nil {
 		openlogging.Error(err.Error())
 		os.Exit(1)
 	}
