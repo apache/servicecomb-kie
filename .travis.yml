@@ -1,0 +1,50 @@
+language: go
+sudo: required
+go: 
+  - 1.11
+install: true
+
+before_script:
+  - mkdir -p $HOME/gopath/src/github.com/apache/servicecomb-kie
+  - rsync -az ${TRAVIS_BUILD_DIR}/ $HOME/gopath/src/github.com/apache/servicecomb-kie/
+  - export TRAVIS_BUILD_DIR=$HOME/gopath/src/github.com/apache/servicecomb-kie
+  - cd $HOME/gopath/src/github.com/apache/servicecomb-kie
+
+jobs:
+  include:
+    - stage: Format Checker
+      script: bash scripts/travis/formatChecker.sh
+    - stage: DeadCode Checker
+      script: 
+        - go get -u github.com/tsenart/deadcode
+        - bash scripts/travis/deadCodeChecker.sh
+    - stage: Misspell Checker
+      script: 
+        - go get -u github.com/client9/misspell
+        - bash scripts/travis/misspellChecker.sh
+    - stage: GoConst Checker
+      script:
+        - go get -u github.com/jgautheron/goconst/cmd/goconst
+        - bash scripts/travis/goConstChecker.sh
+    - stage: GoLint Checker
+      script:
+        - go get -u github.com/golang/lint/golint
+        - bash scripts/travis/goLintChecker.sh
+    - stage: GoCyclo Checker
+      script:
+        - go get github.com/fzipp/gocyclo
+        - bash scripts/travis/goCycloChecker.sh
+    - stage: Unit Test
+      script:
+        - bash scripts/travis/start_deps.sh
+        - go get github.com/mattn/goveralls
+        - go get golang.org/x/tools/cmd/cover
+        - GO111MODULE=on go mod download
+        - GO111MODULE=on go mod vendor
+        - bash scripts/travis/unit_test.sh && $HOME/gopath/bin/goveralls -coverprofile=coverage.txt -service=travis-ci
+
+    - stage: Build
+      script: 
+        - cd build
+        - ./build_server.sh
+
