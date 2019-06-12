@@ -42,5 +42,5 @@ var _ = BeforeSuite(func() {
 
 	logger := log.NewLogger("ut")
 	openlogging.SetLogger(logger)
-	os.Setenv("HTTP_DEBUG","1")
+	os.Setenv("HTTP_DEBUG", "1")
 })

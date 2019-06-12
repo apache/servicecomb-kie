@@ -17,8 +17,6 @@
 
 package client
 
-
-
 type GetOption func(*GetOptions)
 type GetOptions struct {
 	Labels    map[string]string
