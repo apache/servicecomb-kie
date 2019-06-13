@@ -31,6 +31,7 @@ import (
 	"time"
 )
 
+//db errors
 var (
 	ErrMissingDomain    = errors.New("domain info missing, illegal access")
 	ErrKeyNotExists     = errors.New("key with labels does not exits")
@@ -40,6 +41,7 @@ var (
 	ErrRevisionNotExist = errors.New("label revision not exist")
 )
 
+//Options mongodb options
 type Options struct {
 	URI      string
 	PoolSize int
@@ -48,6 +50,8 @@ type Options struct {
 	Timeout  time.Duration
 }
 
+//NewKVService create a kv service
+//TODO, multiple config server
 func NewKVService() (*MongodbService, error) {
 	opts := Options{
 		URI:      config.GetDB().URI,
@@ -55,7 +59,7 @@ func NewKVService() (*MongodbService, error) {
 		SSL:      config.GetDB().SSL,
 	}
 	if opts.SSL {
-
+		//TODO tls config
 	}
 	return NewMongoService(opts)
 }

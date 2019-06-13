@@ -41,11 +41,17 @@ const (
 	DefaultValueType        = "text"
 )
 
+//MongodbService operate data in mongodb
 type MongodbService struct {
 	c       *mongo.Client
 	timeout time.Duration
 }
 
+//CreateOrUpdate will create or update a key value record
+//it first check label exists or not, and create labels if labels is first posted.
+//if label exists, then get its latest revision, and update current revision,
+//save the current label and its all key values to history collection
+//then check key exists or not, then create or update it
 func (s *MongodbService) CreateOrUpdate(ctx context.Context, domain string, kv *model.KVDoc) (*model.KVDoc, error) {
 	if domain == "" {
 		return nil, ErrMissingDomain
@@ -294,6 +300,8 @@ func (s *MongodbService) FindKV(ctx context.Context, domain string, options ...F
 	}
 
 }
+
+//DeleteByID delete a key value by collection ID
 func (s *MongodbService) DeleteByID(id string) error {
 	collection := s.c.Database(DB).Collection(CollectionKV)
 	hex, err := primitive.ObjectIDFromHex(id)
@@ -312,6 +320,8 @@ func (s *MongodbService) DeleteByID(id string) error {
 	return nil
 }
 
+//Delete remove a list of key values for a tenant
+//domain=tenant
 func (s *MongodbService) Delete(ids []string, domain string) error {
 	if len(ids) == 0 {
 		openlogging.Warn("delete error,ids is blank")
@@ -351,6 +361,8 @@ func (s *MongodbService) Delete(ids []string, domain string) error {
 	}
 	return nil
 }
+
+//NewMongoService create a new mongo db service
 func NewMongoService(opts Options) (*MongodbService, error) {
 	if opts.Timeout == 0 {
 		opts.Timeout = DefaultTimeout

@@ -46,8 +46,7 @@ echo "build from ${GIT_COMMIT}"
 
 
 echo "building..."
-go build -o ${release_dir}/kie github.com/apache/servicecomb-kie/cmd/kie
-
+go build -o ${release_dir}/kie github.com/apache/servicecomb-kie/cmd/kieserver
 
 writeConfig(){
 echo "write template config..."

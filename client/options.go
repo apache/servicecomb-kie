@@ -17,7 +17,10 @@
 
 package client
 
+//GetOption is the functional option of client func
 type GetOption func(*GetOptions)
+
+//GetOption is the options of client func
 type GetOptions struct {
 	Labels    map[string]string
 	MatchMode string

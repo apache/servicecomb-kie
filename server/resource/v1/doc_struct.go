@@ -17,12 +17,41 @@
 
 package v1
 
+import (
+	"github.com/apache/servicecomb-kie/pkg/common"
+	goRestful "github.com/emicklei/go-restful"
+	"github.com/go-chassis/go-chassis/server/restful"
+)
+
+//swagger doc elements
+var (
+	DocHeaderDepth = &restful.Parameters{
+		DataType:  "string",
+		Name:      common.HeaderDepth,
+		ParamType: goRestful.HeaderParameterKind,
+		Desc:      "integer, default is 1, if you set match policy, you can set,depth to decide label number",
+	}
+	DocPathKey = &restful.Parameters{
+		DataType:  "string",
+		Name:      "key",
+		ParamType: goRestful.PathParameterKind,
+	}
+	DocHeaderMath = &restful.Parameters{
+		DataType:  "string",
+		Name:      common.HeaderMatch,
+		ParamType: goRestful.HeaderParameterKind,
+		Desc:      "greedy or exact",
+	}
+)
+
+//KVBody is open api doc
 type KVBody struct {
 	Labels    map[string]string `json:"labels"`
 	ValueType string            `json:"valueType"`
 	Value     string            `json:"value"`
 }
 
+//ErrorMsg is open api doc
 type ErrorMsg struct {
 	Msg string `json:"msg"`
 }

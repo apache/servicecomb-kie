@@ -31,9 +31,11 @@ import (
 	"strings"
 )
 
+//KVResource has API about kv operations
 type KVResource struct {
 }
 
+//Put create or update kv
 func (r *KVResource) Put(context *restful.Context) {
 	var err error
 	key := context.ReadPathParameter("key")
@@ -64,6 +66,8 @@ func (r *KVResource) Put(context *restful.Context) {
 	context.WriteHeaderAndJSON(http.StatusOK, kv, goRestful.MIME_JSON)
 
 }
+
+//FindWithKey search key by label and key
 func (r *KVResource) FindWithKey(context *restful.Context) {
 	var err error
 	key := context.ReadPathParameter("key")
@@ -121,6 +125,8 @@ func (r *KVResource) FindWithKey(context *restful.Context) {
 	}
 
 }
+
+//FindByLabels search key only by label
 func (r *KVResource) FindByLabels(context *restful.Context) {
 	var err error
 	values := context.ReadRequest().URL.Query()
@@ -169,6 +175,8 @@ func (r *KVResource) FindByLabels(context *restful.Context) {
 	}
 
 }
+
+//Delete deletes key by ids
 func (r *KVResource) Delete(context *restful.Context) {
 	domain := ReadDomain(context)
 	if domain == nil {
@@ -203,16 +211,7 @@ func (r *KVResource) URLPatterns() []restful.Route {
 			ResourceFuncName: "Put",
 			FuncDesc:         "create or update key value",
 			Parameters: []*restful.Parameters{
-				{
-					DataType:  "string",
-					Name:      "key",
-					ParamType: goRestful.PathParameterKind,
-				}, {
-					DataType:  "string",
-					Name:      HeaderTenant,
-					ParamType: goRestful.HeaderParameterKind,
-					Desc:      "set kv to other tenant",
-				}, {
+				DocPathKey, {
 					DataType:  "string",
 					Name:      "X-Realm",
 					ParamType: goRestful.HeaderParameterKind,
@@ -234,20 +233,7 @@ func (r *KVResource) URLPatterns() []restful.Route {
 			ResourceFuncName: "FindWithKey",
 			FuncDesc:         "get key values by key and labels",
 			Parameters: []*restful.Parameters{
-				{
-					DataType:  "string",
-					Name:      "key",
-					ParamType: goRestful.PathParameterKind,
-				}, {
-					DataType:  "string",
-					Name:      HeaderTenant,
-					ParamType: goRestful.HeaderParameterKind,
-				}, {
-					DataType:  "string",
-					Name:      common.HeaderMatch,
-					ParamType: goRestful.HeaderParameterKind,
-					Desc:      "greedy or exact",
-				},
+				DocPathKey, DocHeaderMath, DocHeaderDepth,
 			},
 			Returns: []*restful.Returns{
 				{
@@ -265,16 +251,7 @@ func (r *KVResource) URLPatterns() []restful.Route {
 			ResourceFuncName: "FindByLabels",
 			FuncDesc:         "find key values only by labels",
 			Parameters: []*restful.Parameters{
-				{
-					DataType:  "string",
-					Name:      HeaderTenant,
-					ParamType: goRestful.HeaderParameterKind,
-				}, {
-					DataType:  "string",
-					Name:      common.HeaderMatch,
-					ParamType: goRestful.HeaderParameterKind,
-					Desc:      "greedy or exact",
-				},
+				DocHeaderMath, DocHeaderDepth,
 			},
 			Returns: []*restful.Returns{
 				{
@@ -290,18 +267,13 @@ func (r *KVResource) URLPatterns() []restful.Route {
 			Path:             "/v1/kv/{ids}",
 			ResourceFuncName: "Delete",
 			FuncDesc:         "delete key by id,separated by ','",
-			Parameters: []*restful.Parameters{
-				{
-					DataType:  "string",
-					Name:      HeaderTenant,
-					ParamType: goRestful.HeaderParameterKind,
-				}, {
-					DataType:  "string",
-					Name:      "ids",
-					ParamType: goRestful.PathParameterKind,
-					Desc: "The id strings to be removed are separated by ',',If the actual number of deletions " +
-						"and the number of parameters are not equal, no error will be returned and only warn log will be printed.",
-				},
+			Parameters: []*restful.Parameters{{
+				DataType:  "string",
+				Name:      "ids",
+				ParamType: goRestful.PathParameterKind,
+				Desc: "The id strings to be removed are separated by ',',If the actual number of deletions " +
+					"and the number of parameters are not equal, no error will be returned and only warn log will be printed.",
+			},
 			},
 			Returns: []*restful.Returns{
 				{

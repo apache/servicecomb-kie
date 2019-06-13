@@ -27,11 +27,8 @@ import (
 	"strconv"
 )
 
+//const of server
 const (
-	HeaderTenant = "X-Domain-Name"
-
-	FindExact               = "exact"
-	FindMany                = "greedy"
 	MsgDomainMustNotBeEmpty = "domain must not be empty"
 	MsgIllegalFindPolicy    = "value of header " + common.HeaderMatch + " can be greedy or exact"
 	MsgIllegalLabels        = "label's value can not be empty, " +
@@ -40,9 +37,12 @@ const (
 	ErrIDMustNotEmpty = "must supply id if you want to remove key"
 )
 
+//ReadDomain get domain info from attribute
 func ReadDomain(context *restful.Context) interface{} {
 	return context.ReadRestfulRequest().Attribute("domain")
 }
+
+//ReadFindDepth get find depth
 func ReadFindDepth(context *restful.Context) (int, error) {
 	d := context.ReadRestfulRequest().HeaderParameter(common.HeaderDepth)
 	if d == "" {
@@ -54,6 +54,8 @@ func ReadFindDepth(context *restful.Context) (int, error) {
 	}
 	return depth, nil
 }
+
+//ReadMatchPolicy get match policy
 func ReadMatchPolicy(context *restful.Context) string {
 	policy := context.ReadRestfulRequest().HeaderParameter(common.HeaderMatch)
 	if policy == "" {
@@ -62,16 +64,20 @@ func ReadMatchPolicy(context *restful.Context) string {
 	}
 	return policy
 }
+
+//WriteErrResponse write error message to client
 func WriteErrResponse(context *restful.Context, status int, msg string) {
 	context.WriteHeader(status)
 	b, _ := json.MarshalIndent(&ErrorMsg{Msg: msg}, "", " ")
 	context.Write(b)
 }
 
+//ErrLog record error
 func ErrLog(action string, kv *model.KVDoc, err error) {
 	openlogging.Error(fmt.Sprintf("[%s] [%v] err:%s", action, kv, err.Error()))
 }
 
+//InfoLog record info
 func InfoLog(action string, kv *model.KVDoc) {
 	openlogging.Info(
 		fmt.Sprintf("[%s] [%s:%s] in [%s] success", action, kv.Key, kv.Value, kv.Domain))

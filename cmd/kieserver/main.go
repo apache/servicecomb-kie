@@ -18,18 +18,56 @@
 package main
 
 import (
-	"github.com/apache/servicecomb-kie/cmd/kie"
-	_ "github.com/apache/servicecomb-kie/server/handler"
+	"os"
 
 	"github.com/apache/servicecomb-kie/server/config"
+	_ "github.com/apache/servicecomb-kie/server/handler"
 	"github.com/apache/servicecomb-kie/server/resource/v1"
 	"github.com/go-chassis/go-chassis"
 	"github.com/go-mesh/openlogging"
-	"os"
+	"github.com/urfave/cli"
 )
 
+const (
+	defaultConfigFile = "/etc/servicecomb-kie/kie-conf.yaml"
+)
+
+//ConfigFromCmd store cmd params
+type ConfigFromCmd struct {
+	ConfigFile string
+}
+
+//Configs is a pointer of struct ConfigFromCmd
+var Configs *ConfigFromCmd
+
+// parseConfigFromCmd
+func parseConfigFromCmd(args []string) (err error) {
+	app := cli.NewApp()
+	app.HideVersion = true
+	app.Usage = "servicecomb-kie server cmd line."
+	app.Flags = []cli.Flag{
+		cli.StringFlag{
+			Name:        "config",
+			Usage:       "config file, example: --config=kie-conf.yaml",
+			Destination: &Configs.ConfigFile,
+			Value:       defaultConfigFile,
+		},
+	}
+	app.Action = func(c *cli.Context) error {
+		return nil
+	}
+
+	err = app.Run(args)
+	return
+}
+
+//Init get config and parses those command
+func Init() error {
+	Configs = &ConfigFromCmd{}
+	return parseConfigFromCmd(os.Args)
+}
 func main() {
-	if err := kie.Init(); err != nil {
+	if err := Init(); err != nil {
 		openlogging.Fatal(err.Error())
 	}
 	chassis.RegisterSchema("rest", &v1.KVResource{})
@@ -37,7 +75,7 @@ func main() {
 		openlogging.Error(err.Error())
 		os.Exit(1)
 	}
-	if err := config.Init(kie.Configs.ConfigFile); err != nil {
+	if err := config.Init(Configs.ConfigFile); err != nil {
 		openlogging.Error(err.Error())
 		os.Exit(1)
 	}
