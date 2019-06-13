@@ -15,4 +15,6 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
-docker-compose up -f $GOPATH/src/github.com/apache/servicecomb-kie/deployments/docker/docker-compose.yaml
+cd build
+bash build_server.sh
+sudo docker-compose -f $GOPATH/src/github.com/apache/servicecomb-kie/deployments/docker/docker-compose.yaml up -d

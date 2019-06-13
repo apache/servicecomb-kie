@@ -17,9 +17,12 @@
 
 package config
 
+//Config is yaml file struct
 type Config struct {
 	DB DB `yaml:"db"`
 }
+
+//DB is yaml file struct to set mongodb config
 type DB struct {
 	URI      string   `yaml:"uri"`
 	PoolSize int      `yaml:"poolSize"`

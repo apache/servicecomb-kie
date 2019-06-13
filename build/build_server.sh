@@ -1,4 +1,5 @@
 #!/usr/bin/env bash
+set -x
 # Licensed to the Apache Software Foundation (ASF) under one or more
 # contributor license agreements.  See the NOTICE file distributed with
 # this work for additional information regarding copyright ownership.
@@ -46,8 +47,7 @@ echo "build from ${GIT_COMMIT}"
 
 
 echo "building..."
-go build -o ${release_dir}/kie github.com/apache/servicecomb-kie/cmd/kie
-
+go build -o ${release_dir}/kie github.com/apache/servicecomb-kie/cmd/kieserver
 
 writeConfig(){
 echo "write template config..."
@@ -95,5 +95,6 @@ tar zcf ${pkg_name} conf kie
 
 echo "building docker..."
 cp ${PROJECT_DIR}/scripts/start.sh ./
-
-sudo docker build -t servicecomb/kie:${version} -f ${PROJECT_DIR}/build/docker/server/Dockerfile .
+cp ${PROJECT_DIR}/build/docker/server/Dockerfile ./
+sudo docker version
+sudo docker build -t servicecomb/kie:${version} .

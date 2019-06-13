@@ -58,6 +58,8 @@ func (s *MongodbService) findOneLabels(ctx context.Context, filter bson.M) (*mod
 	}
 	return l, nil
 }
+
+//LabelsExist check label exists or not and return label ID
 func (s *MongodbService) LabelsExist(ctx context.Context, domain string, labels map[string]string) (primitive.ObjectID, error) {
 	l, err := s.FindLabels(ctx, domain, labels)
 	if err != nil {

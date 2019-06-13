@@ -17,6 +17,7 @@
 
 package dao
 
+//FindOptions is option to find key value
 type FindOptions struct {
 	ExactLabels bool
 	Depth       int
@@ -26,6 +27,7 @@ type FindOptions struct {
 	ClearLabel  bool
 }
 
+//FindOption is functional option to find key value
 type FindOption func(*FindOptions)
 
 //WithExactLabels tell model service to return only one kv matches the labels
@@ -49,7 +51,7 @@ func WithLabels(labels map[string]string) FindOption {
 	}
 }
 
-//WithLabels find kv by labelID
+//WithLabelID find kv by labelID
 func WithLabelID(label string) FindOption {
 	return func(o *FindOptions) {
 		o.LabelID = label

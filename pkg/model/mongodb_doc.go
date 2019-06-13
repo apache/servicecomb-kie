@@ -19,16 +19,15 @@ package model
 
 import "go.mongodb.org/mongo-driver/bson/primitive"
 
-type LabelDocResponse struct {
-	LabelID string            `json:"label_id,omitempty"`
-	Labels  map[string]string `json:"labels,omitempty"`
-}
+//LabelDoc is database struct to store labels
 type LabelDoc struct {
 	ID       primitive.ObjectID `json:"_id,omitempty" bson:"_id,omitempty"`
 	Labels   map[string]string  `json:"labels,omitempty"`
 	Revision int                `json:"revision,omitempty"`
 	Domain   string             `json:"domain,omitempty"` //tenant info
 }
+
+//KVDoc is database struct to store kv
 type KVDoc struct {
 	ID        primitive.ObjectID `json:"_id,omitempty" bson:"_id,omitempty"`
 	LabelID   string             `json:"label_id,omitempty" bson:"label_id,omitempty"`
@@ -41,6 +40,8 @@ type KVDoc struct {
 	Domain   string            `json:"domain,omitempty"` //redundant
 	Revision int               `json:"revision,omitempty" bson:"-"`
 }
+
+//LabelRevisionDoc is database struct to store label history stats
 type LabelRevisionDoc struct {
 	ID       primitive.ObjectID `json:"_id,omitempty" bson:"_id,omitempty"`
 	LabelID  string             `json:"label_id,omitempty"  bson:"label_id,omitempty"`

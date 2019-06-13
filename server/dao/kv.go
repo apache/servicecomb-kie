@@ -15,13 +15,14 @@
  * limitations under the License.
  */
 
-//package dao is a persis layer of kie
+//Package dao is a persis layer of kie
 package dao
 
 import (
 	"context"
 	"crypto/tls"
 	"errors"
+	"fmt"
 	"github.com/apache/servicecomb-kie/pkg/model"
 	"github.com/apache/servicecomb-kie/server/config"
 	"github.com/go-mesh/openlogging"
@@ -31,6 +32,7 @@ import (
 	"time"
 )
 
+//db errors
 var (
 	ErrMissingDomain    = errors.New("domain info missing, illegal access")
 	ErrKeyNotExists     = errors.New("key with labels does not exits")
@@ -40,6 +42,7 @@ var (
 	ErrRevisionNotExist = errors.New("label revision not exist")
 )
 
+//Options mongodb options
 type Options struct {
 	URI      string
 	PoolSize int
@@ -48,6 +51,8 @@ type Options struct {
 	Timeout  time.Duration
 }
 
+//NewKVService create a kv service
+//TODO, multiple config server
 func NewKVService() (*MongodbService, error) {
 	opts := Options{
 		URI:      config.GetDB().URI,
@@ -55,7 +60,7 @@ func NewKVService() (*MongodbService, error) {
 		SSL:      config.GetDB().SSL,
 	}
 	if opts.SSL {
-
+		//TODO tls config
 	}
 	return NewMongoService(opts)
 }
@@ -90,16 +95,36 @@ func (s *MongodbService) KVExist(ctx context.Context, domain, key string, option
 			return primitive.NilObjectID, err
 		}
 		return kvs[0].ID, nil
-	} else {
-		kvs, err := s.FindKV(ctx, domain, WithExactLabels(), WithLabels(opts.Labels), WithKey(key))
-		if err != nil {
-			return primitive.NilObjectID, err
-		}
-		if len(kvs) != 1 {
-			return primitive.NilObjectID, ErrTooMany
-		}
-
-		return kvs[0].Data[0].ID, nil
+	}
+	kvs, err := s.FindKV(ctx, domain, WithExactLabels(), WithLabels(opts.Labels), WithKey(key))
+	if err != nil {
+		return primitive.NilObjectID, err
+	}
+	if len(kvs) != 1 {
+		return primitive.NilObjectID, ErrTooMany
 	}
 
+	return kvs[0].Data[0].ID, nil
+
+}
+
+func (s *MongodbService) findKV(ctx context.Context, domain string, opts FindOptions) (*mongo.Cursor, error) {
+	collection := s.c.Database(DB).Collection(CollectionKV)
+	ctx, _ = context.WithTimeout(ctx, DefaultTimeout)
+	filter := bson.M{"domain": domain}
+	if opts.Key != "" {
+		filter["key"] = opts.Key
+	}
+	for k, v := range opts.Labels {
+		filter["labels."+k] = v
+	}
+
+	cur, err := collection.Find(ctx, filter)
+	if err != nil {
+		if err.Error() == context.DeadlineExceeded.Error() {
+			return nil, ErrAction("find", filter, fmt.Errorf("can not reach mongodb in %s", s.timeout))
+		}
+		return nil, err
+	}
+	return cur, err
 }

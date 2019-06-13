@@ -45,7 +45,7 @@ logger_level: ${LOG_LEVEL}
 
 logger_file: log/chassis.log
 
-log_format_text: true
+log_format_text: false
 
 rollingPolicy: size
 

@@ -15,6 +15,7 @@
  * limitations under the License.
  */
 
+//Package dao is the data access layer
 package dao
 
 import (
@@ -32,6 +33,7 @@ import (
 
 var client *mongo.Client
 
+//const for dao
 const (
 	DB                      = "kie"
 	CollectionLabel         = "label"
@@ -41,11 +43,17 @@ const (
 	DefaultValueType        = "text"
 )
 
+//MongodbService operate data in mongodb
 type MongodbService struct {
 	c       *mongo.Client
 	timeout time.Duration
 }
 
+//CreateOrUpdate will create or update a key value record
+//it first check label exists or not, and create labels if labels is first posted.
+//if label exists, then get its latest revision, and update current revision,
+//save the current label and its all key values to history collection
+//then check key exists or not, then create or update it
 func (s *MongodbService) CreateOrUpdate(ctx context.Context, domain string, kv *model.KVDoc) (*model.KVDoc, error) {
 	if domain == "" {
 		return nil, ErrMissingDomain
@@ -176,9 +184,8 @@ func (s *MongodbService) FindKVByLabelID(ctx context.Context, domain, labelID, k
 	filter := bson.M{"label_id": labelID, "domain": domain}
 	if key != "" {
 		return s.findOneKey(ctx, filter, key)
-	} else {
-		return s.findKeys(ctx, filter, true)
 	}
+	return s.findKeys(ctx, filter, true)
 
 }
 
@@ -193,107 +200,74 @@ func (s *MongodbService) FindKV(ctx context.Context, domain string, options ...F
 	if domain == "" {
 		return nil, ErrMissingDomain
 	}
-	collection := s.c.Database(DB).Collection(CollectionKV)
-	ctx, _ = context.WithTimeout(ctx, DefaultTimeout)
-	filter := bson.M{"domain": domain}
-	if opts.Key != "" {
-		filter["key"] = opts.Key
-	}
-	for k, v := range opts.Labels {
-		filter["labels."+k] = v
-	}
 
-	cur, err := collection.Find(ctx, filter)
+	cur, err := s.findKV(ctx, domain, opts)
 	if err != nil {
-		if err.Error() == context.DeadlineExceeded.Error() {
-			return nil, ErrAction("find", filter, fmt.Errorf("can not reach mongodb in %s", s.timeout))
-		}
 		return nil, err
 	}
 	defer cur.Close(ctx)
-	if cur.Err() != nil {
-		return nil, err
-	}
+
 	kvResp := make([]*model.KVResponse, 0)
 	if opts.ExactLabels {
-		openlogging.Debug(fmt.Sprintf("find one [%s] with lables [%s] in [%s]", opts.Key, opts.Labels, domain))
-		curKV := &model.KVDoc{} //reuse this pointer to reduce GC, only clear label
+		openlogging.Debug("find one key", openlogging.WithTags(
+			map[string]interface{}{
+				"key":    opts.Key,
+				"label":  opts.Labels,
+				"domain": domain,
+			},
+		))
+		return cursorToOneKV(ctx, cur, opts.Labels)
+	}
+	if opts.Depth == 0 {
+		opts.Depth = 1
+	}
+	for cur.Next(ctx) {
+		curKV := &model.KVDoc{}
 
-		//check label length to get the exact match
-		for cur.Next(ctx) { //although complexity is O(n), but there won't be so much labels for one key
-			curKV.Labels = nil
-			err := cur.Decode(curKV)
-			if err != nil {
-				openlogging.Error("decode error: " + err.Error())
-				return nil, err
-			}
-			if len(curKV.Labels) == len(opts.Labels) {
-				openlogging.Debug("hit exact labels")
-				labelGroup := &model.KVResponse{
-					LabelDoc: &model.LabelDocResponse{
-						Labels:  opts.Labels,
-						LabelID: curKV.LabelID,
-					},
-					Data: make([]*model.KVDoc, 0),
-				}
+		if err := cur.Decode(curKV); err != nil {
+			openlogging.Error("decode to KVs error: " + err.Error())
+			return nil, err
+		}
+		if (len(curKV.Labels) - len(opts.Labels)) > opts.Depth {
+			//because it is query by labels, so result can not be minus
+			//so many labels,then continue
+			openlogging.Debug("so deep, skip this key")
+			continue
+		}
+		openlogging.Info(fmt.Sprintf("%v", curKV))
+		var groupExist bool
+		var labelGroup *model.KVResponse
+		for _, labelGroup = range kvResp {
+			if reflect.DeepEqual(labelGroup.LabelDoc.Labels, curKV.Labels) {
+				groupExist = true
 				clearKV(curKV)
 				labelGroup.Data = append(labelGroup.Data, curKV)
-				kvResp = append(kvResp, labelGroup)
-				return kvResp, nil
+				break
 			}
 
 		}
-		return nil, ErrKeyNotExists
-	} else {
-		if opts.Depth == 0 {
-			opts.Depth = 1
+		if !groupExist {
+			labelGroup = &model.KVResponse{
+				LabelDoc: &model.LabelDocResponse{
+					Labels:  curKV.Labels,
+					LabelID: curKV.LabelID,
+				},
+				Data: []*model.KVDoc{curKV},
+			}
+			clearKV(curKV)
+			openlogging.Debug("add new label group")
+			kvResp = append(kvResp, labelGroup)
 		}
-		for cur.Next(ctx) {
-			curKV := &model.KVDoc{}
 
-			if err := cur.Decode(curKV); err != nil {
-				openlogging.Error("decode to KVs error: " + err.Error())
-				return nil, err
-			}
-			if (len(curKV.Labels) - len(opts.Labels)) > opts.Depth {
-				//because it is query by labels, so result can not be minus
-				//so many labels,then continue
-				openlogging.Debug("so deep, skip this key")
-				continue
-			}
-			openlogging.Info(fmt.Sprintf("%v", curKV))
-			var groupExist bool
-			var labelGroup *model.KVResponse
-			for _, labelGroup = range kvResp {
-				if reflect.DeepEqual(labelGroup.LabelDoc.Labels, curKV.Labels) {
-					groupExist = true
-					clearKV(curKV)
-					labelGroup.Data = append(labelGroup.Data, curKV)
-					break
-				}
-
-			}
-			if !groupExist {
-				labelGroup = &model.KVResponse{
-					LabelDoc: &model.LabelDocResponse{
-						Labels:  curKV.Labels,
-						LabelID: curKV.LabelID,
-					},
-					Data: []*model.KVDoc{curKV},
-				}
-				clearKV(curKV)
-				openlogging.Debug("add new label group")
-				kvResp = append(kvResp, labelGroup)
-			}
-
-		}
-		if len(kvResp) == 0 {
-			return nil, ErrKeyNotExists
-		}
-		return kvResp, nil
 	}
+	if len(kvResp) == 0 {
+		return nil, ErrKeyNotExists
+	}
+	return kvResp, nil
 
 }
+
+//DeleteByID delete a key value by collection ID
 func (s *MongodbService) DeleteByID(id string) error {
 	collection := s.c.Database(DB).Collection(CollectionKV)
 	hex, err := primitive.ObjectIDFromHex(id)
@@ -312,6 +286,8 @@ func (s *MongodbService) DeleteByID(id string) error {
 	return nil
 }
 
+//Delete remove a list of key values for a tenant
+//domain=tenant
 func (s *MongodbService) Delete(ids []string, domain string) error {
 	if len(ids) == 0 {
 		openlogging.Warn("delete error,ids is blank")
@@ -351,6 +327,8 @@ func (s *MongodbService) Delete(ids []string, domain string) error {
 	}
 	return nil
 }
+
+//NewMongoService create a new mongo db service
 func NewMongoService(opts Options) (*MongodbService, error) {
 	if opts.Timeout == 0 {
 		opts.Timeout = DefaultTimeout

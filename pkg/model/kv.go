@@ -17,7 +17,14 @@
 
 package model
 
+//KVResponse represents the key value list
 type KVResponse struct {
 	LabelDoc *LabelDocResponse `json:"label"`
 	Data     []*KVDoc          `json:"data"`
+}
+
+//LabelDocResponse is label struct
+type LabelDocResponse struct {
+	LabelID string            `json:"label_id,omitempty"`
+	Labels  map[string]string `json:"labels,omitempty"`
 }

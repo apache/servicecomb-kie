@@ -51,14 +51,10 @@ jobs:
         - bash scripts/travis/goCycloChecker.sh
     - stage: Unit Test
       script:
-        - bash scripts/travis/start_deps.sh
-        - go get github.com/mattn/goveralls
-        - go get golang.org/x/tools/cmd/cover
         - GO111MODULE=on go mod download
         - GO111MODULE=on go mod vendor
-        - bash scripts/travis/unit_test.sh && $HOME/gopath/bin/goveralls -coverprofile=coverage.txt -service=travis-ci
-
-    - stage: Build
-      script:
-        - cd build
-        - ./build_server.sh
+        - bash scripts/travis/start_deps.sh
+        - cd $HOME/gopath/src/github.com/apache/servicecomb-kie
+        - go get github.com/mattn/goveralls
+        - go get golang.org/x/tools/cmd/cover
+        - bash scripts/travis/unit_test.sh

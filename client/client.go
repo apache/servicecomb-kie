@@ -33,25 +33,32 @@ import (
 	"net/url"
 )
 
+//const
 const (
 	APIPathKV = "v1/kv"
 )
 
+//client errors
 var (
 	ErrKeyNotExist = errors.New("can not find value")
 )
 
+//Client is the servicecomb kie rest client.
+//it is concurrency safe
 type Client struct {
 	opts   Config
 	cipher security.Cipher
 	c      *httpclient.URLClient
 }
+
+//Config is the config of client
 type Config struct {
 	Endpoint      string
 	DefaultLabels map[string]string
 	VerifyPeer    bool //TODO make it works, now just keep it false
 }
 
+//New create a client
 func New(config Config) (*Client, error) {
 	u, err := url.Parse(config.Endpoint)
 	if err != nil {
@@ -73,7 +80,7 @@ func New(config Config) (*Client, error) {
 	}, nil
 }
 
-//GetValue get value of a key
+//Get get value of a key
 func (c *Client) Get(ctx context.Context, key string, opts ...GetOption) ([]*model.KVDoc, error) {
 	options := GetOptions{}
 	for _, o := range opts {
