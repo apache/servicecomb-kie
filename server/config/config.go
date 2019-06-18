@@ -26,6 +26,7 @@ import (
 
 var configurations *Config
 
+//Init initiate config files
 func Init(file string) error {
 	if err := archaius.AddFile(file, archaius.WithFileHandler(filesource.UseFileNameAsKeyContentAsValue)); err != nil {
 		return err
@@ -39,6 +40,7 @@ func Init(file string) error {
 	return nil
 }
 
+//GetDB return db configs
 func GetDB() DB {
 	return configurations.DB
 }

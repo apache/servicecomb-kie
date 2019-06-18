@@ -17,12 +17,15 @@
 
 package common
 
+//match mode
 const (
 	MatchGreedy = "greedy"
 	MatchExact  = "exact"
 )
 
+//http headers
 const (
-	HeaderMatch = "X-Match"
-	HeaderDepth = "X-Depth"
+	HeaderMatch  = "X-Match"
+	HeaderDepth  = "X-Depth"
+	HeaderTenant = "X-Domain-Name"
 )

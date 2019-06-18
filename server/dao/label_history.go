@@ -56,6 +56,8 @@ func (s *MongodbService) getLatestLabel(ctx context.Context, labelID string) (*m
 	}
 	return h, nil
 }
+
+//AddHistory get latest labels revision and plus 1  and save current label stats to history, then update current revision to db
 func (s *MongodbService) AddHistory(ctx context.Context, labelID string, labels map[string]string, domain string) (int, error) {
 	r, err := s.getLatestLabel(ctx, labelID)
 	if err != nil {

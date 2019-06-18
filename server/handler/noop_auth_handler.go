@@ -26,6 +26,7 @@ import (
 //developer can extend authenticate and authorization by set new handler in chassis.yaml
 type NoopAuthHandler struct{}
 
+//Handle set local attribute to http request
 func (bk *NoopAuthHandler) Handle(chain *handler.Chain, inv *invocation.Invocation, cb invocation.ResponseCallBack) {
 	inv.SetMetadata("domain", "default")
 	chain.Next(inv, cb)
@@ -35,6 +36,7 @@ func newDomainResolver() handler.Handler {
 	return &NoopAuthHandler{}
 }
 
+//Name is handler name
 func (bk *NoopAuthHandler) Name() string {
 	return "auth-handler"
 }
