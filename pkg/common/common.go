@@ -19,8 +19,7 @@ package common
 
 //match mode
 const (
-	MatchGreedy = "greedy"
-	MatchExact  = "exact"
+	QueryParamQ = "q"
 )
 
 //http headers

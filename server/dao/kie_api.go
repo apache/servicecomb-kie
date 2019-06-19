@@ -191,7 +191,7 @@ func (s *MongodbService) FindKVByLabelID(ctx context.Context, domain, labelID, k
 
 //FindKV get kvs by key, labels
 //because labels has a a lot of combination,
-//you can use WithExactLabels to return only one kv which's labels exactly match the criteria
+//you can use WithDepth(0) to return only one kv which's labels exactly match the criteria
 func (s *MongodbService) FindKV(ctx context.Context, domain string, options ...FindOption) ([]*model.KVResponse, error) {
 	opts := FindOptions{}
 	for _, o := range options {
@@ -208,7 +208,7 @@ func (s *MongodbService) FindKV(ctx context.Context, domain string, options ...F
 	defer cur.Close(ctx)
 
 	kvResp := make([]*model.KVResponse, 0)
-	if opts.ExactLabels {
+	if opts.Depth == 0 {
 		openlogging.Debug("find one key", openlogging.WithTags(
 			map[string]interface{}{
 				"key":    opts.Key,
@@ -217,9 +217,6 @@ func (s *MongodbService) FindKV(ctx context.Context, domain string, options ...F
 			},
 		))
 		return cursorToOneKV(ctx, cur, opts.Labels)
-	}
-	if opts.Depth == 0 {
-		opts.Depth = 1
 	}
 	for cur.Next(ctx) {
 		curKV := &model.KVDoc{}

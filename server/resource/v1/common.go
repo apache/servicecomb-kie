@@ -22,15 +22,17 @@ import (
 	"fmt"
 	"github.com/apache/servicecomb-kie/pkg/common"
 	"github.com/apache/servicecomb-kie/pkg/model"
+	goRestful "github.com/emicklei/go-restful"
 	"github.com/go-chassis/go-chassis/server/restful"
 	"github.com/go-mesh/openlogging"
+	"github.com/pkg/errors"
 	"strconv"
+	"strings"
 )
 
 //const of server
 const (
 	MsgDomainMustNotBeEmpty = "domain must not be empty"
-	MsgIllegalFindPolicy    = "value of header " + common.HeaderMatch + " can be greedy or exact"
 	MsgIllegalLabels        = "label's value can not be empty, " +
 		"label can not be duplicated, please check your query parameters"
 	MsgIllegalDepth   = "X-Depth must be number"
@@ -55,14 +57,27 @@ func ReadFindDepth(context *restful.Context) (int, error) {
 	return depth, nil
 }
 
-//ReadMatchPolicy get match policy
-func ReadMatchPolicy(context *restful.Context) string {
-	policy := context.ReadRestfulRequest().HeaderParameter(common.HeaderMatch)
-	if policy == "" {
-		//default is exact to reduce network traffic
-		return common.MatchExact
+//ReadLabelCombinations get query combination from url
+//q=app:default+service:payment&q=app:default
+func ReadLabelCombinations(req *goRestful.Request) ([]map[string]string, error) {
+	queryCombinations := req.QueryParameters(common.QueryParamQ)
+	labelCombinations := make([]map[string]string, 0)
+	for _, queryStr := range queryCombinations {
+		labelStr := strings.Split(queryStr, " ")
+		labels := make(map[string]string, len(labelStr))
+		for _, label := range labelStr {
+			l := strings.Split(label, ":")
+			if len(l) != 2 {
+				return nil, errors.New("wrong query syntax:" + label)
+			}
+			labels[l[0]] = l[1]
+		}
+		if len(labels) == 0 {
+			continue
+		}
+		labelCombinations = append(labelCombinations, labels)
 	}
-	return policy
+	return labelCombinations, nil
 }
 
 //WriteErrResponse write error message to client
