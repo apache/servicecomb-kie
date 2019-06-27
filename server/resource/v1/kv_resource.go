@@ -99,11 +99,11 @@ func (r *KVResource) GetByKey(context *restful.Context) {
 		return
 	}
 	kvs, err := s.FindKV(context.Ctx, domain.(string), dao.WithKey(key), dao.WithLabels(labels), dao.WithDepth(d))
-	if err == dao.ErrKeyNotExists {
-		WriteErrResponse(context, http.StatusNotFound, err.Error())
-		return
-	}
 	if err != nil {
+		if err == dao.ErrKeyNotExists {
+			WriteErrResponse(context, http.StatusNotFound, err.Error())
+			return
+		}
 		WriteErrResponse(context, http.StatusInternalServerError, err.Error())
 		return
 	}
@@ -146,7 +146,7 @@ func (r *KVResource) SearchByLabels(context *restful.Context) {
 
 	}
 	if len(kvs) == 0 {
-		WriteErrResponse(context, http.StatusNotFound, err.Error())
+		WriteErrResponse(context, http.StatusNotFound, "no kv found")
 		return
 	}
 
@@ -214,7 +214,7 @@ func (r *KVResource) URLPatterns() []restful.Route {
 			ResourceFuncName: "GetByKey",
 			FuncDesc:         "get key values by key and labels",
 			Parameters: []*restful.Parameters{
-				DocPathKey, DocHeaderMath, DocHeaderDepth,
+				DocPathKey, DocHeaderDepth,
 			},
 			Returns: []*restful.Returns{
 				{
@@ -232,7 +232,7 @@ func (r *KVResource) URLPatterns() []restful.Route {
 			ResourceFuncName: "SearchByLabels",
 			FuncDesc:         "search key values by labels combination",
 			Parameters: []*restful.Parameters{
-				DocHeaderMath, DocQueryCombination,
+				DocQueryCombination,
 			},
 			Returns: []*restful.Returns{
 				{

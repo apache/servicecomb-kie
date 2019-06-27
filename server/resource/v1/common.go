@@ -77,6 +77,9 @@ func ReadLabelCombinations(req *goRestful.Request) ([]map[string]string, error) 
 		}
 		labelCombinations = append(labelCombinations, labels)
 	}
+	if len(labelCombinations) == 0 {
+		return []map[string]string{{"default": "default"}}, nil
+	}
 	return labelCombinations, nil
 }
 

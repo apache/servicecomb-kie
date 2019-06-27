@@ -44,5 +44,21 @@ var _ = Describe("Common", func() {
 			})
 
 		})
+		Context("find default", func() {
+			r, err := http.NewRequest("GET",
+				"/kv",
+				nil)
+			It("should not return err ", func() {
+				Expect(err).Should(BeNil())
+			})
+			c, err := ReadLabelCombinations(restful.NewRequest(r))
+			It("should not return err ", func() {
+				Expect(err).Should(BeNil())
+			})
+			It("should has 1 combinations", func() {
+				Expect(len(c)).Should(Equal(1))
+			})
+
+		})
 	})
 })
