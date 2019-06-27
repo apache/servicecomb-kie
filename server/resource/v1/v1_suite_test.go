@@ -15,32 +15,16 @@
  * limitations under the License.
  */
 
-package config
+package v1_test
 
 import (
-	"github.com/go-chassis/go-archaius"
-	"github.com/go-chassis/go-archaius/sources/utils"
-	"gopkg.in/yaml.v2"
-	"path/filepath"
+	"testing"
+
+	. "github.com/onsi/ginkgo"
+	. "github.com/onsi/gomega"
 )
 
-var configurations *Config
-
-//Init initiate config files
-func Init(file string) error {
-	if err := archaius.AddFile(file, archaius.WithFileHandler(utils.UseFileNameAsKeyContentAsValue)); err != nil {
-		return err
-	}
-	_, filename := filepath.Split(file)
-	content := archaius.GetString(filename, "")
-	configurations = &Config{}
-	if err := yaml.Unmarshal([]byte(content), configurations); err != nil {
-		return err
-	}
-	return nil
-}
-
-//GetDB return db configs
-func GetDB() DB {
-	return configurations.DB
+func TestV1(t *testing.T) {
+	RegisterFailHandler(Fail)
+	RunSpecs(t, "V1 Suite")
 }

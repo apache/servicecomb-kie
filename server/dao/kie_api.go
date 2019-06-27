@@ -58,6 +58,11 @@ func (s *MongodbService) CreateOrUpdate(ctx context.Context, domain string, kv *
 	if domain == "" {
 		return nil, ErrMissingDomain
 	}
+	if len(kv.Labels) == 0 {
+		kv.Labels = map[string]string{
+			"default": "default",
+		}
+	}
 	ctx, _ = context.WithTimeout(ctx, DefaultTimeout)
 	//check labels exits or not
 	labelID, err := s.LabelsExist(ctx, domain, kv.Labels)
@@ -66,6 +71,10 @@ func (s *MongodbService) CreateOrUpdate(ctx context.Context, domain string, kv *
 		if err == ErrLabelNotExists {
 			l, err = s.createLabel(ctx, domain, kv.Labels)
 			if err != nil {
+				openlogging.Error("create label failed", openlogging.WithTags(openlogging.Tags{
+					"k":      kv.Key,
+					"domain": kv.Domain,
+				}))
 				return nil, err
 			}
 			labelID = l.ID
@@ -96,6 +105,7 @@ func (s *MongodbService) CreateOrUpdate(ctx context.Context, domain string, kv *
 		return nil, err
 	}
 	kv.Revision = revision
+	kv.Domain = ""
 	return kv, nil
 
 }
@@ -191,7 +201,7 @@ func (s *MongodbService) FindKVByLabelID(ctx context.Context, domain, labelID, k
 
 //FindKV get kvs by key, labels
 //because labels has a a lot of combination,
-//you can use WithExactLabels to return only one kv which's labels exactly match the criteria
+//you can use WithDepth(0) to return only one kv which's labels exactly match the criteria
 func (s *MongodbService) FindKV(ctx context.Context, domain string, options ...FindOption) ([]*model.KVResponse, error) {
 	opts := FindOptions{}
 	for _, o := range options {
@@ -208,7 +218,7 @@ func (s *MongodbService) FindKV(ctx context.Context, domain string, options ...F
 	defer cur.Close(ctx)
 
 	kvResp := make([]*model.KVResponse, 0)
-	if opts.ExactLabels {
+	if opts.Depth == 0 && opts.Key != "" {
 		openlogging.Debug("find one key", openlogging.WithTags(
 			map[string]interface{}{
 				"key":    opts.Key,
@@ -218,9 +228,11 @@ func (s *MongodbService) FindKV(ctx context.Context, domain string, options ...F
 		))
 		return cursorToOneKV(ctx, cur, opts.Labels)
 	}
-	if opts.Depth == 0 {
-		opts.Depth = 1
-	}
+	openlogging.Debug("find more", openlogging.WithTags(openlogging.Tags{
+		"depth":  opts.Depth,
+		"k":      opts.Key,
+		"labels": opts.Labels,
+	}))
 	for cur.Next(ctx) {
 		curKV := &model.KVDoc{}
 
@@ -234,7 +246,7 @@ func (s *MongodbService) FindKV(ctx context.Context, domain string, options ...F
 			openlogging.Debug("so deep, skip this key")
 			continue
 		}
-		openlogging.Info(fmt.Sprintf("%v", curKV))
+		openlogging.Debug(fmt.Sprintf("%v", curKV))
 		var groupExist bool
 		var labelGroup *model.KVResponse
 		for _, labelGroup = range kvResp {

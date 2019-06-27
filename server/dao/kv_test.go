@@ -132,8 +132,8 @@ var _ = Describe("Kv mongodb service", func() {
 			It("should not return err", func() {
 				Expect(err).Should(BeNil())
 			})
-			It("should has 2 records", func() {
-				Expect(len(kvs)).Should(Equal(2))
+			It("should has 1 records", func() {
+				Expect(len(kvs)).Should(Equal(1))
 			})
 
 		})
@@ -189,8 +189,8 @@ var _ = Describe("Kv mongodb service", func() {
 			It("should not return err", func() {
 				Expect(err).Should(BeNil())
 			})
-			It("should has 2 records", func() {
-				Expect(len(kvs)).Should(Equal(2))
+			It("should has 1 records", func() {
+				Expect(len(kvs)).Should(Equal(1))
 			})
 
 		})

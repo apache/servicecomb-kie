@@ -21,7 +21,6 @@ package v1
 import (
 	"encoding/json"
 	"fmt"
-	"github.com/apache/servicecomb-kie/pkg/common"
 	"github.com/apache/servicecomb-kie/pkg/model"
 	"github.com/apache/servicecomb-kie/server/dao"
 	goRestful "github.com/emicklei/go-restful"
@@ -67,8 +66,8 @@ func (r *KVResource) Put(context *restful.Context) {
 
 }
 
-//FindWithKey search key by label and key
-func (r *KVResource) FindWithKey(context *restful.Context) {
+//GetByKey search key by label and key
+func (r *KVResource) GetByKey(context *restful.Context) {
 	var err error
 	key := context.ReadPathParameter("key")
 	if key == "" {
@@ -94,28 +93,17 @@ func (r *KVResource) FindWithKey(context *restful.Context) {
 		WriteErrResponse(context, http.StatusInternalServerError, MsgDomainMustNotBeEmpty)
 		return
 	}
-	policy := ReadMatchPolicy(context)
 	d, err := ReadFindDepth(context)
 	if err != nil {
 		WriteErrResponse(context, http.StatusBadRequest, MsgIllegalDepth)
 		return
 	}
-	var kvs []*model.KVResponse
-	switch policy {
-	case common.MatchGreedy:
-		kvs, err = s.FindKV(context.Ctx, domain.(string), dao.WithKey(key), dao.WithLabels(labels), dao.WithDepth(d))
-	case common.MatchExact:
-		kvs, err = s.FindKV(context.Ctx, domain.(string), dao.WithKey(key), dao.WithLabels(labels),
-			dao.WithExactLabels())
-	default:
-		WriteErrResponse(context, http.StatusBadRequest, MsgIllegalFindPolicy)
-		return
-	}
-	if err == dao.ErrKeyNotExists {
-		WriteErrResponse(context, http.StatusNotFound, err.Error())
-		return
-	}
+	kvs, err := s.FindKV(context.Ctx, domain.(string), dao.WithKey(key), dao.WithLabels(labels), dao.WithDepth(d))
 	if err != nil {
+		if err == dao.ErrKeyNotExists {
+			WriteErrResponse(context, http.StatusNotFound, err.Error())
+			return
+		}
 		WriteErrResponse(context, http.StatusInternalServerError, err.Error())
 		return
 	}
@@ -126,17 +114,13 @@ func (r *KVResource) FindWithKey(context *restful.Context) {
 
 }
 
-//FindByLabels search key only by label
-func (r *KVResource) FindByLabels(context *restful.Context) {
+//SearchByLabels search key only by label
+func (r *KVResource) SearchByLabels(context *restful.Context) {
 	var err error
-	values := context.ReadRequest().URL.Query()
-	labels := make(map[string]string, len(values))
-	for k, v := range values {
-		if len(v) != 1 {
-			WriteErrResponse(context, http.StatusBadRequest, MsgIllegalLabels)
-			return
-		}
-		labels[k] = v[0]
+	labelCombinations, err := ReadLabelCombinations(context.ReadRestfulRequest())
+	if err != nil {
+		WriteErrResponse(context, http.StatusBadRequest, err.Error())
+		return
 	}
 	s, err := dao.NewKVService()
 	if err != nil {
@@ -148,27 +132,24 @@ func (r *KVResource) FindByLabels(context *restful.Context) {
 		WriteErrResponse(context, http.StatusInternalServerError, MsgDomainMustNotBeEmpty)
 		return
 	}
-	policy := ReadMatchPolicy(context)
-	d, err := ReadFindDepth(context)
-	if err != nil {
-		WriteErrResponse(context, http.StatusBadRequest, MsgIllegalDepth)
-		return
-	}
 	var kvs []*model.KVResponse
-	switch policy {
-	case common.MatchGreedy:
-		kvs, err = s.FindKV(context.Ctx, domain.(string), dao.WithLabels(labels), dao.WithDepth(d))
-	case common.MatchExact:
-		kvs, err = s.FindKV(context.Ctx, domain.(string), dao.WithLabels(labels),
-			dao.WithExactLabels())
-	default:
-		WriteErrResponse(context, http.StatusBadRequest, MsgIllegalFindPolicy)
+	for _, labels := range labelCombinations {
+		result, err := s.FindKV(context.Ctx, domain.(string), dao.WithLabels(labels))
+		if err != nil {
+			if err == dao.ErrKeyNotExists {
+				continue
+			}
+			WriteErrResponse(context, http.StatusInternalServerError, err.Error())
+			return
+		}
+		kvs = append(kvs, result...)
+
+	}
+	if len(kvs) == 0 {
+		WriteErrResponse(context, http.StatusNotFound, "no kv found")
 		return
 	}
-	if err == dao.ErrKeyNotExists {
-		WriteErrResponse(context, http.StatusNotFound, err.Error())
-		return
-	}
+
 	err = context.WriteHeaderAndJSON(http.StatusOK, kvs, goRestful.MIME_JSON)
 	if err != nil {
 		openlogging.Error(err.Error())
@@ -215,7 +196,7 @@ func (r *KVResource) URLPatterns() []restful.Route {
 					DataType:  "string",
 					Name:      "X-Realm",
 					ParamType: goRestful.HeaderParameterKind,
-					Desc:      "set kv to heterogeneous config server",
+					Desc:      "set kv to heterogeneous config server, not implement yet",
 				},
 			},
 			Returns: []*restful.Returns{
@@ -230,16 +211,16 @@ func (r *KVResource) URLPatterns() []restful.Route {
 		}, {
 			Method:           http.MethodGet,
 			Path:             "/v1/kv/{key}",
-			ResourceFuncName: "FindWithKey",
+			ResourceFuncName: "GetByKey",
 			FuncDesc:         "get key values by key and labels",
 			Parameters: []*restful.Parameters{
-				DocPathKey, DocHeaderMath, DocHeaderDepth,
+				DocPathKey, DocHeaderDepth,
 			},
 			Returns: []*restful.Returns{
 				{
 					Code:    http.StatusOK,
 					Message: "get key value success",
-					Model:   []*KVBody{},
+					Model:   []*model.KVResponse{},
 				},
 			},
 			Consumes: []string{goRestful.MIME_JSON},
@@ -248,16 +229,16 @@ func (r *KVResource) URLPatterns() []restful.Route {
 		}, {
 			Method:           http.MethodGet,
 			Path:             "/v1/kv",
-			ResourceFuncName: "FindByLabels",
-			FuncDesc:         "find key values only by labels",
+			ResourceFuncName: "SearchByLabels",
+			FuncDesc:         "search key values by labels combination",
 			Parameters: []*restful.Parameters{
-				DocHeaderMath, DocHeaderDepth,
+				DocQueryCombination,
 			},
 			Returns: []*restful.Returns{
 				{
 					Code:    http.StatusOK,
 					Message: "get key value success",
-					Model:   []*KVBody{},
+					Model:   []*model.KVResponse{},
 				},
 			},
 			Consumes: []string{goRestful.MIME_JSON},

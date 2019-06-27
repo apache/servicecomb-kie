@@ -31,16 +31,18 @@ var (
 		ParamType: goRestful.HeaderParameterKind,
 		Desc:      "integer, default is 1, if you set match policy, you can set,depth to decide label number",
 	}
+	DocQueryCombination = &restful.Parameters{
+		DataType:  "string",
+		Name:      common.QueryParamQ,
+		ParamType: goRestful.QueryParameterKind,
+		Desc: "the combination format is {label_key}:{label_value}+{label_key}:{label_value} " +
+			"for example: /v1/kv?q=app:mall&q=app:mall+service:cart " +
+			"that will query key values from 2 kinds of labels",
+	}
 	DocPathKey = &restful.Parameters{
 		DataType:  "string",
 		Name:      "key",
 		ParamType: goRestful.PathParameterKind,
-	}
-	DocHeaderMath = &restful.Parameters{
-		DataType:  "string",
-		Name:      common.HeaderMatch,
-		ParamType: goRestful.HeaderParameterKind,
-		Desc:      "greedy or exact",
 	}
 )
 
