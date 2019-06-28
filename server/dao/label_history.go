@@ -79,7 +79,8 @@ func (s *MongodbService) AddHistory(ctx context.Context, labelID string, labels 
 	r.Revision = r.Revision + 1
 
 	kvs, err := s.findKeys(ctx, bson.M{"label_id": labelID}, true)
-	if err != nil {
+	//Key may be empty When delete
+	if err != nil && err != ErrKeyNotExists {
 		return 0, err
 	}
 	//save current kv states

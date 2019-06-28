@@ -44,6 +44,16 @@ var (
 		Name:      "key",
 		ParamType: goRestful.PathParameterKind,
 	}
+	kvIdParameters = &restful.Parameters{
+		DataType:  "string",
+		Name:      "key",
+		ParamType: goRestful.PathParameterKind,
+	}
+	labelIdParameters = &restful.Parameters{
+		DataType:  "string",
+		Name:      "key",
+		ParamType: goRestful.PathParameterKind,
+	}
 )
 
 //KVBody is open api doc
