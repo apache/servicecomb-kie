@@ -24,7 +24,8 @@ import (
 	"path/filepath"
 )
 
-var configurations *Config
+//Configurations is kie config items
+var Configurations *Config
 
 //Init initiate config files
 func Init(file string) error {
@@ -33,8 +34,8 @@ func Init(file string) error {
 	}
 	_, filename := filepath.Split(file)
 	content := archaius.GetString(filename, "")
-	configurations = &Config{}
-	if err := yaml.Unmarshal([]byte(content), configurations); err != nil {
+	Configurations = &Config{}
+	if err := yaml.Unmarshal([]byte(content), Configurations); err != nil {
 		return err
 	}
 	return nil
@@ -42,5 +43,5 @@ func Init(file string) error {
 
 //GetDB return db configs
 func GetDB() DB {
-	return configurations.DB
+	return Configurations.DB
 }
