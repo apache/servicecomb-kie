@@ -249,8 +249,8 @@ func (r *KVResource) URLPatterns() []restful.Route {
 			FuncDesc: "Delete key by kvId and labelId,If the labelID is nil, query the collection kv to get it." +
 				"It means if only get kvID, it can also delete normally.But if you want better performance, you need to pass the labelID",
 			Parameters: []*restful.Parameters{
-				kvIdParameters,
-				labelIdParameters,
+				kvIDParameters,
+				labelIDParameters,
 			},
 			Returns: []*restful.Returns{
 				{
