@@ -23,7 +23,6 @@ import (
 	"encoding/json"
 	"errors"
 	"fmt"
-	"github.com/apache/servicecomb-kie/pkg/common"
 	"github.com/apache/servicecomb-kie/pkg/model"
 	"github.com/go-chassis/foundation/httpclient"
 	"github.com/go-chassis/foundation/security"
@@ -88,9 +87,6 @@ func (c *Client) Get(ctx context.Context, key string, opts ...GetOption) ([]*mod
 	}
 	url := fmt.Sprintf("%s/%s/%s", c.opts.Endpoint, APIPathKV, key)
 	h := http.Header{}
-	if options.MatchMode != "" {
-		h.Set(common.HeaderMatch, options.MatchMode)
-	}
 	resp, err := c.c.HTTPDoWithContext(ctx, "GET", url, h, nil)
 	if err != nil {
 		return nil, err
@@ -100,6 +96,11 @@ func (c *Client) Get(ctx context.Context, key string, opts ...GetOption) ([]*mod
 		if resp.StatusCode == http.StatusNotFound {
 			return nil, ErrKeyNotExist
 		}
+		openlogging.Error("get failed", openlogging.WithTags(openlogging.Tags{
+			"k":      key,
+			"status": resp.Status,
+			"body":   b,
+		}))
 		return nil, fmt.Errorf("get %s failed,http status [%s], body [%s]", key, resp.Status, b)
 	}
 

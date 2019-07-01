@@ -44,11 +44,6 @@ var (
 		Name:      "key",
 		ParamType: goRestful.PathParameterKind,
 	}
-	kvIDParameters = &restful.Parameters{
-		DataType:  "string",
-		Name:      "key",
-		ParamType: goRestful.PathParameterKind,
-	}
 	labelIDParameters = &restful.Parameters{
 		DataType:  "string",
 		Name:      "key",

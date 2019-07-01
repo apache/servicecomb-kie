@@ -162,7 +162,7 @@ func (r *KVResource) Delete(context *restful.Context) {
 	if domain == nil {
 		WriteErrResponse(context, http.StatusInternalServerError, MsgDomainMustNotBeEmpty)
 	}
-	kvID := context.ReadQueryParameter("kvID")
+	kvID := context.ReadPathParameter("kvID")
 	if kvID == "" {
 		WriteErrResponse(context, http.StatusBadRequest, ErrKvIDMustNotEmpty)
 		return
@@ -244,12 +244,11 @@ func (r *KVResource) URLPatterns() []restful.Route {
 			Produces: []string{goRestful.MIME_JSON},
 		}, {
 			Method:           http.MethodDelete,
-			Path:             "/v1/kv/",
+			Path:             "/v1/kv/{kvID}",
 			ResourceFuncName: "Delete",
-			FuncDesc: "Delete key by kvId and labelId,If the labelID is nil, query the collection kv to get it." +
+			FuncDesc: "Delete key by kvID and labelID,If the labelID is nil, query the collection kv to get it." +
 				"It means if only get kvID, it can also delete normally.But if you want better performance, you need to pass the labelID",
 			Parameters: []*restful.Parameters{
-				kvIDParameters,
 				labelIDParameters,
 			},
 			Returns: []*restful.Returns{

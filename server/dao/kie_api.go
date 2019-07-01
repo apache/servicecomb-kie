@@ -280,25 +280,6 @@ func (s *MongodbService) FindKV(ctx context.Context, domain string, options ...F
 
 }
 
-//DeleteByID delete a key value by collection ID
-func (s *MongodbService) DeleteByID(id string) error {
-	collection := s.c.Database(DB).Collection(CollectionKV)
-	hex, err := primitive.ObjectIDFromHex(id)
-	if err != nil {
-		openlogging.Error(fmt.Sprintf("convert %s ,err:%s", id, err))
-		return err
-	}
-	ctx, _ := context.WithTimeout(context.Background(), DefaultTimeout)
-	dr, err := collection.DeleteOne(ctx, bson.M{"_id": hex})
-	if err != nil {
-		openlogging.Error(fmt.Sprintf("delete [%s] failed: %s", hex, err))
-	}
-	if dr.DeletedCount != 1 {
-		openlogging.Warn(fmt.Sprintf("delete [%s], but it is not exist", hex))
-	}
-	return nil
-}
-
 //Delete delete kv,If the labelID is "", query the collection kv to get it
 //domain=tenant
 //1.delete kv;2.add history
@@ -309,7 +290,6 @@ func (s *MongodbService) Delete(kvID string, labelID string, domain string) erro
 	}
 	hex, err := primitive.ObjectIDFromHex(kvID)
 	if err != nil {
-		openlogging.Error(fmt.Sprintf("convert %s ,err:%s", kvID, err))
 		return err
 	}
 	//if labelID == "",get labelID by kvID
@@ -317,7 +297,6 @@ func (s *MongodbService) Delete(kvID string, labelID string, domain string) erro
 	if labelID == "" {
 		kvArray, err := s.findOneKey(ctx, bson.M{"_id": hex})
 		if err != nil {
-			openlogging.Error(fmt.Sprintf("get kv [id=%s] failed : [%s]", kvID, err))
 			return err
 		}
 		if len(kvArray) > 0 {
@@ -335,11 +314,17 @@ func (s *MongodbService) Delete(kvID string, labelID string, domain string) erro
 	//Labels will not be empty when deleted
 	revision, err := s.AddHistory(ctx, labelID, nil, domain)
 	if err != nil {
-		openlogging.Warn(
-			fmt.Sprintf("can not kv revision for [%s] [%s] in [%s],err: %s",
-				kvID, labelID, domain, err))
+		openlogging.Warn("add history failed ,", openlogging.WithTags(openlogging.Tags{
+			"kvID":    kvID,
+			"labelID": labelID,
+			"error":   err.Error(),
+		}))
 	} else {
-		openlogging.Info(fmt.Sprintf("add history success,kvID=%s,labelID=%s,revision=%d", kvID, labelID, revision))
+		openlogging.Info("add history success,", openlogging.WithTags(openlogging.Tags{
+			"kvID":     kvID,
+			"labelID":  labelID,
+			"revision": revision,
+		}))
 	}
 	return nil
 }

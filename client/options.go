@@ -22,8 +22,8 @@ type GetOption func(*GetOptions)
 
 //GetOptions is the options of client func
 type GetOptions struct {
-	Labels    map[string]string
-	MatchMode string
+	Labels map[string]string
+	Depth  int
 }
 
 //WithLabels query kv by labels
@@ -33,10 +33,9 @@ func WithLabels(l map[string]string) GetOption {
 	}
 }
 
-//WithMatchMode has 2 modes
-//exact and greedy
-func WithMatchMode(m string) GetOption {
+//WithDepth query keys with partial match query labels
+func WithDepth(d int) GetOption {
 	return func(options *GetOptions) {
-		options.MatchMode = m
+		options.Depth = d
 	}
 }
