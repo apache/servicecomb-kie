@@ -193,7 +193,8 @@ func (s *MongodbService) FindKVByLabelID(ctx context.Context, domain, labelID, k
 	ctx, _ = context.WithTimeout(context.Background(), DefaultTimeout)
 	filter := bson.M{"label_id": labelID, "domain": domain}
 	if key != "" {
-		return s.findOneKey(ctx, filter, key)
+		filter["key"] = key
+		return s.findOneKey(ctx, filter)
 	}
 	return s.findKeys(ctx, filter, true)
 
@@ -279,63 +280,58 @@ func (s *MongodbService) FindKV(ctx context.Context, domain string, options ...F
 
 }
 
-//DeleteByID delete a key value by collection ID
-func (s *MongodbService) DeleteByID(id string) error {
-	collection := s.c.Database(DB).Collection(CollectionKV)
-	hex, err := primitive.ObjectIDFromHex(id)
-	if err != nil {
-		openlogging.Error(fmt.Sprintf("convert %s ,err:%s", id, err))
-		return err
-	}
-	ctx, _ := context.WithTimeout(context.Background(), DefaultTimeout)
-	dr, err := collection.DeleteOne(ctx, bson.M{"_id": hex})
-	if err != nil {
-		openlogging.Error(fmt.Sprintf("delete [%s] failed: %s", hex, err))
-	}
-	if dr.DeletedCount != 1 {
-		openlogging.Warn(fmt.Sprintf("delete [%s], but it is not exist", hex))
-	}
-	return nil
-}
-
-//Delete remove a list of key values for a tenant
+//Delete delete kv,If the labelID is "", query the collection kv to get it
 //domain=tenant
-func (s *MongodbService) Delete(ids []string, domain string) error {
-	if len(ids) == 0 {
-		openlogging.Warn("delete error,ids is blank")
-		return nil
-	}
+//1.delete kv;2.add history
+func (s *MongodbService) Delete(kvID string, labelID string, domain string) error {
+	ctx, _ := context.WithTimeout(context.Background(), DefaultTimeout)
 	if domain == "" {
 		return ErrMissingDomain
 	}
-	collection := s.c.Database(DB).Collection(CollectionKV)
-	//transfer id
-	var oid []primitive.ObjectID
-	for _, v := range ids {
-		if v == "" {
-			openlogging.Warn("ids contains continuous ','")
-			continue
-		}
-		hex, err := primitive.ObjectIDFromHex(v)
-		if err != nil {
-			openlogging.Error(fmt.Sprintf("convert %s ,err:%s", v, err))
-			return err
-		}
-		oid = append(oid, hex)
-	}
-	//use in filter
-	filter := &bson.M{"_id": &bson.M{"$in": oid}, "domain": domain}
-	ctx, _ := context.WithTimeout(context.Background(), DefaultTimeout)
-	dr, err := collection.DeleteMany(ctx, filter)
-	//check error and delete number
+	hex, err := primitive.ObjectIDFromHex(kvID)
 	if err != nil {
-		openlogging.Error(fmt.Sprintf("delete [%v] failed : [%s]", filter, err))
 		return err
 	}
-	if dr.DeletedCount != int64(len(oid)) {
-		openlogging.Warn(fmt.Sprintf(" The actual number of deletions[%d] is not equal to the parameters[%d].", dr.DeletedCount, len(oid)))
+	//if labelID == "",get labelID by kvID
+	var kv *model.KVDoc
+	if labelID == "" {
+		kvArray, err := s.findOneKey(ctx, bson.M{"_id": hex})
+		if err != nil {
+			return err
+		}
+		if len(kvArray) > 0 {
+			kv = kvArray[0]
+			labelID = kv.LabelID
+		}
+	}
+	//get Label and check labelID
+	r, err := s.getLatestLabel(ctx, labelID)
+	if err != nil {
+		if err == ErrRevisionNotExist {
+			openlogging.Warn(fmt.Sprintf("failed,kvID and labelID do not match"))
+			return ErrKvIDAndLabelIDNotMatch
+		}
+		return err
+	}
+	//delete kv
+	err = s.DeleteKV(ctx, hex)
+	if err != nil {
+		return err
+	}
+	//Labels will not be empty when deleted
+	revision, err := s.addHistory(ctx, r, labelID)
+	if err != nil {
+		openlogging.Warn("add history failed ,", openlogging.WithTags(openlogging.Tags{
+			"kvID":    kvID,
+			"labelID": labelID,
+			"error":   err.Error(),
+		}))
 	} else {
-		openlogging.Info(fmt.Sprintf("delete success,count=%d", dr.DeletedCount))
+		openlogging.Info("add history success,", openlogging.WithTags(openlogging.Tags{
+			"kvID":     kvID,
+			"labelID":  labelID,
+			"revision": revision,
+		}))
 	}
 	return nil
 }

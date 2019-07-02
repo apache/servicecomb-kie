@@ -52,7 +52,7 @@ func (s *MongodbService) createKey(ctx context.Context, kv *model.KVDoc) (*model
 	}
 	objectID, _ := res.InsertedID.(primitive.ObjectID)
 	kv.ID = objectID
-	revision, err := s.AddHistory(ctx, kv.LabelID, kv.Labels, kv.Domain)
+	revision, err := s.getAndAddHistory(ctx, kv.LabelID, kv.Labels, kv.Domain)
 	if err != nil {
 		openlogging.Warn(
 			fmt.Sprintf("can not updateKey version for [%s] [%s] in [%s]",
@@ -81,7 +81,7 @@ func (s *MongodbService) updateKey(ctx context.Context, kv *model.KVDoc) (int, e
 	openlogging.Debug(
 		fmt.Sprintf("updateKey %s with labels %s value [%s] %d ",
 			kv.Key, kv.Labels, kv.Value, ur.ModifiedCount))
-	revision, err := s.AddHistory(ctx, kv.LabelID, kv.Labels, kv.Domain)
+	revision, err := s.getAndAddHistory(ctx, kv.LabelID, kv.Labels, kv.Domain)
 	if err != nil {
 		openlogging.Warn(
 			fmt.Sprintf("can not label revision for [%s] [%s] in [%s],err: %s",

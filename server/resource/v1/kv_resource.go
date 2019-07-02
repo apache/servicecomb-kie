@@ -20,14 +20,12 @@ package v1
 
 import (
 	"encoding/json"
-	"fmt"
 	"github.com/apache/servicecomb-kie/pkg/model"
 	"github.com/apache/servicecomb-kie/server/dao"
 	goRestful "github.com/emicklei/go-restful"
 	"github.com/go-chassis/go-chassis/server/restful"
 	"github.com/go-mesh/openlogging"
 	"net/http"
-	"strings"
 )
 
 //KVResource has API about kv operations
@@ -163,20 +161,24 @@ func (r *KVResource) Delete(context *restful.Context) {
 	if domain == nil {
 		WriteErrResponse(context, http.StatusInternalServerError, MsgDomainMustNotBeEmpty)
 	}
-	ids := context.ReadPathParameter("ids")
-	if ids == "" {
-		WriteErrResponse(context, http.StatusBadRequest, ErrIDMustNotEmpty)
+	kvID := context.ReadPathParameter("kvID")
+	if kvID == "" {
+		WriteErrResponse(context, http.StatusBadRequest, ErrKvIDMustNotEmpty)
 		return
 	}
-	idArray := strings.Split(ids, ",")
+	labelID := context.ReadQueryParameter("labelID")
 	s, err := dao.NewKVService()
 	if err != nil {
 		WriteErrResponse(context, http.StatusInternalServerError, err.Error())
 		return
 	}
-	err = s.Delete(idArray, domain.(string))
+	err = s.Delete(kvID, labelID, domain.(string))
 	if err != nil {
-		openlogging.Error(fmt.Sprintf("delete ids=%s,err=%s", ids, err.Error()))
+		openlogging.Error("delete failed ,", openlogging.WithTags(openlogging.Tags{
+			"kvID":    kvID,
+			"labelID": labelID,
+			"error":   err.Error(),
+		}))
 		WriteErrResponse(context, http.StatusInternalServerError, err.Error())
 		return
 	}
@@ -245,16 +247,12 @@ func (r *KVResource) URLPatterns() []restful.Route {
 			Produces: []string{goRestful.MIME_JSON},
 		}, {
 			Method:           http.MethodDelete,
-			Path:             "/v1/kv/{ids}",
+			Path:             "/v1/kv/{kvID}",
 			ResourceFuncName: "Delete",
-			FuncDesc:         "delete key by id,separated by ','",
-			Parameters: []*restful.Parameters{{
-				DataType:  "string",
-				Name:      "ids",
-				ParamType: goRestful.PathParameterKind,
-				Desc: "The id strings to be removed are separated by ',',If the actual number of deletions " +
-					"and the number of parameters are not equal, no error will be returned and only warn log will be printed.",
-			},
+			FuncDesc: "Delete key by kvID and labelID,If the labelID is nil, query the collection kv to get it." +
+				"It means if only get kvID, it can also delete normally.But if you want better performance, you need to pass the labelID",
+			Parameters: []*restful.Parameters{
+				labelIDParameters,
 			},
 			Returns: []*restful.Returns{
 				{
