@@ -84,7 +84,6 @@ func (c *Client) Put(ctx context.Context, kv model.KVDoc) (*model.KVDoc, error) 
 	url := fmt.Sprintf("%s/%s/%s", c.opts.Endpoint, APIPathKV, kv.Key)
 	h := http.Header{}
 	h.Set("Content-Type", "application/json")
-	h.Set("domain", "test")
 	body, _ := json.Marshal(kv)
 	resp, err := c.c.HTTPDoWithContext(ctx, "PUT", url, h, body)
 	if err != nil {
@@ -154,8 +153,6 @@ func (c *Client) Delete(ctx context.Context, kvID, labelID string) error {
 	}
 	h := http.Header{}
 	h.Set("Content-Type", "application/json")
-	h.Set("domain", "test")
-
 	resp, err := c.c.HTTPDoWithContext(ctx, "DELETE", url, h, nil)
 	if err != nil {
 		return err
