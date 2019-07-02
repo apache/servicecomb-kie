@@ -35,8 +35,8 @@ const (
 	MsgDomainMustNotBeEmpty = "domain must not be empty"
 	MsgIllegalLabels        = "label's value can not be empty, " +
 		"label can not be duplicated, please check your query parameters"
-	MsgIllegalDepth   = "X-Depth must be number"
-	ErrIDMustNotEmpty = "must supply id if you want to remove key"
+	MsgIllegalDepth     = "X-Depth must be number"
+	ErrKvIDMustNotEmpty = "must supply kv id if you want to remove key"
 )
 
 //ReadDomain get domain info from attribute

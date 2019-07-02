@@ -19,7 +19,6 @@ package dao
 
 import (
 	"context"
-
 	"fmt"
 	"github.com/apache/servicecomb-kie/pkg/model"
 	"github.com/go-mesh/openlogging"
@@ -57,8 +56,8 @@ func (s *MongodbService) getLatestLabel(ctx context.Context, labelID string) (*m
 	return h, nil
 }
 
-//AddHistory get latest labels revision and plus 1  and save current label stats to history, then update current revision to db
-func (s *MongodbService) AddHistory(ctx context.Context, labelID string, labels map[string]string, domain string) (int, error) {
+//getAndAddHistory get latest labels revision and call addHistory
+func (s *MongodbService) getAndAddHistory(ctx context.Context, labelID string, labels map[string]string, domain string) (int, error) {
 	r, err := s.getLatestLabel(ctx, labelID)
 	if err != nil {
 		if err == ErrRevisionNotExist {
@@ -76,23 +75,31 @@ func (s *MongodbService) AddHistory(ctx context.Context, labelID string, labels 
 		}
 
 	}
-	r.Revision = r.Revision + 1
-
-	kvs, err := s.findKeys(ctx, bson.M{"label_id": labelID}, true)
+	r.Revision, err = s.addHistory(ctx, r, labelID)
 	if err != nil {
 		return 0, err
 	}
+	return r.Revision, nil
+}
+
+//addHistory labels revision plus 1 and save current label stats to history, then update current revision to db
+func (s *MongodbService) addHistory(ctx context.Context, labelRevision *model.LabelRevisionDoc, labelID string) (int, error) {
+	labelRevision.Revision = labelRevision.Revision + 1
+	kvs, err := s.findKeys(ctx, bson.M{"label_id": labelID}, true)
+	//Key may be empty When delete
+	if err != nil && err != ErrKeyNotExists {
+		return 0, err
+	}
 	//save current kv states
-	r.KVs = kvs
+	labelRevision.KVs = kvs
 	//clear prev id
-	r.ID = primitive.NilObjectID
+	labelRevision.ID = primitive.NilObjectID
 	collection := s.c.Database(DB).Collection(CollectionLabelRevision)
-	_, err = collection.InsertOne(ctx, r)
+	_, err = collection.InsertOne(ctx, labelRevision)
 	if err != nil {
 		openlogging.Error(err.Error())
 		return 0, err
 	}
-
 	hex, err := primitive.ObjectIDFromHex(labelID)
 	if err != nil {
 		openlogging.Error(fmt.Sprintf("convert %s,err:%s", labelID, err))
@@ -101,13 +108,12 @@ func (s *MongodbService) AddHistory(ctx context.Context, labelID string, labels 
 	labelCollection := s.c.Database(DB).Collection(CollectionLabel)
 	_, err = labelCollection.UpdateOne(ctx, bson.M{"_id": hex}, bson.D{
 		{"$set", bson.D{
-			{"revision", r.Revision},
+			{"revision", labelRevision.Revision},
 		}},
 	})
 	if err != nil {
 		return 0, err
 	}
-	openlogging.Debug(fmt.Sprintf("update revision to %d", r.Revision))
-
-	return r.Revision, nil
+	openlogging.Debug(fmt.Sprintf("update revision to %d", labelRevision.Revision))
+	return labelRevision.Revision, nil
 }

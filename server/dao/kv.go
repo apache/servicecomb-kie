@@ -34,12 +34,14 @@ import (
 
 //db errors
 var (
-	ErrMissingDomain    = errors.New("domain info missing, illegal access")
-	ErrKeyNotExists     = errors.New("key with labels does not exits")
-	ErrLabelNotExists   = errors.New("labels does not exits")
-	ErrTooMany          = errors.New("key with labels should be only one")
-	ErrKeyMustNotEmpty  = errors.New("must supply key if you want to get exact one result")
-	ErrRevisionNotExist = errors.New("label revision not exist")
+	ErrMissingDomain          = errors.New("domain info missing, illegal access")
+	ErrKeyNotExists           = errors.New("key with labels does not exits")
+	ErrLabelNotExists         = errors.New("labels does not exits")
+	ErrTooMany                = errors.New("key with labels should be only one")
+	ErrKeyMustNotEmpty        = errors.New("must supply key if you want to get exact one result")
+	ErrRevisionNotExist       = errors.New("label revision not exist")
+	ErrKVIDIsNil              = errors.New("kvID id is nil")
+	ErrKvIDAndLabelIDNotMatch = errors.New("kvID and labelID do not match")
 )
 
 //Options mongodb options
@@ -64,9 +66,8 @@ func NewKVService() (*MongodbService, error) {
 	}
 	return NewMongoService(opts)
 }
-func (s *MongodbService) findOneKey(ctx context.Context, filter bson.M, key string) ([]*model.KVDoc, error) {
+func (s *MongodbService) findOneKey(ctx context.Context, filter bson.M) ([]*model.KVDoc, error) {
 	collection := s.c.Database(DB).Collection(CollectionKV)
-	filter["key"] = key
 	sr := collection.FindOne(ctx, filter)
 	if sr.Err() != nil {
 		return nil, sr.Err()
@@ -127,4 +128,21 @@ func (s *MongodbService) findKV(ctx context.Context, domain string, opts FindOpt
 		return nil, err
 	}
 	return cur, err
+}
+
+//DeleteKV by kvID
+func (s *MongodbService) DeleteKV(ctx context.Context, hexID primitive.ObjectID) error {
+	collection := s.c.Database(DB).Collection(CollectionKV)
+	dr, err := collection.DeleteOne(ctx, bson.M{"_id": hexID})
+	//check error and delete number
+	if err != nil {
+		openlogging.Error(fmt.Sprintf("delete [%s] failed : [%s]", hexID, err))
+		return err
+	}
+	if dr.DeletedCount != 1 {
+		openlogging.Warn(fmt.Sprintf("Failed,May have been deleted,kvID=%s", hexID))
+	} else {
+		openlogging.Info(fmt.Sprintf("delete success,kvID=%s", hexID))
+	}
+	return err
 }

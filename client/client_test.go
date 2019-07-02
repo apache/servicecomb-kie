@@ -18,11 +18,11 @@
 package client_test
 
 import (
-	. "github.com/onsi/ginkgo"
-	. "github.com/onsi/gomega"
-
 	"context"
 	. "github.com/apache/servicecomb-kie/client"
+	"github.com/apache/servicecomb-kie/pkg/model"
+	. "github.com/onsi/ginkgo"
+	. "github.com/onsi/gomega"
 	"os"
 )
 
@@ -62,4 +62,32 @@ var _ = Describe("Client", func() {
 
 		})
 	})
+
+	Describe("DELETE /v1/kv/", func() {
+		Context("by kvID", func() {
+			client2, err := New(Config{
+				Endpoint: "http://127.0.0.1:30110",
+			})
+
+			kvBody := model.KVDoc{}
+			kvBody.Key = "time"
+			kvBody.Value = "100s"
+			kvBody.ValueType = "string"
+			kvBody.Labels = make(map[string]string)
+			kvBody.Labels["evn"] = "test"
+			kv, err := client2.Put(context.TODO(), kvBody)
+			It("should be not error", func() {
+				Ω(err).ShouldNot(HaveOccurred())
+				Expect(kv.Key).To(Equal(kvBody.Key))
+			})
+			client3, err := New(Config{
+				Endpoint: "http://127.0.0.1:30110",
+			})
+			It("should be 204", func() {
+				err := client3.Delete(context.TODO(), kv.ID.Hex(), "")
+				Ω(err).ShouldNot(HaveOccurred())
+			})
+		})
+	})
+
 })
