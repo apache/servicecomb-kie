@@ -23,13 +23,14 @@ import (
 	"encoding/json"
 	"errors"
 	"fmt"
+	"net/http"
+	"net/url"
+
 	"github.com/apache/servicecomb-kie/pkg/model"
 	"github.com/go-chassis/foundation/httpclient"
 	"github.com/go-chassis/foundation/security"
 	"github.com/go-chassis/go-chassis/pkg/util/httputil"
 	"github.com/go-mesh/openlogging"
-	"net/http"
-	"net/url"
 )
 
 //const
@@ -111,4 +112,37 @@ func (c *Client) Get(ctx context.Context, key string, opts ...GetOption) ([]*mod
 		return nil, err
 	}
 	return kvs, nil
+}
+
+//Put create or update key value
+func (c *Client) Put(ctx context.Context, key string, opts ...PutOption) (success bool, err error) {
+	options := PutOptions{}
+	for _, o := range opts {
+		o(&options)
+	}
+	url := fmt.Sprintf("%s/%s/%s", c.opts.Endpoint, APIPathKV, key)
+	h := http.Header{}
+	h.Set("Content-Type", "application/json; charset=utf-8")
+	b, err := json.Marshal(options)
+	if err != nil {
+		openlogging.Error("marshal kv failed:" + err.Error())
+		return false, err
+	}
+	resp, err := c.c.HTTPDoWithContext(ctx, "PUT", url, h, b)
+	body := httputil.ReadBody(resp)
+	if resp.StatusCode != http.StatusOK {
+		if resp.StatusCode == http.StatusNotFound {
+			return false, ErrKeyNotExist
+		}
+		openlogging.Error("put failed", openlogging.WithTags(openlogging.Tags{
+			"k":      key,
+			"status": resp.Status,
+			"body":   body,
+		}))
+		return false, fmt.Errorf("put %s failed, http status [%s], body [%s]", key, resp.Status, body)
+	}
+	if err == nil {
+		return true, nil
+	}
+	return false, err
 }

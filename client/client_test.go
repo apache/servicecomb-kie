@@ -22,8 +22,10 @@ import (
 	. "github.com/onsi/gomega"
 
 	"context"
-	. "github.com/apache/servicecomb-kie/client"
 	"os"
+
+	. "github.com/apache/servicecomb-kie/client"
+	"github.com/apache/servicecomb-kie/pkg/model"
 )
 
 var _ = Describe("Client", func() {
@@ -60,6 +62,24 @@ var _ = Describe("Client", func() {
 				Expect(err).Should(Equal(ErrKeyNotExist))
 			})
 
+		})
+	})
+
+	Describe("put", func() {
+		c1, _ = New(Config{
+			Endpoint: "http://127.0.0.1:30110",
+			// Endpoint: "http://127.0.0.1:8081", //qi's local mongodb server
+		})
+		Context("create or update key value", func() {
+			success, err := c1.Put(context.TODO(), "app.properties", SetKeyValue(model.KVDoc{
+				Value:     "1s",
+				ValueType: "time",
+				Labels:    map[string]string{"service": "tester"},
+			}))
+			It("should create new key value", func() {
+				Expect(err).Should(BeNil())
+				Expect(success).Should(Equal(true))
+			})
 		})
 	})
 })

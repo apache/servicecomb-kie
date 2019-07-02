@@ -1,5 +1,5 @@
 db:
-  uri: mongodb://admin:123@127.0.0.1:27017/kie
+  uri: mongodb://kie:123@127.0.0.1:27017
   type: mongodb
   poolSize: 10
   ssl: false
