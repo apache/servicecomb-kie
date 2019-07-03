@@ -19,11 +19,12 @@ package client_test
 
 import (
 	"context"
+	"os"
+
 	. "github.com/apache/servicecomb-kie/client"
 	"github.com/apache/servicecomb-kie/pkg/model"
 	. "github.com/onsi/ginkgo"
 	. "github.com/onsi/gomega"
-	"os"
 )
 
 var _ = Describe("Client", func() {
@@ -33,7 +34,7 @@ var _ = Describe("Client", func() {
 		Context("with http protocol", func() {
 			var err error
 			c1, err = New(Config{
-				Endpoint: "http://127.0.0.1:30110",
+				Endpoint: "http://127.0.0.1:8081",
 			})
 			It("should not return err", func() {
 				Expect(err).Should(BeNil())
@@ -44,6 +45,7 @@ var _ = Describe("Client", func() {
 
 		})
 	})
+
 	Describe("get ", func() {
 		Context("only by key", func() {
 			_, err := c1.Get(context.TODO(), "app.properties")
@@ -63,6 +65,28 @@ var _ = Describe("Client", func() {
 		})
 	})
 
+	Describe("put /v1/kv/{key}", func() {
+		Context("create or update key value", func() {
+			c1, _ = New(Config{
+				Endpoint: "http://127.0.0.1:30110",
+			})
+			kv := model.KVDoc{
+				Key:    "app.properties",
+				Labels: map[string]string{"service": "tester"},
+				Value:  "1s",
+			}
+			res, err := c1.Put(context.TODO(), kv)
+			It("should not be error", func() {
+				Expect(err).Should(BeNil())
+			})
+			It("should return the exact content passed", func() {
+				Expect(res.Key).Should(Equal(kv.Key))
+				Expect(res.Labels).Should(Equal(kv.Labels))
+				Expect(res.Value).Should(Equal(kv.Value))
+			})
+		})
+	})
+
 	Describe("DELETE /v1/kv/", func() {
 		Context("by kvID", func() {
 			client2, err := New(Config{
@@ -76,7 +100,7 @@ var _ = Describe("Client", func() {
 			kvBody.Labels = make(map[string]string)
 			kvBody.Labels["evn"] = "test"
 			kv, err := client2.Put(context.TODO(), kvBody)
-			It("should be not error", func() {
+			It("should not be error", func() {
 				Ω(err).ShouldNot(HaveOccurred())
 				Expect(kv.Key).To(Equal(kvBody.Key))
 			})
