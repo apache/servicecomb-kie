@@ -18,24 +18,29 @@
 package client_test
 
 import (
-	. "github.com/onsi/ginkgo"
-	. "github.com/onsi/gomega"
-
 	"context"
 	"os"
 
 	. "github.com/apache/servicecomb-kie/client"
 	"github.com/apache/servicecomb-kie/pkg/model"
+	"github.com/apache/servicecomb-kie/server/config"
+	. "github.com/onsi/ginkgo"
+	. "github.com/onsi/gomega"
 )
 
 var _ = Describe("Client", func() {
 	var c1 *Client
 	os.Setenv("HTTP_DEBUG", "1")
+	// fake DB for UT
+	config.Configurations = &config.Config{
+		DB: config.DB{},
+	}
+
 	Describe("new client ", func() {
 		Context("with http protocol", func() {
 			var err error
 			c1, err = New(Config{
-				Endpoint: "http://127.0.0.1:30110",
+				Endpoint: "http://127.0.0.1:8081",
 			})
 			It("should not return err", func() {
 				Expect(err).Should(BeNil())
@@ -65,21 +70,31 @@ var _ = Describe("Client", func() {
 		})
 	})
 
-	Describe("put", func() {
-		c1, _ = New(Config{
-			Endpoint: "http://127.0.0.1:30110",
-			// Endpoint: "http://127.0.0.1:8081", //qi's local mongodb server
-		})
-		Context("create or update key value", func() {
-			success, err := c1.Put(context.TODO(), "app.properties", SetKeyValue(model.KVDoc{
-				Value:     "1s",
-				ValueType: "time",
-				Labels:    map[string]string{"service": "tester"},
-			}))
-			It("should create new key value", func() {
-				Expect(err).Should(BeNil())
-				Expect(success).Should(Equal(true))
+	Describe("DELETE /v1/kv/", func() {
+		Context("by kvID", func() {
+			client2, err := New(Config{
+				Endpoint: "http://127.0.0.1:30110",
+			})
+
+			kvBody := model.KVDoc{}
+			kvBody.Key = "time"
+			kvBody.Value = "100s"
+			kvBody.ValueType = "string"
+			kvBody.Labels = make(map[string]string)
+			kvBody.Labels["evn"] = "test"
+			kv, err := client2.Put(context.TODO(), kvBody)
+			It("should be not error", func() {
+				Ω(err).ShouldNot(HaveOccurred())
+				Expect(kv.Key).To(Equal(kvBody.Key))
+			})
+			client3, err := New(Config{
+				Endpoint: "http://127.0.0.1:30110",
+			})
+			It("should be 204", func() {
+				err := client3.Delete(context.TODO(), kv.ID.Hex(), "")
+				Ω(err).ShouldNot(HaveOccurred())
 			})
 		})
 	})
+
 })

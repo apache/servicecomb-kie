@@ -80,6 +80,38 @@ func New(config Config) (*Client, error) {
 	}, nil
 }
 
+//Put create value of a key
+func (c *Client) Put(ctx context.Context, kv model.KVDoc) (*model.KVDoc, error) {
+	url := fmt.Sprintf("%s/%s/%s", c.opts.Endpoint, APIPathKV, kv.Key)
+	h := http.Header{}
+	h.Set("Content-Type", "application/json")
+	body, _ := json.Marshal(kv)
+	resp, err := c.c.HTTPDoWithContext(ctx, "PUT", url, h, body)
+	if err != nil {
+		return nil, err
+	}
+	b := httputil.ReadBody(resp)
+	if resp.StatusCode != http.StatusOK {
+		if resp.StatusCode == http.StatusNotFound {
+			return nil, ErrKeyNotExist
+		}
+		openlogging.Error("get failed", openlogging.WithTags(openlogging.Tags{
+			"k":      kv.Key,
+			"status": resp.Status,
+			"body":   b,
+		}))
+		return nil, fmt.Errorf("get %s failed,http status [%s], body [%s]", kv.Key, resp.Status, b)
+	}
+
+	kvs := &model.KVDoc{}
+	err = json.Unmarshal(b, kvs)
+	if err != nil {
+		openlogging.Error("unmarshal kv failed:" + err.Error())
+		return nil, err
+	}
+	return kvs, nil
+}
+
 //Get get value of a key
 func (c *Client) Get(ctx context.Context, key string, opts ...GetOption) ([]*model.KVDoc, error) {
 	options := GetOptions{}
@@ -114,35 +146,21 @@ func (c *Client) Get(ctx context.Context, key string, opts ...GetOption) ([]*mod
 	return kvs, nil
 }
 
-//Put create or update key value
-func (c *Client) Put(ctx context.Context, key string, opts ...PutOption) (success bool, err error) {
-	options := PutOptions{}
-	for _, o := range opts {
-		o(&options)
+//Delete remove kv
+func (c *Client) Delete(ctx context.Context, kvID, labelID string) error {
+	url := fmt.Sprintf("%s/%s/%s", c.opts.Endpoint, APIPathKV, kvID)
+	if labelID != "" {
+		url = fmt.Sprintf("%s?labelID=%s", url, labelID)
 	}
-	url := fmt.Sprintf("%s/%s/%s", c.opts.Endpoint, APIPathKV, key)
 	h := http.Header{}
-	h.Set("Content-Type", "application/json; charset=utf-8")
-	b, err := json.Marshal(options)
+	h.Set("Content-Type", "application/json")
+	resp, err := c.c.HTTPDoWithContext(ctx, "DELETE", url, h, nil)
 	if err != nil {
-		openlogging.Error("marshal kv failed:" + err.Error())
-		return false, err
+		return err
 	}
-	resp, err := c.c.HTTPDoWithContext(ctx, "PUT", url, h, b)
-	body := httputil.ReadBody(resp)
-	if resp.StatusCode != http.StatusOK {
-		if resp.StatusCode == http.StatusNotFound {
-			return false, ErrKeyNotExist
-		}
-		openlogging.Error("put failed", openlogging.WithTags(openlogging.Tags{
-			"k":      key,
-			"status": resp.Status,
-			"body":   body,
-		}))
-		return false, fmt.Errorf("put %s failed, http status [%s], body [%s]", key, resp.Status, body)
+	b := httputil.ReadBody(resp)
+	if resp.StatusCode != http.StatusNoContent {
+		return fmt.Errorf("delete %s failed,http status [%s], body [%s]", kvID, resp.Status, b)
 	}
-	if err == nil {
-		return true, nil
-	}
-	return false, err
+	return nil
 }

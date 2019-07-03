@@ -197,7 +197,7 @@ var _ = Describe("Kv mongodb service", func() {
 	})
 
 	Describe("delete key", func() {
-		Context("delete key by id,seperated by ',' ", func() {
+		Context("delete key by kvID", func() {
 			kv1, err := s.CreateOrUpdate(context.Background(), "default", &model.KVDoc{
 				Key:   "timeout",
 				Value: "20s",
@@ -208,11 +208,20 @@ var _ = Describe("Kv mongodb service", func() {
 			It("should not return err", func() {
 				Expect(err).Should(BeNil())
 			})
+			It("should not return err", func() {
+				Expect(err).Should(BeNil())
+			})
 
-			kv2, err := s.CreateOrUpdate(context.Background(), "default", &model.KVDoc{
-				Key:    "times",
-				Value:  "3",
-				Domain: "default",
+			err = s.Delete(kv1.ID.Hex(), "", "default")
+			It("should not return err", func() {
+				Expect(err).Should(BeNil())
+			})
+
+		})
+		Context("delete key by kvID and labelID", func() {
+			kv1, err := s.CreateOrUpdate(context.Background(), "default", &model.KVDoc{
+				Key:   "timeout",
+				Value: "20s",
 				Labels: map[string]string{
 					"env": "test",
 				},
@@ -220,28 +229,30 @@ var _ = Describe("Kv mongodb service", func() {
 			It("should not return err", func() {
 				Expect(err).Should(BeNil())
 			})
+			It("should not return err", func() {
+				Expect(err).Should(BeNil())
+			})
 
-			ids := []string{kv1.ID.Hex(), kv2.ID.Hex()}
-			err = s.Delete(ids, "default")
+			err = s.Delete(kv1.ID.Hex(), kv1.LabelID, "default")
 			It("should not return err", func() {
 				Expect(err).Should(BeNil())
 			})
 
 		})
-		Context("test miss ids, no panic", func() {
-			err := s.Delete(nil, "default")
+		Context("test miss kvID, no panic", func() {
+			err := s.Delete("", "", "default")
 			It("should not return err", func() {
-				Expect(err).Should(BeNil())
+				Expect(err).Should(HaveOccurred())
 			})
 		})
 		Context("Test encode error ", func() {
-			err := s.Delete([]string{"12312312321"}, "default")
+			err := s.Delete("12312312321", "", "default")
 			It("should return err", func() {
 				Expect(err).To(HaveOccurred())
 			})
 		})
 		Context("Test miss domain error ", func() {
-			err := s.Delete([]string{"5ce3602381fc6e33708b9621"}, "")
+			err := s.Delete("12312312321", "", "")
 			It("should return err", func() {
 				Expect(err).Should(Equal(dao.ErrMissingDomain))
 			})

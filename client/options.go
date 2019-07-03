@@ -17,8 +17,6 @@
 
 package client
 
-import "github.com/apache/servicecomb-kie/pkg/model"
-
 //GetOption is the functional option of client func
 type GetOption func(*GetOptions)
 
@@ -39,24 +37,5 @@ func WithLabels(l map[string]string) GetOption {
 func WithDepth(d int) GetOption {
 	return func(options *GetOptions) {
 		options.Depth = d
-	}
-}
-
-//PutOption is the functional option of client func
-type PutOption func(*PutOptions)
-
-//PutOptions is the options of client func
-type PutOptions struct {
-	Labels    map[string]string
-	Value     string
-	ValueType string
-}
-
-//SetKeyValue update or create key value
-func SetKeyValue(kv model.KVDoc) PutOption {
-	return func(options *PutOptions) {
-		options.Labels = kv.Labels
-		options.Value = kv.Value
-		options.ValueType = kv.ValueType
 	}
 }
