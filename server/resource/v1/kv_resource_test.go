@@ -36,8 +36,8 @@ var _ = Describe("v1 kv resource", func() {
 	config.Configurations = &config.Config{
 		DB: config.DB{},
 	}
+	config.Configurations.DB.URI = "mongodb://kie:123@127.0.0.1:27017"
 	Describe("put kv", func() {
-		config.Configurations.DB.URI = "mongodb://kie:123@127.0.0.1:27017"
 		Context("valid param", func() {
 			kv := &model.KVDoc{
 				Value:  "1s",

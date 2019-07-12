@@ -28,3 +28,8 @@ const (
 	HeaderDepth  = "X-Depth"
 	HeaderTenant = "X-Domain-Name"
 )
+
+//ContentType
+const (
+	ContentTypeText = "application/text"
+)
