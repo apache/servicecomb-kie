@@ -29,7 +29,7 @@ import (
 
 func (s *MongodbService) getLatestLabel(ctx context.Context, labelID string) (*model.LabelRevisionDoc, error) {
 	collection := s.c.Database(DB).Collection(CollectionLabelRevision)
-	ctx, _ = context.WithTimeout(ctx, DefaultTimeout)
+	ctx, _ = context.WithTimeout(ctx, s.timeout)
 
 	filter := bson.M{"label_id": labelID}
 

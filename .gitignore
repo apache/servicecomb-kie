@@ -8,6 +8,7 @@ output
 *.iml
 .idea/
 **/*junit.xml
+**/*crt
 **/*.exe
 **/*.tgz
 vendor/**

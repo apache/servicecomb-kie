@@ -63,7 +63,7 @@ func (s *MongodbService) CreateOrUpdate(ctx context.Context, domain string, kv *
 			"default": "default",
 		}
 	}
-	ctx, _ = context.WithTimeout(ctx, DefaultTimeout)
+	ctx, _ = context.WithTimeout(ctx, s.timeout)
 	//check labels exits or not
 	labelID, err := s.LabelsExist(ctx, domain, kv.Labels)
 	var l *model.LabelDoc
@@ -114,7 +114,7 @@ func (s *MongodbService) CreateOrUpdate(ctx context.Context, domain string, kv *
 //if map is empty. will return default labels doc which has no labels
 func (s *MongodbService) FindLabels(ctx context.Context, domain string, labels map[string]string) (*model.LabelDoc, error) {
 	collection := s.c.Database(DB).Collection(CollectionLabel)
-	ctx, _ = context.WithTimeout(context.Background(), DefaultTimeout)
+	ctx, _ = context.WithTimeout(context.Background(), s.timeout)
 	filter := bson.M{"domain": domain}
 	for k, v := range labels {
 		filter["labels."+k] = v
@@ -125,7 +125,10 @@ func (s *MongodbService) FindLabels(ctx context.Context, domain string, labels m
 	cur, err := collection.Find(ctx, filter)
 	if err != nil {
 		if err.Error() == context.DeadlineExceeded.Error() {
-			return nil, ErrAction("find label", filter, fmt.Errorf("can not reach mongodb in %s", s.timeout))
+			openlogging.Error("find label failed, dead line exceeded", openlogging.WithTags(openlogging.Tags{
+				"timeout": s.timeout,
+			}))
+			return nil, fmt.Errorf("can not reach mongodb in %s", s.timeout)
 		}
 		return nil, err
 	}
@@ -158,7 +161,10 @@ func (s *MongodbService) findKeys(ctx context.Context, filter bson.M, withoutLab
 	cur, err := collection.Find(ctx, filter)
 	if err != nil {
 		if err.Error() == context.DeadlineExceeded.Error() {
-			return nil, ErrAction("find", filter, fmt.Errorf("can not reach mongodb in %s", s.timeout))
+			openlogging.Error("find kvs failed, dead line exceeded", openlogging.WithTags(openlogging.Tags{
+				"timeout": s.timeout,
+			}))
+			return nil, fmt.Errorf("can not reach mongodb in %s", s.timeout)
 		}
 		return nil, err
 	}
@@ -190,7 +196,7 @@ func (s *MongodbService) findKeys(ctx context.Context, filter bson.M, withoutLab
 //key can be empty, then it will return all key values
 //if key is given, will return 0-1 key value
 func (s *MongodbService) FindKVByLabelID(ctx context.Context, domain, labelID, key string) ([]*model.KVDoc, error) {
-	ctx, _ = context.WithTimeout(context.Background(), DefaultTimeout)
+	ctx, _ = context.WithTimeout(context.Background(), s.timeout)
 	filter := bson.M{"label_id": labelID, "domain": domain}
 	if key != "" {
 		filter["key"] = key
@@ -284,7 +290,7 @@ func (s *MongodbService) FindKV(ctx context.Context, domain string, options ...F
 //domain=tenant
 //1.delete kv;2.add history
 func (s *MongodbService) Delete(kvID string, labelID string, domain string) error {
-	ctx, _ := context.WithTimeout(context.Background(), DefaultTimeout)
+	ctx, _ := context.WithTimeout(context.Background(), s.timeout)
 	if domain == "" {
 		return ErrMissingDomain
 	}
@@ -354,17 +360,22 @@ func NewMongoService(opts Options) (*MongodbService, error) {
 func getClient(opts Options) (*mongo.Client, error) {
 	if client == nil {
 		var err error
-		client, err = mongo.NewClient(options.Client().ApplyURI(opts.URI))
+		clientOps := []*options.ClientOptions{options.Client().ApplyURI(opts.URI)}
+		if opts.TLS != nil {
+			clientOps = append(clientOps, options.Client().SetTLSConfig(opts.TLS))
+			openlogging.Info("enabled ssl communication to mongodb")
+		}
+		client, err = mongo.NewClient(clientOps...)
 		if err != nil {
 			return nil, err
 		}
-		openlogging.Info("connecting to " + opts.URI)
+		openlogging.Info("DB connecting")
 		ctx, _ := context.WithTimeout(context.Background(), 10*time.Second)
 		err = client.Connect(ctx)
 		if err != nil {
 			return nil, err
 		}
-		openlogging.Info("connected to " + opts.URI)
+		openlogging.Info("DB connected")
 	}
 	return client, nil
 }

@@ -21,6 +21,7 @@ package dao
 import (
 	"context"
 	"crypto/tls"
+	"crypto/x509"
 	"errors"
 	"fmt"
 	"github.com/apache/servicecomb-kie/pkg/model"
@@ -29,6 +30,7 @@ import (
 	"go.mongodb.org/mongo-driver/bson"
 	"go.mongodb.org/mongo-driver/bson/primitive"
 	"go.mongodb.org/mongo-driver/mongo"
+	"io/ioutil"
 	"time"
 )
 
@@ -42,6 +44,7 @@ var (
 	ErrRevisionNotExist       = errors.New("label revision not exist")
 	ErrKVIDIsNil              = errors.New("kvID id is nil")
 	ErrKvIDAndLabelIDNotMatch = errors.New("kvID and labelID do not match")
+	ErrRootCAMissing          = errors.New("rootCAFile is empty in config file")
 )
 
 //Options mongodb options
@@ -56,13 +59,35 @@ type Options struct {
 //NewKVService create a kv service
 //TODO, multiple config server
 func NewKVService() (*MongodbService, error) {
+	var d time.Duration
+	var err error
+	if config.GetDB().Timeout != "" {
+		d, err = time.ParseDuration(config.GetDB().Timeout)
+		if err != nil {
+			return nil, errors.New("timeout setting invalid:" + config.GetDB().Timeout)
+		}
+	}
 	opts := Options{
 		URI:      config.GetDB().URI,
 		PoolSize: config.GetDB().PoolSize,
-		SSL:      config.GetDB().SSL,
+		SSL:      config.GetDB().SSLEnabled,
+		Timeout:  d,
 	}
 	if opts.SSL {
-		//TODO tls config
+		if config.GetDB().RootCA == "" {
+			return nil, ErrRootCAMissing
+		}
+		pool := x509.NewCertPool()
+		caCert, err := ioutil.ReadFile(config.GetDB().RootCA)
+		if err != nil {
+			return nil, fmt.Errorf("read ca cert file %s failed", caCert)
+		}
+		pool.AppendCertsFromPEM(caCert)
+		opts.TLS = &tls.Config{
+			RootCAs:            pool,
+			InsecureSkipVerify: true,
+		}
+
 	}
 	return NewMongoService(opts)
 }
@@ -111,7 +136,7 @@ func (s *MongodbService) KVExist(ctx context.Context, domain, key string, option
 
 func (s *MongodbService) findKV(ctx context.Context, domain string, opts FindOptions) (*mongo.Cursor, error) {
 	collection := s.c.Database(DB).Collection(CollectionKV)
-	ctx, _ = context.WithTimeout(ctx, DefaultTimeout)
+	ctx, _ = context.WithTimeout(ctx, s.timeout)
 	filter := bson.M{"domain": domain}
 	if opts.Key != "" {
 		filter["key"] = opts.Key
@@ -123,7 +148,10 @@ func (s *MongodbService) findKV(ctx context.Context, domain string, opts FindOpt
 	cur, err := collection.Find(ctx, filter)
 	if err != nil {
 		if err.Error() == context.DeadlineExceeded.Error() {
-			return nil, ErrAction("find", filter, fmt.Errorf("can not reach mongodb in %s", s.timeout))
+			openlogging.Error("find kv failed, deadline exceeded", openlogging.WithTags(openlogging.Tags{
+				"timeout": s.timeout,
+			}))
+			return nil, fmt.Errorf("can not reach mongodb in %s", s.timeout)
 		}
 		return nil, err
 	}

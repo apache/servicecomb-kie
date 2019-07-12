@@ -42,7 +42,7 @@ func (s *MongodbService) createLabel(ctx context.Context, domain string, labels 
 }
 func (s *MongodbService) findOneLabels(ctx context.Context, filter bson.M) (*model.LabelDoc, error) {
 	collection := s.c.Database(DB).Collection(CollectionLabel)
-	ctx, _ = context.WithTimeout(context.Background(), DefaultTimeout)
+	ctx, _ = context.WithTimeout(context.Background(), s.timeout)
 	sr := collection.FindOne(ctx, filter)
 	if sr.Err() != nil {
 		return nil, sr.Err()

@@ -81,14 +81,18 @@ it will launch 3 components
 To see how to build a local dev environment, check [here](examples/dev)
 
 ### Build
+this will build your own service image and binary in local
 ```bash
 cd build
-export VERSION=0.0.1
+export VERSION=0.0.1 #optional, it is latest by default
 ./build_server.sh
 ```
 
 this will generate a "servicecomb-kie-0.0.1-linux-amd64.tar" in "release" folder,
 and a docker image "servicecomb/kie:0.0.1"
+
+# API Doc
+swagger/servicecomb-kie.yaml
 
 ## Contact
 
