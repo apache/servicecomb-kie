@@ -20,6 +20,7 @@ package v1
 
 import (
 	"encoding/json"
+	"github.com/apache/servicecomb-kie/pkg/common"
 	"github.com/apache/servicecomb-kie/pkg/model"
 	"github.com/apache/servicecomb-kie/server/dao"
 	goRestful "github.com/emicklei/go-restful"
@@ -39,23 +40,23 @@ func (r *KVResource) Put(context *restful.Context) {
 	kv := new(model.KVDoc)
 	decoder := json.NewDecoder(context.ReadRequest().Body)
 	if err = decoder.Decode(kv); err != nil {
-		WriteErrResponse(context, http.StatusInternalServerError, err.Error())
+		WriteErrResponse(context, http.StatusInternalServerError, err.Error(), common.ContentTypeText)
 		return
 	}
 	domain := ReadDomain(context)
 	if domain == nil {
-		WriteErrResponse(context, http.StatusInternalServerError, MsgDomainMustNotBeEmpty)
+		WriteErrResponse(context, http.StatusInternalServerError, MsgDomainMustNotBeEmpty, common.ContentTypeText)
 	}
 	kv.Key = key
 	s, err := dao.NewKVService()
 	if err != nil {
-		WriteErrResponse(context, http.StatusInternalServerError, err.Error())
+		WriteErrResponse(context, http.StatusInternalServerError, err.Error(), common.ContentTypeText)
 		return
 	}
 	kv, err = s.CreateOrUpdate(context.Ctx, domain.(string), kv)
 	if err != nil {
 		ErrLog("put", kv, err)
-		WriteErrResponse(context, http.StatusInternalServerError, err.Error())
+		WriteErrResponse(context, http.StatusInternalServerError, err.Error(), common.ContentTypeText)
 		return
 	}
 	InfoLog("put", kv)
@@ -69,40 +70,40 @@ func (r *KVResource) GetByKey(context *restful.Context) {
 	var err error
 	key := context.ReadPathParameter("key")
 	if key == "" {
-		WriteErrResponse(context, http.StatusForbidden, "key must not be empty")
+		WriteErrResponse(context, http.StatusForbidden, "key must not be empty", common.ContentTypeText)
 		return
 	}
 	values := context.ReadRequest().URL.Query()
 	labels := make(map[string]string, len(values))
 	for k, v := range values {
 		if len(v) != 1 {
-			WriteErrResponse(context, http.StatusBadRequest, MsgIllegalLabels)
+			WriteErrResponse(context, http.StatusBadRequest, MsgIllegalLabels, common.ContentTypeText)
 			return
 		}
 		labels[k] = v[0]
 	}
 	s, err := dao.NewKVService()
 	if err != nil {
-		WriteErrResponse(context, http.StatusInternalServerError, err.Error())
+		WriteErrResponse(context, http.StatusInternalServerError, err.Error(), common.ContentTypeText)
 		return
 	}
 	domain := ReadDomain(context)
 	if domain == nil {
-		WriteErrResponse(context, http.StatusInternalServerError, MsgDomainMustNotBeEmpty)
+		WriteErrResponse(context, http.StatusInternalServerError, MsgDomainMustNotBeEmpty, common.ContentTypeText)
 		return
 	}
 	d, err := ReadFindDepth(context)
 	if err != nil {
-		WriteErrResponse(context, http.StatusBadRequest, MsgIllegalDepth)
+		WriteErrResponse(context, http.StatusBadRequest, MsgIllegalDepth, common.ContentTypeText)
 		return
 	}
 	kvs, err := s.FindKV(context.Ctx, domain.(string), dao.WithKey(key), dao.WithLabels(labels), dao.WithDepth(d))
 	if err != nil {
 		if err == dao.ErrKeyNotExists {
-			WriteErrResponse(context, http.StatusNotFound, err.Error())
+			WriteErrResponse(context, http.StatusNotFound, err.Error(), common.ContentTypeText)
 			return
 		}
-		WriteErrResponse(context, http.StatusInternalServerError, err.Error())
+		WriteErrResponse(context, http.StatusInternalServerError, err.Error(), common.ContentTypeText)
 		return
 	}
 	err = context.WriteHeaderAndJSON(http.StatusOK, kvs, goRestful.MIME_JSON)
@@ -117,34 +118,41 @@ func (r *KVResource) SearchByLabels(context *restful.Context) {
 	var err error
 	labelCombinations, err := ReadLabelCombinations(context.ReadRestfulRequest())
 	if err != nil {
-		WriteErrResponse(context, http.StatusBadRequest, err.Error())
+		WriteErrResponse(context, http.StatusBadRequest, err.Error(), common.ContentTypeText)
 		return
 	}
 	s, err := dao.NewKVService()
 	if err != nil {
-		WriteErrResponse(context, http.StatusInternalServerError, err.Error())
+		WriteErrResponse(context, http.StatusInternalServerError, err.Error(), common.ContentTypeText)
 		return
 	}
 	domain := ReadDomain(context)
 	if domain == nil {
-		WriteErrResponse(context, http.StatusInternalServerError, MsgDomainMustNotBeEmpty)
+		WriteErrResponse(context, http.StatusInternalServerError, MsgDomainMustNotBeEmpty, common.ContentTypeText)
 		return
 	}
 	var kvs []*model.KVResponse
 	for _, labels := range labelCombinations {
+		openlogging.Debug("find by combination", openlogging.WithTags(openlogging.Tags{
+			"q": labels,
+		}))
 		result, err := s.FindKV(context.Ctx, domain.(string), dao.WithLabels(labels))
 		if err != nil {
 			if err == dao.ErrKeyNotExists {
 				continue
+			} else {
+				openlogging.Error("can not find by labels", openlogging.WithTags(openlogging.Tags{
+					"err": err.Error(),
+				}))
+				WriteErrResponse(context, http.StatusInternalServerError, err.Error(), common.ContentTypeText)
+				return
 			}
-			WriteErrResponse(context, http.StatusInternalServerError, err.Error())
-			return
 		}
 		kvs = append(kvs, result...)
 
 	}
 	if len(kvs) == 0 {
-		WriteErrResponse(context, http.StatusNotFound, "no kv found")
+		WriteErrResponse(context, http.StatusNotFound, "no kv found", common.ContentTypeText)
 		return
 	}
 
@@ -159,17 +167,17 @@ func (r *KVResource) SearchByLabels(context *restful.Context) {
 func (r *KVResource) Delete(context *restful.Context) {
 	domain := ReadDomain(context)
 	if domain == nil {
-		WriteErrResponse(context, http.StatusInternalServerError, MsgDomainMustNotBeEmpty)
+		WriteErrResponse(context, http.StatusInternalServerError, MsgDomainMustNotBeEmpty, common.ContentTypeText)
 	}
 	kvID := context.ReadPathParameter("kvID")
 	if kvID == "" {
-		WriteErrResponse(context, http.StatusBadRequest, ErrKvIDMustNotEmpty)
+		WriteErrResponse(context, http.StatusBadRequest, ErrKvIDMustNotEmpty, common.ContentTypeText)
 		return
 	}
 	labelID := context.ReadQueryParameter("labelID")
 	s, err := dao.NewKVService()
 	if err != nil {
-		WriteErrResponse(context, http.StatusInternalServerError, err.Error())
+		WriteErrResponse(context, http.StatusInternalServerError, err.Error(), common.ContentTypeText)
 		return
 	}
 	err = s.Delete(kvID, labelID, domain.(string))
@@ -179,7 +187,7 @@ func (r *KVResource) Delete(context *restful.Context) {
 			"labelID": labelID,
 			"error":   err.Error(),
 		}))
-		WriteErrResponse(context, http.StatusInternalServerError, err.Error())
+		WriteErrResponse(context, http.StatusInternalServerError, err.Error(), common.ContentTypeText)
 		return
 	}
 	context.WriteHeader(http.StatusNoContent)
@@ -209,7 +217,7 @@ func (r *KVResource) URLPatterns() []restful.Route {
 			},
 			Consumes: []string{goRestful.MIME_JSON},
 			Produces: []string{goRestful.MIME_JSON},
-			Read:     &KVBody{},
+			Read:     KVBody{},
 		}, {
 			Method:           http.MethodGet,
 			Path:             "/v1/kv/{key}",
@@ -222,7 +230,7 @@ func (r *KVResource) URLPatterns() []restful.Route {
 				{
 					Code:    http.StatusOK,
 					Message: "get key value success",
-					Model:   []*model.KVResponse{},
+					Model:   []model.KVResponse{},
 				},
 			},
 			Consumes: []string{goRestful.MIME_JSON},
@@ -240,7 +248,7 @@ func (r *KVResource) URLPatterns() []restful.Route {
 				{
 					Code:    http.StatusOK,
 					Message: "get key value success",
-					Model:   []*model.KVResponse{},
+					Model:   []model.KVResponse{},
 				},
 			},
 			Consumes: []string{goRestful.MIME_JSON},

@@ -19,13 +19,13 @@ package v1
 
 import (
 	"encoding/json"
+	"errors"
 	"fmt"
 	"github.com/apache/servicecomb-kie/pkg/common"
 	"github.com/apache/servicecomb-kie/pkg/model"
 	goRestful "github.com/emicklei/go-restful"
 	"github.com/go-chassis/go-chassis/server/restful"
 	"github.com/go-mesh/openlogging"
-	"github.com/pkg/errors"
 	"strconv"
 	"strings"
 )
@@ -80,14 +80,17 @@ func ReadLabelCombinations(req *goRestful.Request) ([]map[string]string, error) 
 	if len(labelCombinations) == 0 {
 		return []map[string]string{{"default": "default"}}, nil
 	}
+
 	return labelCombinations, nil
 }
 
 //WriteErrResponse write error message to client
-func WriteErrResponse(context *restful.Context, status int, msg string) {
+func WriteErrResponse(context *restful.Context, status int, msg, contentType string) {
 	context.WriteHeader(status)
 	b, _ := json.MarshalIndent(&ErrorMsg{Msg: msg}, "", " ")
+	context.ReadRestfulResponse().AddHeader(goRestful.HEADER_ContentType, contentType)
 	context.Write(b)
+
 }
 
 //ErrLog record error
