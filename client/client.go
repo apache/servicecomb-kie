@@ -148,7 +148,7 @@ func (c *Client) Get(ctx context.Context, key string, opts ...GetOption) ([]*mod
 
 //Delete remove kv
 func (c *Client) Delete(ctx context.Context, kvID, labelID string) error {
-	url := fmt.Sprintf("%s/%s/%s", c.opts.Endpoint, APIPathKV, kvID)
+	url := fmt.Sprintf("%s/%s/?kvID=%s", c.opts.Endpoint, APIPathKV, kvID)
 	if labelID != "" {
 		url = fmt.Sprintf("%s?labelID=%s", url, labelID)
 	}
