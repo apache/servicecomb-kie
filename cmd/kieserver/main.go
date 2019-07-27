@@ -18,6 +18,7 @@
 package main
 
 import (
+	"github.com/apache/servicecomb-kie/server/db"
 	"os"
 
 	"github.com/apache/servicecomb-kie/server/config"
@@ -72,15 +73,15 @@ func main() {
 	}
 	chassis.RegisterSchema("rest", &v1.KVResource{})
 	if err := chassis.Init(); err != nil {
-		openlogging.Error(err.Error())
-		os.Exit(1)
+		openlogging.Fatal(err.Error())
 	}
 	if err := config.Init(Configs.ConfigFile); err != nil {
-		openlogging.Error(err.Error())
-		os.Exit(1)
+		openlogging.Fatal(err.Error())
+	}
+	if err := db.Init(); err != nil {
+		openlogging.Fatal(err.Error())
 	}
 	if err := chassis.Run(); err != nil {
-		openlogging.Error("service exit: " + err.Error())
-		os.Exit(1)
+		openlogging.Fatal("service exit: " + err.Error())
 	}
 }

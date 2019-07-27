@@ -15,7 +15,9 @@
  * limitations under the License.
  */
 
-package dao
+package kvsvc
+
+import "time"
 
 //FindOptions is option to find key value
 type FindOptions struct {
@@ -25,6 +27,7 @@ type FindOptions struct {
 	Labels      map[string]string
 	LabelID     string
 	ClearLabel  bool
+	Timeout     time.Duration
 }
 
 //FindOption is functional option to find key value
@@ -41,6 +44,13 @@ func WithExactLabels() FindOption {
 func WithKey(key string) FindOption {
 	return func(o *FindOptions) {
 		o.Key = key
+	}
+}
+
+//WithTimeout will return err if execution take too long
+func WithTimeout(d time.Duration) FindOption {
+	return func(o *FindOptions) {
+		o.Timeout = d
 	}
 }
 

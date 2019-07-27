@@ -15,7 +15,7 @@
  * limitations under the License.
  */
 
-package dao_test
+package kvsvc_test
 
 import (
 	"testing"
@@ -30,7 +30,7 @@ import (
 func TestModel(t *testing.T) {
 	RegisterFailHandler(Fail)
 	junitReporter := reporters.NewJUnitReporter("junit.xml")
-	RunSpecsWithDefaultAndCustomReporters(t, "Dao Suite", []Reporter{junitReporter})
+	RunSpecsWithDefaultAndCustomReporters(t, "kv Suite", []Reporter{junitReporter})
 }
 
 var _ = BeforeSuite(func() {

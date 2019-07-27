@@ -49,8 +49,8 @@ var _ = Describe("v1 kv resource", func() {
 			rctx.ReadRestfulRequest().SetAttribute("domain", "default")
 			kvr := &v1.KVResource{}
 			kvr.Put(rctx)
-			It("should be 200 ", func() {
-				Expect(rctx.Resp.StatusCode()).Should(Equal(http.StatusOK))
+			It("should be 500 ", func() {
+				Expect(rctx.Resp.StatusCode()).Should(Equal(http.StatusInternalServerError))
 			})
 
 		})

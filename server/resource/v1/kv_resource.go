@@ -22,7 +22,8 @@ import (
 	"encoding/json"
 	"github.com/apache/servicecomb-kie/pkg/common"
 	"github.com/apache/servicecomb-kie/pkg/model"
-	"github.com/apache/servicecomb-kie/server/dao"
+	"github.com/apache/servicecomb-kie/server/db"
+	"github.com/apache/servicecomb-kie/server/service/kv"
 	goRestful "github.com/emicklei/go-restful"
 	"github.com/go-chassis/go-chassis/server/restful"
 	"github.com/go-mesh/openlogging"
@@ -48,12 +49,7 @@ func (r *KVResource) Put(context *restful.Context) {
 		WriteErrResponse(context, http.StatusInternalServerError, MsgDomainMustNotBeEmpty, common.ContentTypeText)
 	}
 	kv.Key = key
-	s, err := dao.NewKVService()
-	if err != nil {
-		WriteErrResponse(context, http.StatusInternalServerError, err.Error(), common.ContentTypeText)
-		return
-	}
-	kv, err = s.CreateOrUpdate(context.Ctx, domain.(string), kv)
+	kv, err = kvsvc.CreateOrUpdate(context.Ctx, domain.(string), kv)
 	if err != nil {
 		ErrLog("put", kv, err)
 		WriteErrResponse(context, http.StatusInternalServerError, err.Error(), common.ContentTypeText)
@@ -82,11 +78,6 @@ func (r *KVResource) GetByKey(context *restful.Context) {
 		}
 		labels[k] = v[0]
 	}
-	s, err := dao.NewKVService()
-	if err != nil {
-		WriteErrResponse(context, http.StatusInternalServerError, err.Error(), common.ContentTypeText)
-		return
-	}
 	domain := ReadDomain(context)
 	if domain == nil {
 		WriteErrResponse(context, http.StatusInternalServerError, MsgDomainMustNotBeEmpty, common.ContentTypeText)
@@ -97,9 +88,10 @@ func (r *KVResource) GetByKey(context *restful.Context) {
 		WriteErrResponse(context, http.StatusBadRequest, MsgIllegalDepth, common.ContentTypeText)
 		return
 	}
-	kvs, err := s.FindKV(context.Ctx, domain.(string), dao.WithKey(key), dao.WithLabels(labels), dao.WithDepth(d))
+	kvs, err := kvsvc.FindKV(context.Ctx, domain.(string),
+		kvsvc.WithKey(key), kvsvc.WithLabels(labels), kvsvc.WithDepth(d))
 	if err != nil {
-		if err == dao.ErrKeyNotExists {
+		if err == db.ErrKeyNotExists {
 			WriteErrResponse(context, http.StatusNotFound, err.Error(), common.ContentTypeText)
 			return
 		}
@@ -121,11 +113,6 @@ func (r *KVResource) SearchByLabels(context *restful.Context) {
 		WriteErrResponse(context, http.StatusBadRequest, err.Error(), common.ContentTypeText)
 		return
 	}
-	s, err := dao.NewKVService()
-	if err != nil {
-		WriteErrResponse(context, http.StatusInternalServerError, err.Error(), common.ContentTypeText)
-		return
-	}
 	domain := ReadDomain(context)
 	if domain == nil {
 		WriteErrResponse(context, http.StatusInternalServerError, MsgDomainMustNotBeEmpty, common.ContentTypeText)
@@ -136,9 +123,9 @@ func (r *KVResource) SearchByLabels(context *restful.Context) {
 		openlogging.Debug("find by combination", openlogging.WithTags(openlogging.Tags{
 			"q": labels,
 		}))
-		result, err := s.FindKV(context.Ctx, domain.(string), dao.WithLabels(labels))
+		result, err := kvsvc.FindKV(context.Ctx, domain.(string), kvsvc.WithLabels(labels))
 		if err != nil {
-			if err == dao.ErrKeyNotExists {
+			if err == db.ErrKeyNotExists {
 				continue
 			} else {
 				openlogging.Error("can not find by labels", openlogging.WithTags(openlogging.Tags{
@@ -175,12 +162,7 @@ func (r *KVResource) Delete(context *restful.Context) {
 		return
 	}
 	labelID := context.ReadQueryParameter("labelID")
-	s, err := dao.NewKVService()
-	if err != nil {
-		WriteErrResponse(context, http.StatusInternalServerError, err.Error(), common.ContentTypeText)
-		return
-	}
-	err = s.Delete(kvID, labelID, domain.(string))
+	err := kvsvc.Delete(kvID, labelID, domain.(string))
 	if err != nil {
 		openlogging.Error("delete failed ,", openlogging.WithTags(openlogging.Tags{
 			"kvID":    kvID,
