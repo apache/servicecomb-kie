@@ -67,7 +67,7 @@ func createKey(ctx context.Context, kv *model.KVDoc) (*model.KVDoc, error) {
 	revision, err := history.GetAndAddHistory(ctx, kv.LabelID, kv.Labels, kvs, kv.Domain)
 	if err != nil {
 		openlogging.Warn(
-			fmt.Sprintf("can not updateKey version for [%s] [%s] in [%s]",
+			fmt.Sprintf("can not updateKeyValue version for [%s] [%s] in [%s]",
 				kv.Key, kv.Labels, kv.Domain))
 	}
 	openlogging.Debug(fmt.Sprintf("create %s with labels %s value [%s]", kv.Key, kv.Labels, kv.Value))
@@ -76,10 +76,10 @@ func createKey(ctx context.Context, kv *model.KVDoc) (*model.KVDoc, error) {
 
 }
 
-//updateKey get latest revision from history
+//updateKeyValue get latest revision from history
 //and increase revision of label
-//and updateKey and them add new revision
-func updateKey(ctx context.Context, kv *model.KVDoc) (int, error) {
+//and updateKeyValue and them add new revision
+func updateKeyValue(ctx context.Context, kv *model.KVDoc) (int, error) {
 	c, err := db.GetClient()
 	if err != nil {
 		return 0, err
@@ -95,7 +95,7 @@ func updateKey(ctx context.Context, kv *model.KVDoc) (int, error) {
 		return 0, err
 	}
 	openlogging.Debug(
-		fmt.Sprintf("updateKey %s with labels %s value [%s] %d ",
+		fmt.Sprintf("updateKeyValue %s with labels %s value [%s] %d ",
 			kv.Key, kv.Labels, kv.Value, ur.ModifiedCount))
 	kvs, err := findKeys(ctx, bson.M{"label_id": kv.LabelID}, true)
 	//Key may be empty When delete

@@ -88,7 +88,7 @@ func CreateOrUpdate(ctx context.Context, domain string, kv *model.KVDoc) (*model
 		return nil, err
 	}
 	kv.ID = keyID
-	revision, err := updateKey(ctx, kv)
+	revision, err := updateKeyValue(ctx, kv)
 	if err != nil {
 		return nil, err
 	}

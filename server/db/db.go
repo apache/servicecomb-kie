@@ -29,6 +29,7 @@ import (
 	"go.mongodb.org/mongo-driver/mongo"
 	"go.mongodb.org/mongo-driver/mongo/options"
 	"io/ioutil"
+	"sync"
 	"time"
 )
 
@@ -57,6 +58,7 @@ var (
 )
 
 var client *mongo.Client
+var once sync.Once
 
 //Timeout db operation time out
 var Timeout time.Duration
@@ -79,17 +81,19 @@ func Init() error {
 //GetClient create a new mongo db client
 //if client is created, just return.
 func GetClient() (*mongo.Client, error) {
-	if client == nil {
-		var err error
+	var err error
+	once.Do(func() {
 		clientOps := []*options.ClientOptions{options.Client().ApplyURI(config.GetDB().URI)}
 		if config.GetDB().SSLEnabled {
 			if config.GetDB().RootCA == "" {
-				return nil, ErrRootCAMissing
+				err = ErrRootCAMissing
+				return
 			}
 			pool := x509.NewCertPool()
 			caCert, err := ioutil.ReadFile(config.GetDB().RootCA)
 			if err != nil {
-				return nil, fmt.Errorf("read ca cert file %s failed", caCert)
+				err = fmt.Errorf("read ca cert file %s failed", caCert)
+				return
 			}
 			pool.AppendCertsFromPEM(caCert)
 			tc := &tls.Config{
@@ -101,15 +105,16 @@ func GetClient() (*mongo.Client, error) {
 		}
 		client, err = mongo.NewClient(clientOps...)
 		if err != nil {
-			return nil, err
+			return
 		}
 		openlogging.Info("DB connecting")
 		ctx, _ := context.WithTimeout(context.Background(), 10*time.Second)
 		err = client.Connect(ctx)
 		if err != nil {
-			return nil, err
+			return
 		}
 		openlogging.Info("DB connected")
-	}
-	return client, nil
+	})
+
+	return client, err
 }
