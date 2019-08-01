@@ -17,6 +17,70 @@
 
 package v1
 
+import (
+	"net/http"
+
+	"github.com/apache/servicecomb-kie/pkg/common"
+	"github.com/apache/servicecomb-kie/pkg/model"
+	"github.com/apache/servicecomb-kie/server/db"
+	rvsvc "github.com/apache/servicecomb-kie/server/service/history"
+	goRestful "github.com/emicklei/go-restful"
+	"github.com/go-chassis/go-chassis/server/restful"
+	"github.com/go-mesh/openlogging"
+)
+
 //HistoryResource TODO
 type HistoryResource struct {
+}
+
+//GetRevisionsByLabelID search key only by label
+func (r *HistoryResource) GetRevisionsByLabelID(context *restful.Context) {
+	var err error
+	labelID := context.ReadPathParameter("label_id")
+	if labelID == "" {
+		openlogging.Debug("label id is null")
+		WriteErrResponse(context, http.StatusForbidden, "label_id must not be empty", common.ContentTypeText)
+		return
+	}
+	revisions, err := rvsvc.GetHistoryByLabelID(context.Ctx, labelID)
+	if err != nil {
+		if err == db.ErrRevisionNotExist {
+			WriteErrResponse(context, http.StatusNotFound, err.Error(), common.ContentTypeText)
+			return
+		}
+		WriteErrResponse(context, http.StatusInternalServerError, err.Error(), common.ContentTypeText)
+		return
+	}
+	if len(revisions) == 0 {
+		WriteErrResponse(context, http.StatusNotFound, "no revisions found", common.ContentTypeText)
+		return
+	}
+	err = context.WriteHeaderAndJSON(http.StatusOK, revisions, goRestful.MIME_JSON)
+	if err != nil {
+		openlogging.Error(err.Error())
+	}
+}
+
+//URLPatterns defined config operations
+func (r *HistoryResource) URLPatterns() []restful.Route {
+	return []restful.Route{
+		{
+			Method:           http.MethodGet,
+			Path:             "/v1/revision/{label_id}",
+			ResourceFuncName: "GetRevisionsByLabelID",
+			FuncDesc:         "get all revisions by label id",
+			Parameters: []*restful.Parameters{
+				DocPathLabelID,
+			},
+			Returns: []*restful.Returns{
+				{
+					Code:    http.StatusOK,
+					Message: "true",
+					Model:   []*model.LabelHistoryResponse{},
+				},
+			},
+			Consumes: []string{goRestful.MIME_JSON},
+			Produces: []string{goRestful.MIME_JSON},
+		},
+	}
 }

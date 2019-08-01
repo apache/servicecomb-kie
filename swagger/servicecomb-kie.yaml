@@ -9,88 +9,91 @@ paths:
       summary: search key values by labels combination
       operationId: SearchByLabels
       parameters:
-      - name: q
-        in: query
-        description: 'the combination format is {label_key}:{label_value}+{label_key}:{label_value}
-          for example: /v1/kv?q=app:mall&q=app:mall+service:cart that will query key
-          values from 2 kinds of labels'
-        type: string
+        - name: q
+          in: query
+          description:
+            "the combination format is {label_key}:{label_value}+{label_key}:{label_value}
+            for example: /v1/kv?q=app:mall&q=app:mall+service:cart that will query key
+            values from 2 kinds of labels"
+          type: string
       consumes:
-      - application/json
+        - application/json
       produces:
-      - application/json
+        - application/json
       responses:
         "200":
           description: get key value success
           schema:
             type: array
             items:
-              $ref: '#/definitions/KVResponse'
+              $ref: "#/definitions/KVResponse"
   /v1/kv/{key}:
     get:
       summary: get key values by key and labels
       operationId: GetByKey
       parameters:
-      - name: key
-        in: path
-        required: true
-        type: string
-      - name: X-Depth
-        in: header
-        description: integer, default is 1, if you set match policy, you can set,depth
-          to decide label number
-        type: string
-      - name: body
-        in: body
-        required: true
-        schema:
-          $ref: '#/definitions/*v1.KVBody'
+        - name: key
+          in: path
+          required: true
+          type: string
+        - name: X-Depth
+          in: header
+          description:
+            integer, default is 1, if you set match policy, you can set,depth
+            to decide label number
+          type: string
+        - name: body
+          in: body
+          required: true
+          schema:
+            $ref: "#/definitions/*v1.KVBody"
       consumes:
-      - application/json
+        - application/json
       produces:
-      - application/json
+        - application/json
       responses:
         "200":
           description: get key value success
           schema:
             type: array
             items:
-              $ref: '#/definitions/KVResponse'
+              $ref: "#/definitions/KVResponse"
     put:
       summary: create or update key value
       operationId: Put
       parameters:
-      - name: key
-        in: path
-        required: true
-        type: string
-      - name: X-Realm
-        in: header
-        description: set kv to heterogeneous config server, not implement yet
-        type: string
-      - name: body
-        in: body
-        required: true
-        schema:
-          $ref: '#/definitions/v1.KVBody'
+        - name: key
+          in: path
+          required: true
+          type: string
+        - name: X-Realm
+          in: header
+          description: set kv to heterogeneous config server, not implement yet
+          type: string
+        - name: body
+          in: body
+          required: true
+          schema:
+            $ref: "#/definitions/v1.KVBody"
       consumes:
-      - application/json
+        - application/json
       produces:
-      - application/json
+        - application/json
       responses:
         "200":
           description: "true"
   /v1/kv/{kvID}:
     delete:
-      summary: Delete key by kvID and labelID,If the labelID is nil, query the collection
+      summary:
+        Delete key by kvID and labelID,If the labelID is nil, query the collection
         kv to get it.It means if only get kvID, it can also delete normally.But if
         you want better performance, you need to pass the labelID
       operationId: Delete
       parameters:
-      - name: key
-        in: path
-        required: true
-        type: string
+        - name: key
+          in: path
+          required: true
+          type: string
       responses:
         "204":
           description: Delete success
@@ -132,9 +135,9 @@ definitions:
       data:
         type: array
         items:
-          $ref: '#/definitions/KVDoc'
+          $ref: "#/definitions/KVDoc"
       label:
-        $ref: '#/definitions/LabelDocResponse'
+        $ref: "#/definitions/LabelDocResponse"
   LabelDocResponse:
     type: object
     properties:

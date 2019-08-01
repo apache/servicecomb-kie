@@ -20,14 +20,15 @@ package v1
 
 import (
 	"encoding/json"
+	"net/http"
+
 	"github.com/apache/servicecomb-kie/pkg/common"
 	"github.com/apache/servicecomb-kie/pkg/model"
 	"github.com/apache/servicecomb-kie/server/db"
-	"github.com/apache/servicecomb-kie/server/service/kv"
+	kvsvc "github.com/apache/servicecomb-kie/server/service/kv"
 	goRestful "github.com/emicklei/go-restful"
 	"github.com/go-chassis/go-chassis/server/restful"
 	"github.com/go-mesh/openlogging"
-	"net/http"
 )
 
 //KVResource has API about kv operations

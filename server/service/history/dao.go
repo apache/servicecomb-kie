@@ -20,11 +20,13 @@ package history
 import (
 	"context"
 	"fmt"
+
 	"github.com/apache/servicecomb-kie/pkg/model"
 	"github.com/apache/servicecomb-kie/server/db"
 	"github.com/go-mesh/openlogging"
 	"go.mongodb.org/mongo-driver/bson"
 	"go.mongodb.org/mongo-driver/bson/primitive"
+	"go.mongodb.org/mongo-driver/mongo/options"
 )
 
 //AddHistory increment labels revision and save current label stats to history, then update current revision to db
@@ -62,4 +64,34 @@ func AddHistory(ctx context.Context,
 	}
 	openlogging.Debug(fmt.Sprintf("update revision to %d", labelRevision.Revision))
 	return labelRevision.Revision, nil
+}
+
+func getHistoryByLabelID(ctx context.Context, filter bson.M) ([]*model.LabelRevisionDoc, error) {
+	c, err := db.GetClient()
+	if err != nil {
+		return nil, err
+	}
+	collection := c.Database(db.Name).Collection(db.CollectionLabelRevision)
+	cur, err := collection.Find(ctx, filter, options.Find().SetSort(map[string]interface{}{
+		"revisions": -1,
+	}))
+	if err != nil {
+		return nil, err
+	}
+	rvs := []*model.LabelRevisionDoc{}
+	var exist bool
+	for cur.Next(ctx) {
+		var elem model.LabelRevisionDoc
+		err := cur.Decode(&elem)
+		if err != nil {
+			openlogging.Error("decode to LabelRevisionDoc error: " + err.Error())
+			return nil, err
+		}
+		exist = true
+		rvs = append(rvs, &elem)
+	}
+	if !exist {
+		return nil, db.ErrRevisionNotExist
+	}
+	return rvs, nil
 }

@@ -18,17 +18,22 @@
 package v1_test
 
 import (
+	"bytes"
+	"encoding/json"
+	"io/ioutil"
+	"net/http"
+	"net/http/httptest"
+
+	"github.com/go-chassis/go-chassis/core/common"
+	"github.com/go-chassis/go-chassis/core/handler"
+	"github.com/go-chassis/go-chassis/server/restful/restfultest"
 	. "github.com/onsi/ginkgo"
 	. "github.com/onsi/gomega"
 
-	"bytes"
-	"context"
-	"encoding/json"
 	"github.com/apache/servicecomb-kie/pkg/model"
 	"github.com/apache/servicecomb-kie/server/config"
-	"github.com/apache/servicecomb-kie/server/resource/v1"
-	"github.com/go-chassis/go-chassis/server/restful/restfultest"
-	"net/http"
+	"github.com/apache/servicecomb-kie/server/db"
+	v1 "github.com/apache/servicecomb-kie/server/resource/v1"
 )
 
 var _ = Describe("v1 kv resource", func() {
@@ -37,6 +42,10 @@ var _ = Describe("v1 kv resource", func() {
 		DB: config.DB{},
 	}
 	config.Configurations.DB.URI = "mongodb://kie:123@127.0.0.1:27017"
+	err := db.Init()
+	It("should not return err", func() {
+		Expect(err).Should(BeNil())
+	})
 	Describe("put kv", func() {
 		Context("valid param", func() {
 			kv := &model.KVDoc{
@@ -45,14 +54,32 @@ var _ = Describe("v1 kv resource", func() {
 			}
 			j, _ := json.Marshal(kv)
 			r, _ := http.NewRequest("PUT", "/v1/kv/timeout", bytes.NewBuffer(j))
-			rctx := restfultest.NewRestfulContext(context.Background(), r)
-			rctx.ReadRestfulRequest().SetAttribute("domain", "default")
+			handler.RegisterHandler("fake", newFakeHandler)
+			chain, _ := handler.CreateChain(common.Provider, "testchain1", "fake")
+			r.Header.Set("Content-Type", "application/json")
 			kvr := &v1.KVResource{}
-			kvr.Put(rctx)
-			It("should be 500 ", func() {
-				Expect(rctx.Resp.StatusCode()).Should(Equal(http.StatusInternalServerError))
+			c, err := restfultest.New(kvr, chain)
+			It("should not return error", func() {
+				Expect(err).Should(BeNil())
+			})
+			resp := httptest.NewRecorder()
+			c.ServeHTTP(resp, r)
+
+			body, err := ioutil.ReadAll(resp.Body)
+			It("should not return err", func() {
+				Expect(err).Should(BeNil())
 			})
 
+			data := &model.KVDoc{}
+			err = json.Unmarshal(body, data)
+			It("should not return err", func() {
+				Expect(err).Should(BeNil())
+			})
+
+			It("should return created or updated kv", func() {
+				Expect(data.Value).Should(Equal(kv.Value))
+				Expect(data.Labels).Should(Equal(kv.Labels))
+			})
 		})
 	})
 })

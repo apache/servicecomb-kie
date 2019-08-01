@@ -28,3 +28,11 @@ type LabelDocResponse struct {
 	LabelID string            `json:"label_id,omitempty"`
 	Labels  map[string]string `json:"labels,omitempty"`
 }
+
+//LabelHistoryResponse is label history revision struct
+type LabelHistoryResponse struct {
+	LabelID  string            `json:"label_id,omitempty"  bson:"label_id,omitempty"`
+	Labels   map[string]string `json:"labels,omitempty"`
+	KVs      []*KVDoc          `json:"data,omitempty"`
+	Revision int               `json:"revision"`
+}

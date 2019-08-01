@@ -20,16 +20,19 @@ package history
 import (
 	"context"
 	"fmt"
+
 	"github.com/apache/servicecomb-kie/pkg/model"
 	"github.com/apache/servicecomb-kie/server/db"
 	"github.com/apache/servicecomb-kie/server/service/label"
 	"github.com/go-mesh/openlogging"
+	"go.mongodb.org/mongo-driver/bson"
 )
 
 //GetAndAddHistory get latest labels revision and call AddHistory
 func GetAndAddHistory(ctx context.Context,
 	labelID string, labels map[string]string, kvs []*model.KVDoc, domain string) (int, error) {
-	ctx, _ = context.WithTimeout(ctx, db.Timeout)
+	ctx, cancel := context.WithTimeout(ctx, db.Timeout)
+	defer cancel()
 	r, err := label.GetLatestLabel(ctx, labelID)
 	if err != nil {
 		if err == db.ErrRevisionNotExist {
@@ -52,4 +55,12 @@ func GetAndAddHistory(ctx context.Context,
 		return 0, err
 	}
 	return r.Revision, nil
+}
+
+//GetHistoryByLabelID get all history by label id
+func GetHistoryByLabelID(ctx context.Context, labelID string) ([]*model.LabelRevisionDoc, error) {
+	ctx, cancel := context.WithTimeout(ctx, db.Timeout)
+	defer cancel()
+	filter := bson.M{"label_id": labelID}
+	return getHistoryByLabelID(ctx, filter)
 }
