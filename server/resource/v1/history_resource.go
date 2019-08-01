@@ -76,7 +76,7 @@ func (r *HistoryResource) URLPatterns() []restful.Route {
 				{
 					Code:    http.StatusOK,
 					Message: "true",
-					Model:   []*model.LabelHistoryResponse{},
+					Model:   []model.LabelHistoryResponse{},
 				},
 			},
 			Consumes: []string{goRestful.MIME_JSON},

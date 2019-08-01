@@ -46,7 +46,7 @@ type LabelRevisionDoc struct {
 	ID       primitive.ObjectID `json:"_id,omitempty" bson:"_id,omitempty"`
 	LabelID  string             `json:"label_id,omitempty"  bson:"label_id,omitempty"`
 	Labels   map[string]string  `json:"labels,omitempty"`
-	Domain   string             `json:"domain,omitempty" bson:"-"`
+	Domain   string             `json:"-"`
 	KVs      []*KVDoc           `json:"data,omitempty"`
 	Revision int                `json:"revision"`
 }

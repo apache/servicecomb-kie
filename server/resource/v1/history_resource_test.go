@@ -23,7 +23,6 @@ import (
 
 	"github.com/go-chassis/go-chassis/core/common"
 	"github.com/go-chassis/go-chassis/core/handler"
-	"github.com/go-chassis/go-chassis/core/invocation"
 
 	"fmt"
 	"net/http"
@@ -40,22 +39,6 @@ import (
 	. "github.com/onsi/ginkgo"
 	. "github.com/onsi/gomega"
 )
-
-type FakeHandler struct{}
-
-func (fh *FakeHandler) Handle(chain *handler.Chain, i *invocation.Invocation, cb invocation.ResponseCallBack) {
-	i.SetMetadata("domain", "default")
-	r := &invocation.Response{}
-	cb(r)
-}
-
-func (fh *FakeHandler) Name() string {
-	return "fake"
-}
-
-func newFakeHandler() handler.Handler {
-	return &FakeHandler{}
-}
 
 var _ = Describe("v1 history resource", func() {
 
@@ -81,8 +64,9 @@ var _ = Describe("v1 history resource", func() {
 			path := fmt.Sprintf("/v1/revision/%s", kv.LabelID)
 			r, _ := http.NewRequest("GET", path, nil)
 			revision := &v1.HistoryResource{}
-			handler.RegisterHandler("fake", newFakeHandler)
-			chain, _ := handler.CreateChain(common.Provider, "testRevisions", "fake")
+			// handler.RegisterHandler("fake", newFakeHandler)
+			// chain, _ := handler.CreateChain(common.Provider, "testRevisions", "auth-handler")
+			chain, _ := handler.GetChain(common.Provider, "")
 			c, err := restfultest.New(revision, chain)
 			It("should not return err or nil", func() {
 				Expect(err).Should(BeNil())
