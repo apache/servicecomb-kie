@@ -64,8 +64,6 @@ var _ = Describe("v1 history resource", func() {
 			path := fmt.Sprintf("/v1/revision/%s", kv.LabelID)
 			r, _ := http.NewRequest("GET", path, nil)
 			revision := &v1.HistoryResource{}
-			// handler.RegisterHandler("fake", newFakeHandler)
-			// chain, _ := handler.CreateChain(common.Provider, "testRevisions", "auth-handler")
 			chain, _ := handler.GetChain(common.Provider, "")
 			c, err := restfultest.New(revision, chain)
 			It("should not return err or nil", func() {
