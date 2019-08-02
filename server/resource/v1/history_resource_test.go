@@ -14,36 +14,39 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-
 package v1_test
 
 import (
-	"bytes"
+	"context"
 	"encoding/json"
 	"io/ioutil"
-	"net/http"
-	"net/http/httptest"
 
 	"github.com/go-chassis/go-chassis/core/common"
 	"github.com/go-chassis/go-chassis/core/handler"
-	"github.com/go-chassis/go-chassis/server/restful/restfultest"
-	. "github.com/onsi/ginkgo"
-	. "github.com/onsi/gomega"
+
+	"fmt"
+	"net/http"
+	"net/http/httptest"
 
 	"github.com/apache/servicecomb-kie/pkg/model"
-	"github.com/apache/servicecomb-kie/server/config"
 	"github.com/apache/servicecomb-kie/server/db"
-	noop "github.com/apache/servicecomb-kie/server/handler"
+	kvsvc "github.com/apache/servicecomb-kie/server/service/kv"
+
+	"github.com/apache/servicecomb-kie/server/config"
 	v1 "github.com/apache/servicecomb-kie/server/resource/v1"
+	"github.com/go-chassis/go-chassis/server/restful/restfultest"
+
+	. "github.com/onsi/ginkgo"
+	. "github.com/onsi/gomega"
 )
 
-var _ = Describe("v1 kv resource", func() {
-	//for UT
+var _ = Describe("v1 history resource", func() {
+
 	config.Configurations = &config.Config{
 		DB: config.DB{},
 	}
 
-	Describe("put kv", func() {
+	Describe("get history revisions", func() {
 		config.Configurations.DB.URI = "mongodb://kie:123@127.0.0.1:27017"
 		err := db.Init()
 		It("should not return err", func() {
@@ -51,18 +54,19 @@ var _ = Describe("v1 kv resource", func() {
 		})
 		Context("valid param", func() {
 			kv := &model.KVDoc{
-				Key:    "timeout",
-				Value:  "1s",
-				Labels: map[string]string{"service": "tester"},
+				Key:   "test",
+				Value: "revisions",
+				Labels: map[string]string{
+					"test": "revisions",
+				},
 			}
-			j, _ := json.Marshal(kv)
-			r, _ := http.NewRequest("PUT", "/v1/kv/timeout", bytes.NewBuffer(j))
-			noopH := &noop.NoopAuthHandler{}
-			chain, _ := handler.CreateChain(common.Provider, "testchain1", noopH.Name())
-			r.Header.Set("Content-Type", "application/json")
-			kvr := &v1.KVResource{}
-			c, err := restfultest.New(kvr, chain)
-			It("should not return error", func() {
+			kv, _ = kvsvc.CreateOrUpdate(context.Background(), "default", kv)
+			path := fmt.Sprintf("/v1/revision/%s", kv.LabelID)
+			r, _ := http.NewRequest("GET", path, nil)
+			revision := &v1.HistoryResource{}
+			chain, _ := handler.GetChain(common.Provider, "")
+			c, err := restfultest.New(revision, chain)
+			It("should not return err or nil", func() {
 				Expect(err).Should(BeNil())
 			})
 			resp := httptest.NewRecorder()
@@ -72,16 +76,15 @@ var _ = Describe("v1 kv resource", func() {
 			It("should not return err", func() {
 				Expect(err).Should(BeNil())
 			})
-
-			data := &model.KVDoc{}
-			err = json.Unmarshal(body, data)
+			data := []*model.LabelRevisionDoc{}
+			err = json.Unmarshal(body, &data)
 			It("should not return err", func() {
 				Expect(err).Should(BeNil())
 			})
 
-			It("should return created or updated kv", func() {
-				Expect(data.Value).Should(Equal(kv.Value))
-				Expect(data.Labels).Should(Equal(kv.Labels))
+			It("should return all revisions with the same label ID", func() {
+				Expect(len(data) > 0).Should(Equal(true))
+				Expect((data[0]).LabelID).Should(Equal(kv.LabelID))
 			})
 		})
 	})

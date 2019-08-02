@@ -44,6 +44,11 @@ var (
 		Name:      "key",
 		ParamType: goRestful.PathParameterKind,
 	}
+	DocPathLabelID = &restful.Parameters{
+		DataType:  "string",
+		Name:      "label_id",
+		ParamType: goRestful.PathParameterKind,
+	}
 	kvIDParameters = &restful.Parameters{
 		DataType:  "string",
 		Name:      "kvID",
