@@ -61,7 +61,7 @@ var _ = Describe("v1 history resource", func() {
 				},
 			}
 			kv, _ = kvsvc.CreateOrUpdate(context.Background(), "default", kv)
-			path := fmt.Sprintf("/v1/revision/%s", kv.LabelID)
+			path := fmt.Sprintf("/v1/kie/revision/%s", kv.LabelID)
 			r, _ := http.NewRequest("GET", path, nil)
 			revision := &v1.HistoryResource{}
 			chain, _ := handler.GetChain(common.Provider, "")

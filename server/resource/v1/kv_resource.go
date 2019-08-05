@@ -181,7 +181,7 @@ func (r *KVResource) URLPatterns() []restful.Route {
 	return []restful.Route{
 		{
 			Method:           http.MethodPut,
-			Path:             "/v1/kv/{key}",
+			Path:             "/v1/kie/kv/{key}",
 			ResourceFuncName: "Put",
 			FuncDesc:         "create or update key value",
 			Parameters: []*restful.Parameters{
@@ -203,7 +203,7 @@ func (r *KVResource) URLPatterns() []restful.Route {
 			Read:     KVBody{},
 		}, {
 			Method:           http.MethodGet,
-			Path:             "/v1/kv/{key}",
+			Path:             "/v1/kie/kv/{key}",
 			ResourceFuncName: "GetByKey",
 			FuncDesc:         "get key values by key and labels",
 			Parameters: []*restful.Parameters{
@@ -221,7 +221,7 @@ func (r *KVResource) URLPatterns() []restful.Route {
 			Read:     &KVBody{},
 		}, {
 			Method:           http.MethodGet,
-			Path:             "/v1/kv",
+			Path:             "/v1/kie/kv",
 			ResourceFuncName: "SearchByLabels",
 			FuncDesc:         "search key values by labels combination",
 			Parameters: []*restful.Parameters{
@@ -238,7 +238,7 @@ func (r *KVResource) URLPatterns() []restful.Route {
 			Produces: []string{goRestful.MIME_JSON},
 		}, {
 			Method:           http.MethodDelete,
-			Path:             "/v1/kv/",
+			Path:             "/v1/kie/kv/",
 			ResourceFuncName: "Delete",
 			FuncDesc: "Delete key by kvID and labelID,If the labelID is nil, query the collection kv to get it." +
 				"It means if only get kvID, it can also delete normally.But if you want better performance, you need to pass the labelID",

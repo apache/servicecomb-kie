@@ -4,7 +4,7 @@ info:
   version: ""
 basePath: /
 paths:
-  /v1/kv:
+  /v1/kie/kv:
     get:
       summary: search key values by labels combination
       operationId: SearchByLabels
@@ -13,7 +13,7 @@ paths:
           in: query
           description:
             "the combination format is {label_key}:{label_value}+{label_key}:{label_value}
-            for example: /v1/kv?q=app:mall&q=app:mall+service:cart that will query key
+            for example: /v1/kie/kv?q=app:mall&q=app:mall+service:cart that will query key
             values from 2 kinds of labels"
           type: string
       consumes:
@@ -27,7 +27,7 @@ paths:
             type: array
             items:
               $ref: "#/definitions/KVResponse"
-  /v1/kv/{key}:
+  /v1/kie/kv/{key}:
     get:
       summary: get key values by key and labels
       operationId: GetByKey
@@ -82,7 +82,7 @@ paths:
       responses:
         "200":
           description: "true"
-  /v1/kv/{kvID}:
+  /v1/kie/kv/{kvID}:
     delete:
       summary:
         Delete key by kvID and labelID,If the labelID is nil, query the collection

@@ -65,7 +65,7 @@ var _ = Describe("Client", func() {
 		})
 	})
 
-	Describe("put /v1/kv/{key}", func() {
+	Describe("put /v1/kie/kv/{key}", func() {
 		Context("create or update key value", func() {
 			c1, _ = New(Config{
 				Endpoint: "http://127.0.0.1:30110",
@@ -87,7 +87,7 @@ var _ = Describe("Client", func() {
 		})
 	})
 
-	Describe("DELETE /v1/kv/", func() {
+	Describe("DELETE /v1/kie/kv/", func() {
 		Context("by kvID", func() {
 			client2, err := New(Config{
 				Endpoint: "http://127.0.0.1:30110",

@@ -35,7 +35,7 @@ import (
 
 //const
 const (
-	APIPathKV = "v1/kv"
+	APIPathKV = "v1/kie/kv"
 )
 
 //client errors

@@ -25,6 +25,7 @@ type LabelDoc struct {
 	Labels   map[string]string  `json:"labels,omitempty"`
 	Revision int                `json:"revision,omitempty"`
 	Domain   string             `json:"domain,omitempty"` //tenant info
+	Project  string             `json:"project,omitempty"`
 }
 
 //KVDoc is database struct to store kv
