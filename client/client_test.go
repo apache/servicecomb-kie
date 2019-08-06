@@ -65,15 +65,16 @@ var _ = Describe("Client", func() {
 		})
 	})
 
-	Describe("put /v1/kie/kv/{key}", func() {
+	Describe("put /v1/test/kie/kv/{key}", func() {
 		Context("create or update key value", func() {
 			c1, _ = New(Config{
 				Endpoint: "http://127.0.0.1:30110",
 			})
 			kv := model.KVDoc{
-				Key:    "app.properties",
-				Labels: map[string]string{"service": "tester"},
-				Value:  "1s",
+				Key:     "app.properties",
+				Labels:  map[string]string{"service": "tester"},
+				Value:   "1s",
+				Project: "test",
 			}
 			res, err := c1.Put(context.TODO(), kv)
 			It("should not be error", func() {
@@ -83,11 +84,12 @@ var _ = Describe("Client", func() {
 				Expect(res.Key).Should(Equal(kv.Key))
 				Expect(res.Labels).Should(Equal(kv.Labels))
 				Expect(res.Value).Should(Equal(kv.Value))
+				Expect(res.Project).Should(Equal(kv.Project))
 			})
 		})
 	})
 
-	Describe("DELETE /v1/kie/kv/", func() {
+	Describe("DELETE /v1/test/kie/kv/", func() {
 		Context("by kvID", func() {
 			client2, err := New(Config{
 				Endpoint: "http://127.0.0.1:30110",
@@ -97,6 +99,7 @@ var _ = Describe("Client", func() {
 			kvBody.Key = "time"
 			kvBody.Value = "100s"
 			kvBody.ValueType = "string"
+			kvBody.Project = "test"
 			kvBody.Labels = make(map[string]string)
 			kvBody.Labels["evn"] = "test"
 			kv, err := client2.Put(context.TODO(), kvBody)

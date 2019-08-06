@@ -24,13 +24,14 @@ import (
 	"crypto/x509"
 	"errors"
 	"fmt"
+	"io/ioutil"
+	"sync"
+	"time"
+
 	"github.com/apache/servicecomb-kie/server/config"
 	"github.com/go-mesh/openlogging"
 	"go.mongodb.org/mongo-driver/mongo"
 	"go.mongodb.org/mongo-driver/mongo/options"
-	"io/ioutil"
-	"sync"
-	"time"
 )
 
 //const for db name and collection name
@@ -47,6 +48,7 @@ const (
 //db errors
 var (
 	ErrMissingDomain          = errors.New("domain info missing, illegal access")
+	ErrMissingProject         = errors.New("project info missing, illegal access")
 	ErrKeyNotExists           = errors.New("key with labels does not exits")
 	ErrLabelNotExists         = errors.New("labels does not exits")
 	ErrTooMany                = errors.New("key with labels should be only one")

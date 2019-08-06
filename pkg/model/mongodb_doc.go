@@ -40,6 +40,7 @@ type KVDoc struct {
 	Labels   map[string]string `json:"labels,omitempty"` //redundant
 	Domain   string            `json:"domain,omitempty"` //redundant
 	Revision int               `json:"revision,omitempty" bson:"-"`
+	Project  string            `json:"project,omitempty"`
 }
 
 //LabelRevisionDoc is database struct to store label history stats
