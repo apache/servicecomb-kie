@@ -36,12 +36,17 @@ var (
 		Name:      common.QueryParamQ,
 		ParamType: goRestful.QueryParameterKind,
 		Desc: "the combination format is {label_key}:{label_value}+{label_key}:{label_value} " +
-			"for example: /v1/kie/kv?q=app:mall&q=app:mall+service:cart " +
+			"for example: /v1/test/kie/kv?q=app:mall&q=app:mall+service:cart " +
 			"that will query key values from 2 kinds of labels",
 	}
 	DocPathKey = &restful.Parameters{
 		DataType:  "string",
 		Name:      "key",
+		ParamType: goRestful.PathParameterKind,
+	}
+	DocPathProject = &restful.Parameters{
+		DataType:  "string",
+		Name:      "project",
 		ParamType: goRestful.PathParameterKind,
 	}
 	DocPathLabelID = &restful.Parameters{

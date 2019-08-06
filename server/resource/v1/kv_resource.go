@@ -39,6 +39,7 @@ type KVResource struct {
 func (r *KVResource) Put(context *restful.Context) {
 	var err error
 	key := context.ReadPathParameter("key")
+	project := context.ReadPathParameter("project")
 	kv := new(model.KVDoc)
 	decoder := json.NewDecoder(context.ReadRequest().Body)
 	if err = decoder.Decode(kv); err != nil {
@@ -50,7 +51,7 @@ func (r *KVResource) Put(context *restful.Context) {
 		WriteErrResponse(context, http.StatusInternalServerError, MsgDomainMustNotBeEmpty, common.ContentTypeText)
 	}
 	kv.Key = key
-	kv, err = kvsvc.CreateOrUpdate(context.Ctx, domain.(string), kv)
+	kv, err = kvsvc.CreateOrUpdate(context.Ctx, domain.(string), kv, project)
 	if err != nil {
 		ErrLog("put", kv, err)
 		WriteErrResponse(context, http.StatusInternalServerError, err.Error(), common.ContentTypeText)
@@ -68,6 +69,11 @@ func (r *KVResource) GetByKey(context *restful.Context) {
 	key := context.ReadPathParameter("key")
 	if key == "" {
 		WriteErrResponse(context, http.StatusForbidden, "key must not be empty", common.ContentTypeText)
+		return
+	}
+	project := context.ReadPathParameter("project")
+	if project == "" {
+		WriteErrResponse(context, http.StatusForbidden, "project must not be empty", common.ContentTypeText)
 		return
 	}
 	values := context.ReadRequest().URL.Query()
@@ -89,7 +95,7 @@ func (r *KVResource) GetByKey(context *restful.Context) {
 		WriteErrResponse(context, http.StatusBadRequest, MsgIllegalDepth, common.ContentTypeText)
 		return
 	}
-	kvs, err := kvsvc.FindKV(context.Ctx, domain.(string),
+	kvs, err := kvsvc.FindKV(context.Ctx, domain.(string), project,
 		kvsvc.WithKey(key), kvsvc.WithLabels(labels), kvsvc.WithDepth(d))
 	if err != nil {
 		if err == db.ErrKeyNotExists {
@@ -114,6 +120,11 @@ func (r *KVResource) SearchByLabels(context *restful.Context) {
 		WriteErrResponse(context, http.StatusBadRequest, err.Error(), common.ContentTypeText)
 		return
 	}
+	project := context.ReadPathParameter("project")
+	if project == "" {
+		WriteErrResponse(context, http.StatusForbidden, "project must not be empty", common.ContentTypeText)
+		return
+	}
 	domain := ReadDomain(context)
 	if domain == nil {
 		WriteErrResponse(context, http.StatusInternalServerError, MsgDomainMustNotBeEmpty, common.ContentTypeText)
@@ -124,7 +135,7 @@ func (r *KVResource) SearchByLabels(context *restful.Context) {
 		openlogging.Debug("find by combination", openlogging.WithTags(openlogging.Tags{
 			"q": labels,
 		}))
-		result, err := kvsvc.FindKV(context.Ctx, domain.(string), kvsvc.WithLabels(labels))
+		result, err := kvsvc.FindKV(context.Ctx, domain.(string), project, kvsvc.WithLabels(labels))
 		if err != nil {
 			if err == db.ErrKeyNotExists {
 				continue
@@ -153,6 +164,11 @@ func (r *KVResource) SearchByLabels(context *restful.Context) {
 
 //Delete deletes key by ids
 func (r *KVResource) Delete(context *restful.Context) {
+	project := context.ReadPathParameter("project")
+	if project == "" {
+		WriteErrResponse(context, http.StatusForbidden, "project must not be empty", common.ContentTypeText)
+		return
+	}
 	domain := ReadDomain(context)
 	if domain == nil {
 		WriteErrResponse(context, http.StatusInternalServerError, MsgDomainMustNotBeEmpty, common.ContentTypeText)
@@ -163,7 +179,7 @@ func (r *KVResource) Delete(context *restful.Context) {
 		return
 	}
 	labelID := context.ReadQueryParameter("labelID")
-	err := kvsvc.Delete(kvID, labelID, domain.(string))
+	err := kvsvc.Delete(kvID, labelID, domain.(string), project)
 	if err != nil {
 		openlogging.Error("delete failed ,", openlogging.WithTags(openlogging.Tags{
 			"kvID":    kvID,
@@ -181,11 +197,11 @@ func (r *KVResource) URLPatterns() []restful.Route {
 	return []restful.Route{
 		{
 			Method:           http.MethodPut,
-			Path:             "/v1/kie/kv/{key}",
+			Path:             "/v1/{project}/kie/kv/{key}",
 			ResourceFuncName: "Put",
 			FuncDesc:         "create or update key value",
 			Parameters: []*restful.Parameters{
-				DocPathKey, {
+				DocPathProject, DocPathKey, {
 					DataType:  "string",
 					Name:      "X-Realm",
 					ParamType: goRestful.HeaderParameterKind,
@@ -203,11 +219,11 @@ func (r *KVResource) URLPatterns() []restful.Route {
 			Read:     KVBody{},
 		}, {
 			Method:           http.MethodGet,
-			Path:             "/v1/kie/kv/{key}",
+			Path:             "/v1/{project}/kie/kv/{key}",
 			ResourceFuncName: "GetByKey",
 			FuncDesc:         "get key values by key and labels",
 			Parameters: []*restful.Parameters{
-				DocPathKey, DocHeaderDepth,
+				DocPathProject, DocPathKey, DocHeaderDepth,
 			},
 			Returns: []*restful.Returns{
 				{
@@ -221,11 +237,11 @@ func (r *KVResource) URLPatterns() []restful.Route {
 			Read:     &KVBody{},
 		}, {
 			Method:           http.MethodGet,
-			Path:             "/v1/kie/kv",
+			Path:             "/v1/{project}/kie/kv",
 			ResourceFuncName: "SearchByLabels",
 			FuncDesc:         "search key values by labels combination",
 			Parameters: []*restful.Parameters{
-				DocQueryCombination,
+				DocPathProject, DocQueryCombination,
 			},
 			Returns: []*restful.Returns{
 				{
@@ -238,11 +254,12 @@ func (r *KVResource) URLPatterns() []restful.Route {
 			Produces: []string{goRestful.MIME_JSON},
 		}, {
 			Method:           http.MethodDelete,
-			Path:             "/v1/kie/kv/",
+			Path:             "/v1/{project}/kie/kv/",
 			ResourceFuncName: "Delete",
 			FuncDesc: "Delete key by kvID and labelID,If the labelID is nil, query the collection kv to get it." +
 				"It means if only get kvID, it can also delete normally.But if you want better performance, you need to pass the labelID",
 			Parameters: []*restful.Parameters{
+				DocPathProject,
 				kvIDParameters,
 				labelIDParameters,
 			},

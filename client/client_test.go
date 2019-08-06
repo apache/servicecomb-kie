@@ -48,14 +48,14 @@ var _ = Describe("Client", func() {
 
 	Describe("get ", func() {
 		Context("only by key", func() {
-			_, err := c1.Get(context.TODO(), "app.properties")
+			_, err := c1.Get(context.TODO(), "app.properties", "test")
 			It("should be 404 error", func() {
 				Expect(err).Should(Equal(ErrKeyNotExist))
 			})
 
 		})
 		Context("by key and labels", func() {
-			_, err := c1.Get(context.TODO(), "app.properties", WithLabels(map[string]string{
+			_, err := c1.Get(context.TODO(), "app.properties", "test", WithLabels(map[string]string{
 				"app": "mall",
 			}))
 			It("should be 404 error", func() {
@@ -65,17 +65,18 @@ var _ = Describe("Client", func() {
 		})
 	})
 
-	Describe("put /v1/kie/kv/{key}", func() {
+	Describe("put /v1/test/kie/kv/{key}", func() {
 		Context("create or update key value", func() {
 			c1, _ = New(Config{
 				Endpoint: "http://127.0.0.1:30110",
 			})
 			kv := model.KVDoc{
-				Key:    "app.properties",
-				Labels: map[string]string{"service": "tester"},
-				Value:  "1s",
+				Key:     "app.properties",
+				Labels:  map[string]string{"service": "tester"},
+				Value:   "1s",
+				Project: "test",
 			}
-			res, err := c1.Put(context.TODO(), kv)
+			res, err := c1.Put(context.TODO(), kv, "test")
 			It("should not be error", func() {
 				Expect(err).Should(BeNil())
 			})
@@ -83,11 +84,12 @@ var _ = Describe("Client", func() {
 				Expect(res.Key).Should(Equal(kv.Key))
 				Expect(res.Labels).Should(Equal(kv.Labels))
 				Expect(res.Value).Should(Equal(kv.Value))
+				Expect(res.Project).Should(Equal(kv.Project))
 			})
 		})
 	})
 
-	Describe("DELETE /v1/kie/kv/", func() {
+	Describe("DELETE /v1/test/kie/kv/", func() {
 		Context("by kvID", func() {
 			client2, err := New(Config{
 				Endpoint: "http://127.0.0.1:30110",
@@ -97,9 +99,10 @@ var _ = Describe("Client", func() {
 			kvBody.Key = "time"
 			kvBody.Value = "100s"
 			kvBody.ValueType = "string"
+			kvBody.Project = "test"
 			kvBody.Labels = make(map[string]string)
 			kvBody.Labels["evn"] = "test"
-			kv, err := client2.Put(context.TODO(), kvBody)
+			kv, err := client2.Put(context.TODO(), kvBody, "test")
 			It("should not be error", func() {
 				Ω(err).ShouldNot(HaveOccurred())
 				Expect(kv.Key).To(Equal(kvBody.Key))
@@ -108,7 +111,7 @@ var _ = Describe("Client", func() {
 				Endpoint: "http://127.0.0.1:30110",
 			})
 			It("should be 204", func() {
-				err := client3.Delete(context.TODO(), kv.ID.Hex(), "")
+				err := client3.Delete(context.TODO(), kv.ID.Hex(), "", "test")
 				Ω(err).ShouldNot(HaveOccurred())
 			})
 		})

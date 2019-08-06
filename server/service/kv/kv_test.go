@@ -19,6 +19,7 @@ package kvsvc_test
 
 import (
 	"context"
+
 	"github.com/apache/servicecomb-kie/pkg/model"
 	"github.com/apache/servicecomb-kie/server/config"
 	"github.com/apache/servicecomb-kie/server/db"
@@ -46,7 +47,7 @@ var _ = Describe("Kv mongodb service", func() {
 					"app":     "mall",
 					"service": "cart",
 				},
-			})
+			}, "test")
 			It("should not return err", func() {
 				Expect(err).Should(BeNil())
 			})
@@ -54,7 +55,7 @@ var _ = Describe("Kv mongodb service", func() {
 				Expect(kv.ID.Hex()).ShouldNot(BeEmpty())
 			})
 
-		})
+		}, "test")
 		Context("with labels app, service and version", func() {
 			kv, err := kvsvc.CreateOrUpdate(context.TODO(), "default", &model.KVDoc{
 				Key:   "timeout",
@@ -64,7 +65,7 @@ var _ = Describe("Kv mongodb service", func() {
 					"service": "cart",
 					"version": "1.0.0",
 				},
-			})
+			}, "test")
 			oid, err := kvsvc.KVExist(context.TODO(), "default", "timeout", kvsvc.WithLabels(map[string]string{
 				"app":     "mall",
 				"service": "cart",
@@ -88,7 +89,7 @@ var _ = Describe("Kv mongodb service", func() {
 				Labels: map[string]string{
 					"app": "mall",
 				},
-			})
+			}, "test")
 			It("should not return err", func() {
 				Expect(err).Should(BeNil())
 			})
@@ -105,7 +106,7 @@ var _ = Describe("Kv mongodb service", func() {
 				Labels: map[string]string{
 					"app": "mall",
 				},
-			})
+			}, "test")
 			It("should has same id", func() {
 				Expect(afterKV.ID.Hex()).Should(Equal(beforeKV.ID.Hex()))
 			})
@@ -205,7 +206,7 @@ var _ = Describe("Kv mongodb service", func() {
 				Labels: map[string]string{
 					"env": "test",
 				},
-			})
+			}, "test")
 			It("should not return err", func() {
 				Expect(err).Should(BeNil())
 			})
@@ -226,7 +227,7 @@ var _ = Describe("Kv mongodb service", func() {
 				Labels: map[string]string{
 					"env": "test",
 				},
-			})
+			}, "test")
 			It("should not return err", func() {
 				Expect(err).Should(BeNil())
 			})

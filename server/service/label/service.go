@@ -20,6 +20,7 @@ package label
 import (
 	"context"
 	"fmt"
+
 	"github.com/apache/servicecomb-kie/server/db"
 	"github.com/go-mesh/openlogging"
 	"go.mongodb.org/mongo-driver/bson/primitive"
@@ -40,4 +41,19 @@ func Exist(ctx context.Context, domain string, labels map[string]string) (primit
 
 	return l.ID, nil
 
+}
+
+//ProjectHasLabel check whether the project has certain label or not, if so return label ID
+func ProjectHasLabel(ctx context.Context, domain string, project string, labels map[string]string) (primitive.ObjectID, error) {
+	l, err := projectHasLabels(ctx, domain, project, labels)
+	if err != nil {
+		if err.Error() == context.DeadlineExceeded.Error() {
+			openlogging.Error("find project's label failed, dead line exceeded", openlogging.WithTags(openlogging.Tags{
+				"timeout": db.Timeout,
+			}))
+			return primitive.NilObjectID, fmt.Errorf("operation timout %s", db.Timeout)
+		}
+		return primitive.NilObjectID, err
+	}
+	return l.ID, nil
 }

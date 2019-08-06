@@ -35,7 +35,8 @@ import (
 
 //const
 const (
-	APIPathKV = "v1/kie/kv"
+	version   = "v1"
+	APIPathKV = "kie/kv"
 )
 
 //client errors
@@ -81,8 +82,9 @@ func New(config Config) (*Client, error) {
 }
 
 //Put create value of a key
-func (c *Client) Put(ctx context.Context, kv model.KVDoc) (*model.KVDoc, error) {
-	url := fmt.Sprintf("%s/%s/%s", c.opts.Endpoint, APIPathKV, kv.Key)
+func (c *Client) Put(ctx context.Context, kv model.KVDoc, project string) (*model.KVDoc, error) {
+	finalPath := fmt.Sprintf("%s/%s/%s", version, project, APIPathKV)
+	url := fmt.Sprintf("%s/%s/%s", c.opts.Endpoint, finalPath, kv.Key)
 	h := http.Header{}
 	h.Set("Content-Type", "application/json")
 	body, _ := json.Marshal(kv)
@@ -113,12 +115,13 @@ func (c *Client) Put(ctx context.Context, kv model.KVDoc) (*model.KVDoc, error) 
 }
 
 //Get get value of a key
-func (c *Client) Get(ctx context.Context, key string, opts ...GetOption) ([]*model.KVDoc, error) {
+func (c *Client) Get(ctx context.Context, key string, project string, opts ...GetOption) ([]*model.KVDoc, error) {
 	options := GetOptions{}
 	for _, o := range opts {
 		o(&options)
 	}
-	url := fmt.Sprintf("%s/%s/%s", c.opts.Endpoint, APIPathKV, key)
+	finalPath := fmt.Sprintf("%s/%s/%s", version, project, APIPathKV)
+	url := fmt.Sprintf("%s/%s/%s", c.opts.Endpoint, finalPath, key)
 	h := http.Header{}
 	resp, err := c.c.HTTPDoWithContext(ctx, "GET", url, h, nil)
 	if err != nil {
@@ -147,8 +150,9 @@ func (c *Client) Get(ctx context.Context, key string, opts ...GetOption) ([]*mod
 }
 
 //Delete remove kv
-func (c *Client) Delete(ctx context.Context, kvID, labelID string) error {
-	url := fmt.Sprintf("%s/%s/?kvID=%s", c.opts.Endpoint, APIPathKV, kvID)
+func (c *Client) Delete(ctx context.Context, kvID, labelID string, project string) error {
+	finalPath := fmt.Sprintf("%s/%s/%s", version, project, APIPathKV)
+	url := fmt.Sprintf("%s/%s/?kvID=%s", c.opts.Endpoint, finalPath, kvID)
 	if labelID != "" {
 		url = fmt.Sprintf("%s?labelID=%s", url, labelID)
 	}

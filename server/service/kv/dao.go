@@ -20,6 +20,7 @@ package kvsvc
 import (
 	"context"
 	"fmt"
+
 	"github.com/apache/servicecomb-kie/pkg/model"
 	"github.com/apache/servicecomb-kie/server/db"
 	"github.com/apache/servicecomb-kie/server/service/history"
@@ -64,7 +65,7 @@ func createKey(ctx context.Context, kv *model.KVDoc) (*model.KVDoc, error) {
 	if err != nil && err != db.ErrKeyNotExists {
 		return nil, err
 	}
-	revision, err := history.GetAndAddHistory(ctx, kv.LabelID, kv.Labels, kvs, kv.Domain)
+	revision, err := history.GetAndAddHistory(ctx, kv.LabelID, kv.Labels, kvs, kv.Domain, kv.Project)
 	if err != nil {
 		openlogging.Warn(
 			fmt.Sprintf("can not updateKeyValue version for [%s] [%s] in [%s]",
@@ -102,7 +103,7 @@ func updateKeyValue(ctx context.Context, kv *model.KVDoc) (int, error) {
 	if err != nil && err != db.ErrKeyNotExists {
 		return 0, err
 	}
-	revision, err := history.GetAndAddHistory(ctx, kv.LabelID, kv.Labels, kvs, kv.Domain)
+	revision, err := history.GetAndAddHistory(ctx, kv.LabelID, kv.Labels, kvs, kv.Domain, kv.Project)
 	if err != nil {
 		openlogging.Warn(
 			fmt.Sprintf("can not label revision for [%s] [%s] in [%s],err: %s",
@@ -115,14 +116,14 @@ func updateKeyValue(ctx context.Context, kv *model.KVDoc) (int, error) {
 
 }
 
-func findKV(ctx context.Context, domain string, opts FindOptions) (*mongo.Cursor, error) {
+func findKV(ctx context.Context, domain string, project string, opts FindOptions) (*mongo.Cursor, error) {
 	c, err := db.GetClient()
 	if err != nil {
 		return nil, err
 	}
 	collection := c.Database(db.Name).Collection(db.CollectionKV)
 	ctx, _ = context.WithTimeout(ctx, opts.Timeout)
-	filter := bson.M{"domain": domain}
+	filter := bson.M{"domain": domain, "project": project}
 	if opts.Key != "" {
 		filter["key"] = opts.Key
 	}
@@ -165,13 +166,13 @@ func findOneKey(ctx context.Context, filter bson.M) ([]*model.KVDoc, error) {
 }
 
 //DeleteKV by kvID
-func DeleteKV(ctx context.Context, hexID primitive.ObjectID) error {
+func DeleteKV(ctx context.Context, hexID primitive.ObjectID, project string) error {
 	c, err := db.GetClient()
 	if err != nil {
 		return err
 	}
 	collection := c.Database(db.Name).Collection(db.CollectionKV)
-	dr, err := collection.DeleteOne(ctx, bson.M{"_id": hexID})
+	dr, err := collection.DeleteOne(ctx, bson.M{"_id": hexID, "project": project})
 	//check error and delete number
 	if err != nil {
 		openlogging.Error(fmt.Sprintf("delete [%s] failed : [%s]", hexID, err))

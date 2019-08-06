@@ -30,7 +30,7 @@ import (
 
 //GetAndAddHistory get latest labels revision and call AddHistory
 func GetAndAddHistory(ctx context.Context,
-	labelID string, labels map[string]string, kvs []*model.KVDoc, domain string) (int, error) {
+	labelID string, labels map[string]string, kvs []*model.KVDoc, domain string, project string) (int, error) {
 	ctx, cancel := context.WithTimeout(ctx, db.Timeout)
 	defer cancel()
 	r, err := label.GetLatestLabel(ctx, labelID)

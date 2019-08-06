@@ -66,11 +66,11 @@ func (r *HistoryResource) URLPatterns() []restful.Route {
 	return []restful.Route{
 		{
 			Method:           http.MethodGet,
-			Path:             "/v1/kie/revision/{label_id}",
+			Path:             "/v1/{project}/kie/revision/{label_id}",
 			ResourceFuncName: "GetRevisionsByLabelID",
 			FuncDesc:         "get all revisions by label id",
 			Parameters: []*restful.Parameters{
-				DocPathLabelID,
+				DocPathProject, DocPathLabelID,
 			},
 			Returns: []*restful.Returns{
 				{
