@@ -54,7 +54,7 @@ func CreateOrUpdate(ctx context.Context, domain string, kv *model.KVDoc, project
 	}
 
 	//check whether the projecr has certain labels or not
-	labelID, err := label.ProjectHasLabel(ctx, domain, project, kv.Labels)
+	labelID, err := label.Exist(ctx, domain, project, kv.Labels)
 
 	var l *model.LabelDoc
 	if err != nil {

@@ -54,16 +54,16 @@ func CreateLabel(ctx context.Context, domain string, labels map[string]string, p
 	return l, nil
 }
 
-//FindLabels find label doc by labels
+//FindLabels find label doc by labels and project, check if the project has certain labels
 //if map is empty. will return default labels doc which has no labels
-func FindLabels(ctx context.Context, domain string, labels map[string]string) (*model.LabelDoc, error) {
+func FindLabels(ctx context.Context, domain string, project string, labels map[string]string) (*model.LabelDoc, error) {
 	c, err := db.GetClient()
 	if err != nil {
 		return nil, err
 	}
 	collection := c.Database(db.Name).Collection(db.CollectionLabel)
 
-	filter := bson.M{"domain": domain}
+	filter := bson.M{"domain": domain, "project": project}
 	for k, v := range labels {
 		filter["labels."+k] = v
 	}
@@ -130,46 +130,4 @@ func GetLatestLabel(ctx context.Context, labelID string) (*model.LabelRevisionDo
 		return nil, db.ErrRevisionNotExist
 	}
 	return h, nil
-}
-
-//projectHasLabels check whether the project has certain labels
-func projectHasLabels(ctx context.Context, domain string, project string, labels map[string]string) (*model.LabelDoc, error) {
-	c, err := db.GetClient()
-	if err != nil {
-		return nil, err
-	}
-	collection := c.Database(db.Name).Collection(db.CollectionLabel)
-
-	filter := bson.M{"domain": domain, "project": project}
-	for k, v := range labels {
-		filter["labels."+k] = v
-	}
-	if len(labels) == 0 {
-		filter["labels"] = defaultLabels //allow key without labels
-	}
-	cur, err := collection.Find(ctx, filter)
-	if err != nil {
-		return nil, err
-	}
-	defer cur.Close(ctx)
-	if cur.Err() != nil {
-		return nil, err
-	}
-	openlogging.Debug(fmt.Sprintf("find lables [%s] in [%s], project [%s]", labels, domain, project))
-	curLabel := &model.LabelDoc{} //reuse this pointer to reduce GC, only clear label
-	//check label length to get the exact match
-	for cur.Next(ctx) { //although complexity is O(n), but there won't be so much labels
-		curLabel.Labels = nil
-		err := cur.Decode(curLabel)
-		if err != nil {
-			openlogging.Error("decode error: " + err.Error())
-			return nil, err
-		}
-		if len(curLabel.Labels) == len(labels) {
-			openlogging.Debug("hit exact labels")
-			curLabel.Labels = nil //exact match don't need to return labels
-			return curLabel, nil
-		}
-	}
-	return nil, db.ErrLabelNotExists
 }
