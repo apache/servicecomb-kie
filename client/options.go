@@ -17,13 +17,26 @@
 
 package client
 
+const (
+	defaultProject = "default"
+)
+
 //GetOption is the functional option of client func
 type GetOption func(*GetOptions)
 
+//OpOption is the functional option of client func
+type OpOption func(*OpOptions)
+
 //GetOptions is the options of client func
 type GetOptions struct {
-	Labels map[string]string
-	Depth  int
+	Labels  map[string]string
+	Depth   int
+	Project string
+}
+
+//OpOptions is the options of client func
+type OpOptions struct {
+	Project string
 }
 
 //WithLabels query kv by labels
@@ -37,5 +50,19 @@ func WithLabels(l map[string]string) GetOption {
 func WithDepth(d int) GetOption {
 	return func(options *GetOptions) {
 		options.Depth = d
+	}
+}
+
+//WithGetProject query keys with certain project
+func WithGetProject(project string) GetOption {
+	return func(options *GetOptions) {
+		options.Project = project
+	}
+}
+
+//WithProject set project to param
+func WithProject(project string) OpOption {
+	return func(options *OpOptions) {
+		options.Project = project
 	}
 }

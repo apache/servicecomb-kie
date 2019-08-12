@@ -35,7 +35,8 @@ import (
 
 //const
 const (
-	APIPathKV = "v1/test/kie/kv"
+	version   = "v1"
+	APIPathKV = "kie/kv"
 )
 
 //client errors
@@ -81,8 +82,15 @@ func New(config Config) (*Client, error) {
 }
 
 //Put create value of a key
-func (c *Client) Put(ctx context.Context, kv model.KVDoc) (*model.KVDoc, error) {
-	url := fmt.Sprintf("%s/%s/%s", c.opts.Endpoint, APIPathKV, kv.Key)
+func (c *Client) Put(ctx context.Context, kv model.KVDoc, opts ...OpOption) (*model.KVDoc, error) {
+	options := OpOptions{}
+	for _, o := range opts {
+		o(&options)
+	}
+	if options.Project == "" {
+		options.Project = defaultProject
+	}
+	url := fmt.Sprintf("%s/%s/%s/%s/%s", c.opts.Endpoint, version, options.Project, APIPathKV, kv.Key)
 	h := http.Header{}
 	h.Set("Content-Type", "application/json")
 	body, _ := json.Marshal(kv)
@@ -118,7 +126,10 @@ func (c *Client) Get(ctx context.Context, key string, opts ...GetOption) ([]*mod
 	for _, o := range opts {
 		o(&options)
 	}
-	url := fmt.Sprintf("%s/%s/%s", c.opts.Endpoint, APIPathKV, key)
+	if options.Project == "" {
+		options.Project = defaultProject
+	}
+	url := fmt.Sprintf("%s/%s/%s/%s/%s", c.opts.Endpoint, version, options.Project, APIPathKV, key)
 	h := http.Header{}
 	resp, err := c.c.HTTPDoWithContext(ctx, "GET", url, h, nil)
 	if err != nil {
@@ -136,9 +147,8 @@ func (c *Client) Get(ctx context.Context, key string, opts ...GetOption) ([]*mod
 		}))
 		return nil, fmt.Errorf("get %s failed,http status [%s], body [%s]", key, resp.Status, b)
 	}
-
-	kvs := make([]*model.KVDoc, 0)
-	err = json.Unmarshal(b, kvs)
+	var kvs []*model.KVDoc
+	err = json.Unmarshal(b, &kvs)
 	if err != nil {
 		openlogging.Error("unmarshal kv failed:" + err.Error())
 		return nil, err
@@ -147,8 +157,15 @@ func (c *Client) Get(ctx context.Context, key string, opts ...GetOption) ([]*mod
 }
 
 //Delete remove kv
-func (c *Client) Delete(ctx context.Context, kvID, labelID string) error {
-	url := fmt.Sprintf("%s/%s/?kvID=%s", c.opts.Endpoint, APIPathKV, kvID)
+func (c *Client) Delete(ctx context.Context, kvID, labelID string, opts ...OpOption) error {
+	options := OpOptions{}
+	for _, o := range opts {
+		o(&options)
+	}
+	if options.Project == "" {
+		options.Project = defaultProject
+	}
+	url := fmt.Sprintf("%s/%s/%s/%s/?kvID=%s", c.opts.Endpoint, version, options.Project, APIPathKV, kvID)
 	if labelID != "" {
 		url = fmt.Sprintf("%s?labelID=%s", url, labelID)
 	}
