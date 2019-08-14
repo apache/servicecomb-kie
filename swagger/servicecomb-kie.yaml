@@ -4,7 +4,7 @@ info:
   version: ""
 basePath: /
 paths:
-  /v1/kv:
+  /v1/{project}/kie/kv:
     get:
       summary: search key values by labels combination
       operationId: SearchByLabels
@@ -13,7 +13,7 @@ paths:
           in: query
           description:
             "the combination format is {label_key}:{label_value}+{label_key}:{label_value}
-            for example: /v1/kv?q=app:mall&q=app:mall+service:cart that will query key
+            for example: /v1/test/kie/kv?q=app:mall&q=app:mall+service:cart that will query key
             values from 2 kinds of labels"
           type: string
       consumes:
@@ -27,11 +27,15 @@ paths:
             type: array
             items:
               $ref: "#/definitions/KVResponse"
-  /v1/kv/{key}:
+  /v1/{project}/kie/kv/{key}:
     get:
       summary: get key values by key and labels
       operationId: GetByKey
       parameters:
+        - name: project
+          in: path
+          required: true
+          type: string
         - name: key
           in: path
           required: true
@@ -62,6 +66,10 @@ paths:
       summary: create or update key value
       operationId: Put
       parameters:
+        - name: project
+          in: path
+          required: true
+          type: string
         - name: key
           in: path
           required: true
@@ -82,7 +90,7 @@ paths:
       responses:
         "200":
           description: "true"
-  /v1/kv/{kvID}:
+  /v1/{project}/kie/kv/{kvID}:
     delete:
       summary:
         Delete key by kvID and labelID,If the labelID is nil, query the collection
@@ -90,6 +98,10 @@ paths:
         you want better performance, you need to pass the labelID
       operationId: Delete
       parameters:
+        - name: project
+          in: path
+          required: true
+          type: string
         - name: key
           in: path
           required: true
@@ -101,6 +113,37 @@ paths:
           description: Failed,check url
         "500":
           description: Server error
+  /v1/{project}/kie/revision/{label_id}:
+    get:
+      summary: get history revisions by label id
+      operationId: GetRevisionsByLabelID
+      parameters:
+        - name: project
+          in: path
+          required: true
+          type: string
+        - name: label_id
+          in: path
+          required: true
+          type: string
+      consumes:
+        - application/json
+      produces:
+        - application/json
+      responses:
+        "200":
+          description: get history revisions success
+          schema:
+            type: array
+            items:
+              $ref: "#/definitions/LabelRevisionResponse"
+        "403":
+          description: label_id must not be empty
+        "404":
+          description: no revisions found
+        "500":
+          description: internal server error
+
 definitions:
   KVDoc:
     type: object
@@ -147,6 +190,23 @@ definitions:
         type: object
         additionalProperties:
           type: string
+  LabelRevisionResponse:
+    type: object
+    properties:
+      data:
+        type: array
+        items:
+          $ref: "#/definitions/KVDoc"
+      label_id:
+        type: string
+      labels:
+        type: object
+        additionalProperties:
+          type: string
+      revision:
+        type: integer
+        format: int32
+
   v1.KVBody:
     type: object
     properties:

@@ -20,6 +20,7 @@ package label
 import (
 	"context"
 	"fmt"
+
 	"github.com/apache/servicecomb-kie/pkg/model"
 	"github.com/apache/servicecomb-kie/server/db"
 	"github.com/go-mesh/openlogging"
@@ -28,15 +29,20 @@ import (
 	"go.mongodb.org/mongo-driver/mongo/options"
 )
 
+const (
+	defaultLabels = "default"
+)
+
 //CreateLabel create a new label
-func CreateLabel(ctx context.Context, domain string, labels map[string]string) (*model.LabelDoc, error) {
+func CreateLabel(ctx context.Context, domain string, labels map[string]string, project string) (*model.LabelDoc, error) {
 	c, err := db.GetClient()
 	if err != nil {
 		return nil, err
 	}
 	l := &model.LabelDoc{
-		Domain: domain,
-		Labels: labels,
+		Domain:  domain,
+		Labels:  labels,
+		Project: project,
 	}
 	collection := c.Database(db.Name).Collection(db.CollectionLabel)
 	res, err := collection.InsertOne(ctx, l)
@@ -48,21 +54,21 @@ func CreateLabel(ctx context.Context, domain string, labels map[string]string) (
 	return l, nil
 }
 
-//FindLabels find label doc by labels
+//FindLabels find label doc by labels and project, check if the project has certain labels
 //if map is empty. will return default labels doc which has no labels
-func FindLabels(ctx context.Context, domain string, labels map[string]string) (*model.LabelDoc, error) {
+func FindLabels(ctx context.Context, domain string, project string, labels map[string]string) (*model.LabelDoc, error) {
 	c, err := db.GetClient()
 	if err != nil {
 		return nil, err
 	}
 	collection := c.Database(db.Name).Collection(db.CollectionLabel)
 
-	filter := bson.M{"domain": domain}
+	filter := bson.M{"domain": domain, "project": project}
 	for k, v := range labels {
 		filter["labels."+k] = v
 	}
 	if len(labels) == 0 {
-		filter["labels"] = "default" //allow key without labels
+		filter["labels"] = defaultLabels //allow key without labels
 	}
 	cur, err := collection.Find(ctx, filter)
 	if err != nil {

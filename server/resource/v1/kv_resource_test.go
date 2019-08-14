@@ -56,7 +56,7 @@ var _ = Describe("v1 kv resource", func() {
 				Labels: map[string]string{"service": "tester"},
 			}
 			j, _ := json.Marshal(kv)
-			r, _ := http.NewRequest("PUT", "/v1/kv/timeout", bytes.NewBuffer(j))
+			r, _ := http.NewRequest("PUT", "/v1/test/kie/kv/timeout", bytes.NewBuffer(j))
 			noopH := &noop.NoopAuthHandler{}
 			chain, _ := handler.CreateChain(common.Provider, "testchain1", noopH.Name())
 			r.Header.Set("Content-Type", "application/json")

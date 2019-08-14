@@ -19,6 +19,7 @@ package kvsvc_test
 
 import (
 	"context"
+
 	"github.com/apache/servicecomb-kie/pkg/model"
 	"github.com/apache/servicecomb-kie/server/config"
 	"github.com/apache/servicecomb-kie/server/db"
@@ -46,7 +47,7 @@ var _ = Describe("Kv mongodb service", func() {
 					"app":     "mall",
 					"service": "cart",
 				},
-			})
+			}, "test")
 			It("should not return err", func() {
 				Expect(err).Should(BeNil())
 			})
@@ -64,8 +65,8 @@ var _ = Describe("Kv mongodb service", func() {
 					"service": "cart",
 					"version": "1.0.0",
 				},
-			})
-			oid, err := kvsvc.KVExist(context.TODO(), "default", "timeout", kvsvc.WithLabels(map[string]string{
+			}, "test")
+			oid, err := kvsvc.KVExist(context.TODO(), "default", "timeout", "test", kvsvc.WithLabels(map[string]string{
 				"app":     "mall",
 				"service": "cart",
 				"version": "1.0.0",
@@ -88,11 +89,11 @@ var _ = Describe("Kv mongodb service", func() {
 				Labels: map[string]string{
 					"app": "mall",
 				},
-			})
+			}, "test")
 			It("should not return err", func() {
 				Expect(err).Should(BeNil())
 			})
-			kvs1, err := kvsvc.FindKV(context.Background(), "default", kvsvc.WithKey("timeout"), kvsvc.WithLabels(map[string]string{
+			kvs1, err := kvsvc.FindKV(context.Background(), "default", "test", kvsvc.WithKey("timeout"), kvsvc.WithLabels(map[string]string{
 				"app": "mall",
 			}), kvsvc.WithExactLabels())
 			It("should be 1s", func() {
@@ -105,17 +106,17 @@ var _ = Describe("Kv mongodb service", func() {
 				Labels: map[string]string{
 					"app": "mall",
 				},
-			})
+			}, "test")
 			It("should has same id", func() {
 				Expect(afterKV.ID.Hex()).Should(Equal(beforeKV.ID.Hex()))
 			})
-			oid, err := kvsvc.KVExist(context.Background(), "default", "timeout", kvsvc.WithLabels(map[string]string{
+			oid, err := kvsvc.KVExist(context.Background(), "default", "timeout", "test", kvsvc.WithLabels(map[string]string{
 				"app": "mall",
 			}))
 			It("should exists", func() {
 				Expect(oid.Hex()).Should(Equal(beforeKV.ID.Hex()))
 			})
-			kvs, err := kvsvc.FindKV(context.Background(), "default", kvsvc.WithKey("timeout"), kvsvc.WithLabels(map[string]string{
+			kvs, err := kvsvc.FindKV(context.Background(), "default", "test", kvsvc.WithKey("timeout"), kvsvc.WithLabels(map[string]string{
 				"app": "mall",
 			}), kvsvc.WithExactLabels())
 			It("should be 3s", func() {
@@ -126,7 +127,7 @@ var _ = Describe("Kv mongodb service", func() {
 
 	Describe("greedy find by kv and labels", func() {
 		Context("with labels app,depth is 1 ", func() {
-			kvs, err := kvsvc.FindKV(context.Background(), "default",
+			kvs, err := kvsvc.FindKV(context.Background(), "default", "test",
 				kvsvc.WithKey("timeout"), kvsvc.WithLabels(map[string]string{
 					"app": "mall",
 				}))
@@ -139,7 +140,7 @@ var _ = Describe("Kv mongodb service", func() {
 
 		})
 		Context("with labels app,depth is 2 ", func() {
-			kvs, err := kvsvc.FindKV(context.Background(), "default", kvsvc.WithKey("timeout"),
+			kvs, err := kvsvc.FindKV(context.Background(), "default", "test", kvsvc.WithKey("timeout"),
 				kvsvc.WithLabels(map[string]string{
 					"app": "mall",
 				}),
@@ -155,7 +156,7 @@ var _ = Describe("Kv mongodb service", func() {
 	})
 	Describe("exact find by kv and labels", func() {
 		Context("with labels app ", func() {
-			kvs, err := kvsvc.FindKV(context.Background(), "default", kvsvc.WithKey("timeout"), kvsvc.WithLabels(map[string]string{
+			kvs, err := kvsvc.FindKV(context.Background(), "default", "test", kvsvc.WithKey("timeout"), kvsvc.WithLabels(map[string]string{
 				"app": "mall",
 			}), kvsvc.WithExactLabels())
 			It("should not return err", func() {
@@ -169,7 +170,7 @@ var _ = Describe("Kv mongodb service", func() {
 	})
 	Describe("exact find by labels", func() {
 		Context("with labels app ", func() {
-			kvs, err := kvsvc.FindKV(context.Background(), "default", kvsvc.WithLabels(map[string]string{
+			kvs, err := kvsvc.FindKV(context.Background(), "default", "test", kvsvc.WithLabels(map[string]string{
 				"app": "mall",
 			}), kvsvc.WithExactLabels())
 			It("should not return err", func() {
@@ -183,7 +184,7 @@ var _ = Describe("Kv mongodb service", func() {
 	})
 	Describe("greedy find by labels", func() {
 		Context("with labels app ans service ", func() {
-			kvs, err := kvsvc.FindKV(context.Background(), "default", kvsvc.WithLabels(map[string]string{
+			kvs, err := kvsvc.FindKV(context.Background(), "default", "test", kvsvc.WithLabels(map[string]string{
 				"app":     "mall",
 				"service": "cart",
 			}))
@@ -205,7 +206,7 @@ var _ = Describe("Kv mongodb service", func() {
 				Labels: map[string]string{
 					"env": "test",
 				},
-			})
+			}, "test")
 			It("should not return err", func() {
 				Expect(err).Should(BeNil())
 			})
@@ -213,7 +214,7 @@ var _ = Describe("Kv mongodb service", func() {
 				Expect(err).Should(BeNil())
 			})
 
-			err = kvsvc.Delete(kv1.ID.Hex(), "", "default")
+			err = kvsvc.Delete(kv1.ID.Hex(), "", "default", "test")
 			It("should not return err", func() {
 				Expect(err).Should(BeNil())
 			})
@@ -226,7 +227,7 @@ var _ = Describe("Kv mongodb service", func() {
 				Labels: map[string]string{
 					"env": "test",
 				},
-			})
+			}, "test")
 			It("should not return err", func() {
 				Expect(err).Should(BeNil())
 			})
@@ -234,26 +235,26 @@ var _ = Describe("Kv mongodb service", func() {
 				Expect(err).Should(BeNil())
 			})
 
-			err = kvsvc.Delete(kv1.ID.Hex(), kv1.LabelID, "default")
+			err = kvsvc.Delete(kv1.ID.Hex(), kv1.LabelID, "default", "test")
 			It("should not return err", func() {
 				Expect(err).Should(BeNil())
 			})
 
 		})
 		Context("test miss kvID, no panic", func() {
-			err := kvsvc.Delete("", "", "default")
+			err := kvsvc.Delete("", "", "default", "test")
 			It("should not return err", func() {
 				Expect(err).Should(HaveOccurred())
 			})
 		})
 		Context("Test encode error ", func() {
-			err := kvsvc.Delete("12312312321", "", "default")
+			err := kvsvc.Delete("12312312321", "", "default", "test")
 			It("should return err", func() {
 				Expect(err).To(HaveOccurred())
 			})
 		})
 		Context("Test miss domain error ", func() {
-			err := kvsvc.Delete("12312312321", "", "")
+			err := kvsvc.Delete("12312312321", "", "", "test")
 			It("should return err", func() {
 				Expect(err).Should(Equal(db.ErrMissingDomain))
 			})

@@ -47,7 +47,7 @@ var _ = Describe("Client", func() {
 	})
 
 	Describe("get ", func() {
-		Context("only by key", func() {
+		Context("only by key with default project", func() {
 			_, err := c1.Get(context.TODO(), "app.properties")
 			It("should be 404 error", func() {
 				Expect(err).Should(Equal(ErrKeyNotExist))
@@ -63,9 +63,16 @@ var _ = Describe("Client", func() {
 			})
 
 		})
+
+		Context("by project", func() {
+			_, err := c1.Get(context.TODO(), "app.properties", WithGetProject("test"))
+			It("should be 404 error", func() {
+				Expect(err).Should(Equal(ErrKeyNotExist))
+			})
+		})
 	})
 
-	Describe("put /v1/kv/{key}", func() {
+	Describe("put /v1/{project}/kie/kv/{key}", func() {
 		Context("create or update key value", func() {
 			c1, _ = New(Config{
 				Endpoint: "http://127.0.0.1:30110",
@@ -75,7 +82,7 @@ var _ = Describe("Client", func() {
 				Labels: map[string]string{"service": "tester"},
 				Value:  "1s",
 			}
-			res, err := c1.Put(context.TODO(), kv)
+			res, err := c1.Put(context.TODO(), kv, WithProject("test"))
 			It("should not be error", func() {
 				Expect(err).Should(BeNil())
 			})
@@ -83,11 +90,16 @@ var _ = Describe("Client", func() {
 				Expect(res.Key).Should(Equal(kv.Key))
 				Expect(res.Labels).Should(Equal(kv.Labels))
 				Expect(res.Value).Should(Equal(kv.Value))
+				Expect(res.Project).Should(Equal("test"))
+			})
+			kvs, _ := c1.Get(context.TODO(), "app.properties", WithGetProject("test"))
+			It("should exactly 1 kv", func() {
+				Expect(len(kvs)).Should(Equal(1))
 			})
 		})
 	})
 
-	Describe("DELETE /v1/kv/", func() {
+	Describe("DELETE /v1/{project}/kie/kv/", func() {
 		Context("by kvID", func() {
 			client2, err := New(Config{
 				Endpoint: "http://127.0.0.1:30110",
@@ -97,18 +109,25 @@ var _ = Describe("Client", func() {
 			kvBody.Key = "time"
 			kvBody.Value = "100s"
 			kvBody.ValueType = "string"
+			kvBody.Project = "test"
 			kvBody.Labels = make(map[string]string)
 			kvBody.Labels["evn"] = "test"
-			kv, err := client2.Put(context.TODO(), kvBody)
+			kv, err := client2.Put(context.TODO(), kvBody, WithProject("test"))
 			It("should not be error", func() {
 				Ω(err).ShouldNot(HaveOccurred())
 				Expect(kv.Key).To(Equal(kvBody.Key))
+				Expect(kv.Project).To(Equal(kvBody.Project))
+			})
+			kvs, err := client2.Get(context.TODO(), "time", WithGetProject("test"))
+			It("should return exactly 1 kv", func() {
+				Expect(len(kvs)).Should(Equal(1))
+				Expect(err).Should(BeNil())
 			})
 			client3, err := New(Config{
 				Endpoint: "http://127.0.0.1:30110",
 			})
 			It("should be 204", func() {
-				err := client3.Delete(context.TODO(), kv.ID.Hex(), "")
+				err := client3.Delete(context.TODO(), kv.ID.Hex(), "", WithProject("test"))
 				Ω(err).ShouldNot(HaveOccurred())
 			})
 		})

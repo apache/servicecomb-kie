@@ -20,6 +20,9 @@ package kvsvc
 import (
 	"context"
 	"fmt"
+	"reflect"
+	"time"
+
 	"github.com/apache/servicecomb-kie/pkg/model"
 	"github.com/apache/servicecomb-kie/server/db"
 	"github.com/apache/servicecomb-kie/server/service/history"
@@ -27,8 +30,6 @@ import (
 	"github.com/go-mesh/openlogging"
 	"go.mongodb.org/mongo-driver/bson"
 	"go.mongodb.org/mongo-driver/bson/primitive"
-	"reflect"
-	"time"
 )
 
 //MongodbService operate data in mongodb
@@ -41,7 +42,7 @@ type MongodbService struct {
 //if label exists, then get its latest revision, and update current revision,
 //save the current label and its all key values to history collection
 //then check key exists or not, then create or update it
-func CreateOrUpdate(ctx context.Context, domain string, kv *model.KVDoc) (*model.KVDoc, error) {
+func CreateOrUpdate(ctx context.Context, domain string, kv *model.KVDoc, project string) (*model.KVDoc, error) {
 	ctx, _ = context.WithTimeout(ctx, db.Timeout)
 	if domain == "" {
 		return nil, db.ErrMissingDomain
@@ -52,12 +53,13 @@ func CreateOrUpdate(ctx context.Context, domain string, kv *model.KVDoc) (*model
 		}
 	}
 
-	//check labels exits or not
-	labelID, err := label.Exist(ctx, domain, kv.Labels)
+	//check whether the projecr has certain labels or not
+	labelID, err := label.Exist(ctx, domain, project, kv.Labels)
+
 	var l *model.LabelDoc
 	if err != nil {
 		if err == db.ErrLabelNotExists {
-			l, err = label.CreateLabel(ctx, domain, kv.Labels)
+			l, err = label.CreateLabel(ctx, domain, kv.Labels, project)
 			if err != nil {
 				openlogging.Error("create label failed", openlogging.WithTags(openlogging.Tags{
 					"k":      kv.Key,
@@ -72,11 +74,12 @@ func CreateOrUpdate(ctx context.Context, domain string, kv *model.KVDoc) (*model
 
 	}
 	kv.LabelID = labelID.Hex()
+	kv.Project = project
 	kv.Domain = domain
 	if kv.ValueType == "" {
 		kv.ValueType = db.DefaultValueType
 	}
-	keyID, err := KVExist(ctx, domain, kv.Key, WithLabelID(kv.LabelID))
+	keyID, err := KVExist(ctx, domain, kv.Key, kv.Project, WithLabelID(kv.LabelID))
 	if err != nil {
 		if err == db.ErrKeyNotExists {
 			kv, err := createKey(ctx, kv)
@@ -99,20 +102,20 @@ func CreateOrUpdate(ctx context.Context, domain string, kv *model.KVDoc) (*model
 }
 
 //KVExist supports you query by label map or labels id
-func KVExist(ctx context.Context, domain, key string, options ...FindOption) (primitive.ObjectID, error) {
+func KVExist(ctx context.Context, domain, key string, project string, options ...FindOption) (primitive.ObjectID, error) {
 	ctx, _ = context.WithTimeout(context.Background(), db.Timeout)
 	opts := FindOptions{}
 	for _, o := range options {
 		o(&opts)
 	}
 	if opts.LabelID != "" {
-		kvs, err := FindKVByLabelID(ctx, domain, opts.LabelID, key)
+		kvs, err := FindKVByLabelID(ctx, domain, opts.LabelID, key, project)
 		if err != nil {
 			return primitive.NilObjectID, err
 		}
 		return kvs[0].ID, nil
 	}
-	kvs, err := FindKV(ctx, domain, WithExactLabels(), WithLabels(opts.Labels), WithKey(key))
+	kvs, err := FindKV(ctx, domain, project, WithExactLabels(), WithLabels(opts.Labels), WithKey(key))
 	if err != nil {
 		return primitive.NilObjectID, err
 	}
@@ -127,10 +130,13 @@ func KVExist(ctx context.Context, domain, key string, options ...FindOption) (pr
 //Delete delete kv,If the labelID is "", query the collection kv to get it
 //domain=tenant
 //1.delete kv;2.add history
-func Delete(kvID string, labelID string, domain string) error {
+func Delete(kvID string, labelID string, domain string, project string) error {
 	ctx, _ := context.WithTimeout(context.Background(), db.Timeout)
 	if domain == "" {
 		return db.ErrMissingDomain
+	}
+	if project == "" {
+		return db.ErrMissingProject
 	}
 	hex, err := primitive.ObjectIDFromHex(kvID)
 	if err != nil {
@@ -139,7 +145,7 @@ func Delete(kvID string, labelID string, domain string) error {
 	//if labelID == "",get labelID by kvID
 	var kv *model.KVDoc
 	if labelID == "" {
-		kvArray, err := findOneKey(ctx, bson.M{"_id": hex})
+		kvArray, err := findOneKey(ctx, bson.M{"_id": hex, "project": project})
 		if err != nil {
 			return err
 		}
@@ -158,11 +164,11 @@ func Delete(kvID string, labelID string, domain string) error {
 		return err
 	}
 	//delete kv
-	err = DeleteKV(ctx, hex)
+	err = DeleteKV(ctx, hex, project)
 	if err != nil {
 		return err
 	}
-	kvs, err := findKeys(ctx, bson.M{"label_id": labelID}, true)
+	kvs, err := findKeys(ctx, bson.M{"label_id": labelID, "project": project}, true)
 	//Key may be empty When delete
 	if err != nil && err != db.ErrKeyNotExists {
 		return err
@@ -188,9 +194,9 @@ func Delete(kvID string, labelID string, domain string) error {
 //FindKVByLabelID get kvs by key and label id
 //key can be empty, then it will return all key values
 //if key is given, will return 0-1 key value
-func FindKVByLabelID(ctx context.Context, domain, labelID, key string) ([]*model.KVDoc, error) {
+func FindKVByLabelID(ctx context.Context, domain, labelID, key string, project string) ([]*model.KVDoc, error) {
 
-	filter := bson.M{"label_id": labelID, "domain": domain}
+	filter := bson.M{"label_id": labelID, "domain": domain, "project": project}
 	if key != "" {
 		filter["key"] = key
 		return findOneKey(ctx, filter)
@@ -202,7 +208,7 @@ func FindKVByLabelID(ctx context.Context, domain, labelID, key string) ([]*model
 //FindKV get kvs by key, labels
 //because labels has a a lot of combination,
 //you can use WithDepth(0) to return only one kv which's labels exactly match the criteria
-func FindKV(ctx context.Context, domain string, options ...FindOption) ([]*model.KVResponse, error) {
+func FindKV(ctx context.Context, domain string, project string, options ...FindOption) ([]*model.KVResponse, error) {
 	opts := FindOptions{}
 	for _, o := range options {
 		o(&opts)
@@ -213,8 +219,11 @@ func FindKV(ctx context.Context, domain string, options ...FindOption) ([]*model
 	if domain == "" {
 		return nil, db.ErrMissingDomain
 	}
+	if project == "" {
+		return nil, db.ErrMissingProject
+	}
 
-	cur, err := findKV(ctx, domain, opts)
+	cur, err := findKV(ctx, domain, project, opts)
 	if err != nil {
 		return nil, err
 	}
