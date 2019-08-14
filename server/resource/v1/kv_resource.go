@@ -40,6 +40,10 @@ func (r *KVResource) Put(context *restful.Context) {
 	var err error
 	key := context.ReadPathParameter("key")
 	project := context.ReadPathParameter("project")
+	if project == "" {
+		WriteErrResponse(context, http.StatusForbidden, "project must not be empty", common.ContentTypeText)
+		return
+	}
 	kv := new(model.KVDoc)
 	decoder := json.NewDecoder(context.ReadRequest().Body)
 	if err = decoder.Decode(kv); err != nil {
