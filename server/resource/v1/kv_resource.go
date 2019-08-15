@@ -62,8 +62,10 @@ func (r *KVResource) Put(context *restful.Context) {
 		return
 	}
 	InfoLog("put", kv)
-	context.WriteHeader(http.StatusOK)
-	context.WriteHeaderAndJSON(http.StatusOK, kv, goRestful.MIME_JSON)
+	err = context.WriteHeaderAndJSON(http.StatusOK, kv, goRestful.MIME_JSON)
+	if err != nil {
+		openlogging.Error(err.Error())
+	}
 
 }
 

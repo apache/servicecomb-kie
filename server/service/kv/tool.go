@@ -19,6 +19,7 @@ package kvsvc
 
 import (
 	"context"
+
 	"github.com/apache/servicecomb-kie/pkg/model"
 	"github.com/apache/servicecomb-kie/server/db"
 	"github.com/go-mesh/openlogging"
@@ -30,6 +31,7 @@ func clearKV(kv *model.KVDoc) {
 	kv.Domain = ""
 	kv.Labels = nil
 	kv.LabelID = ""
+	kv.Project = ""
 }
 
 func cursorToOneKV(ctx context.Context, cur *mongo.Cursor, labels map[string]string) ([]*model.KVResponse, error) {

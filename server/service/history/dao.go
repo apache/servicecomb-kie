@@ -88,6 +88,7 @@ func getHistoryByLabelID(ctx context.Context, filter bson.M) ([]*model.LabelRevi
 			return nil, err
 		}
 		exist = true
+		clearRevisionKV(&elem)
 		rvs = append(rvs, &elem)
 	}
 	if !exist {

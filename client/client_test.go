@@ -90,7 +90,8 @@ var _ = Describe("Client", func() {
 				Expect(res.Key).Should(Equal(kv.Key))
 				Expect(res.Labels).Should(Equal(kv.Labels))
 				Expect(res.Value).Should(Equal(kv.Value))
-				Expect(res.Project).Should(Equal("test"))
+				Expect(res.Project).Should(Equal(""))
+				Expect(res.Domain).Should(Equal(""))
 			})
 			kvs, _ := c1.Get(context.TODO(), "app.properties", WithGetProject("test"))
 			It("should exactly 1 kv", func() {
@@ -116,7 +117,10 @@ var _ = Describe("Client", func() {
 			It("should not be error", func() {
 				Ω(err).ShouldNot(HaveOccurred())
 				Expect(kv.Key).To(Equal(kvBody.Key))
-				Expect(kv.Project).To(Equal(kvBody.Project))
+				Expect(kv.Value).To(Equal(kvBody.Value))
+				Expect(kv.Labels).To(Equal(kvBody.Labels))
+				Expect(kv.Project).To(Equal(""))
+				Expect(kv.Domain).To(Equal(""))
 			})
 			kvs, err := client2.Get(context.TODO(), "time", WithGetProject("test"))
 			It("should return exactly 1 kv", func() {

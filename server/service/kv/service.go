@@ -86,6 +86,8 @@ func CreateOrUpdate(ctx context.Context, domain string, kv *model.KVDoc, project
 			if err != nil {
 				return nil, err
 			}
+			kv.Domain = ""
+			kv.Project = ""
 			return kv, nil
 		}
 		return nil, err
@@ -97,6 +99,7 @@ func CreateOrUpdate(ctx context.Context, domain string, kv *model.KVDoc, project
 	}
 	kv.Revision = revision
 	kv.Domain = ""
+	kv.Project = ""
 	return kv, nil
 
 }
