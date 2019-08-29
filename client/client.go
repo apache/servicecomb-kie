@@ -147,11 +147,18 @@ func (c *Client) Get(ctx context.Context, key string, opts ...GetOption) ([]*mod
 		}))
 		return nil, fmt.Errorf("get %s failed,http status [%s], body [%s]", key, resp.Status, b)
 	}
-	var kvs []*model.KVDoc
-	err = json.Unmarshal(b, &kvs)
+	var kvRes []*model.KVResponse
+	err = json.Unmarshal(b, &kvRes)
 	if err != nil {
 		openlogging.Error("unmarshal kv failed:" + err.Error())
 		return nil, err
+	}
+	var kvs []*model.KVDoc
+	for _, kvR := range kvRes {
+		kvD := *kvR.Data[0]
+		kvD.LabelID = kvR.LabelDoc.LabelID
+		kvD.Labels = kvR.LabelDoc.Labels
+		kvs = append(kvs, &kvD)
 	}
 	return kvs, nil
 }
