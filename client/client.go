@@ -121,7 +121,7 @@ func (c *Client) Put(ctx context.Context, kv model.KVDoc, opts ...OpOption) (*mo
 }
 
 //Get get value of a key
-func (c *Client) Get(ctx context.Context, key string, opts ...GetOption) ([]*model.KVDoc, error) {
+func (c *Client) Get(ctx context.Context, key string, opts ...GetOption) ([]*model.KVResponse, error) {
 	options := GetOptions{}
 	for _, o := range opts {
 		o(&options)
@@ -147,18 +147,58 @@ func (c *Client) Get(ctx context.Context, key string, opts ...GetOption) ([]*mod
 		}))
 		return nil, fmt.Errorf("get %s failed,http status [%s], body [%s]", key, resp.Status, b)
 	}
-	var kvRes []*model.KVResponse
-	err = json.Unmarshal(b, &kvRes)
+	var kvs []*model.KVResponse
+	err = json.Unmarshal(b, &kvs)
 	if err != nil {
 		openlogging.Error("unmarshal kv failed:" + err.Error())
 		return nil, err
 	}
-	var kvs []*model.KVDoc
-	for _, kvR := range kvRes {
-		kvD := *kvR.Data[0]
-		kvD.LabelID = kvR.LabelDoc.LabelID
-		kvD.Labels = kvR.LabelDoc.Labels
-		kvs = append(kvs, &kvD)
+	return kvs, nil
+}
+
+//Get get value
+func (c *Client) SearchByLabels(ctx context.Context, opts ...GetOption) ([]*model.KVResponse, error) {
+	options := GetOptions{}
+	for _, o := range opts {
+		o(&options)
+	}
+	if options.Project == "" {
+		options.Project = defaultProject
+	}
+	lableReq := "q="
+	i := 1
+	for labelKey, labelValue := range options.Labels {
+		if i == len(options.Labels) {
+			lableReq += labelKey + ":" + labelValue
+		} else {
+			lableReq += labelKey + ":" + labelValue + "+"
+		}
+		i += 1
+	}
+	url := fmt.Sprintf("%s/%s/%s/%s?%s", c.opts.Endpoint, version, options.Project, APIPathKV, lableReq)
+	fmt.Println("SearchByLabels url. ", url)
+	h := http.Header{}
+	resp, err := c.c.HTTPDoWithContext(ctx, "GET", url, h, nil)
+	if err != nil {
+		return nil, err
+	}
+	b := httputil.ReadBody(resp)
+	if resp.StatusCode != http.StatusOK {
+		if resp.StatusCode == http.StatusNotFound {
+			return nil, ErrKeyNotExist
+		}
+		openlogging.Error("get failed", openlogging.WithTags(openlogging.Tags{
+			"p":      options.Project,
+			"status": resp.Status,
+			"body":   b,
+		}))
+		return nil, fmt.Errorf("search %s failed,http status [%s], body [%s]", lableReq, resp.Status, b)
+	}
+	var kvs []*model.KVResponse
+	err = json.Unmarshal(b, &kvs)
+	if err != nil {
+		openlogging.Error("unmarshal kv failed:" + err.Error())
+		return nil, err
 	}
 	return kvs, nil
 }
