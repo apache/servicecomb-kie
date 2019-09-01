@@ -156,7 +156,7 @@ func (c *Client) Get(ctx context.Context, key string, opts ...GetOption) ([]*mod
 	return kvs, nil
 }
 
-//Get get value
+//SearchByLabels get value by lables
 func (c *Client) SearchByLabels(ctx context.Context, opts ...GetOption) ([]*model.KVResponse, error) {
 	options := GetOptions{}
 	for _, o := range opts {
@@ -173,7 +173,7 @@ func (c *Client) SearchByLabels(ctx context.Context, opts ...GetOption) ([]*mode
 		} else {
 			lableReq += labelKey + ":" + labelValue + "+"
 		}
-		i += 1
+		i++
 	}
 	url := fmt.Sprintf("%s/%s/%s/%s?%s", c.opts.Endpoint, version, options.Project, APIPathKV, lableReq)
 	fmt.Println("SearchByLabels url. ", url)
