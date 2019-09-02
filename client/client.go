@@ -39,6 +39,7 @@ const (
 	version        = "v1"
 	APIPathKV      = "kie/kv"
 	ByLabelsPrefix = "q="
+	ByLabelsCon    = "&"
 )
 
 //client errors
@@ -167,12 +168,19 @@ func (c *Client) SearchByLabels(ctx context.Context, opts ...GetOption) ([]*mode
 	if options.Project == "" {
 		options.Project = defaultProject
 	}
-	lableReq := ByLabelsPrefix
-	for labelKey, labelValue := range options.Labels {
-		lableReq += labelKey + ":" + labelValue + "+"
+	lableReq := ""
+	for _, labels := range options.Labels {
+		lableReq += ByLabelsPrefix
+		for labelKey, labelValue := range labels {
+			lableReq += labelKey + ":" + labelValue + "+"
+		}
+		if labels != nil && len(labels) > 0 {
+			lableReq = strings.TrimRight(lableReq, "+")
+		}
+		lableReq += ByLabelsCon
 	}
 	if options.Labels != nil && len(options.Labels) > 0 {
-		lableReq = strings.TrimRight(lableReq, "+")
+		lableReq = strings.TrimRight(lableReq, ByLabelsCon)
 	}
 	url := fmt.Sprintf("%s/%s/%s/%s?%s", c.opts.Endpoint, version, options.Project, APIPathKV, lableReq)
 	fmt.Println("SearchByLabels url. ", url)
