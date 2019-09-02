@@ -25,6 +25,7 @@ import (
 	"fmt"
 	"net/http"
 	"net/url"
+	"strings"
 
 	"github.com/apache/servicecomb-kie/pkg/model"
 	"github.com/go-chassis/foundation/httpclient"
@@ -35,8 +36,9 @@ import (
 
 //const
 const (
-	version   = "v1"
-	APIPathKV = "kie/kv"
+	version        = "v1"
+	APIPathKV      = "kie/kv"
+	ByLabelsPrefix = "q="
 )
 
 //client errors
@@ -165,15 +167,12 @@ func (c *Client) SearchByLabels(ctx context.Context, opts ...GetOption) ([]*mode
 	if options.Project == "" {
 		options.Project = defaultProject
 	}
-	lableReq := "q="
-	i := 1
+	lableReq := ByLabelsPrefix
 	for labelKey, labelValue := range options.Labels {
-		if i == len(options.Labels) {
-			lableReq += labelKey + ":" + labelValue
-		} else {
-			lableReq += labelKey + ":" + labelValue + "+"
-		}
-		i++
+		lableReq += labelKey + ":" + labelValue + "+"
+	}
+	if options.Labels != nil && len(options.Labels) > 0 {
+		lableReq = strings.TrimRight(lableReq, "+")
 	}
 	url := fmt.Sprintf("%s/%s/%s/%s?%s", c.opts.Endpoint, version, options.Project, APIPathKV, lableReq)
 	fmt.Println("SearchByLabels url. ", url)
