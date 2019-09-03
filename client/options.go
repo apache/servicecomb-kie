@@ -29,7 +29,7 @@ type OpOption func(*OpOptions)
 
 //GetOptions is the options of client func
 type GetOptions struct {
-	Labels  map[string]string
+	Labels  []map[string]string
 	Depth   int
 	Project string
 }
@@ -40,9 +40,11 @@ type OpOptions struct {
 }
 
 //WithLabels query kv by labels
-func WithLabels(l map[string]string) GetOption {
+func WithLabels(l ...map[string]string) GetOption {
 	return func(options *GetOptions) {
-		options.Labels = l
+		for _, labels := range l {
+			options.Labels = append(options.Labels, labels)
+		}
 	}
 }
 

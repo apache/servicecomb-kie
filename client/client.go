@@ -23,8 +23,10 @@ import (
 	"encoding/json"
 	"errors"
 	"fmt"
+	"github.com/apache/servicecomb-kie/pkg/common"
 	"net/http"
 	"net/url"
+	"strings"
 
 	"github.com/apache/servicecomb-kie/pkg/model"
 	"github.com/go-chassis/foundation/httpclient"
@@ -121,7 +123,7 @@ func (c *Client) Put(ctx context.Context, kv model.KVDoc, opts ...OpOption) (*mo
 }
 
 //Get get value of a key
-func (c *Client) Get(ctx context.Context, key string, opts ...GetOption) ([]*model.KVDoc, error) {
+func (c *Client) Get(ctx context.Context, key string, opts ...GetOption) ([]*model.KVResponse, error) {
 	options := GetOptions{}
 	for _, o := range opts {
 		o(&options)
@@ -147,7 +149,58 @@ func (c *Client) Get(ctx context.Context, key string, opts ...GetOption) ([]*mod
 		}))
 		return nil, fmt.Errorf("get %s failed,http status [%s], body [%s]", key, resp.Status, b)
 	}
-	var kvs []*model.KVDoc
+	var kvs []*model.KVResponse
+	err = json.Unmarshal(b, &kvs)
+	if err != nil {
+		openlogging.Error("unmarshal kv failed:" + err.Error())
+		return nil, err
+	}
+	return kvs, nil
+}
+
+//SearchByLabels get value by lables
+func (c *Client) SearchByLabels(ctx context.Context, opts ...GetOption) ([]*model.KVResponse, error) {
+	options := GetOptions{}
+	for _, o := range opts {
+		o(&options)
+	}
+	if options.Project == "" {
+		options.Project = defaultProject
+	}
+	lableReq := ""
+	for _, labels := range options.Labels {
+		lableReq += common.QueryParamQ + "="
+		for labelKey, labelValue := range labels {
+			lableReq += labelKey + ":" + labelValue + "+"
+		}
+		if labels != nil && len(labels) > 0 {
+			lableReq = strings.TrimRight(lableReq, "+")
+		}
+		lableReq += common.QueryByLabelsCon
+	}
+	if options.Labels != nil && len(options.Labels) > 0 {
+		lableReq = strings.TrimRight(lableReq, common.QueryByLabelsCon)
+	}
+	url := fmt.Sprintf("%s/%s/%s/%s?%s", c.opts.Endpoint, version, options.Project, APIPathKV, lableReq)
+	fmt.Println("SearchByLabels url. ", url)
+	h := http.Header{}
+	resp, err := c.c.HTTPDoWithContext(ctx, "GET", url, h, nil)
+	if err != nil {
+		return nil, err
+	}
+	b := httputil.ReadBody(resp)
+	if resp.StatusCode != http.StatusOK {
+		if resp.StatusCode == http.StatusNotFound {
+			return nil, ErrKeyNotExist
+		}
+		openlogging.Error("get failed", openlogging.WithTags(openlogging.Tags{
+			"p":      options.Project,
+			"status": resp.Status,
+			"body":   b,
+		}))
+		return nil, fmt.Errorf("search %s failed,http status [%s], body [%s]", lableReq, resp.Status, b)
+	}
+	var kvs []*model.KVResponse
 	err = json.Unmarshal(b, &kvs)
 	if err != nil {
 		openlogging.Error("unmarshal kv failed:" + err.Error())
