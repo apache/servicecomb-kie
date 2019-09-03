@@ -23,6 +23,7 @@ import (
 	"encoding/json"
 	"errors"
 	"fmt"
+	"github.com/apache/servicecomb-kie/pkg/common"
 	"net/http"
 	"net/url"
 	"strings"
@@ -36,10 +37,8 @@ import (
 
 //const
 const (
-	version        = "v1"
-	APIPathKV      = "kie/kv"
-	ByLabelsPrefix = "q="
-	ByLabelsCon    = "&"
+	version   = "v1"
+	APIPathKV = "kie/kv"
 )
 
 //client errors
@@ -170,17 +169,17 @@ func (c *Client) SearchByLabels(ctx context.Context, opts ...GetOption) ([]*mode
 	}
 	lableReq := ""
 	for _, labels := range options.Labels {
-		lableReq += ByLabelsPrefix
+		lableReq += common.QueryParamQ + "="
 		for labelKey, labelValue := range labels {
 			lableReq += labelKey + ":" + labelValue + "+"
 		}
 		if labels != nil && len(labels) > 0 {
 			lableReq = strings.TrimRight(lableReq, "+")
 		}
-		lableReq += ByLabelsCon
+		lableReq += common.QueryByLabelsCon
 	}
 	if options.Labels != nil && len(options.Labels) > 0 {
-		lableReq = strings.TrimRight(lableReq, ByLabelsCon)
+		lableReq = strings.TrimRight(lableReq, common.QueryByLabelsCon)
 	}
 	url := fmt.Sprintf("%s/%s/%s/%s?%s", c.opts.Endpoint, version, options.Project, APIPathKV, lableReq)
 	fmt.Println("SearchByLabels url. ", url)

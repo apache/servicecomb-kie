@@ -19,7 +19,8 @@ package common
 
 //match mode
 const (
-	QueryParamQ = "q"
+	QueryParamQ      = "q"
+	QueryByLabelsCon = "&"
 )
 
 //http headers
