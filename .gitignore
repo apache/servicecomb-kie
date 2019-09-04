@@ -10,6 +10,7 @@ output
 **/*junit.xml
 **/*crt
 **/*.exe
+**/*_build
 **/*.tgz
 vendor/**
 !vendor/manifest

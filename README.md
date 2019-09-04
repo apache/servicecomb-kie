@@ -22,8 +22,6 @@ it means all payment service print debug log, but for other service print info l
 so you can control your application runtime behaviors 
 by setting different labels to a key.
 
-
-
 ## Components
 it includes 5 components
 
@@ -93,6 +91,9 @@ and a docker image "servicecomb/kie:0.0.1"
 
 # API Doc
 swagger/servicecomb-kie.yaml
+
+# Documentations
+follow [here](docs/README.md) to generate it in local
 
 ## Contact
 
