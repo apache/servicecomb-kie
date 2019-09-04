@@ -4,7 +4,7 @@ require (
 	github.com/emicklei/go-restful v2.8.0+incompatible
 	github.com/go-chassis/foundation v0.0.0-20190621030543-c3b63f787f4c
 	github.com/go-chassis/go-archaius v0.20.0
-	github.com/go-chassis/go-chassis v1.6.2-0.20190730080139-fcfd929304bc
+	github.com/go-chassis/go-chassis v1.7.1-0.20190903133217-e4a22c998fe1
 	github.com/go-chassis/paas-lager v1.0.2-0.20190328010332-cf506050ddb2
 	github.com/go-mesh/openlogging v1.0.1-0.20181205082104-3d418c478b2d
 	github.com/golang/snappy v0.0.1 // indirect
