@@ -1,5 +1,4 @@
 #!/usr/bin/env bash
-set -x
 # Licensed to the Apache Software Foundation (ASF) under one or more
 # contributor license agreements.  See the NOTICE file distributed with
 # this work for additional information regarding copyright ownership.
@@ -40,17 +39,17 @@ if [ -d ${release_dir} ]; then
 fi
 
 mkdir -p ${release_dir}/conf
-pkg_name="servicecomb-kie-$version-linux-amd64.tar.gz"
+
 
 export GIT_COMMIT=`git rev-parse HEAD | cut -b 1-7`
 echo "build from ${GIT_COMMIT}"
 
 
-echo "building..."
+echo "building x86..."
 go build -o ${release_dir}/kie github.com/apache/servicecomb-kie/cmd/kieserver
 
 writeConfig(){
-echo "write template config..."
+echo "write chassis config..."
 cat <<EOM > ${release_dir}/conf/chassis.yaml
 cse:
   service:
@@ -67,7 +66,7 @@ cse:
       Provider:
         default: auth-handler,ratelimiter-provider
 EOM
-
+echo "write miroservice config..."
 cat <<EOM > ${release_dir}/conf/microservice.yaml
 service_description:
   name: servicecomb-kie
@@ -76,7 +75,7 @@ EOM
 
 cat <<EOM > ${release_dir}/conf/kie-conf.yaml
 db:
-  uri: mongodb://admin:123@127.0.0.1:27017/kie
+  uri: mongodb://root:root@127.0.0.1:27017/kie
   type: mongodb
   poolSize: 10
   ssl: false
@@ -87,14 +86,24 @@ EOM
 
 writeConfig
 
-echo "packaging tar.gz..."
+component="apache-servicecomb-kie"
+x86_pkg_name="$component-$VERSION-linux-amd64.tar.gz"
+arm_pkg_name="$component-$VERSION-linux-arm64.tar.gz"
+
+echo "packaging x86 tar.gz..."
 cd ${release_dir}
-tar zcf ${pkg_name} conf kie
-
-
+tar zcf ${x86_pkg_name} conf kie
 
 echo "building docker..."
 cp ${PROJECT_DIR}/scripts/start.sh ./
 cp ${PROJECT_DIR}/build/docker/server/Dockerfile ./
 sudo docker version
 sudo docker build -t servicecomb/kie:${version} .
+
+
+echo "building arm64"
+GOARCH=arm64  go build -o ${release_dir}/kie github.com/apache/servicecomb-kie/cmd/kieserver
+echo "packaging arm64 tar.gz..."
+cd ${release_dir}
+tar zcf ${arm_pkg_name} conf kie
+
