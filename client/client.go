@@ -182,7 +182,6 @@ func (c *Client) SearchByLabels(ctx context.Context, opts ...GetOption) ([]*mode
 		lableReq = strings.TrimRight(lableReq, common.QueryByLabelsCon)
 	}
 	url := fmt.Sprintf("%s/%s/%s/%s?%s", c.opts.Endpoint, version, options.Project, APIPathKV, lableReq)
-	fmt.Println("SearchByLabels url. ", url)
 	h := http.Header{}
 	resp, err := c.c.HTTPDoWithContext(ctx, "GET", url, h, nil)
 	if err != nil {
