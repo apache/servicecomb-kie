@@ -32,7 +32,13 @@ else
  version=${VERSION}
 fi
 
-
+CURRENT_OS=`go env GOHOSTOS`
+if [ -z "${GO_HOST_OS}" ]; then
+ echo "missing GO_HOST_OS env, use current OS ${GOOS} as host OS"
+ GOOS=${CURRENT_OS}
+else
+ GOOS=${GO_HOST_OS}
+fi
 
 if [ -d ${release_dir} ]; then
     rm -rf ${release_dir}
@@ -46,7 +52,7 @@ echo "build from ${GIT_COMMIT}"
 
 
 echo "building x86..."
-go build -o ${release_dir}/kie github.com/apache/servicecomb-kie/cmd/kieserver
+GOOS=${GOOS} go build -o ${release_dir}/kie github.com/apache/servicecomb-kie/cmd/kieserver
 
 writeConfig(){
 echo "write chassis config..."
@@ -91,8 +97,9 @@ x86_pkg_name="$component-$version-linux-amd64.tar.gz"
 arm_pkg_name="$component-$version-linux-arm64.tar.gz"
 
 echo "packaging x86 tar.gz..."
+cp ${PROJECT_DIR}/LICENSE ${PROJECT_DIR}/NOTICE ${release_dir}
 cd ${release_dir}
-tar zcf ${x86_pkg_name} conf kie
+tar zcf ${x86_pkg_name} conf kie LICENSE NOTICE
 
 echo "building docker..."
 cp ${PROJECT_DIR}/scripts/start.sh ./
@@ -102,8 +109,9 @@ sudo docker build -t servicecomb/kie:${version} .
 
 
 echo "building arm64"
-GOARCH=arm64  go build -o ${release_dir}/kie github.com/apache/servicecomb-kie/cmd/kieserver
+GOOS=${GO_HOST_OS} GOARCH=arm64 go build -o ${release_dir}/kie github.com/apache/servicecomb-kie/cmd/kieserver
 echo "packaging arm64 tar.gz..."
+cp ${PROJECT_DIR}/LICENSE ${PROJECT_DIR}/NOTICE ${release_dir}
 cd ${release_dir}
-tar zcf ${arm_pkg_name} conf kie
+tar zcf ${arm_pkg_name} conf kie LICENSE NOTICE
 
