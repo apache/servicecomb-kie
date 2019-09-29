@@ -87,8 +87,8 @@ EOM
 writeConfig
 
 component="apache-servicecomb-kie"
-x86_pkg_name="$component-$VERSION-linux-amd64.tar.gz"
-arm_pkg_name="$component-$VERSION-linux-arm64.tar.gz"
+x86_pkg_name="$component-$version-linux-amd64.tar.gz"
+arm_pkg_name="$component-$version-linux-arm64.tar.gz"
 
 echo "packaging x86 tar.gz..."
 cd ${release_dir}
