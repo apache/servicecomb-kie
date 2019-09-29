@@ -20,9 +20,10 @@ package history
 import (
 	"context"
 	"fmt"
-
 	"github.com/apache/servicecomb-kie/pkg/model"
-	"github.com/apache/servicecomb-kie/server/db"
+	"github.com/apache/servicecomb-kie/server/service"
+	"github.com/apache/servicecomb-kie/server/service/mongo/label"
+	"github.com/apache/servicecomb-kie/server/service/mongo/session"
 	"github.com/go-mesh/openlogging"
 	"go.mongodb.org/mongo-driver/bson"
 	"go.mongodb.org/mongo-driver/bson/primitive"
@@ -32,7 +33,7 @@ import (
 //AddHistory increment labels revision and save current label stats to history, then update current revision to db
 func AddHistory(ctx context.Context,
 	labelRevision *model.LabelRevisionDoc, labelID string, kvs []*model.KVDoc) (int, error) {
-	c, err := db.GetClient()
+	c, err := session.GetClient()
 	if err != nil {
 		return 0, err
 	}
@@ -42,7 +43,7 @@ func AddHistory(ctx context.Context,
 	labelRevision.KVs = kvs
 	//clear prev id
 	labelRevision.ID = primitive.NilObjectID
-	collection := c.Database(db.Name).Collection(db.CollectionLabelRevision)
+	collection := c.Database(session.Name).Collection(session.CollectionLabelRevision)
 	_, err = collection.InsertOne(ctx, labelRevision)
 	if err != nil {
 		openlogging.Error(err.Error())
@@ -53,7 +54,7 @@ func AddHistory(ctx context.Context,
 		openlogging.Error(fmt.Sprintf("convert %s,err:%s", labelID, err))
 		return 0, err
 	}
-	labelCollection := c.Database(db.Name).Collection(db.CollectionLabel)
+	labelCollection := c.Database(session.Name).Collection(session.CollectionLabel)
 	_, err = labelCollection.UpdateOne(ctx, bson.M{"_id": hex}, bson.D{
 		{"$set", bson.D{
 			{"revision", labelRevision.Revision},
@@ -67,11 +68,11 @@ func AddHistory(ctx context.Context,
 }
 
 func getHistoryByLabelID(ctx context.Context, filter bson.M) ([]*model.LabelRevisionDoc, error) {
-	c, err := db.GetClient()
+	c, err := session.GetClient()
 	if err != nil {
 		return nil, err
 	}
-	collection := c.Database(db.Name).Collection(db.CollectionLabelRevision)
+	collection := c.Database(session.Name).Collection(session.CollectionLabelRevision)
 	cur, err := collection.Find(ctx, filter, options.Find().SetSort(map[string]interface{}{
 		"revisions": -1,
 	}))
@@ -92,7 +93,36 @@ func getHistoryByLabelID(ctx context.Context, filter bson.M) ([]*model.LabelRevi
 		rvs = append(rvs, &elem)
 	}
 	if !exist {
-		return nil, db.ErrRevisionNotExist
+		return nil, service.ErrRevisionNotExist
 	}
 	return rvs, nil
+}
+
+//GetAndAddHistory get latest labels revision and call AddHistory
+func GetAndAddHistory(ctx context.Context,
+	labelID string, labels map[string]string, kvs []*model.KVDoc, domain string, project string) (int, error) {
+	ctx, cancel := context.WithTimeout(ctx, session.Timeout)
+	defer cancel()
+	r, err := label.GetLatestLabel(ctx, labelID)
+	if err != nil {
+		if err == service.ErrRevisionNotExist {
+			openlogging.Warn(fmt.Sprintf("label revision not exists, create first label revision"))
+			r = &model.LabelRevisionDoc{
+				LabelID:  labelID,
+				Labels:   labels,
+				Domain:   domain,
+				Revision: 0,
+			}
+		} else {
+			openlogging.Error(fmt.Sprintf("get latest [%s] in [%s],err: %s",
+				labelID, domain, err.Error()))
+			return 0, err
+		}
+
+	}
+	r.Revision, err = AddHistory(ctx, r, labelID, kvs)
+	if err != nil {
+		return 0, err
+	}
+	return r.Revision, nil
 }

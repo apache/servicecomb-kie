@@ -15,13 +15,13 @@
  * limitations under the License.
  */
 
-package kvsvc
+package kv
 
 import (
 	"context"
+	"github.com/apache/servicecomb-kie/server/service"
 
 	"github.com/apache/servicecomb-kie/pkg/model"
-	"github.com/apache/servicecomb-kie/server/db"
 	"github.com/go-mesh/openlogging"
 	"go.mongodb.org/mongo-driver/mongo"
 )
@@ -64,5 +64,5 @@ func cursorToOneKV(ctx context.Context, cur *mongo.Cursor, labels map[string]str
 		}
 
 	}
-	return nil, db.ErrKeyNotExists
+	return nil, service.ErrKeyNotExists
 }

@@ -19,6 +19,7 @@ package v1_test
 import (
 	"context"
 	"encoding/json"
+	"github.com/apache/servicecomb-kie/server/service"
 	"io/ioutil"
 
 	"github.com/go-chassis/go-chassis/core/common"
@@ -29,11 +30,9 @@ import (
 	"net/http/httptest"
 
 	"github.com/apache/servicecomb-kie/pkg/model"
-	"github.com/apache/servicecomb-kie/server/db"
-	kvsvc "github.com/apache/servicecomb-kie/server/service/kv"
-
 	"github.com/apache/servicecomb-kie/server/config"
 	v1 "github.com/apache/servicecomb-kie/server/resource/v1"
+	_ "github.com/apache/servicecomb-kie/server/service/mongo"
 	"github.com/go-chassis/go-chassis/server/restful/restfultest"
 
 	. "github.com/onsi/ginkgo"
@@ -48,7 +47,7 @@ var _ = Describe("v1 history resource", func() {
 
 	Describe("get history revisions", func() {
 		config.Configurations.DB.URI = "mongodb://kie:123@127.0.0.1:27017"
-		err := db.Init()
+		err := service.DBInit()
 		It("should not return err", func() {
 			Expect(err).Should(BeNil())
 		})
@@ -59,8 +58,10 @@ var _ = Describe("v1 history resource", func() {
 				Labels: map[string]string{
 					"test": "revisions",
 				},
+				Domain:  "default",
+				Project: "test",
 			}
-			kv, _ = kvsvc.CreateOrUpdate(context.Background(), "default", kv, "test")
+			kv, _ = service.KVService.CreateOrUpdate(context.Background(), kv)
 			path := fmt.Sprintf("/v1/%s/kie/revision/%s", "test", kv.LabelID)
 			r, _ := http.NewRequest("GET", path, nil)
 			revision := &v1.HistoryResource{}

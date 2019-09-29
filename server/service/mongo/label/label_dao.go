@@ -1,28 +1,11 @@
-/*
- * Licensed to the Apache Software Foundation (ASF) under one or more
- * contributor license agreements.  See the NOTICE file distributed with
- * this work for additional information regarding copyright ownership.
- * The ASF licenses this file to You under the Apache License, Version 2.0
- * (the "License"); you may not use this file except in compliance with
- * the License.  You may obtain a copy of the License at
- *
- *     http://www.apache.org/licenses/LICENSE-2.0
- *
- * Unless required by applicable law or agreed to in writing, software
- * distributed under the License is distributed on an "AS IS" BASIS,
- * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
- * See the License for the specific language governing permissions and
- * limitations under the License.
- */
-
 package label
 
 import (
 	"context"
 	"fmt"
-
 	"github.com/apache/servicecomb-kie/pkg/model"
-	"github.com/apache/servicecomb-kie/server/db"
+	"github.com/apache/servicecomb-kie/server/service"
+	"github.com/apache/servicecomb-kie/server/service/mongo/session"
 	"github.com/go-mesh/openlogging"
 	"go.mongodb.org/mongo-driver/bson"
 	"go.mongodb.org/mongo-driver/bson/primitive"
@@ -33,35 +16,14 @@ const (
 	defaultLabels = "default"
 )
 
-//CreateLabel create a new label
-func CreateLabel(ctx context.Context, domain string, labels map[string]string, project string) (*model.LabelDoc, error) {
-	c, err := db.GetClient()
-	if err != nil {
-		return nil, err
-	}
-	l := &model.LabelDoc{
-		Domain:  domain,
-		Labels:  labels,
-		Project: project,
-	}
-	collection := c.Database(db.Name).Collection(db.CollectionLabel)
-	res, err := collection.InsertOne(ctx, l)
-	if err != nil {
-		return nil, err
-	}
-	objectID, _ := res.InsertedID.(primitive.ObjectID)
-	l.ID = objectID
-	return l, nil
-}
-
 //FindLabels find label doc by labels and project, check if the project has certain labels
 //if map is empty. will return default labels doc which has no labels
-func FindLabels(ctx context.Context, domain string, project string, labels map[string]string) (*model.LabelDoc, error) {
-	c, err := db.GetClient()
+func FindLabels(ctx context.Context, domain, project string, labels map[string]string) (*model.LabelDoc, error) {
+	c, err := session.GetClient()
 	if err != nil {
 		return nil, err
 	}
-	collection := c.Database(db.Name).Collection(db.CollectionLabel)
+	collection := c.Database(session.Name).Collection(session.CollectionLabel)
 
 	filter := bson.M{"domain": domain, "project": project}
 	for k, v := range labels {
@@ -79,7 +41,7 @@ func FindLabels(ctx context.Context, domain string, project string, labels map[s
 	if cur.Err() != nil {
 		return nil, err
 	}
-	openlogging.Debug(fmt.Sprintf("find lables [%s] in [%s]", labels, domain))
+	openlogging.Debug(fmt.Sprintf("find labels [%s] in [%s]", labels, domain))
 	curLabel := &model.LabelDoc{} //reuse this pointer to reduce GC, only clear label
 	//check label length to get the exact match
 	for cur.Next(ctx) { //although complexity is O(n), but there won't be so much labels
@@ -96,16 +58,16 @@ func FindLabels(ctx context.Context, domain string, project string, labels map[s
 		}
 
 	}
-	return nil, db.ErrLabelNotExists
+	return nil, session.ErrLabelNotExists
 }
 
 //GetLatestLabel query revision table and find maximum revision number
 func GetLatestLabel(ctx context.Context, labelID string) (*model.LabelRevisionDoc, error) {
-	c, err := db.GetClient()
+	c, err := session.GetClient()
 	if err != nil {
 		return nil, err
 	}
-	collection := c.Database(db.Name).Collection(db.CollectionLabelRevision)
+	collection := c.Database(session.Name).Collection(session.CollectionLabelRevision)
 
 	filter := bson.M{"label_id": labelID}
 
@@ -127,7 +89,45 @@ func GetLatestLabel(ctx context.Context, labelID string) (*model.LabelRevisionDo
 		break
 	}
 	if !exist {
-		return nil, db.ErrRevisionNotExist
+		return nil, service.ErrRevisionNotExist
 	}
 	return h, nil
+}
+
+//Exist check whether the project has certain label or not and return label ID
+func Exist(ctx context.Context, domain string, project string, labels map[string]string) (primitive.ObjectID, error) {
+	l, err := FindLabels(ctx, domain, project, labels)
+	if err != nil {
+		if err.Error() == context.DeadlineExceeded.Error() {
+			openlogging.Error("find label failed, dead line exceeded", openlogging.WithTags(openlogging.Tags{
+				"timeout": session.Timeout,
+			}))
+			return primitive.NilObjectID, fmt.Errorf("operation timout %s", session.Timeout)
+		}
+		return primitive.NilObjectID, err
+	}
+
+	return l.ID, nil
+
+}
+
+//CreateLabel create a new label
+func CreateLabel(ctx context.Context, domain string, labels map[string]string, project string) (*model.LabelDoc, error) {
+	c, err := session.GetClient()
+	if err != nil {
+		return nil, err
+	}
+	l := &model.LabelDoc{
+		Domain:  domain,
+		Labels:  labels,
+		Project: project,
+	}
+	collection := c.Database(session.Name).Collection(session.CollectionLabel)
+	res, err := collection.InsertOne(ctx, l)
+	if err != nil {
+		return nil, err
+	}
+	objectID, _ := res.InsertedID.(primitive.ObjectID)
+	l.ID = objectID
+	return l, nil
 }

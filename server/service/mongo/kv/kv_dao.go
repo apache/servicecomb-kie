@@ -15,16 +15,17 @@
  * limitations under the License.
  */
 
-package kvsvc
+package kv
 
 import (
 	"context"
 	"fmt"
+	"github.com/apache/servicecomb-kie/server/service"
+	"github.com/apache/servicecomb-kie/server/service/mongo/label"
+	"github.com/apache/servicecomb-kie/server/service/mongo/session"
 
 	"github.com/apache/servicecomb-kie/pkg/model"
-	"github.com/apache/servicecomb-kie/server/db"
-	"github.com/apache/servicecomb-kie/server/service/history"
-	"github.com/apache/servicecomb-kie/server/service/label"
+	"github.com/apache/servicecomb-kie/server/service/mongo/history"
 	"github.com/go-mesh/openlogging"
 	"go.mongodb.org/mongo-driver/bson"
 	"go.mongodb.org/mongo-driver/bson/primitive"
@@ -35,13 +36,13 @@ import (
 //and increase revision of label
 //and insert key
 func createKey(ctx context.Context, kv *model.KVDoc) (*model.KVDoc, error) {
-	c, err := db.GetClient()
+	c, err := session.GetClient()
 	if err != nil {
 		return nil, err
 	}
 	r, err := label.GetLatestLabel(ctx, kv.LabelID)
 	if err != nil {
-		if err != db.ErrRevisionNotExist {
+		if err != service.ErrRevisionNotExist {
 			openlogging.Error(fmt.Sprintf("get latest [%s][%s] in [%s],err: %s",
 				kv.Key, kv.Labels, kv.Domain, err.Error()))
 			return nil, err
@@ -53,7 +54,7 @@ func createKey(ctx context.Context, kv *model.KVDoc) (*model.KVDoc, error) {
 	if r != nil {
 		r.Revision = r.Revision + 1
 	}
-	collection := c.Database(db.Name).Collection(db.CollectionKV)
+	collection := c.Database(session.Name).Collection(session.CollectionKV)
 	res, err := collection.InsertOne(ctx, kv)
 	if err != nil {
 		return nil, err
@@ -62,7 +63,7 @@ func createKey(ctx context.Context, kv *model.KVDoc) (*model.KVDoc, error) {
 	kv.ID = objectID
 	kvs, err := findKeys(ctx, bson.M{"label_id": kv.LabelID}, true)
 	//Key may be empty When delete
-	if err != nil && err != db.ErrKeyNotExists {
+	if err != nil && err != service.ErrKeyNotExists {
 		return nil, err
 	}
 	revision, err := history.GetAndAddHistory(ctx, kv.LabelID, kv.Labels, kvs, kv.Domain, kv.Project)
@@ -81,11 +82,11 @@ func createKey(ctx context.Context, kv *model.KVDoc) (*model.KVDoc, error) {
 //and increase revision of label
 //and updateKeyValue and them add new revision
 func updateKeyValue(ctx context.Context, kv *model.KVDoc) (int, error) {
-	c, err := db.GetClient()
+	c, err := session.GetClient()
 	if err != nil {
 		return 0, err
 	}
-	collection := c.Database(db.Name).Collection(db.CollectionKV)
+	collection := c.Database(session.Name).Collection(session.CollectionKV)
 	ur, err := collection.UpdateOne(ctx, bson.M{"key": kv.Key, "label_id": kv.LabelID}, bson.D{
 		{"$set", bson.D{
 			{"value", kv.Value},
@@ -100,7 +101,7 @@ func updateKeyValue(ctx context.Context, kv *model.KVDoc) (int, error) {
 			kv.Key, kv.Labels, kv.Value, ur.ModifiedCount))
 	kvs, err := findKeys(ctx, bson.M{"label_id": kv.LabelID}, true)
 	//Key may be empty When delete
-	if err != nil && err != db.ErrKeyNotExists {
+	if err != nil && err != service.ErrKeyNotExists {
 		return 0, err
 	}
 	revision, err := history.GetAndAddHistory(ctx, kv.LabelID, kv.Labels, kvs, kv.Domain, kv.Project)
@@ -116,12 +117,12 @@ func updateKeyValue(ctx context.Context, kv *model.KVDoc) (int, error) {
 
 }
 
-func findKV(ctx context.Context, domain string, project string, opts FindOptions) (*mongo.Cursor, error) {
-	c, err := db.GetClient()
+func findKV(ctx context.Context, domain string, project string, opts service.FindOptions) (*mongo.Cursor, error) {
+	c, err := session.GetClient()
 	if err != nil {
 		return nil, err
 	}
-	collection := c.Database(db.Name).Collection(db.CollectionKV)
+	collection := c.Database(session.Name).Collection(session.CollectionKV)
 	ctx, _ = context.WithTimeout(ctx, opts.Timeout)
 	filter := bson.M{"domain": domain, "project": project}
 	if opts.Key != "" {
@@ -144,11 +145,11 @@ func findKV(ctx context.Context, domain string, project string, opts FindOptions
 	return cur, err
 }
 func findOneKey(ctx context.Context, filter bson.M) ([]*model.KVDoc, error) {
-	c, err := db.GetClient()
+	c, err := session.GetClient()
 	if err != nil {
 		return nil, err
 	}
-	collection := c.Database(db.Name).Collection(db.CollectionKV)
+	collection := c.Database(session.Name).Collection(session.CollectionKV)
 	sr := collection.FindOne(ctx, filter)
 	if sr.Err() != nil {
 		return nil, sr.Err()
@@ -157,7 +158,7 @@ func findOneKey(ctx context.Context, filter bson.M) ([]*model.KVDoc, error) {
 	err = sr.Decode(curKV)
 	if err != nil {
 		if err == mongo.ErrNoDocuments {
-			return nil, db.ErrKeyNotExists
+			return nil, service.ErrKeyNotExists
 		}
 		openlogging.Error("decode error: " + err.Error())
 		return nil, err
@@ -165,13 +166,13 @@ func findOneKey(ctx context.Context, filter bson.M) ([]*model.KVDoc, error) {
 	return []*model.KVDoc{curKV}, nil
 }
 
-//DeleteKV by kvID
-func DeleteKV(ctx context.Context, hexID primitive.ObjectID, project string) error {
-	c, err := db.GetClient()
+//deleteKV by kvID
+func deleteKV(ctx context.Context, hexID primitive.ObjectID, project string) error {
+	c, err := session.GetClient()
 	if err != nil {
 		return err
 	}
-	collection := c.Database(db.Name).Collection(db.CollectionKV)
+	collection := c.Database(session.Name).Collection(session.CollectionKV)
 	dr, err := collection.DeleteOne(ctx, bson.M{"_id": hexID, "project": project})
 	//check error and delete number
 	if err != nil {
@@ -186,16 +187,16 @@ func DeleteKV(ctx context.Context, hexID primitive.ObjectID, project string) err
 	return err
 }
 func findKeys(ctx context.Context, filter bson.M, withoutLabel bool) ([]*model.KVDoc, error) {
-	c, err := db.GetClient()
+	c, err := session.GetClient()
 	if err != nil {
 		return nil, err
 	}
-	collection := c.Database(db.Name).Collection(db.CollectionKV)
+	collection := c.Database(session.Name).Collection(session.CollectionKV)
 	cur, err := collection.Find(ctx, filter)
 	if err != nil {
 		if err.Error() == context.DeadlineExceeded.Error() {
 			openlogging.Error("find kvs failed, dead line exceeded", openlogging.WithTags(openlogging.Tags{
-				"timeout": db.Timeout,
+				"timeout": session.Timeout,
 			}))
 			return nil, fmt.Errorf("can not find keys due to timout")
 		}
@@ -220,7 +221,21 @@ func findKeys(ctx context.Context, filter bson.M, withoutLabel bool) ([]*model.K
 
 	}
 	if len(kvs) == 0 {
-		return nil, db.ErrKeyNotExists
+		return nil, service.ErrKeyNotExists
 	}
 	return kvs, nil
+}
+
+//findKVByLabelID get kvs by key and label id
+//key can be empty, then it will return all key values
+//if key is given, will return 0-1 key value
+func findKVByLabelID(ctx context.Context, domain, labelID, key string, project string) ([]*model.KVDoc, error) {
+
+	filter := bson.M{"label_id": labelID, "domain": domain, "project": project}
+	if key != "" {
+		filter["key"] = key
+		return findOneKey(ctx, filter)
+	}
+	return findKeys(ctx, filter, true)
+
 }

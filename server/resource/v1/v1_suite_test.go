@@ -22,6 +22,8 @@ import (
 
 	. "github.com/onsi/ginkgo"
 	. "github.com/onsi/gomega"
+
+	_ "github.com/apache/servicecomb-kie/server/service/mongo"
 )
 
 func TestV1(t *testing.T) {

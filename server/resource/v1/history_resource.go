@@ -18,12 +18,11 @@
 package v1
 
 import (
+	"github.com/apache/servicecomb-kie/server/service"
 	"net/http"
 
 	"github.com/apache/servicecomb-kie/pkg/common"
 	"github.com/apache/servicecomb-kie/pkg/model"
-	"github.com/apache/servicecomb-kie/server/db"
-	rvsvc "github.com/apache/servicecomb-kie/server/service/history"
 	goRestful "github.com/emicklei/go-restful"
 	"github.com/go-chassis/go-chassis/server/restful"
 	"github.com/go-mesh/openlogging"
@@ -42,9 +41,9 @@ func (r *HistoryResource) GetRevisionsByLabelID(context *restful.Context) {
 		WriteErrResponse(context, http.StatusForbidden, "label_id must not be empty", common.ContentTypeText)
 		return
 	}
-	revisions, err := rvsvc.GetHistoryByLabelID(context.Ctx, labelID)
+	revisions, err := service.HistoryService.GetHistoryByLabelID(context.Ctx, labelID)
 	if err != nil {
-		if err == db.ErrRevisionNotExist {
+		if err == service.ErrRevisionNotExist {
 			WriteErrResponse(context, http.StatusNotFound, err.Error(), common.ContentTypeText)
 			return
 		}

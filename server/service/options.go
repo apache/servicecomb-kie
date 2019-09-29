@@ -15,7 +15,7 @@
  * limitations under the License.
  */
 
-package kvsvc
+package service
 
 import "time"
 

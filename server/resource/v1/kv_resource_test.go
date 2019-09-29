@@ -20,6 +20,7 @@ package v1_test
 import (
 	"bytes"
 	"encoding/json"
+	"github.com/apache/servicecomb-kie/server/service"
 	"io/ioutil"
 	"net/http"
 	"net/http/httptest"
@@ -32,9 +33,9 @@ import (
 
 	"github.com/apache/servicecomb-kie/pkg/model"
 	"github.com/apache/servicecomb-kie/server/config"
-	"github.com/apache/servicecomb-kie/server/db"
 	noop "github.com/apache/servicecomb-kie/server/handler"
 	v1 "github.com/apache/servicecomb-kie/server/resource/v1"
+	_ "github.com/apache/servicecomb-kie/server/service/mongo"
 )
 
 var _ = Describe("v1 kv resource", func() {
@@ -45,7 +46,7 @@ var _ = Describe("v1 kv resource", func() {
 
 	Describe("put kv", func() {
 		config.Configurations.DB.URI = "mongodb://kie:123@127.0.0.1:27017"
-		err := db.Init()
+		err := service.DBInit()
 		It("should not return err", func() {
 			Expect(err).Should(BeNil())
 		})

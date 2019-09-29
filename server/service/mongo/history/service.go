@@ -15,30 +15,20 @@
  * limitations under the License.
  */
 
-package label
+package history
 
 import (
 	"context"
-	"fmt"
-
-	"github.com/apache/servicecomb-kie/server/db"
-	"github.com/go-mesh/openlogging"
-	"go.mongodb.org/mongo-driver/bson/primitive"
+	"github.com/apache/servicecomb-kie/pkg/model"
+	"go.mongodb.org/mongo-driver/bson"
 )
 
-//Exist check whether the project has certain label or not and return label ID
-func Exist(ctx context.Context, domain string, project string, labels map[string]string) (primitive.ObjectID, error) {
-	l, err := FindLabels(ctx, domain, project, labels)
-	if err != nil {
-		if err.Error() == context.DeadlineExceeded.Error() {
-			openlogging.Error("find label failed, dead line exceeded", openlogging.WithTags(openlogging.Tags{
-				"timeout": db.Timeout,
-			}))
-			return primitive.NilObjectID, fmt.Errorf("operation timout %s", db.Timeout)
-		}
-		return primitive.NilObjectID, err
-	}
+//Service is the implementation
+type Service struct {
+}
 
-	return l.ID, nil
-
+//GetHistoryByLabelID get all history by label id
+func (s *Service) GetHistoryByLabelID(ctx context.Context, labelID string) ([]*model.LabelRevisionDoc, error) {
+	filter := bson.M{"label_id": labelID}
+	return getHistoryByLabelID(ctx, filter)
 }

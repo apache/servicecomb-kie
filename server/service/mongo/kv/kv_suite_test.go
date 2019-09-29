@@ -15,7 +15,7 @@
  * limitations under the License.
  */
 
-package kvsvc_test
+package kv_test
 
 import (
 	"testing"
