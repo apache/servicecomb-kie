@@ -24,8 +24,7 @@ import (
 
 	"github.com/apache/servicecomb-kie/pkg/common"
 	"github.com/apache/servicecomb-kie/pkg/model"
-	"github.com/apache/servicecomb-kie/server/db"
-	kvsvc "github.com/apache/servicecomb-kie/server/service/kv"
+	"github.com/apache/servicecomb-kie/server/service"
 	goRestful "github.com/emicklei/go-restful"
 	"github.com/go-chassis/go-chassis/server/restful"
 	"github.com/go-mesh/openlogging"
@@ -55,7 +54,9 @@ func (r *KVResource) Put(context *restful.Context) {
 		WriteErrResponse(context, http.StatusInternalServerError, MsgDomainMustNotBeEmpty, common.ContentTypeText)
 	}
 	kv.Key = key
-	kv, err = kvsvc.CreateOrUpdate(context.Ctx, domain.(string), kv, project)
+	kv.Domain = domain.(string)
+	kv.Project = project
+	kv, err = service.KVService.CreateOrUpdate(context.Ctx, kv)
 	if err != nil {
 		ErrLog("put", kv, err)
 		WriteErrResponse(context, http.StatusInternalServerError, err.Error(), common.ContentTypeText)
@@ -101,10 +102,10 @@ func (r *KVResource) GetByKey(context *restful.Context) {
 		WriteErrResponse(context, http.StatusBadRequest, MsgIllegalDepth, common.ContentTypeText)
 		return
 	}
-	kvs, err := kvsvc.FindKV(context.Ctx, domain.(string), project,
-		kvsvc.WithKey(key), kvsvc.WithLabels(labels), kvsvc.WithDepth(d))
+	kvs, err := service.KVService.FindKV(context.Ctx, domain.(string), project,
+		service.WithKey(key), service.WithLabels(labels), service.WithDepth(d))
 	if err != nil {
-		if err == db.ErrKeyNotExists {
+		if err == service.ErrKeyNotExists {
 			WriteErrResponse(context, http.StatusNotFound, err.Error(), common.ContentTypeText)
 			return
 		}
@@ -141,9 +142,9 @@ func (r *KVResource) SearchByLabels(context *restful.Context) {
 		openlogging.Debug("find by combination", openlogging.WithTags(openlogging.Tags{
 			"q": labels,
 		}))
-		result, err := kvsvc.FindKV(context.Ctx, domain.(string), project, kvsvc.WithLabels(labels))
+		result, err := service.KVService.FindKV(context.Ctx, domain.(string), project, service.WithLabels(labels))
 		if err != nil {
-			if err == db.ErrKeyNotExists {
+			if err == service.ErrKeyNotExists {
 				continue
 			} else {
 				openlogging.Error("can not find by labels", openlogging.WithTags(openlogging.Tags{
@@ -185,7 +186,7 @@ func (r *KVResource) Delete(context *restful.Context) {
 		return
 	}
 	labelID := context.ReadQueryParameter("labelID")
-	err := kvsvc.Delete(kvID, labelID, domain.(string), project)
+	err := service.KVService.Delete(kvID, labelID, domain.(string), project)
 	if err != nil {
 		openlogging.Error("delete failed ,", openlogging.WithTags(openlogging.Tags{
 			"kvID":    kvID,

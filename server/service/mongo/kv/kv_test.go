@@ -15,15 +15,15 @@
  * limitations under the License.
  */
 
-package kvsvc_test
+package kv_test
 
 import (
 	"context"
-
 	"github.com/apache/servicecomb-kie/pkg/model"
 	"github.com/apache/servicecomb-kie/server/config"
-	"github.com/apache/servicecomb-kie/server/db"
-	kvsvc "github.com/apache/servicecomb-kie/server/service/kv"
+	"github.com/apache/servicecomb-kie/server/service"
+	"github.com/apache/servicecomb-kie/server/service/mongo/kv"
+	"github.com/apache/servicecomb-kie/server/service/mongo/session"
 	. "github.com/onsi/ginkgo"
 	. "github.com/onsi/gomega"
 )
@@ -32,22 +32,25 @@ var _ = Describe("Kv mongodb service", func() {
 	var err error
 	Describe("connecting db", func() {
 		config.Configurations = &config.Config{DB: config.DB{URI: "mongodb://kie:123@127.0.0.1:27017"}}
-		err = db.Init()
+		err = session.Init()
 		It("should not return err", func() {
 			Expect(err).Should(BeNil())
 		})
 	})
-
+	kvsvc := &kv.Service{}
 	Describe("put kv timeout", func() {
+
 		Context("with labels app and service", func() {
-			kv, err := kvsvc.CreateOrUpdate(context.TODO(), "default", &model.KVDoc{
+			kv, err := kvsvc.CreateOrUpdate(context.TODO(), &model.KVDoc{
 				Key:   "timeout",
 				Value: "2s",
 				Labels: map[string]string{
 					"app":     "mall",
 					"service": "cart",
 				},
-			}, "test")
+				Domain:  "default",
+				Project: "test",
+			})
 			It("should not return err", func() {
 				Expect(err).Should(BeNil())
 			})
@@ -57,7 +60,7 @@ var _ = Describe("Kv mongodb service", func() {
 
 		})
 		Context("with labels app, service and version", func() {
-			kv, err := kvsvc.CreateOrUpdate(context.TODO(), "default", &model.KVDoc{
+			kv, err := kvsvc.CreateOrUpdate(context.TODO(), &model.KVDoc{
 				Key:   "timeout",
 				Value: "2s",
 				Labels: map[string]string{
@@ -65,8 +68,10 @@ var _ = Describe("Kv mongodb service", func() {
 					"service": "cart",
 					"version": "1.0.0",
 				},
-			}, "test")
-			oid, err := kvsvc.KVExist(context.TODO(), "default", "timeout", "test", kvsvc.WithLabels(map[string]string{
+				Domain:  "default",
+				Project: "test",
+			})
+			oid, err := kvsvc.Exist(context.TODO(), "default", "timeout", "test", service.WithLabels(map[string]string{
 				"app":     "mall",
 				"service": "cart",
 				"version": "1.0.0",
@@ -82,43 +87,45 @@ var _ = Describe("Kv mongodb service", func() {
 			})
 		})
 		Context("with labels app,and update value", func() {
-			beforeKV, err := kvsvc.CreateOrUpdate(context.Background(), "default", &model.KVDoc{
-				Key:    "timeout",
-				Value:  "1s",
-				Domain: "default",
+			beforeKV, err := kvsvc.CreateOrUpdate(context.Background(), &model.KVDoc{
+				Key:   "timeout",
+				Value: "1s",
 				Labels: map[string]string{
 					"app": "mall",
 				},
-			}, "test")
+				Domain:  "default",
+				Project: "test",
+			})
 			It("should not return err", func() {
 				Expect(err).Should(BeNil())
 			})
-			kvs1, err := kvsvc.FindKV(context.Background(), "default", "test", kvsvc.WithKey("timeout"), kvsvc.WithLabels(map[string]string{
+			kvs1, err := kvsvc.FindKV(context.Background(), "default", "test", service.WithKey("timeout"), service.WithLabels(map[string]string{
 				"app": "mall",
-			}), kvsvc.WithExactLabels())
+			}), service.WithExactLabels())
 			It("should be 1s", func() {
 				Expect(kvs1[0].Data[0].Value).Should(Equal(beforeKV.Value))
 			})
-			afterKV, err := kvsvc.CreateOrUpdate(context.Background(), "default", &model.KVDoc{
-				Key:    "timeout",
-				Value:  "3s",
-				Domain: "default",
+			afterKV, err := kvsvc.CreateOrUpdate(context.Background(), &model.KVDoc{
+				Key:   "timeout",
+				Value: "3s",
 				Labels: map[string]string{
 					"app": "mall",
 				},
-			}, "test")
+				Domain:  "default",
+				Project: "test",
+			})
 			It("should has same id", func() {
 				Expect(afterKV.ID.Hex()).Should(Equal(beforeKV.ID.Hex()))
 			})
-			oid, err := kvsvc.KVExist(context.Background(), "default", "timeout", "test", kvsvc.WithLabels(map[string]string{
+			oid, err := kvsvc.Exist(context.Background(), "default", "timeout", "test", service.WithLabels(map[string]string{
 				"app": "mall",
 			}))
 			It("should exists", func() {
 				Expect(oid.Hex()).Should(Equal(beforeKV.ID.Hex()))
 			})
-			kvs, err := kvsvc.FindKV(context.Background(), "default", "test", kvsvc.WithKey("timeout"), kvsvc.WithLabels(map[string]string{
+			kvs, err := kvsvc.FindKV(context.Background(), "default", "test", service.WithKey("timeout"), service.WithLabels(map[string]string{
 				"app": "mall",
-			}), kvsvc.WithExactLabels())
+			}), service.WithExactLabels())
 			It("should be 3s", func() {
 				Expect(kvs[0].Data[0].Value).Should(Equal(afterKV.Value))
 			})
@@ -128,7 +135,7 @@ var _ = Describe("Kv mongodb service", func() {
 	Describe("greedy find by kv and labels", func() {
 		Context("with labels app,depth is 1 ", func() {
 			kvs, err := kvsvc.FindKV(context.Background(), "default", "test",
-				kvsvc.WithKey("timeout"), kvsvc.WithLabels(map[string]string{
+				service.WithKey("timeout"), service.WithLabels(map[string]string{
 					"app": "mall",
 				}))
 			It("should not return err", func() {
@@ -140,11 +147,11 @@ var _ = Describe("Kv mongodb service", func() {
 
 		})
 		Context("with labels app,depth is 2 ", func() {
-			kvs, err := kvsvc.FindKV(context.Background(), "default", "test", kvsvc.WithKey("timeout"),
-				kvsvc.WithLabels(map[string]string{
+			kvs, err := kvsvc.FindKV(context.Background(), "default", "test", service.WithKey("timeout"),
+				service.WithLabels(map[string]string{
 					"app": "mall",
 				}),
-				kvsvc.WithDepth(2))
+				service.WithDepth(2))
 			It("should not return err", func() {
 				Expect(err).Should(BeNil())
 			})
@@ -156,9 +163,9 @@ var _ = Describe("Kv mongodb service", func() {
 	})
 	Describe("exact find by kv and labels", func() {
 		Context("with labels app ", func() {
-			kvs, err := kvsvc.FindKV(context.Background(), "default", "test", kvsvc.WithKey("timeout"), kvsvc.WithLabels(map[string]string{
+			kvs, err := kvsvc.FindKV(context.Background(), "default", "test", service.WithKey("timeout"), service.WithLabels(map[string]string{
 				"app": "mall",
-			}), kvsvc.WithExactLabels())
+			}), service.WithExactLabels())
 			It("should not return err", func() {
 				Expect(err).Should(BeNil())
 			})
@@ -170,9 +177,9 @@ var _ = Describe("Kv mongodb service", func() {
 	})
 	Describe("exact find by labels", func() {
 		Context("with labels app ", func() {
-			kvs, err := kvsvc.FindKV(context.Background(), "default", "test", kvsvc.WithLabels(map[string]string{
+			kvs, err := kvsvc.FindKV(context.Background(), "default", "test", service.WithLabels(map[string]string{
 				"app": "mall",
-			}), kvsvc.WithExactLabels())
+			}), service.WithExactLabels())
 			It("should not return err", func() {
 				Expect(err).Should(BeNil())
 			})
@@ -184,7 +191,7 @@ var _ = Describe("Kv mongodb service", func() {
 	})
 	Describe("greedy find by labels", func() {
 		Context("with labels app ans service ", func() {
-			kvs, err := kvsvc.FindKV(context.Background(), "default", "test", kvsvc.WithLabels(map[string]string{
+			kvs, err := kvsvc.FindKV(context.Background(), "default", "test", service.WithLabels(map[string]string{
 				"app":     "mall",
 				"service": "cart",
 			}))
@@ -200,13 +207,15 @@ var _ = Describe("Kv mongodb service", func() {
 
 	Describe("delete key", func() {
 		Context("delete key by kvID", func() {
-			kv1, err := kvsvc.CreateOrUpdate(context.Background(), "default", &model.KVDoc{
+			kv1, err := kvsvc.CreateOrUpdate(context.Background(), &model.KVDoc{
 				Key:   "timeout",
 				Value: "20s",
 				Labels: map[string]string{
 					"env": "test",
 				},
-			}, "test")
+				Domain:  "default",
+				Project: "test",
+			})
 			It("should not return err", func() {
 				Expect(err).Should(BeNil())
 			})
@@ -221,13 +230,15 @@ var _ = Describe("Kv mongodb service", func() {
 
 		})
 		Context("delete key by kvID and labelID", func() {
-			kv1, err := kvsvc.CreateOrUpdate(context.Background(), "default", &model.KVDoc{
+			kv1, err := kvsvc.CreateOrUpdate(context.Background(), &model.KVDoc{
 				Key:   "timeout",
 				Value: "20s",
 				Labels: map[string]string{
 					"env": "test",
 				},
-			}, "test")
+				Domain:  "default",
+				Project: "test",
+			})
 			It("should not return err", func() {
 				Expect(err).Should(BeNil())
 			})
@@ -256,7 +267,7 @@ var _ = Describe("Kv mongodb service", func() {
 		Context("Test miss domain error ", func() {
 			err := kvsvc.Delete("12312312321", "", "", "test")
 			It("should return err", func() {
-				Expect(err).Should(Equal(db.ErrMissingDomain))
+				Expect(err).Should(Equal(session.ErrMissingDomain))
 			})
 		})
 	})

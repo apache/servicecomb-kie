@@ -18,13 +18,13 @@
 package main
 
 import (
+	"github.com/apache/servicecomb-kie/server/service"
 	"os"
-
-	"github.com/apache/servicecomb-kie/server/db"
 
 	"github.com/apache/servicecomb-kie/server/config"
 	_ "github.com/apache/servicecomb-kie/server/handler"
 	v1 "github.com/apache/servicecomb-kie/server/resource/v1"
+	_ "github.com/apache/servicecomb-kie/server/service/mongo"
 	"github.com/go-chassis/go-chassis"
 	"github.com/go-mesh/openlogging"
 	"github.com/urfave/cli"
@@ -80,7 +80,7 @@ func main() {
 	if err := config.Init(Configs.ConfigFile); err != nil {
 		openlogging.Fatal(err.Error())
 	}
-	if err := db.Init(); err != nil {
+	if err := service.DBInit(); err != nil {
 		openlogging.Fatal(err.Error())
 	}
 	if err := chassis.Run(); err != nil {

@@ -15,8 +15,8 @@
  * limitations under the License.
  */
 
-//Package db manage db connection
-package db
+//Package session manage db connection
+package session
 
 import (
 	"context"
@@ -47,13 +47,12 @@ const (
 
 //db errors
 var (
-	ErrMissingDomain          = errors.New("domain info missing, illegal access")
-	ErrMissingProject         = errors.New("project info missing, illegal access")
-	ErrKeyNotExists           = errors.New("key with labels does not exits")
-	ErrLabelNotExists         = errors.New("labels does not exits")
-	ErrTooMany                = errors.New("key with labels should be only one")
-	ErrKeyMustNotEmpty        = errors.New("must supply key if you want to get exact one result")
-	ErrRevisionNotExist       = errors.New("label revision not exist")
+	ErrMissingDomain   = errors.New("domain info missing, illegal access")
+	ErrMissingProject  = errors.New("project info missing, illegal access")
+	ErrLabelNotExists  = errors.New("labels does not exits")
+	ErrTooMany         = errors.New("key with labels should be only one")
+	ErrKeyMustNotEmpty = errors.New("must supply key if you want to get exact one result")
+
 	ErrKVIDIsNil              = errors.New("kvID id is nil")
 	ErrKvIDAndLabelIDNotMatch = errors.New("kvID and labelID do not match")
 	ErrRootCAMissing          = errors.New("rootCAFile is empty in config file")

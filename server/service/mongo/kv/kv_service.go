@@ -15,25 +15,26 @@
  * limitations under the License.
  */
 
-package kvsvc
+package kv
 
 import (
 	"context"
 	"fmt"
+	"github.com/apache/servicecomb-kie/server/service"
+	"github.com/apache/servicecomb-kie/server/service/mongo/label"
+	"github.com/apache/servicecomb-kie/server/service/mongo/session"
 	"reflect"
 	"time"
 
 	"github.com/apache/servicecomb-kie/pkg/model"
-	"github.com/apache/servicecomb-kie/server/db"
-	"github.com/apache/servicecomb-kie/server/service/history"
-	"github.com/apache/servicecomb-kie/server/service/label"
+	"github.com/apache/servicecomb-kie/server/service/mongo/history"
 	"github.com/go-mesh/openlogging"
 	"go.mongodb.org/mongo-driver/bson"
 	"go.mongodb.org/mongo-driver/bson/primitive"
 )
 
-//MongodbService operate data in mongodb
-type MongodbService struct {
+//Service operate data in mongodb
+type Service struct {
 	timeout time.Duration
 }
 
@@ -42,10 +43,10 @@ type MongodbService struct {
 //if label exists, then get its latest revision, and update current revision,
 //save the current label and its all key values to history collection
 //then check key exists or not, then create or update it
-func CreateOrUpdate(ctx context.Context, domain string, kv *model.KVDoc, project string) (*model.KVDoc, error) {
-	ctx, _ = context.WithTimeout(ctx, db.Timeout)
-	if domain == "" {
-		return nil, db.ErrMissingDomain
+func (s *Service) CreateOrUpdate(ctx context.Context, kv *model.KVDoc) (*model.KVDoc, error) {
+	ctx, _ = context.WithTimeout(ctx, session.Timeout)
+	if kv.Domain == "" {
+		return nil, session.ErrMissingDomain
 	}
 	if len(kv.Labels) == 0 {
 		kv.Labels = map[string]string{
@@ -54,12 +55,12 @@ func CreateOrUpdate(ctx context.Context, domain string, kv *model.KVDoc, project
 	}
 
 	//check whether the projecr has certain labels or not
-	labelID, err := label.Exist(ctx, domain, project, kv.Labels)
+	labelID, err := label.Exist(ctx, kv.Domain, kv.Project, kv.Labels)
 
 	var l *model.LabelDoc
 	if err != nil {
-		if err == db.ErrLabelNotExists {
-			l, err = label.CreateLabel(ctx, domain, kv.Labels, project)
+		if err == session.ErrLabelNotExists {
+			l, err = label.CreateLabel(ctx, kv.Domain, kv.Labels, kv.Project)
 			if err != nil {
 				openlogging.Error("create label failed", openlogging.WithTags(openlogging.Tags{
 					"k":      kv.Key,
@@ -74,14 +75,12 @@ func CreateOrUpdate(ctx context.Context, domain string, kv *model.KVDoc, project
 
 	}
 	kv.LabelID = labelID.Hex()
-	kv.Project = project
-	kv.Domain = domain
 	if kv.ValueType == "" {
-		kv.ValueType = db.DefaultValueType
+		kv.ValueType = session.DefaultValueType
 	}
-	keyID, err := KVExist(ctx, domain, kv.Key, kv.Project, WithLabelID(kv.LabelID))
+	keyID, err := s.Exist(ctx, kv.Domain, kv.Key, kv.Project, service.WithLabelID(kv.LabelID))
 	if err != nil {
-		if err == db.ErrKeyNotExists {
+		if err == service.ErrKeyNotExists {
 			kv, err := createKey(ctx, kv)
 			if err != nil {
 				return nil, err
@@ -104,26 +103,26 @@ func CreateOrUpdate(ctx context.Context, domain string, kv *model.KVDoc, project
 
 }
 
-//KVExist supports you query by label map or labels id
-func KVExist(ctx context.Context, domain, key string, project string, options ...FindOption) (primitive.ObjectID, error) {
-	ctx, _ = context.WithTimeout(context.Background(), db.Timeout)
-	opts := FindOptions{}
+//Exist supports you query by label map or labels id
+func (s *Service) Exist(ctx context.Context, domain, key string, project string, options ...service.FindOption) (primitive.ObjectID, error) {
+	ctx, _ = context.WithTimeout(context.Background(), session.Timeout)
+	opts := service.FindOptions{}
 	for _, o := range options {
 		o(&opts)
 	}
 	if opts.LabelID != "" {
-		kvs, err := FindKVByLabelID(ctx, domain, opts.LabelID, key, project)
+		kvs, err := findKVByLabelID(ctx, domain, opts.LabelID, key, project)
 		if err != nil {
 			return primitive.NilObjectID, err
 		}
 		return kvs[0].ID, nil
 	}
-	kvs, err := FindKV(ctx, domain, project, WithExactLabels(), WithLabels(opts.Labels), WithKey(key))
+	kvs, err := s.FindKV(ctx, domain, project, service.WithExactLabels(), service.WithLabels(opts.Labels), service.WithKey(key))
 	if err != nil {
 		return primitive.NilObjectID, err
 	}
 	if len(kvs) != 1 {
-		return primitive.NilObjectID, db.ErrTooMany
+		return primitive.NilObjectID, session.ErrTooMany
 	}
 
 	return kvs[0].Data[0].ID, nil
@@ -133,13 +132,13 @@ func KVExist(ctx context.Context, domain, key string, project string, options ..
 //Delete delete kv,If the labelID is "", query the collection kv to get it
 //domain=tenant
 //1.delete kv;2.add history
-func Delete(kvID string, labelID string, domain string, project string) error {
-	ctx, _ := context.WithTimeout(context.Background(), db.Timeout)
+func (s *Service) Delete(kvID string, labelID string, domain string, project string) error {
+	ctx, _ := context.WithTimeout(context.Background(), session.Timeout)
 	if domain == "" {
-		return db.ErrMissingDomain
+		return session.ErrMissingDomain
 	}
 	if project == "" {
-		return db.ErrMissingProject
+		return session.ErrMissingProject
 	}
 	hex, err := primitive.ObjectIDFromHex(kvID)
 	if err != nil {
@@ -160,20 +159,20 @@ func Delete(kvID string, labelID string, domain string, project string) error {
 	//get Label and check labelID
 	r, err := label.GetLatestLabel(ctx, labelID)
 	if err != nil {
-		if err == db.ErrRevisionNotExist {
+		if err == service.ErrRevisionNotExist {
 			openlogging.Warn(fmt.Sprintf("failed,kvID and labelID do not match"))
-			return db.ErrKvIDAndLabelIDNotMatch
+			return session.ErrKvIDAndLabelIDNotMatch
 		}
 		return err
 	}
 	//delete kv
-	err = DeleteKV(ctx, hex, project)
+	err = deleteKV(ctx, hex, project)
 	if err != nil {
 		return err
 	}
 	kvs, err := findKeys(ctx, bson.M{"label_id": labelID, "project": project}, true)
 	//Key may be empty When delete
-	if err != nil && err != db.ErrKeyNotExists {
+	if err != nil && err != service.ErrKeyNotExists {
 		return err
 	}
 	//Labels will not be empty when deleted
@@ -194,36 +193,22 @@ func Delete(kvID string, labelID string, domain string, project string) error {
 	return nil
 }
 
-//FindKVByLabelID get kvs by key and label id
-//key can be empty, then it will return all key values
-//if key is given, will return 0-1 key value
-func FindKVByLabelID(ctx context.Context, domain, labelID, key string, project string) ([]*model.KVDoc, error) {
-
-	filter := bson.M{"label_id": labelID, "domain": domain, "project": project}
-	if key != "" {
-		filter["key"] = key
-		return findOneKey(ctx, filter)
-	}
-	return findKeys(ctx, filter, true)
-
-}
-
 //FindKV get kvs by key, labels
 //because labels has a a lot of combination,
 //you can use WithDepth(0) to return only one kv which's labels exactly match the criteria
-func FindKV(ctx context.Context, domain string, project string, options ...FindOption) ([]*model.KVResponse, error) {
-	opts := FindOptions{}
+func (s *Service) FindKV(ctx context.Context, domain string, project string, options ...service.FindOption) ([]*model.KVResponse, error) {
+	opts := service.FindOptions{}
 	for _, o := range options {
 		o(&opts)
 	}
 	if opts.Timeout == 0 {
-		opts.Timeout = db.DefaultTimeout
+		opts.Timeout = session.DefaultTimeout
 	}
 	if domain == "" {
-		return nil, db.ErrMissingDomain
+		return nil, session.ErrMissingDomain
 	}
 	if project == "" {
-		return nil, db.ErrMissingProject
+		return nil, session.ErrMissingProject
 	}
 
 	cur, err := findKV(ctx, domain, project, opts)
@@ -288,7 +273,7 @@ func FindKV(ctx context.Context, domain string, project string, options ...FindO
 
 	}
 	if len(kvResp) == 0 {
-		return nil, db.ErrKeyNotExists
+		return nil, service.ErrKeyNotExists
 	}
 	return kvResp, nil
 
