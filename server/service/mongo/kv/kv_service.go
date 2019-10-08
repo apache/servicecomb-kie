@@ -20,14 +20,15 @@ package kv
 import (
 	"context"
 	"fmt"
-	"github.com/apache/servicecomb-kie/server/service"
-	"github.com/apache/servicecomb-kie/server/service/mongo/label"
-	"github.com/apache/servicecomb-kie/server/service/mongo/session"
+	"github.com/apache/servicecomb-kie/server/id"
 	"reflect"
 	"time"
 
 	"github.com/apache/servicecomb-kie/pkg/model"
+	"github.com/apache/servicecomb-kie/server/service"
 	"github.com/apache/servicecomb-kie/server/service/mongo/history"
+	"github.com/apache/servicecomb-kie/server/service/mongo/label"
+	"github.com/apache/servicecomb-kie/server/service/mongo/session"
 	"github.com/go-mesh/openlogging"
 	"go.mongodb.org/mongo-driver/bson"
 	"go.mongodb.org/mongo-driver/bson/primitive"
@@ -74,7 +75,7 @@ func (s *Service) CreateOrUpdate(ctx context.Context, kv *model.KVDoc) (*model.K
 		}
 
 	}
-	kv.LabelID = labelID.Hex()
+	kv.LabelID = string(labelID)
 	if kv.ValueType == "" {
 		kv.ValueType = session.DefaultValueType
 	}
@@ -104,7 +105,7 @@ func (s *Service) CreateOrUpdate(ctx context.Context, kv *model.KVDoc) (*model.K
 }
 
 //Exist supports you query by label map or labels id
-func (s *Service) Exist(ctx context.Context, domain, key string, project string, options ...service.FindOption) (primitive.ObjectID, error) {
+func (s *Service) Exist(ctx context.Context, domain, key string, project string, options ...service.FindOption) (id.ID, error) {
 	ctx, _ = context.WithTimeout(context.Background(), session.Timeout)
 	opts := service.FindOptions{}
 	for _, o := range options {
@@ -113,16 +114,16 @@ func (s *Service) Exist(ctx context.Context, domain, key string, project string,
 	if opts.LabelID != "" {
 		kvs, err := findKVByLabelID(ctx, domain, opts.LabelID, key, project)
 		if err != nil {
-			return primitive.NilObjectID, err
+			return "", err
 		}
 		return kvs[0].ID, nil
 	}
 	kvs, err := s.FindKV(ctx, domain, project, service.WithExactLabels(), service.WithLabels(opts.Labels), service.WithKey(key))
 	if err != nil {
-		return primitive.NilObjectID, err
+		return "", err
 	}
 	if len(kvs) != 1 {
-		return primitive.NilObjectID, session.ErrTooMany
+		return "", session.ErrTooMany
 	}
 
 	return kvs[0].Data[0].ID, nil
