@@ -33,18 +33,14 @@ import (
 //AddHistory increment labels revision and save current label stats to history, then update current revision to db
 func AddHistory(ctx context.Context,
 	labelRevision *model.LabelRevisionDoc, labelID string, kvs []*model.KVDoc) (int, error) {
-	c, err := session.GetClient()
-	if err != nil {
-		return 0, err
-	}
 	labelRevision.Revision = labelRevision.Revision + 1
 
 	//save current kv states
 	labelRevision.KVs = kvs
 	//clear prev id
-	labelRevision.ID = primitive.NilObjectID
-	collection := c.Database(session.Name).Collection(session.CollectionLabelRevision)
-	_, err = collection.InsertOne(ctx, labelRevision)
+	labelRevision.ID = ""
+	collection := session.GetDB().Collection(session.CollectionLabelRevision)
+	_, err := collection.InsertOne(ctx, labelRevision)
 	if err != nil {
 		openlogging.Error(err.Error())
 		return 0, err
@@ -54,7 +50,7 @@ func AddHistory(ctx context.Context,
 		openlogging.Error(fmt.Sprintf("convert %s,err:%s", labelID, err))
 		return 0, err
 	}
-	labelCollection := c.Database(session.Name).Collection(session.CollectionLabel)
+	labelCollection := session.GetDB().Collection(session.CollectionLabel)
 	_, err = labelCollection.UpdateOne(ctx, bson.M{"_id": hex}, bson.D{
 		{"$set", bson.D{
 			{"revision", labelRevision.Revision},
@@ -68,11 +64,7 @@ func AddHistory(ctx context.Context,
 }
 
 func getHistoryByLabelID(ctx context.Context, filter bson.M) ([]*model.LabelRevisionDoc, error) {
-	c, err := session.GetClient()
-	if err != nil {
-		return nil, err
-	}
-	collection := c.Database(session.Name).Collection(session.CollectionLabelRevision)
+	collection := session.GetDB().Collection(session.CollectionLabelRevision)
 	cur, err := collection.Find(ctx, filter, options.Find().SetSort(map[string]interface{}{
 		"revisions": -1,
 	}))

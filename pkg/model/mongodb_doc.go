@@ -17,25 +17,27 @@
 
 package model
 
-import "go.mongodb.org/mongo-driver/bson/primitive"
+import (
+	"github.com/apache/servicecomb-kie/server/id"
+)
 
 //LabelDoc is database struct to store labels
 type LabelDoc struct {
-	ID       primitive.ObjectID `json:"_id,omitempty" bson:"_id,omitempty"`
-	Labels   map[string]string  `json:"labels,omitempty"`
-	Revision int                `json:"revision,omitempty"`
-	Domain   string             `json:"domain,omitempty"` //tenant info
-	Project  string             `json:"project,omitempty"`
+	ID       id.ID             `json:"_id,omitempty" bson:"_id,omitempty"`
+	Labels   map[string]string `json:"labels,omitempty"`
+	Revision int               `json:"revision,omitempty"`
+	Domain   string            `json:"domain,omitempty"` //tenant info
+	Project  string            `json:"project,omitempty"`
 }
 
 //KVDoc is database struct to store kv
 type KVDoc struct {
-	ID        primitive.ObjectID `json:"_id,omitempty" bson:"_id,omitempty"`
-	LabelID   string             `json:"label_id,omitempty" bson:"label_id,omitempty"`
-	Key       string             `json:"key"`
-	Value     string             `json:"value,omitempty"`
-	ValueType string             `json:"value_type,omitempty" bson:"value_type,omitempty"` //ini,json,text,yaml,properties
-	Checker   string             `json:"check,omitempty"`                                  //python script
+	ID        id.ID  `json:"_id,omitempty" bson:"_id,omitempty"`
+	LabelID   string `json:"label_id,omitempty" bson:"label_id,omitempty"`
+	Key       string `json:"key"`
+	Value     string `json:"value,omitempty"`
+	ValueType string `json:"value_type,omitempty" bson:"value_type,omitempty"` //ini,json,text,yaml,properties
+	Checker   string `json:"check,omitempty"`                                  //python script
 
 	Labels   map[string]string `json:"labels,omitempty"` //redundant
 	Domain   string            `json:"domain,omitempty"` //redundant
@@ -45,10 +47,10 @@ type KVDoc struct {
 
 //LabelRevisionDoc is database struct to store label history stats
 type LabelRevisionDoc struct {
-	ID       primitive.ObjectID `json:"_id,omitempty" bson:"_id,omitempty"`
-	LabelID  string             `json:"label_id,omitempty"  bson:"label_id,omitempty"`
-	Labels   map[string]string  `json:"labels,omitempty"`
-	Domain   string             `json:"-"`
-	KVs      []*KVDoc           `json:"data,omitempty"`
-	Revision int                `json:"revision"`
+	ID       id.ID             `json:"_id,omitempty" bson:"_id,omitempty"`
+	LabelID  string            `json:"label_id,omitempty"  bson:"label_id,omitempty"`
+	Labels   map[string]string `json:"labels,omitempty"`
+	Domain   string            `json:"-"`
+	KVs      []*KVDoc          `json:"data,omitempty"`
+	Revision int               `json:"revision"`
 }

@@ -21,6 +21,7 @@ import (
 	"context"
 	"fmt"
 	"github.com/apache/servicecomb-kie/pkg/model"
+	"github.com/apache/servicecomb-kie/server/id"
 	"github.com/apache/servicecomb-kie/server/service"
 	"github.com/apache/servicecomb-kie/server/service/mongo/session"
 	"github.com/go-mesh/openlogging"
@@ -36,11 +37,7 @@ const (
 //FindLabels find label doc by labels and project, check if the project has certain labels
 //if map is empty. will return default labels doc which has no labels
 func FindLabels(ctx context.Context, domain, project string, labels map[string]string) (*model.LabelDoc, error) {
-	c, err := session.GetClient()
-	if err != nil {
-		return nil, err
-	}
-	collection := c.Database(session.Name).Collection(session.CollectionLabel)
+	collection := session.GetDB().Collection(session.CollectionLabel)
 
 	filter := bson.M{"domain": domain, "project": project}
 	for k, v := range labels {
@@ -80,11 +77,7 @@ func FindLabels(ctx context.Context, domain, project string, labels map[string]s
 
 //GetLatestLabel query revision table and find maximum revision number
 func GetLatestLabel(ctx context.Context, labelID string) (*model.LabelRevisionDoc, error) {
-	c, err := session.GetClient()
-	if err != nil {
-		return nil, err
-	}
-	collection := c.Database(session.Name).Collection(session.CollectionLabelRevision)
+	collection := session.GetDB().Collection(session.CollectionLabelRevision)
 
 	filter := bson.M{"label_id": labelID}
 
@@ -112,16 +105,16 @@ func GetLatestLabel(ctx context.Context, labelID string) (*model.LabelRevisionDo
 }
 
 //Exist check whether the project has certain label or not and return label ID
-func Exist(ctx context.Context, domain string, project string, labels map[string]string) (primitive.ObjectID, error) {
+func Exist(ctx context.Context, domain string, project string, labels map[string]string) (id.ID, error) {
 	l, err := FindLabels(ctx, domain, project, labels)
 	if err != nil {
 		if err.Error() == context.DeadlineExceeded.Error() {
 			openlogging.Error("find label failed, dead line exceeded", openlogging.WithTags(openlogging.Tags{
 				"timeout": session.Timeout,
 			}))
-			return primitive.NilObjectID, fmt.Errorf("operation timout %s", session.Timeout)
+			return "", fmt.Errorf("operation timout %s", session.Timeout)
 		}
-		return primitive.NilObjectID, err
+		return "", err
 	}
 
 	return l.ID, nil
@@ -130,21 +123,17 @@ func Exist(ctx context.Context, domain string, project string, labels map[string
 
 //CreateLabel create a new label
 func CreateLabel(ctx context.Context, domain string, labels map[string]string, project string) (*model.LabelDoc, error) {
-	c, err := session.GetClient()
-	if err != nil {
-		return nil, err
-	}
 	l := &model.LabelDoc{
 		Domain:  domain,
 		Labels:  labels,
 		Project: project,
 	}
-	collection := c.Database(session.Name).Collection(session.CollectionLabel)
+	collection := session.GetDB().Collection(session.CollectionLabel)
 	res, err := collection.InsertOne(ctx, l)
 	if err != nil {
 		return nil, err
 	}
 	objectID, _ := res.InsertedID.(primitive.ObjectID)
-	l.ID = objectID
+	l.ID = id.ID(objectID.Hex())
 	return l, nil
 }

@@ -24,19 +24,23 @@ import (
 	"crypto/x509"
 	"errors"
 	"fmt"
+	"github.com/apache/servicecomb-kie/pkg/model"
+	"github.com/go-mesh/openlogging"
+	"go.mongodb.org/mongo-driver/bson"
+	"go.mongodb.org/mongo-driver/bson/bsoncodec"
+	"go.mongodb.org/mongo-driver/mongo/options"
 	"io/ioutil"
+	"reflect"
 	"sync"
 	"time"
 
 	"github.com/apache/servicecomb-kie/server/config"
-	"github.com/go-mesh/openlogging"
 	"go.mongodb.org/mongo-driver/mongo"
-	"go.mongodb.org/mongo-driver/mongo/options"
 )
 
 //const for db name and collection name
 const (
-	Name                    = "kie"
+	DBName                  = "kie"
 	CollectionLabel         = "label"
 	CollectionKV            = "kv"
 	CollectionLabelRevision = "label_revision"
@@ -60,6 +64,7 @@ var (
 
 var client *mongo.Client
 var once sync.Once
+var db *mongo.Database
 
 //Timeout db operation time out
 var Timeout time.Duration
@@ -76,14 +81,13 @@ func Init() error {
 	if Timeout == 0 {
 		Timeout = DefaultTimeout
 	}
-	return nil
-}
-
-//GetClient create a new mongo db client
-//if client is created, just return.
-func GetClient() (*mongo.Client, error) {
-	var err error
 	once.Do(func() {
+		sc, _ := bsoncodec.NewStructCodec(bsoncodec.DefaultStructTagParser)
+		reg := bson.NewRegistryBuilder().
+			RegisterEncoder(reflect.TypeOf(model.LabelDoc{}), sc).
+			RegisterEncoder(reflect.TypeOf(model.KVDoc{}), sc).
+			RegisterEncoder(reflect.TypeOf(model.LabelRevisionDoc{}), sc).
+			Build()
 		clientOps := []*options.ClientOptions{options.Client().ApplyURI(config.GetDB().URI)}
 		if config.GetDB().SSLEnabled {
 			if config.GetDB().RootCA == "" {
@@ -115,7 +119,14 @@ func GetClient() (*mongo.Client, error) {
 			return
 		}
 		openlogging.Info("DB connected")
+		db = client.Database(DBName, &options.DatabaseOptions{
+			Registry: reg,
+		})
 	})
+	return nil
+}
 
-	return client, err
+//GetDB get mongo db client
+func GetDB() *mongo.Database {
+	return db
 }

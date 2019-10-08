@@ -55,7 +55,7 @@ var _ = Describe("Kv mongodb service", func() {
 				Expect(err).Should(BeNil())
 			})
 			It("should has ID", func() {
-				Expect(kv.ID.Hex()).ShouldNot(BeEmpty())
+				Expect(kv.ID.String()).ShouldNot(BeEmpty())
 			})
 
 		})
@@ -80,7 +80,7 @@ var _ = Describe("Kv mongodb service", func() {
 				Expect(err).Should(BeNil())
 			})
 			It("should has ID", func() {
-				Expect(kv.ID.Hex()).ShouldNot(BeEmpty())
+				Expect(kv.ID.String()).ShouldNot(BeEmpty())
 			})
 			It("should exist", func() {
 				Expect(oid).ShouldNot(BeEmpty())
@@ -115,13 +115,13 @@ var _ = Describe("Kv mongodb service", func() {
 				Project: "test",
 			})
 			It("should has same id", func() {
-				Expect(afterKV.ID.Hex()).Should(Equal(beforeKV.ID.Hex()))
+				Expect(afterKV.ID.String()).Should(Equal(beforeKV.ID.String()))
 			})
 			oid, err := kvsvc.Exist(context.Background(), "default", "timeout", "test", service.WithLabels(map[string]string{
 				"app": "mall",
 			}))
 			It("should exists", func() {
-				Expect(oid.Hex()).Should(Equal(beforeKV.ID.Hex()))
+				Expect(oid.String()).Should(Equal(beforeKV.ID.String()))
 			})
 			kvs, err := kvsvc.FindKV(context.Background(), "default", "test", service.WithKey("timeout"), service.WithLabels(map[string]string{
 				"app": "mall",
@@ -223,7 +223,7 @@ var _ = Describe("Kv mongodb service", func() {
 				Expect(err).Should(BeNil())
 			})
 
-			err = kvsvc.Delete(kv1.ID.Hex(), "", "default", "test")
+			err = kvsvc.Delete(kv1.ID.String(), "", "default", "test")
 			It("should not return err", func() {
 				Expect(err).Should(BeNil())
 			})
@@ -246,7 +246,7 @@ var _ = Describe("Kv mongodb service", func() {
 				Expect(err).Should(BeNil())
 			})
 
-			err = kvsvc.Delete(kv1.ID.Hex(), kv1.LabelID, "default", "test")
+			err = kvsvc.Delete(kv1.ID.String(), kv1.LabelID, "default", "test")
 			It("should not return err", func() {
 				Expect(err).Should(BeNil())
 			})

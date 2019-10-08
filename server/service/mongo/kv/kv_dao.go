@@ -20,6 +20,7 @@ package kv
 import (
 	"context"
 	"fmt"
+	"github.com/apache/servicecomb-kie/server/id"
 	"github.com/apache/servicecomb-kie/server/service"
 	"github.com/apache/servicecomb-kie/server/service/mongo/label"
 	"github.com/apache/servicecomb-kie/server/service/mongo/session"
@@ -36,10 +37,6 @@ import (
 //and increase revision of label
 //and insert key
 func createKey(ctx context.Context, kv *model.KVDoc) (*model.KVDoc, error) {
-	c, err := session.GetClient()
-	if err != nil {
-		return nil, err
-	}
 	r, err := label.GetLatestLabel(ctx, kv.LabelID)
 	if err != nil {
 		if err != service.ErrRevisionNotExist {
@@ -54,13 +51,13 @@ func createKey(ctx context.Context, kv *model.KVDoc) (*model.KVDoc, error) {
 	if r != nil {
 		r.Revision = r.Revision + 1
 	}
-	collection := c.Database(session.Name).Collection(session.CollectionKV)
+	collection := session.GetDB().Collection(session.CollectionKV)
 	res, err := collection.InsertOne(ctx, kv)
 	if err != nil {
 		return nil, err
 	}
 	objectID, _ := res.InsertedID.(primitive.ObjectID)
-	kv.ID = objectID
+	kv.ID = id.ID(objectID.Hex())
 	kvs, err := findKeys(ctx, bson.M{"label_id": kv.LabelID}, true)
 	//Key may be empty When delete
 	if err != nil && err != service.ErrKeyNotExists {
@@ -82,11 +79,7 @@ func createKey(ctx context.Context, kv *model.KVDoc) (*model.KVDoc, error) {
 //and increase revision of label
 //and updateKeyValue and them add new revision
 func updateKeyValue(ctx context.Context, kv *model.KVDoc) (int, error) {
-	c, err := session.GetClient()
-	if err != nil {
-		return 0, err
-	}
-	collection := c.Database(session.Name).Collection(session.CollectionKV)
+	collection := session.GetDB().Collection(session.CollectionKV)
 	ur, err := collection.UpdateOne(ctx, bson.M{"key": kv.Key, "label_id": kv.LabelID}, bson.D{
 		{"$set", bson.D{
 			{"value", kv.Value},
@@ -118,11 +111,7 @@ func updateKeyValue(ctx context.Context, kv *model.KVDoc) (int, error) {
 }
 
 func findKV(ctx context.Context, domain string, project string, opts service.FindOptions) (*mongo.Cursor, error) {
-	c, err := session.GetClient()
-	if err != nil {
-		return nil, err
-	}
-	collection := c.Database(session.Name).Collection(session.CollectionKV)
+	collection := session.GetDB().Collection(session.CollectionKV)
 	ctx, _ = context.WithTimeout(ctx, opts.Timeout)
 	filter := bson.M{"domain": domain, "project": project}
 	if opts.Key != "" {
@@ -145,17 +134,13 @@ func findKV(ctx context.Context, domain string, project string, opts service.Fin
 	return cur, err
 }
 func findOneKey(ctx context.Context, filter bson.M) ([]*model.KVDoc, error) {
-	c, err := session.GetClient()
-	if err != nil {
-		return nil, err
-	}
-	collection := c.Database(session.Name).Collection(session.CollectionKV)
+	collection := session.GetDB().Collection(session.CollectionKV)
 	sr := collection.FindOne(ctx, filter)
 	if sr.Err() != nil {
 		return nil, sr.Err()
 	}
 	curKV := &model.KVDoc{}
-	err = sr.Decode(curKV)
+	err := sr.Decode(curKV)
 	if err != nil {
 		if err == mongo.ErrNoDocuments {
 			return nil, service.ErrKeyNotExists
@@ -168,11 +153,7 @@ func findOneKey(ctx context.Context, filter bson.M) ([]*model.KVDoc, error) {
 
 //deleteKV by kvID
 func deleteKV(ctx context.Context, hexID primitive.ObjectID, project string) error {
-	c, err := session.GetClient()
-	if err != nil {
-		return err
-	}
-	collection := c.Database(session.Name).Collection(session.CollectionKV)
+	collection := session.GetDB().Collection(session.CollectionKV)
 	dr, err := collection.DeleteOne(ctx, bson.M{"_id": hexID, "project": project})
 	//check error and delete number
 	if err != nil {
@@ -187,11 +168,7 @@ func deleteKV(ctx context.Context, hexID primitive.ObjectID, project string) err
 	return err
 }
 func findKeys(ctx context.Context, filter bson.M, withoutLabel bool) ([]*model.KVDoc, error) {
-	c, err := session.GetClient()
-	if err != nil {
-		return nil, err
-	}
-	collection := c.Database(session.Name).Collection(session.CollectionKV)
+	collection := session.GetDB().Collection(session.CollectionKV)
 	cur, err := collection.Find(ctx, filter)
 	if err != nil {
 		if err.Error() == context.DeadlineExceeded.Error() {
