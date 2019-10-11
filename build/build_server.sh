@@ -15,8 +15,11 @@
 # limitations under the License.
 
 source ./build_native_server.sh
+
 echo "building docker..."
+buildAndPackage "linux" "amd64"
 cp ${PROJECT_DIR}/scripts/start.sh ./
 cp ${PROJECT_DIR}/build/docker/server/Dockerfile ./
+
 sudo docker version
 sudo docker build -t servicecomb/kie:${version} .

@@ -23,4 +23,5 @@ RUN export GO_CHASSIS=/opt/servicecomb-kie
 ADD ./kie /opt/servicecomb-kie/
 ADD ./start.sh /opt/servicecomb-kie/
 ADD ./conf/microservice.yaml /opt/servicecomb-kie/conf/
+
 ENTRYPOINT ["/opt/servicecomb-kie/start.sh"]
