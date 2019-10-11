@@ -16,5 +16,5 @@
 # limitations under the License.
 
 cd build
-bash build_server.sh
+bash build_docker.sh
 sudo docker-compose -f $GOPATH/src/github.com/apache/servicecomb-kie/deployments/docker/docker-compose.yaml up -d

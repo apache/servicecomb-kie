@@ -14,7 +14,7 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
-source ./build_native_server.sh
+source ./build_binary.sh
 
 echo "building docker..."
 buildAndPackage "linux" "amd64"
