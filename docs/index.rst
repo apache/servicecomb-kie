@@ -14,5 +14,6 @@ Welcome to ServiceComb-kie's documentation!
    get-started
    usage
    configuration
+   development-guide
 
 
