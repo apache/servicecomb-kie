@@ -19,12 +19,12 @@
 package v1
 
 import (
-	"encoding/json"
 	"net/http"
 
 	"github.com/apache/servicecomb-kie/pkg/common"
 	"github.com/apache/servicecomb-kie/pkg/model"
 	"github.com/apache/servicecomb-kie/server/service"
+
 	goRestful "github.com/emicklei/go-restful"
 	"github.com/go-chassis/go-chassis/server/restful"
 	"github.com/go-mesh/openlogging"
@@ -44,9 +44,8 @@ func (r *KVResource) Put(context *restful.Context) {
 		return
 	}
 	kv := new(model.KVDoc)
-	decoder := json.NewDecoder(context.ReadRequest().Body)
-	if err = decoder.Decode(kv); err != nil {
-		WriteErrResponse(context, http.StatusInternalServerError, err.Error(), common.ContentTypeText)
+	if err = readRequest(context, kv); err != nil {
+		WriteErrResponse(context, http.StatusBadRequest, err.Error(), common.ContentTypeText)
 		return
 	}
 	domain := ReadDomain(context)
@@ -63,7 +62,7 @@ func (r *KVResource) Put(context *restful.Context) {
 		return
 	}
 	InfoLog("put", kv)
-	err = context.WriteHeaderAndJSON(http.StatusOK, kv, goRestful.MIME_JSON)
+	err = writeResponse(context, kv)
 	if err != nil {
 		openlogging.Error(err.Error())
 	}
@@ -75,7 +74,7 @@ func (r *KVResource) GetByKey(context *restful.Context) {
 	var err error
 	key := context.ReadPathParameter("key")
 	if key == "" {
-		WriteErrResponse(context, http.StatusForbidden, "key must not be empty", common.ContentTypeText)
+		WriteErrResponse(context, http.StatusBadRequest, "key must not be empty", common.ContentTypeText)
 		return
 	}
 	project := context.ReadPathParameter("project")
@@ -112,7 +111,7 @@ func (r *KVResource) GetByKey(context *restful.Context) {
 		WriteErrResponse(context, http.StatusInternalServerError, err.Error(), common.ContentTypeText)
 		return
 	}
-	err = context.WriteHeaderAndJSON(http.StatusOK, kvs, goRestful.MIME_JSON)
+	err = writeResponse(context, kvs)
 	if err != nil {
 		openlogging.Error(err.Error())
 	}
@@ -162,7 +161,7 @@ func (r *KVResource) SearchByLabels(context *restful.Context) {
 		return
 	}
 
-	err = context.WriteHeaderAndJSON(http.StatusOK, kvs, goRestful.MIME_JSON)
+	err = writeResponse(context, kvs)
 	if err != nil {
 		openlogging.Error(err.Error())
 	}
@@ -221,8 +220,8 @@ func (r *KVResource) URLPatterns() []restful.Route {
 					Message: "true",
 				},
 			},
-			Consumes: []string{goRestful.MIME_JSON},
-			Produces: []string{goRestful.MIME_JSON},
+			Consumes: []string{goRestful.MIME_JSON, common.ContentTypeYaml},
+			Produces: []string{goRestful.MIME_JSON, common.ContentTypeYaml},
 			Read:     KVBody{},
 		}, {
 			Method:           http.MethodGet,
@@ -239,8 +238,8 @@ func (r *KVResource) URLPatterns() []restful.Route {
 					Model:   []model.KVResponse{},
 				},
 			},
-			Consumes: []string{goRestful.MIME_JSON},
-			Produces: []string{goRestful.MIME_JSON},
+			Consumes: []string{goRestful.MIME_JSON, common.ContentTypeYaml},
+			Produces: []string{goRestful.MIME_JSON, common.ContentTypeYaml},
 			Read:     &KVBody{},
 		}, {
 			Method:           http.MethodGet,
@@ -257,8 +256,8 @@ func (r *KVResource) URLPatterns() []restful.Route {
 					Model:   []model.KVResponse{},
 				},
 			},
-			Consumes: []string{goRestful.MIME_JSON},
-			Produces: []string{goRestful.MIME_JSON},
+			Consumes: []string{goRestful.MIME_JSON, common.ContentTypeYaml},
+			Produces: []string{goRestful.MIME_JSON, common.ContentTypeYaml},
 		}, {
 			Method:           http.MethodDelete,
 			Path:             "/v1/{project}/kie/kv/",

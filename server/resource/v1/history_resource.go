@@ -18,11 +18,12 @@
 package v1
 
 import (
-	"github.com/apache/servicecomb-kie/server/service"
 	"net/http"
 
 	"github.com/apache/servicecomb-kie/pkg/common"
 	"github.com/apache/servicecomb-kie/pkg/model"
+	"github.com/apache/servicecomb-kie/server/service"
+
 	goRestful "github.com/emicklei/go-restful"
 	"github.com/go-chassis/go-chassis/server/restful"
 	"github.com/go-mesh/openlogging"
@@ -54,7 +55,7 @@ func (r *HistoryResource) GetRevisionsByLabelID(context *restful.Context) {
 		WriteErrResponse(context, http.StatusNotFound, "no revisions found", common.ContentTypeText)
 		return
 	}
-	err = context.WriteHeaderAndJSON(http.StatusOK, revisions, goRestful.MIME_JSON)
+	err = writeResponse(context, revisions)
 	if err != nil {
 		openlogging.Error(err.Error())
 	}
@@ -78,8 +79,8 @@ func (r *HistoryResource) URLPatterns() []restful.Route {
 					Model:   []model.LabelHistoryResponse{},
 				},
 			},
-			Consumes: []string{goRestful.MIME_JSON},
-			Produces: []string{goRestful.MIME_JSON},
+			Consumes: []string{goRestful.MIME_JSON, common.ContentTypeYaml},
+			Produces: []string{goRestful.MIME_JSON, common.ContentTypeYaml},
 		},
 	}
 }

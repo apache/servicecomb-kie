@@ -21,13 +21,17 @@ import (
 	"encoding/json"
 	"errors"
 	"fmt"
+	"net/http"
+	"strconv"
+	"strings"
+
 	"github.com/apache/servicecomb-kie/pkg/common"
 	"github.com/apache/servicecomb-kie/pkg/model"
+
 	goRestful "github.com/emicklei/go-restful"
 	"github.com/go-chassis/go-chassis/server/restful"
 	"github.com/go-mesh/openlogging"
-	"strconv"
-	"strings"
+	"gopkg.in/yaml.v2"
 )
 
 //const of server
@@ -102,4 +106,28 @@ func ErrLog(action string, kv *model.KVDoc, err error) {
 func InfoLog(action string, kv *model.KVDoc) {
 	openlogging.Info(
 		fmt.Sprintf("[%s] [%s:%s] in [%s] success", action, kv.Key, kv.Value, kv.Domain))
+}
+
+func readRequest(ctx *restful.Context, v interface{}) error {
+	if ctx.ReadHeader(common.HeaderContentType) == common.ContentTypeYaml {
+		return yaml.NewDecoder(ctx.ReadRequest().Body).Decode(v)
+	}
+	return json.NewDecoder(ctx.ReadRequest().Body).Decode(v) // json is default
+}
+
+func writeYaml(resp *goRestful.Response, v interface{}) error {
+	if v == nil {
+		resp.WriteHeader(http.StatusOK)
+		return nil
+	}
+	resp.Header().Set(common.HeaderContentType, common.ContentTypeYaml)
+	resp.WriteHeader(http.StatusOK)
+	return yaml.NewEncoder(resp).Encode(v)
+}
+
+func writeResponse(ctx *restful.Context, v interface{}) error {
+	if ctx.ReadHeader(common.HeaderAccept) == common.ContentTypeYaml {
+		return writeYaml(ctx.Resp, v)
+	}
+	return ctx.WriteJSON(v, goRestful.MIME_JSON) // json is default
 }

@@ -35,10 +35,7 @@ func Init(file string) error {
 	_, filename := filepath.Split(file)
 	content := archaius.GetString(filename, "")
 	Configurations = &Config{}
-	if err := yaml.Unmarshal([]byte(content), Configurations); err != nil {
-		return err
-	}
-	return nil
+	return yaml.Unmarshal([]byte(content), Configurations)
 }
 
 //GetDB return db configs

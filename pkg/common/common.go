@@ -25,12 +25,16 @@ const (
 
 //http headers
 const (
-	HeaderMatch  = "X-Match"
-	HeaderDepth  = "X-Depth"
-	HeaderTenant = "X-Domain-Name"
+	HeaderMatch       = "X-Match"
+	HeaderDepth       = "X-Depth"
+	HeaderTenant      = "X-Domain-Name"
+	HeaderContentType = "Content-Type"
+	HeaderAccept      = "Accept"
 )
 
 //ContentType
 const (
 	ContentTypeText = "application/text"
+	ContentTypeJSON = "application/json"
+	ContentTypeYaml = "text/yaml"
 )
