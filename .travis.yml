@@ -54,6 +54,7 @@ jobs:
         - GO111MODULE=on go mod download
         - GO111MODULE=on go mod vendor
         - bash scripts/travis/start_deps.sh
+        - sleep 15
         - cd $HOME/gopath/src/github.com/apache/servicecomb-kie
         - go get github.com/mattn/goveralls
         - go get golang.org/x/tools/cmd/cover

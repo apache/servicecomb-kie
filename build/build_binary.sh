@@ -32,8 +32,6 @@ else
  version=${VERSION}
 fi
 
-
-
 if [ -d ${release_dir} ]; then
     rm -rf ${release_dir}
 fi
@@ -45,8 +43,7 @@ export GIT_COMMIT=`git rev-parse HEAD | cut -b 1-7`
 echo "build from ${GIT_COMMIT}"
 
 
-echo "building x86..."
-go build -o ${release_dir}/kie github.com/apache/servicecomb-kie/cmd/kieserver
+
 
 writeConfig(){
 echo "write chassis config..."
@@ -85,25 +82,26 @@ EOM
 }
 
 writeConfig
-
+cp ${PROJECT_DIR}/LICENSE ${PROJECT_DIR}/NOTICE ${release_dir}
+cd ${release_dir}
 component="apache-servicecomb-kie"
-x86_pkg_name="$component-$version-linux-amd64.tar.gz"
-arm_pkg_name="$component-$version-linux-arm64.tar.gz"
 
-echo "packaging x86 tar.gz..."
-cd ${release_dir}
-tar zcf ${x86_pkg_name} conf kie
+buildAndPackage(){
+  GOOS=$1
+  GOARCH=$2
+  echo "building & packaging ${GOOS} ${GOARCH}..."
+  GOOS=${GOOS} GOARCH=${GOARCH} go build -o ${release_dir}/kie github.com/apache/servicecomb-kie/cmd/kieserver
+  if [ $? -eq 0 ]; then
+    tar zcf "$component-$VERSION-${GOOS}-${GOARCH}.tar.gz" conf kie LICENSE NOTICE
+  else
+    echo -e "\033[31m build ${GOOS}-${GOARCH} fail !! \033[0m"
+  fi
+}
 
-echo "building docker..."
-cp ${PROJECT_DIR}/scripts/start.sh ./
-cp ${PROJECT_DIR}/build/docker/server/Dockerfile ./
-sudo docker version
-sudo docker build -t servicecomb/kie:${version} .
+for GOOS in 'windows' 'darwin' 'linux'
+do
+  buildAndPackage $GOOS "amd64"
+done
 
-
-echo "building arm64"
-GOARCH=arm64  go build -o ${release_dir}/kie github.com/apache/servicecomb-kie/cmd/kieserver
-echo "packaging arm64 tar.gz..."
-cd ${release_dir}
-tar zcf ${arm_pkg_name} conf kie
+buildAndPackage "linux" "arm64"
 

@@ -1,3 +1,4 @@
+#!/usr/bin/env bash
 # Licensed to the Apache Software Foundation (ASF) under one or more
 # contributor license agreements.  See the NOTICE file distributed with
 # this work for additional information regarding copyright ownership.
@@ -13,15 +14,12 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
-FROM ubuntu:19.04
+source ./build_binary.sh
 
-RUN apt-get update && apt-get install -y net-tools
-RUN mkdir -p /etc/servicecomb-kie/
-RUN mkdir -p /opt/servicecomb-kie/conf
-RUN export GO_CHASSIS=/opt/servicecomb-kie
+echo "building docker..."
+buildAndPackage "linux" "amd64"
+cp ${PROJECT_DIR}/scripts/start.sh ./
+cp ${PROJECT_DIR}/build/docker/server/Dockerfile ./
 
-ADD ./kie /opt/servicecomb-kie/
-ADD ./start.sh /opt/servicecomb-kie/
-ADD ./conf/microservice.yaml /opt/servicecomb-kie/conf/
-
-ENTRYPOINT ["/opt/servicecomb-kie/start.sh"]
+sudo docker version
+sudo docker build -t servicecomb/kie:${version} .

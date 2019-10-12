@@ -30,9 +30,11 @@ sha512sum "${x86_pkg_name}" > "${x86_pkg_name}".sha512
 sha512sum "${arm_pkg_name}" > "${arm_pkg_name}".sha512
 #src
 wget "https://github.com/apache/servicecomb-kie/archive/v${VERSION}.tar.gz"
-
+tar xzf "v${VERSION}.tar.gz"
+mv servicecomb-kie-${VERSION} apache-servicecomb-kie-${VERSION}
 src_name="${component}-${VERSION}-src.tar.gz"
-mv "v${VERSION}.tar.gz" "${src_name}"
+tar czf ${src_name} apache-servicecomb-kie-${VERSION}
+rm -rf "v${VERSION}.tar.gz" apache-servicecomb-kie-${VERSION}
 
 gpg --armor --output "$src_name.asc" --detach-sig "${src_name}"
 
