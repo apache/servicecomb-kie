@@ -19,7 +19,7 @@ package config
 
 import (
 	"github.com/go-chassis/go-archaius"
-	"github.com/go-chassis/go-archaius/sources/utils"
+	"github.com/go-chassis/go-archaius/source/util"
 	"gopkg.in/yaml.v2"
 	"path/filepath"
 )
@@ -29,7 +29,7 @@ var Configurations *Config
 
 //Init initiate config files
 func Init(file string) error {
-	if err := archaius.AddFile(file, archaius.WithFileHandler(utils.UseFileNameAsKeyContentAsValue)); err != nil {
+	if err := archaius.AddFile(file, archaius.WithFileHandler(util.UseFileNameAsKeyContentAsValue)); err != nil {
 		return err
 	}
 	_, filename := filepath.Split(file)
