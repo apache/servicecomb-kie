@@ -22,4 +22,3 @@ etc/data/
 etc/ssl/
 tmp/
 glide.lock
-go.sum
