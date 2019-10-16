@@ -101,7 +101,7 @@ Bugs: [issues](https://issues.apache.org/jira/browse/SCB)
 
 ## Contributing
 
-See [Contribution guide](/CONTRIBUTING.md) for details on submitting patches and the contribution workflow.
+See [Contribution guide](http://servicecomb.apache.org/developers/contributing) for details on submitting patches and the contribution workflow.
 
 ## Reporting Issues
 
