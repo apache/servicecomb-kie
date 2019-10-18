@@ -82,7 +82,7 @@ EOM
 }
 
 writeConfig
-cp ${PROJECT_DIR}/LICENSE ${PROJECT_DIR}/NOTICE ${release_dir}
+cp ${PROJECT_DIR}/licenses/LICENSE ${PROJECT_DIR}/licenses/NOTICE ${release_dir}
 cp -r ${PROJECT_DIR}/licenses ${release_dir}
 cd ${release_dir}
 component="apache-servicecomb-kie"
