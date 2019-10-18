@@ -22,7 +22,7 @@ export BUILD_DIR=$(cd "$(dirname "$0")"; pwd)
 export PROJECT_DIR=$(dirname ${BUILD_DIR})
 echo "downloading dependencies"
 cd ${PROJECT_DIR}
-GO111MODULE=on go mod download
+GO111MODULE=on go mod vendor
 version="latest"
 release_dir=${PROJECT_DIR}/release/kie
 
