@@ -118,13 +118,13 @@ func (c *Client) PushConfigs(data map[string]interface{}, labels map[string]stri
 //DeleteConfigsByKeys use keyId for delete
 func (c *Client) DeleteConfigsByKeys(keys []string, labels map[string]string) (map[string]interface{}, error) {
 	result := make(map[string]interface{})
-	for _, keyId := range keys {
-		err := c.KieClient.Delete(context.TODO(), keyId, "", client.WithProject("default"))
+	for _, keyID := range keys {
+		err := c.KieClient.Delete(context.TODO(), keyID, "", client.WithProject("default"))
 		if err != nil {
 			openlogging.Error("Error in Delete from Kie. " + err.Error())
 			return nil, err
 		}
-		openlogging.GetLogger().Debugf("Delete The KeyId:%s", keyId)
+		openlogging.GetLogger().Debugf("Delete The KeyId:%s", keyID)
 	}
 	return result, nil
 }
@@ -135,7 +135,7 @@ func (c *Client) Watch(f func(map[string]interface{}), errHandler func(err error
 	return errors.New("not implemented")
 }
 
-//Options.
+//Options return settings
 func (c *Client) Options() config.Options {
 	return c.opts
 }
