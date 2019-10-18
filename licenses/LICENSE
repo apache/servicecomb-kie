@@ -232,7 +232,7 @@ github.com/go-mesh/openlogging (v1.0.1-0.20181205082104-3d418c478b2d)
 ================================================================
 The following component(s) are provided under the Apache-2.0 License (Apache License 2.0).
 See the respective project link for details.
-You can find a copy of the License at LICENSE_go-chassis_go-chassis.
+You can find a copy of the License at LICENSE_Apache2.0 .
 
 github.com/go-chassis/foundation (v0.0.0-20190621030543-c3b63f787f4c)
 github.com/go-chassis/go-chassis (v1.7.1-0.20190903133217-e4a22c998fe1)
