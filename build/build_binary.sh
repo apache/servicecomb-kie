@@ -22,7 +22,7 @@ export BUILD_DIR=$(cd "$(dirname "$0")"; pwd)
 export PROJECT_DIR=$(dirname ${BUILD_DIR})
 echo "downloading dependencies"
 cd ${PROJECT_DIR}
-GO111MODULE=on go mod vendor
+GO111MODULE=on
 version="latest"
 release_dir=${PROJECT_DIR}/release/kie
 
@@ -83,6 +83,7 @@ EOM
 
 writeConfig
 cp ${PROJECT_DIR}/LICENSE ${PROJECT_DIR}/NOTICE ${release_dir}
+cp -r ${PROJECT_DIR}/licenses ${release_dir}
 cd ${release_dir}
 component="apache-servicecomb-kie"
 
@@ -92,7 +93,7 @@ buildAndPackage(){
   echo "building & packaging ${GOOS} ${GOARCH}..."
   GOOS=${GOOS} GOARCH=${GOARCH} go build -o ${release_dir}/kie github.com/apache/servicecomb-kie/cmd/kieserver
   if [ $? -eq 0 ]; then
-    tar zcf "$component-$VERSION-${GOOS}-${GOARCH}.tar.gz" conf kie LICENSE NOTICE
+    tar zcf "$component-$VERSION-${GOOS}-${GOARCH}.tar.gz" conf kie LICENSE NOTICE licenses
   else
     echo -e "\033[31m build ${GOOS}-${GOARCH} fail !! \033[0m"
   fi
