@@ -213,6 +213,7 @@ following licenses.
 ================================================================
 The following component(s) are provided under the Apache-2.0 License (Apache License 2.0).
 See the respective project link for details.
+You can find a copy of the License at ./licenses/Apache2.0 .
 
 github.com/xdg/scram (v0.0.0-20180814205039-7eeb5667e42c)
 github.com/xdg/stringprep (v1.0.0)
@@ -231,7 +232,7 @@ go.mongodb.org/mongo-driver (v1.0.3)
 ================================================================
 The following component(s) are provided under the Apache-2.0 License (Apache License 2.0).
 See the respective project link for details.
-You can find a copy of the License at ./licenses/LICENSE_Apache2.0 .
+You can find a copy of the License at ./licenses/LICENSE_go-chassis_go-chassis .
 
 github.com/go-chassis/foundation (v0.0.0-20190621030543-c3b63f787f4c)
 github.com/go-chassis/go-chassis (v1.7.3-0.20191018125535-1a99ab41f7ea)
