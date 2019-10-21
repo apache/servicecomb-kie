@@ -82,7 +82,9 @@ EOM
 }
 
 writeConfig
-cp ${PROJECT_DIR}/LICENSE ${PROJECT_DIR}/NOTICE ${release_dir}
+cp ${PROJECT_DIR}/licenses/LICENSE ${PROJECT_DIR}/licenses/NOTICE ${release_dir}
+cp -r ${PROJECT_DIR}/licenses ${release_dir}
+rm -f ${release_dir}/licenses/LICENSE ${release_dir}/licenses/NOTICE
 cd ${release_dir}
 component="apache-servicecomb-kie"
 
@@ -92,7 +94,7 @@ buildAndPackage(){
   echo "building & packaging ${GOOS} ${GOARCH}..."
   GOOS=${GOOS} GOARCH=${GOARCH} go build -o ${release_dir}/kie github.com/apache/servicecomb-kie/cmd/kieserver
   if [ $? -eq 0 ]; then
-    tar zcf "$component-$VERSION-${GOOS}-${GOARCH}.tar.gz" conf kie LICENSE NOTICE
+    tar zcf "$component-$VERSION-${GOOS}-${GOARCH}.tar.gz" conf kie LICENSE NOTICE licenses
   else
     echo -e "\033[31m build ${GOOS}-${GOARCH} fail !! \033[0m"
   fi
