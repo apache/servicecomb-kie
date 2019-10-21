@@ -18,6 +18,7 @@
 package adaptor
 
 import (
+	"context"
 	"encoding/json"
 	"fmt"
 	"github.com/apache/servicecomb-kie/pkg/model"
@@ -64,7 +65,7 @@ func TestKieClient_PullConfig(t *testing.T) {
 	//assert.Equal(t, resp.StatusCode, 404)
 	assert.Equal(t, err.Error(), "can not find value")
 	// Shutdown the helper server gracefully
-	if err := helper.Shutdown(nil); err != nil {
+	if err := helper.Shutdown(context.Background()); err != nil {
 		panic(err)
 	}
 }
@@ -88,7 +89,7 @@ func TestKieClient_PullConfigs(t *testing.T) {
 	//assert.Equal(t, resp.StatusCode, 404)
 	assert.Equal(t, err.Error(), "can not find value")
 	// Shutdown the helper server gracefully
-	if err := helper.Shutdown(nil); err != nil {
+	if err := helper.Shutdown(context.Background()); err != nil {
 		panic(err)
 	}
 }
@@ -114,7 +115,7 @@ func TestKieClient_PushConfigs(t *testing.T) {
 	//assert.Equal(t, resp.StatusCode, 404)
 	assert.Equal(t, err.Error(), "json: cannot unmarshal array into Go value of type model.KVDoc")
 	// Shutdown the helper server gracefully
-	if err := helper.Shutdown(nil); err != nil {
+	if err := helper.Shutdown(context.Background()); err != nil {
 		panic(err)
 	}
 }
@@ -139,7 +140,7 @@ func TestKieClient_DeleteConfigs(t *testing.T) {
 	//assert.Equal(t, resp.StatusCode, 404)
 	assert.Equal(t, err.Error(), "delete 1 failed,http status [200 OK], body [[{\"label\":null,\"data\":null}]]")
 	// Shutdown the helper server gracefully
-	if err := helper.Shutdown(nil); err != nil {
+	if err := helper.Shutdown(context.Background()); err != nil {
 		panic(err)
 	}
 }
