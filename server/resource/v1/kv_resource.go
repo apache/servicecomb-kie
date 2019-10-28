@@ -240,7 +240,6 @@ func (r *KVResource) URLPatterns() []restful.Route {
 			},
 			Consumes: []string{goRestful.MIME_JSON, common.ContentTypeYaml},
 			Produces: []string{goRestful.MIME_JSON, common.ContentTypeYaml},
-			Read:     &KVBody{},
 		}, {
 			Method:           http.MethodGet,
 			Path:             "/v1/{project}/kie/kv",
