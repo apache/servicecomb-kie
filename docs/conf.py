@@ -38,8 +38,8 @@ import sphinx_rtd_theme
 # -- Project information -----------------------------------------------------
 
 project = u'servicecomb-kie'
-copyright = u'2018, xiaoliang'
-author = u'xiaoliang'
+copyright = u'2019-2019, The Apache Software Foundation'
+author = u'The Apache Software Foundation'
 
 # The short X.Y version
 version = u''
@@ -160,7 +160,7 @@ latex_elements = {
 #  author, documentclass [howto, manual, or own class]).
 latex_documents = [
     (master_doc, 'servicecomb-kie.tex', u'servicecomb-kie Documentation',
-     u'xiaoliang', 'manual'),
+     u'The Apache Software Foundation', 'manual'),
 ]
 
 
