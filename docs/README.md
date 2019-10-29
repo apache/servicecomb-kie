@@ -21,10 +21,10 @@ make.bat html
 In linux
 ```shell
 cd docs
-make html
+make html 
 ```
 
 ## Check the result
 
 1. See html pages in _build folder
-1. You can start a http server using `python -m http.server` which will serve at http://0.0.0.0:8000/.
+2. You can start a http server using `python -m http.server` which will serve at http://0.0.0.0:8000/.
