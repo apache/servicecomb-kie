@@ -55,12 +55,11 @@ func (s *Service) CreateOrUpdate(ctx context.Context, kv *model.KVDoc) (*model.K
 		}
 	}
 
-	//check whether the projecr has certain labels or not
+	//check whether the project has certain labels or not
 	labelID, err := label.Exist(ctx, kv.Domain, kv.Project, kv.Labels)
-
-	var l *model.LabelDoc
 	if err != nil {
 		if err == session.ErrLabelNotExists {
+			var l *model.LabelDoc
 			l, err = label.CreateLabel(ctx, kv.Domain, kv.Labels, kv.Project)
 			if err != nil {
 				openlogging.Error("create label failed", openlogging.WithTags(openlogging.Tags{
@@ -73,7 +72,6 @@ func (s *Service) CreateOrUpdate(ctx context.Context, kv *model.KVDoc) (*model.K
 		} else {
 			return nil, err
 		}
-
 	}
 	kv.LabelID = string(labelID)
 	if kv.ValueType == "" {

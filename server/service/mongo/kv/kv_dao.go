@@ -184,9 +184,8 @@ func findKeys(ctx context.Context, filter bson.M, withoutLabel bool) ([]*model.K
 		return nil, err
 	}
 	kvs := make([]*model.KVDoc, 0)
-	curKV := &model.KVDoc{} //reduce GC,but need to clear labels
 	for cur.Next(ctx) {
-		curKV.Labels = nil
+		curKV := &model.KVDoc{}
 		if err := cur.Decode(curKV); err != nil {
 			openlogging.Error("decode to KVs error: " + err.Error())
 			return nil, err
@@ -207,7 +206,6 @@ func findKeys(ctx context.Context, filter bson.M, withoutLabel bool) ([]*model.K
 //key can be empty, then it will return all key values
 //if key is given, will return 0-1 key value
 func findKVByLabelID(ctx context.Context, domain, labelID, key string, project string) ([]*model.KVDoc, error) {
-
 	filter := bson.M{"label_id": labelID, "domain": domain, "project": project}
 	if key != "" {
 		filter["key"] = key

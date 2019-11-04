@@ -1,1 +1,1 @@
-log_format_text: false
+log_level: DEBUG

@@ -54,6 +54,24 @@ func parseConfigFromCmd(args []string) (err error) {
 			Destination: &Configs.ConfigFile,
 			Value:       defaultConfigFile,
 		},
+		cli.StringFlag{
+			Name:        "name",
+			Usage:       "node name, example: --name=kie0",
+			Destination: &Configs.ConfigFile,
+			EnvVar:      "NODE_NAME",
+		},
+		cli.StringFlag{
+			Name:        "peer-addr",
+			Usage:       "peer address any node address in a cluster, example: --peer-addr=10.1.1.10:5000",
+			Destination: &Configs.ConfigFile,
+			EnvVar:      "PEER_ADDR",
+		},
+		cli.StringFlag{
+			Name:        "listen-peer-addr",
+			Usage:       "peer address, example: --listen-peer-addr=0.0.0.0:5000",
+			Destination: &Configs.ConfigFile,
+			EnvVar:      "LISTEN_PEER_ADDR",
+		},
 	}
 	app.Action = func(c *cli.Context) error {
 		return nil

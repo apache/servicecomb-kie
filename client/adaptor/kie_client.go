@@ -98,7 +98,7 @@ func (c *Client) PullConfig(key, contentType string, labels map[string]string) (
 
 //PushConfigs put config in kie by key and labels.
 func (c *Client) PushConfigs(data map[string]interface{}, labels map[string]string) (map[string]interface{}, error) {
-	var configReq model.KVDoc
+	var configReq model.KVRequest
 	configResult := make(map[string]interface{})
 	for key, configValue := range data {
 		configReq.Key = key

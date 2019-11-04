@@ -77,7 +77,7 @@ var _ = Describe("Client", func() {
 			c1, _ = New(Config{
 				Endpoint: "http://127.0.0.1:30110",
 			})
-			kv := model.KVDoc{
+			kv := model.KVRequest{
 				Key:    "app.properties",
 				Labels: map[string]string{"service": "tester"},
 				Value:  "1s",
@@ -106,11 +106,10 @@ var _ = Describe("Client", func() {
 				Endpoint: "http://127.0.0.1:30110",
 			})
 
-			kvBody := model.KVDoc{}
+			kvBody := model.KVRequest{}
 			kvBody.Key = "time"
 			kvBody.Value = "100s"
 			kvBody.ValueType = "string"
-			kvBody.Project = "test"
 			kvBody.Labels = make(map[string]string)
 			kvBody.Labels["evn"] = "test"
 			kv, err := client2.Put(context.TODO(), kvBody, WithProject("test"))
