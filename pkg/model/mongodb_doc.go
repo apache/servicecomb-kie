@@ -51,6 +51,6 @@ type LabelRevisionDoc struct {
 	LabelID  string            `json:"label_id,omitempty"  bson:"label_id,omitempty" yaml:"label_id,omitempty"`
 	Labels   map[string]string `json:"labels,omitempty" yaml:"labels,omitempty"`
 	Domain   string            `json:"-" yaml:"-"`
-	KVs      []*KVDoc          `json:"data,omitempty" yaml:"data,omitempty"`
+	KVs      []*KVDoc          `json:"data,omitempty" bson:"data,omitempty" yaml:"data,omitempty"`
 	Revision int               `json:"revision" yaml:"revision"`
 }

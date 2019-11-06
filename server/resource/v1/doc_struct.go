@@ -24,7 +24,7 @@ import (
 	"github.com/go-chassis/go-chassis/server/restful"
 )
 
-//swagger doc elements
+//swagger doc header params
 var (
 	DocHeaderDepth = &restful.Parameters{
 		DataType:  "string",
@@ -32,14 +32,45 @@ var (
 		ParamType: goRestful.HeaderParameterKind,
 		Desc:      "integer, default is 1, if you set match policy, you can set,depth to decide label number",
 	}
+)
+
+//swagger doc query params
+var (
 	DocQueryCombination = &restful.Parameters{
 		DataType:  "string",
 		Name:      common.QueryParamQ,
 		ParamType: goRestful.QueryParameterKind,
 		Desc: "the combination format is {label_key}:{label_value}+{label_key}:{label_value} " +
-			"for example: /v1/test/kie/kv?q=app:mall&q=app:mall+service:cart " +
+			"for example: /v1/test/kie/kv?q=app:mall&q=app:mall+service:cart, " +
 			"that will query key values from 2 kinds of labels",
 	}
+	DocQueryKVIDParameters = &restful.Parameters{
+		DataType:  "string",
+		Name:      "kvID",
+		ParamType: goRestful.QueryParameterKind,
+		Required:  true,
+	}
+	DocQueryKeyParameters = &restful.Parameters{
+		DataType:  "string",
+		Name:      "key",
+		ParamType: goRestful.QueryParameterKind,
+		Desc:      "only return history about a specific key",
+	}
+	DocQueryLabelParameters = &restful.Parameters{
+		DataType:  "string",
+		Name:      "any",
+		ParamType: goRestful.QueryParameterKind,
+		Desc:      "label pairs",
+	}
+	DocQueryLabelIDParameters = &restful.Parameters{
+		DataType:  "string",
+		Name:      "labelID",
+		ParamType: goRestful.QueryParameterKind,
+	}
+)
+
+//swagger doc path params
+var (
 	DocPathKey = &restful.Parameters{
 		DataType:  "string",
 		Name:      "key",
@@ -54,16 +85,6 @@ var (
 		DataType:  "string",
 		Name:      "label_id",
 		ParamType: goRestful.PathParameterKind,
-	}
-	kvIDParameters = &restful.Parameters{
-		DataType:  "string",
-		Name:      "kvID",
-		ParamType: goRestful.QueryParameterKind,
-	}
-	labelIDParameters = &restful.Parameters{
-		DataType:  "string",
-		Name:      "labelID",
-		ParamType: goRestful.QueryParameterKind,
 	}
 )
 

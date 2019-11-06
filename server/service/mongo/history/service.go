@@ -20,15 +20,30 @@ package history
 import (
 	"context"
 	"github.com/apache/servicecomb-kie/pkg/model"
+	"github.com/apache/servicecomb-kie/server/service"
 	"go.mongodb.org/mongo-driver/bson"
+	"go.mongodb.org/mongo-driver/bson/primitive"
 )
 
 //Service is the implementation
 type Service struct {
 }
 
-//GetHistoryByLabelID get all history by label id
-func (s *Service) GetHistoryByLabelID(ctx context.Context, labelID string) ([]*model.LabelRevisionDoc, error) {
-	filter := bson.M{"label_id": labelID}
+//GetHistory get all history by label id
+func (s *Service) GetHistory(ctx context.Context, labelID string, options ...service.FindOption) ([]*model.LabelRevisionDoc, error) {
+	var filter primitive.M
+	opts := service.FindOptions{}
+	for _, o := range options {
+		o(&opts)
+	}
+	if opts.Key != "" {
+		filter = bson.M{
+			"label_id": labelID,
+			"data.key": opts.Key,
+		}
+
+	} else {
+		filter = bson.M{"label_id": labelID}
+	}
 	return getHistoryByLabelID(ctx, filter)
 }

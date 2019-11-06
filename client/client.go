@@ -84,7 +84,7 @@ func New(config Config) (*Client, error) {
 }
 
 //Put create value of a key
-func (c *Client) Put(ctx context.Context, kv model.KVDoc, opts ...OpOption) (*model.KVDoc, error) {
+func (c *Client) Put(ctx context.Context, kv model.KVRequest, opts ...OpOption) (*model.KVDoc, error) {
 	options := OpOptions{}
 	for _, o := range opts {
 		o(&options)

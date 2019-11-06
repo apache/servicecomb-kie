@@ -202,18 +202,14 @@ func (r *KVResource) Delete(context *restful.Context) {
 func (r *KVResource) URLPatterns() []restful.Route {
 	return []restful.Route{
 		{
-			Method:           http.MethodPut,
-			Path:             "/v1/{project}/kie/kv/{key}",
-			ResourceFuncName: "Put",
-			FuncDesc:         "create or update key value",
+			Method:       http.MethodPut,
+			Path:         "/v1/{project}/kie/kv/{key}",
+			ResourceFunc: r.Put,
+			FuncDesc:     "create or update key value",
 			Parameters: []*restful.Parameters{
-				DocPathProject, DocPathKey, {
-					DataType:  "string",
-					Name:      "X-Realm",
-					ParamType: goRestful.HeaderParameterKind,
-					Desc:      "set kv to heterogeneous config server, not implement yet",
-				},
+				DocPathProject, DocPathKey,
 			},
+			Read: KVBody{},
 			Returns: []*restful.Returns{
 				{
 					Code:    http.StatusOK,
@@ -222,14 +218,15 @@ func (r *KVResource) URLPatterns() []restful.Route {
 			},
 			Consumes: []string{goRestful.MIME_JSON, common.ContentTypeYaml},
 			Produces: []string{goRestful.MIME_JSON, common.ContentTypeYaml},
-			Read:     KVBody{},
 		}, {
-			Method:           http.MethodGet,
-			Path:             "/v1/{project}/kie/kv/{key}",
-			ResourceFuncName: "GetByKey",
-			FuncDesc:         "get key values by key and labels",
+			Method:       http.MethodGet,
+			Path:         "/v1/{project}/kie/kv/{key}",
+			ResourceFunc: r.GetByKey,
+			FuncDesc:     "get key values by key and labels",
 			Parameters: []*restful.Parameters{
-				DocPathProject, DocPathKey, DocHeaderDepth,
+				DocPathProject, DocPathKey,
+				DocHeaderDepth,
+				DocQueryLabelParameters,
 			},
 			Returns: []*restful.Returns{
 				{
@@ -241,10 +238,10 @@ func (r *KVResource) URLPatterns() []restful.Route {
 			Consumes: []string{goRestful.MIME_JSON, common.ContentTypeYaml},
 			Produces: []string{goRestful.MIME_JSON, common.ContentTypeYaml},
 		}, {
-			Method:           http.MethodGet,
-			Path:             "/v1/{project}/kie/kv",
-			ResourceFuncName: "SearchByLabels",
-			FuncDesc:         "search key values by labels combination",
+			Method:       http.MethodGet,
+			Path:         "/v1/{project}/kie/kv",
+			ResourceFunc: r.SearchByLabels,
+			FuncDesc:     "search key values by labels combination",
 			Parameters: []*restful.Parameters{
 				DocPathProject, DocQueryCombination,
 			},
@@ -258,15 +255,14 @@ func (r *KVResource) URLPatterns() []restful.Route {
 			Consumes: []string{goRestful.MIME_JSON, common.ContentTypeYaml},
 			Produces: []string{goRestful.MIME_JSON, common.ContentTypeYaml},
 		}, {
-			Method:           http.MethodDelete,
-			Path:             "/v1/{project}/kie/kv/",
-			ResourceFuncName: "Delete",
-			FuncDesc: "Delete key by kvID and labelID,If the labelID is nil, query the collection kv to get it." +
-				"It means if only get kvID, it can also delete normally.But if you want better performance, you need to pass the labelID",
+			Method:       http.MethodDelete,
+			Path:         "/v1/{project}/kie/kv",
+			ResourceFunc: r.Delete,
+			FuncDesc:     "delete key by kvID and labelID. if you want better performance, you need to give labelID",
 			Parameters: []*restful.Parameters{
 				DocPathProject,
-				kvIDParameters,
-				labelIDParameters,
+				DocQueryKVIDParameters,
+				DocQueryLabelIDParameters,
 			},
 			Returns: []*restful.Returns{
 				{

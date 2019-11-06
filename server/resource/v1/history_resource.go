@@ -33,8 +33,8 @@ import (
 type HistoryResource struct {
 }
 
-//GetRevisionsByLabelID search key only by label
-func (r *HistoryResource) GetRevisionsByLabelID(context *restful.Context) {
+//GetRevisions search key only by label
+func (r *HistoryResource) GetRevisions(context *restful.Context) {
 	var err error
 	labelID := context.ReadPathParameter("label_id")
 	if labelID == "" {
@@ -42,7 +42,8 @@ func (r *HistoryResource) GetRevisionsByLabelID(context *restful.Context) {
 		WriteErrResponse(context, http.StatusForbidden, "label_id must not be empty", common.ContentTypeText)
 		return
 	}
-	revisions, err := service.HistoryService.GetHistoryByLabelID(context.Ctx, labelID)
+	key := context.ReadQueryParameter("key")
+	revisions, err := service.HistoryService.GetHistory(context.Ctx, labelID, service.WithKey(key))
 	if err != nil {
 		if err == service.ErrRevisionNotExist {
 			WriteErrResponse(context, http.StatusNotFound, err.Error(), common.ContentTypeText)
@@ -65,12 +66,12 @@ func (r *HistoryResource) GetRevisionsByLabelID(context *restful.Context) {
 func (r *HistoryResource) URLPatterns() []restful.Route {
 	return []restful.Route{
 		{
-			Method:           http.MethodGet,
-			Path:             "/v1/{project}/kie/revision/{label_id}",
-			ResourceFuncName: "GetRevisionsByLabelID",
-			FuncDesc:         "get all revisions by label id",
+			Method:       http.MethodGet,
+			Path:         "/v1/{project}/kie/revision/{label_id}",
+			ResourceFunc: r.GetRevisions,
+			FuncDesc:     "get all revisions by label id",
 			Parameters: []*restful.Parameters{
-				DocPathProject, DocPathLabelID,
+				DocPathProject, DocPathLabelID, DocQueryKeyParameters,
 			},
 			Returns: []*restful.Returns{
 				{

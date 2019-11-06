@@ -15,38 +15,36 @@
  * limitations under the License.
  */
 
-package service
+package history_test
 
 import (
 	"context"
-	"errors"
-	"github.com/apache/servicecomb-kie/pkg/model"
+	"github.com/apache/servicecomb-kie/server/config"
+	"github.com/apache/servicecomb-kie/server/service/mongo/session"
+	"github.com/stretchr/testify/assert"
+	"go.mongodb.org/mongo-driver/bson"
+	"testing"
 )
 
-//services
-var (
-	KVService      KV
-	HistoryService History
-	DBInit         Init
-)
-
-//db errors
-var (
-	ErrKeyNotExists     = errors.New("key with labels does not exits")
-	ErrRevisionNotExist = errors.New("label revision not exist")
-)
-
-//KV provide api of KV entity
-type KV interface {
-	CreateOrUpdate(ctx context.Context, kv *model.KVDoc) (*model.KVDoc, error)
-	Delete(kvID string, labelID string, domain, project string) error
-	FindKV(ctx context.Context, domain, project string, options ...FindOption) ([]*model.KVResponse, error)
+func init() {
+	config.Configurations = &config.Config{DB: config.DB{URI: "mongodb://kie:123@127.0.0.1:27017"}}
+	_ = session.Init()
 }
 
-//History provide api of History entity
-type History interface {
-	GetHistory(ctx context.Context, labelID string, options ...FindOption) ([]*model.LabelRevisionDoc, error)
+func TestAddHistory(t *testing.T) {
+	ctx := context.Background()
+	coll := session.GetDB().Collection("label_revision")
+	cur, err := coll.Find(
+		context.Background(),
+		bson.M{
+			"label_id": "5dbc079183ff1a09242376e7",
+			"data.key": "lb",
+		})
+	assert.NoError(t, err)
+	for cur.Next(ctx) {
+		var elem interface{}
+		err := cur.Decode(&elem)
+		assert.NoError(t, err)
+		t.Log(elem)
+	}
 }
-
-//Init init db session
-type Init func() error
