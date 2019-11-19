@@ -23,11 +23,11 @@ import (
 	"encoding/json"
 	"errors"
 	"fmt"
-	"github.com/apache/servicecomb-kie/pkg/common"
 	"net/http"
 	"net/url"
 	"strings"
 
+	"github.com/apache/servicecomb-kie/pkg/common"
 	"github.com/apache/servicecomb-kie/pkg/model"
 	"github.com/go-chassis/foundation/httpclient"
 	"github.com/go-chassis/foundation/security"
@@ -51,7 +51,7 @@ var (
 type Client struct {
 	opts   Config
 	cipher security.Cipher
-	c      *httpclient.URLClient
+	c      *httpclient.Requests
 }
 
 //Config is the config of client
@@ -67,13 +67,13 @@ func New(config Config) (*Client, error) {
 	if err != nil {
 		return nil, err
 	}
-	httpOpts := &httpclient.URLClientOption{}
+	httpOpts := &httpclient.Options{}
 	if u.Scheme == "https" {
 		httpOpts.TLSConfig = &tls.Config{
 			InsecureSkipVerify: !config.VerifyPeer,
 		}
 	}
-	c, err := httpclient.GetURLClient(httpOpts)
+	c, err := httpclient.New(httpOpts)
 	if err != nil {
 		return nil, err
 	}
@@ -96,7 +96,7 @@ func (c *Client) Put(ctx context.Context, kv model.KVRequest, opts ...OpOption) 
 	h := http.Header{}
 	h.Set("Content-Type", "application/json")
 	body, _ := json.Marshal(kv)
-	resp, err := c.c.HTTPDoWithContext(ctx, "PUT", url, h, body)
+	resp, err := c.c.Do(ctx, "PUT", url, h, body)
 	if err != nil {
 		return nil, err
 	}
@@ -133,7 +133,7 @@ func (c *Client) Get(ctx context.Context, key string, opts ...GetOption) ([]*mod
 	}
 	url := fmt.Sprintf("%s/%s/%s/%s/%s", c.opts.Endpoint, version, options.Project, APIPathKV, key)
 	h := http.Header{}
-	resp, err := c.c.HTTPDoWithContext(ctx, "GET", url, h, nil)
+	resp, err := c.c.Do(ctx, "GET", url, h, nil)
 	if err != nil {
 		return nil, err
 	}
@@ -183,7 +183,7 @@ func (c *Client) SearchByLabels(ctx context.Context, opts ...GetOption) ([]*mode
 	}
 	url := fmt.Sprintf("%s/%s/%s/%s?%s", c.opts.Endpoint, version, options.Project, APIPathKV, lableReq)
 	h := http.Header{}
-	resp, err := c.c.HTTPDoWithContext(ctx, "GET", url, h, nil)
+	resp, err := c.c.Do(ctx, "GET", url, h, nil)
 	if err != nil {
 		return nil, err
 	}
@@ -223,7 +223,7 @@ func (c *Client) Delete(ctx context.Context, kvID, labelID string, opts ...OpOpt
 	}
 	h := http.Header{}
 	h.Set("Content-Type", "application/json")
-	resp, err := c.c.HTTPDoWithContext(ctx, "DELETE", url, h, nil)
+	resp, err := c.c.Do(ctx, "DELETE", url, h, nil)
 	if err != nil {
 		return err
 	}
