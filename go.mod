@@ -6,6 +6,7 @@ require (
 	github.com/go-chassis/go-archaius v0.24.0
 	github.com/go-chassis/go-chassis v1.7.6
 	github.com/go-chassis/go-chassis-config v0.15.0
+	github.com/go-chassis/go-restful-swagger20 v1.0.2-0.20191118130439-7eec0f2639f6
 	github.com/go-chassis/paas-lager v1.0.2-0.20190328010332-cf506050ddb2
 	github.com/go-mesh/openlogging v1.0.1
 	github.com/golang/snappy v0.0.1 // indirect
