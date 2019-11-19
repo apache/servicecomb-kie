@@ -23,7 +23,7 @@ import (
 
 //LabelDoc is database struct to store labels
 type LabelDoc struct {
-	ID       id.ID             `json:"_id,omitempty" bson:"_id,omitempty" yaml:"_id,omitempty"`
+	ID       id.ID             `json:"_id,omitempty" bson:"_id,omitempty" yaml:"_id,omitempty" swag:"string"`
 	Labels   map[string]string `json:"labels,omitempty" yaml:"labels,omitempty"`
 	Revision int               `json:"revision,omitempty" yaml:"revision,omitempty"`
 	Domain   string            `json:"domain,omitempty" yaml:"domain,omitempty"` //tenant info
@@ -32,7 +32,7 @@ type LabelDoc struct {
 
 //KVDoc is database struct to store kv
 type KVDoc struct {
-	ID        id.ID  `json:"_id,omitempty" bson:"_id,omitempty" yaml:"_id,omitempty"`
+	ID        id.ID  `json:"_id,omitempty" bson:"_id,omitempty" yaml:"_id,omitempty" swag:"string"`
 	LabelID   string `json:"label_id,omitempty" bson:"label_id,omitempty" yaml:"label_id,omitempty"`
 	Key       string `json:"key" yaml:"key"`
 	Value     string `json:"value,omitempty" yaml:"value,omitempty"`
@@ -47,7 +47,7 @@ type KVDoc struct {
 
 //LabelRevisionDoc is database struct to store label history stats
 type LabelRevisionDoc struct {
-	ID       id.ID             `json:"_id,omitempty" bson:"_id,omitempty" yaml:"_id,omitempty"`
+	ID       id.ID             `json:"_id,omitempty" bson:"_id,omitempty" yaml:"_id,omitempty" swag:"string"`
 	LabelID  string            `json:"label_id,omitempty"  bson:"label_id,omitempty" yaml:"label_id,omitempty"`
 	Labels   map[string]string `json:"labels,omitempty" yaml:"labels,omitempty"`
 	Domain   string            `json:"-" yaml:"-"`
