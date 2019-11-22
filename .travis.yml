@@ -58,4 +58,4 @@ jobs:
         - cd $HOME/gopath/src/github.com/apache/servicecomb-kie
         - go get github.com/mattn/goveralls
         - go get golang.org/x/tools/cmd/cover
-        - bash scripts/travis/unit_test.sh
+        - bash scripts/travis/unit_test.sh && $HOME/gopath/bin/goveralls -coverprofile=coverage.txt -service=travis-ci

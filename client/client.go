@@ -158,8 +158,8 @@ func (c *Client) Get(ctx context.Context, key string, opts ...GetOption) ([]*mod
 	return kvs, nil
 }
 
-//SearchByLabels get value by lables
-func (c *Client) SearchByLabels(ctx context.Context, opts ...GetOption) ([]*model.KVResponse, error) {
+//Search get value by labels
+func (c *Client) Search(ctx context.Context, opts ...GetOption) ([]*model.KVResponse, error) {
 	options := GetOptions{}
 	for _, o := range opts {
 		o(&options)

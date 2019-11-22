@@ -38,8 +38,11 @@ var (
 
 //KV provide api of KV entity
 type KV interface {
+	//below 3 methods is usually for admin console
 	CreateOrUpdate(ctx context.Context, kv *model.KVDoc) (*model.KVDoc, error)
+	List(ctx context.Context, domain, project, key string, labels map[string]string, limit, offset int) (*model.KVResponse, error)
 	Delete(kvID string, labelID string, domain, project string) error
+	//FindKV is usually for service to pull configs
 	FindKV(ctx context.Context, domain, project string, options ...FindOption) ([]*model.KVResponse, error)
 }
 

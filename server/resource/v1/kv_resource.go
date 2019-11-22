@@ -20,6 +20,7 @@ package v1
 
 import (
 	"net/http"
+	"strconv"
 
 	"github.com/apache/servicecomb-kie/pkg/common"
 	"github.com/apache/servicecomb-kie/pkg/model"
@@ -39,10 +40,6 @@ func (r *KVResource) Put(context *restful.Context) {
 	var err error
 	key := context.ReadPathParameter("key")
 	project := context.ReadPathParameter("project")
-	if project == "" {
-		WriteErrResponse(context, http.StatusForbidden, "project must not be empty", common.ContentTypeText)
-		return
-	}
 	kv := new(model.KVDoc)
 	if err = readRequest(context, kv); err != nil {
 		WriteErrResponse(context, http.StatusBadRequest, err.Error(), common.ContentTypeText)
@@ -78,10 +75,6 @@ func (r *KVResource) GetByKey(context *restful.Context) {
 		return
 	}
 	project := context.ReadPathParameter("project")
-	if project == "" {
-		WriteErrResponse(context, http.StatusForbidden, "project must not be empty", common.ContentTypeText)
-		return
-	}
 	values := context.ReadRequest().URL.Query()
 	labels := make(map[string]string, len(values))
 	for k, v := range values {
@@ -118,8 +111,57 @@ func (r *KVResource) GetByKey(context *restful.Context) {
 
 }
 
-//SearchByLabels search key only by label
-func (r *KVResource) SearchByLabels(context *restful.Context) {
+//List TODO pagination
+func (r *KVResource) List(rctx *restful.Context) {
+	project := rctx.ReadPathParameter("project")
+	domain := ReadDomain(rctx)
+	if domain == nil {
+		WriteErrResponse(rctx, http.StatusInternalServerError, MsgDomainMustNotBeEmpty, common.ContentTypeText)
+		return
+	}
+	var limit int64 = 20
+	var offset int64 = 0
+	labels := make(map[string]string, 0)
+	var err error
+	for k, v := range rctx.ReadRequest().URL.Query() {
+		if k == "limit" {
+			limit, err = strconv.ParseInt(v[0], 10, 64)
+			if err != nil {
+				WriteErrResponse(rctx, http.StatusBadRequest, "invalid limit number", common.ContentTypeText)
+			}
+			if limit < 1 || limit > 50 {
+				WriteErrResponse(rctx, http.StatusBadRequest, "invalid limit number", common.ContentTypeText)
+			}
+			continue
+		}
+		if k == "offset" {
+			offset, err = strconv.ParseInt(v[0], 10, 64)
+			if err != nil {
+				WriteErrResponse(rctx, http.StatusBadRequest, "invalid offset number", common.ContentTypeText)
+			}
+			if offset < 1 {
+				WriteErrResponse(rctx, http.StatusBadRequest, "invalid offset number", common.ContentTypeText)
+			}
+			continue
+		}
+		labels[k] = v[0]
+	}
+	result, err := service.KVService.List(rctx.Ctx, domain.(string), project, "", labels, int(limit), int(offset))
+	if err != nil {
+		openlogging.Error("can not find by labels", openlogging.WithTags(openlogging.Tags{
+			"err": err.Error(),
+		}))
+		WriteErrResponse(rctx, http.StatusInternalServerError, err.Error(), common.ContentTypeText)
+		return
+	}
+	err = writeResponse(rctx, result)
+	if err != nil {
+		openlogging.Error(err.Error())
+	}
+}
+
+//Search search key only by label
+func (r *KVResource) Search(context *restful.Context) {
 	var err error
 	labelCombinations, err := ReadLabelCombinations(context.ReadRestfulRequest())
 	if err != nil {
@@ -127,16 +169,23 @@ func (r *KVResource) SearchByLabels(context *restful.Context) {
 		return
 	}
 	project := context.ReadPathParameter("project")
-	if project == "" {
-		WriteErrResponse(context, http.StatusForbidden, "project must not be empty", common.ContentTypeText)
-		return
-	}
 	domain := ReadDomain(context)
 	if domain == nil {
 		WriteErrResponse(context, http.StatusInternalServerError, MsgDomainMustNotBeEmpty, common.ContentTypeText)
 		return
 	}
 	var kvs []*model.KVResponse
+	if labelCombinations == nil {
+		result, err := service.KVService.FindKV(context.Ctx, domain.(string), project)
+		if err != nil {
+			openlogging.Error("can not find by labels", openlogging.WithTags(openlogging.Tags{
+				"err": err.Error(),
+			}))
+			WriteErrResponse(context, http.StatusInternalServerError, err.Error(), common.ContentTypeText)
+			return
+		}
+		kvs = append(kvs, result...)
+	}
 	for _, labels := range labelCombinations {
 		openlogging.Debug("find by combination", openlogging.WithTags(openlogging.Tags{
 			"q": labels,
@@ -171,10 +220,6 @@ func (r *KVResource) SearchByLabels(context *restful.Context) {
 //Delete deletes key by ids
 func (r *KVResource) Delete(context *restful.Context) {
 	project := context.ReadPathParameter("project")
-	if project == "" {
-		WriteErrResponse(context, http.StatusForbidden, "project must not be empty", common.ContentTypeText)
-		return
-	}
 	domain := ReadDomain(context)
 	if domain == nil {
 		WriteErrResponse(context, http.StatusInternalServerError, MsgDomainMustNotBeEmpty, common.ContentTypeText)
@@ -240,7 +285,7 @@ func (r *KVResource) URLPatterns() []restful.Route {
 		}, {
 			Method:       http.MethodGet,
 			Path:         "/v1/{project}/kie/kv",
-			ResourceFunc: r.SearchByLabels,
+			ResourceFunc: r.Search,
 			FuncDesc:     "search key values by labels combination",
 			Parameters: []*restful.Parameters{
 				DocPathProject, DocQueryCombination,
@@ -255,10 +300,26 @@ func (r *KVResource) URLPatterns() []restful.Route {
 			Consumes: []string{goRestful.MIME_JSON, common.ContentTypeYaml},
 			Produces: []string{goRestful.MIME_JSON, common.ContentTypeYaml},
 		}, {
+			Method:       http.MethodGet,
+			Path:         "/v1/{project}/kie/kv:list",
+			ResourceFunc: r.List,
+			FuncDesc:     "list key values by labels and key",
+			Parameters: []*restful.Parameters{
+				DocPathProject, DocQueryLabelParameters,
+			},
+			Returns: []*restful.Returns{
+				{
+					Code:  http.StatusOK,
+					Model: model.KVResponse{},
+				},
+			},
+			Consumes: []string{goRestful.MIME_JSON, common.ContentTypeYaml},
+			Produces: []string{goRestful.MIME_JSON, common.ContentTypeYaml},
+		}, {
 			Method:       http.MethodDelete,
 			Path:         "/v1/{project}/kie/kv",
 			ResourceFunc: r.Delete,
-			FuncDesc:     "delete key by kvID and labelID. if you want better performance, you need to give labelID",
+			FuncDesc:     "delete key by kvID and labelID. Want better performance, give labelID",
 			Parameters: []*restful.Parameters{
 				DocPathProject,
 				DocQueryKVIDParameters,

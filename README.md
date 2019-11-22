@@ -1,5 +1,8 @@
-# Apache-ServiceComb-Kie [![Build Status](https://travis-ci.org/apache/servicecomb-kie.svg?branch=master)](https://travis-ci.org/apache/servicecomb-kie?branch=master) [![License](https://img.shields.io/badge/license-Apache%202-4EB1BA.svg)](https://www.apache.org/licenses/LICENSE-2.0.html)
+# Apache-ServiceComb-Kie 
 
+[![Build Status](https://travis-ci.org/apache/servicecomb-kie.svg?branch=master)](https://travis-ci.org/apache/servicecomb-kie?branch=master) 
+[![License](https://img.shields.io/badge/license-Apache%202-4EB1BA.svg)](https://www.apache.org/licenses/LICENSE-2.0.html)
+[![Coverage Status](https://coveralls.io/repos/github/apache/servicecomb-kie/badge.svg?branch=master)](https://coveralls.io/github/apache/servicecomb-kie?branch=master)
 A service for configuration management in distributed system.
 
 ## Conceptions
