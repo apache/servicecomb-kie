@@ -26,16 +26,18 @@ import (
 	"go.mongodb.org/mongo-driver/mongo"
 )
 
-//clearKV clean attr which don't need to return to client side
-func clearKV(kv *model.KVDoc) {
-	kv.Domain = ""
+//clearAll clean attr which don't need to return to client side
+func clearAll(kv *model.KVDoc) {
+	clearPart(kv)
 	kv.Labels = nil
 	kv.LabelID = ""
+}
+func clearPart(kv *model.KVDoc) {
+	kv.Domain = ""
 	kv.Project = ""
 }
-
 func cursorToOneKV(ctx context.Context, cur *mongo.Cursor, labels map[string]string) ([]*model.KVResponse, error) {
-	kvResp := make([]*model.KVResponse, 0)
+	result := make([]*model.KVResponse, 0)
 	curKV := &model.KVDoc{} //reuse this pointer to reduce GC, only clear label
 	//check label length to get the exact match
 	for cur.Next(ctx) { //although complexity is O(n), but there won't be so much labels for one key
@@ -57,10 +59,10 @@ func cursorToOneKV(ctx context.Context, cur *mongo.Cursor, labels map[string]str
 				},
 				Data: make([]*model.KVDoc, 0),
 			}
-			clearKV(curKV)
+			clearAll(curKV)
 			labelGroup.Data = append(labelGroup.Data, curKV)
-			kvResp = append(kvResp, labelGroup)
-			return kvResp, nil
+			result = append(result, labelGroup)
+			return result, nil
 		}
 
 	}

@@ -17,7 +17,17 @@
 
 package service
 
-import "time"
+import (
+	"github.com/apache/servicecomb-kie/server/service/mongo/session"
+	"time"
+)
+
+//NewDefaultFindOpts return default options
+func NewDefaultFindOpts() FindOptions {
+	return FindOptions{
+		Timeout: session.DefaultTimeout,
+	}
+}
 
 //FindOptions is option to find key value
 type FindOptions struct {

@@ -60,15 +60,15 @@ func (c *Client) PullConfigs(labels ...map[string]string) (map[string]interface{
 	var err error
 	var configurationsValue []*model.KVResponse
 	if len(labels) != 0 {
-		configurationsValue, err = c.KieClient.SearchByLabels(context.TODO(), client.WithGetProject("default"), client.WithLabels(labels...))
+		configurationsValue, err = c.KieClient.Search(context.TODO(), client.WithGetProject("default"), client.WithLabels(labels...))
 	} else {
-		configurationsValue, err = c.KieClient.SearchByLabels(context.TODO(), client.WithGetProject("default"), client.WithLabels(c.opts.Labels))
+		configurationsValue, err = c.KieClient.Search(context.TODO(), client.WithGetProject("default"), client.WithLabels(c.opts.Labels))
 	}
 	if err != nil {
 		openlogging.GetLogger().Errorf("Error in Querying the Response from Kie %s %#v", err.Error(), labels)
 		return nil, err
 	}
-	openlogging.GetLogger().Debugf("KieClient SearchByLabels. %#v", labels)
+	openlogging.GetLogger().Debugf("KieClient Search. %#v", labels)
 	//Parse config result.
 	for _, docRes := range configurationsValue {
 		for _, docInfo := range docRes.Data {
