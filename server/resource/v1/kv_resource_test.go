@@ -22,6 +22,7 @@ import (
 	"encoding/json"
 	"github.com/apache/servicecomb-kie/server/service"
 	"io/ioutil"
+	"log"
 	"net/http"
 	"net/http/httptest"
 
@@ -43,13 +44,12 @@ var _ = Describe("v1 kv resource", func() {
 	config.Configurations = &config.Config{
 		DB: config.DB{},
 	}
-
+	config.Configurations.DB.URI = "mongodb://kie:123@127.0.0.1:27017"
+	err := service.DBInit()
+	if err != nil {
+		panic(err)
+	}
 	Describe("put kv", func() {
-		config.Configurations.DB.URI = "mongodb://kie:123@127.0.0.1:27017"
-		err := service.DBInit()
-		It("should not return err", func() {
-			Expect(err).Should(BeNil())
-		})
 		Context("valid param", func() {
 			kv := &model.KVDoc{
 				Key:    "timeout",
@@ -83,6 +83,36 @@ var _ = Describe("v1 kv resource", func() {
 			It("should return created or updated kv", func() {
 				Expect(data.Value).Should(Equal(kv.Value))
 				Expect(data.Labels).Should(Equal(kv.Labels))
+			})
+		})
+	})
+	Describe("list kv", func() {
+		Context("with no label", func() {
+			r, _ := http.NewRequest("GET", "/v1/test/kie/kv:list", nil)
+			noopH := &noop.NoopAuthHandler{}
+			chain, _ := handler.CreateChain(common.Provider, "testchain1", noopH.Name())
+			r.Header.Set("Content-Type", "application/json")
+			kvr := &v1.KVResource{}
+			c, err := restfultest.New(kvr, chain)
+			It("should not return error", func() {
+				Expect(err).Should(BeNil())
+			})
+			resp := httptest.NewRecorder()
+			c.ServeHTTP(resp, r)
+
+			body, err := ioutil.ReadAll(resp.Body)
+			It("should not return err", func() {
+				Expect(err).Should(BeNil())
+			})
+			log.Println(string(body))
+			result := &model.KVResponse{}
+			err = json.Unmarshal(body, result)
+			It("should not return err", func() {
+				Expect(err).Should(BeNil())
+			})
+
+			It("should longer than 1", func() {
+				Expect(len(result.Data)).NotTo(Equal(0))
 			})
 		})
 	})

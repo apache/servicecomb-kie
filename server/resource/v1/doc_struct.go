@@ -75,16 +75,19 @@ var (
 		DataType:  "string",
 		Name:      "key",
 		ParamType: goRestful.PathParameterKind,
+		Required:  true,
 	}
 	DocPathProject = &restful.Parameters{
 		DataType:  "string",
 		Name:      "project",
 		ParamType: goRestful.PathParameterKind,
+		Required:  true,
 	}
 	DocPathLabelID = &restful.Parameters{
 		DataType:  "string",
 		Name:      "label_id",
 		ParamType: goRestful.PathParameterKind,
+		Required:  true,
 	}
 )
 

@@ -2,10 +2,11 @@ module github.com/apache/servicecomb-kie
 
 require (
 	github.com/emicklei/go-restful v2.11.1+incompatible
-	github.com/go-chassis/foundation v0.0.0-20190621030543-c3b63f787f4c
+	github.com/go-chassis/foundation v0.1.1-0.20191113114104-2b05871e9ec4
 	github.com/go-chassis/go-archaius v0.24.0
-	github.com/go-chassis/go-chassis v1.7.4-0.20191031115844-2d2fe55920d0
-	github.com/go-chassis/go-chassis-config v0.14.0
+	github.com/go-chassis/go-chassis v1.7.6
+	github.com/go-chassis/go-chassis-config v0.15.0
+	github.com/go-chassis/go-restful-swagger20 v1.0.2-0.20191118130439-7eec0f2639f6 // indirect
 	github.com/go-chassis/paas-lager v1.0.2-0.20190328010332-cf506050ddb2
 	github.com/go-mesh/openlogging v1.0.1
 	github.com/golang/snappy v0.0.1 // indirect

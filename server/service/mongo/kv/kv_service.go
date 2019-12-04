@@ -192,6 +192,30 @@ func (s *Service) Delete(kvID string, labelID string, domain string, project str
 	return nil
 }
 
+//List get kv list by key and criteria
+func (s *Service) List(ctx context.Context, domain, project, key string, labels map[string]string, limit, offset int) (*model.KVResponse, error) {
+	opts := service.NewDefaultFindOpts()
+	opts.Labels = labels
+	opts.Key = key
+	cur, err := findKV(ctx, domain, project, opts)
+	if err != nil {
+		return nil, err
+	}
+	defer cur.Close(ctx)
+	result := &model.KVResponse{}
+	for cur.Next(ctx) {
+		curKV := &model.KVDoc{}
+
+		if err := cur.Decode(curKV); err != nil {
+			openlogging.Error("decode to KVs error: " + err.Error())
+			return nil, err
+		}
+		clearPart(curKV)
+		result.Data = append(result.Data, curKV)
+	}
+	return result, nil
+}
+
 //FindKV get kvs by key, labels
 //because labels has a a lot of combination,
 //you can use WithDepth(0) to return only one kv which's labels exactly match the criteria
@@ -251,7 +275,7 @@ func (s *Service) FindKV(ctx context.Context, domain string, project string, opt
 		for _, labelGroup = range kvResp {
 			if reflect.DeepEqual(labelGroup.LabelDoc.Labels, curKV.Labels) {
 				groupExist = true
-				clearKV(curKV)
+				clearAll(curKV)
 				labelGroup.Data = append(labelGroup.Data, curKV)
 				break
 			}
@@ -265,7 +289,7 @@ func (s *Service) FindKV(ctx context.Context, domain string, project string, opt
 				},
 				Data: []*model.KVDoc{curKV},
 			}
-			clearKV(curKV)
+			clearAll(curKV)
 			openlogging.Debug("add new label group")
 			kvResp = append(kvResp, labelGroup)
 		}

@@ -138,7 +138,7 @@ func TestKieClient_DeleteConfigs(t *testing.T) {
 		config.LabelService: "test",
 	})
 	//assert.Equal(t, resp.StatusCode, 404)
-	assert.Equal(t, err.Error(), "delete 1 failed,http status [200 OK], body [[{\"label\":null,\"data\":null}]]")
+	assert.Equal(t, "delete 1 failed,http status [200 OK], body [[{\"data\":null}]]", err.Error())
 	// Shutdown the helper server gracefully
 	if err := helper.Shutdown(context.Background()); err != nil {
 		panic(err)
