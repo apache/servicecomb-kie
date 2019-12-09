@@ -25,6 +25,9 @@ import (
 )
 
 func CryptoInit() error {
+	if config.GetCrypto().Name == "" {
+		return nil
+	}
 	if KVService != nil {
 		KVService = newCryptoKV(KVService)
 	}

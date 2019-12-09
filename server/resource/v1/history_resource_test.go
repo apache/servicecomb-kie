@@ -43,11 +43,16 @@ var _ = Describe("v1 history resource", func() {
 
 	config.Configurations = &config.Config{
 		DB: config.DB{},
+		Crypto: config.Crypto{},
 	}
 
 	Describe("get history revisions", func() {
 		config.Configurations.DB.URI = "mongodb://kie:123@127.0.0.1:27017"
 		err := service.DBInit()
+		It("should not return err", func() {
+			Expect(err).Should(BeNil())
+		})
+		err = service.CryptoInit()
 		It("should not return err", func() {
 			Expect(err).Should(BeNil())
 		})

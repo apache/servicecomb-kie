@@ -43,9 +43,14 @@ var _ = Describe("v1 kv resource", func() {
 	//for UT
 	config.Configurations = &config.Config{
 		DB: config.DB{},
+		Crypto: config.Crypto{Name:"not_implemented"},
 	}
 	config.Configurations.DB.URI = "mongodb://kie:123@127.0.0.1:27017"
 	err := service.DBInit()
+	if err != nil {
+		panic(err)
+	}
+	err = service.CryptoInit()
 	if err != nil {
 		panic(err)
 	}
