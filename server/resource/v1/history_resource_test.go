@@ -42,7 +42,7 @@ import (
 var _ = Describe("v1 history resource", func() {
 
 	config.Configurations = &config.Config{
-		DB: config.DB{},
+		DB:     config.DB{},
 		Crypto: config.Crypto{},
 	}
 

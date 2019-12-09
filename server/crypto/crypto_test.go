@@ -24,7 +24,7 @@ import (
 
 func TestLookup(t *testing.T) {
 	type args struct {
-		name string
+		name  string
 		value string
 	}
 	tests := []struct {
@@ -37,9 +37,9 @@ func TestLookup(t *testing.T) {
 	}
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
-			gotCipher := Lookup(tt.args.name);
+			gotCipher := Lookup(tt.args.name)
 			expect, _ := gotCipher.Encrypt(tt.args.value)
-			if  !reflect.DeepEqual(expect, tt.want) {
+			if !reflect.DeepEqual(expect, tt.want) {
 				t.Errorf("Lookup() = %v, want %v", expect, tt.want)
 			}
 		})
