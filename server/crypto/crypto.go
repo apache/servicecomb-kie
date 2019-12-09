@@ -37,7 +37,8 @@ func Register(name string, c Cipher) {
 func Lookup(name string) Cipher {
 	cipher, ok := ciphers[name]
 	if !ok {
-		return &namedNoop{Name: name}
+		cipher = &namedNoop{Name: name}
+		ciphers[name] = cipher
 	}
 
 	return cipher
