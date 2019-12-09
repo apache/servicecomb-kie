@@ -15,39 +15,33 @@
  * limitations under the License.
  */
 
-package config_test
+package crypto
 
 import (
-	"github.com/apache/servicecomb-kie/server/config"
-	"github.com/go-chassis/go-archaius"
-	"github.com/stretchr/testify/assert"
-	"io"
-	"os"
+	"reflect"
 	"testing"
 )
 
-func TestInit(t *testing.T) {
-	err := archaius.Init()
-	assert.NoError(t, err)
-	b := []byte(`
-db:
-  uri: mongodb://admin:123@127.0.0.1:27017/kie
-  type: mongodb
-  poolSize: 10
-  ssl: false
-  sslCA:
-  sslCert:
-crypto:
-  name: noop
-`)
-	defer os.Remove("test.yaml")
-	f1, err := os.Create("test.yaml")
-	assert.NoError(t, err)
-	_, err = io.WriteString(f1, string(b))
-	assert.NoError(t, err)
-	err = config.Init("test.yaml")
-	assert.NoError(t, err)
-	assert.Equal(t, 10, config.GetDB().PoolSize)
-	assert.Equal(t, "mongodb://admin:123@127.0.0.1:27017/kie", config.GetDB().URI)
-	assert.Equal(t, "noop", config.GetCrypto().Name)
+func TestLookup(t *testing.T) {
+	type args struct {
+		name string
+		value string
+	}
+	tests := []struct {
+		name string
+		args args
+		want string
+	}{
+		{"noop", args{"noop", "123"}, "123"},
+		{"namedNoop", args{"not_implemented", "123"}, "123"},
+	}
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			gotCipher := Lookup(tt.args.name);
+			expect, _ := gotCipher.Encrypt(tt.args.value)
+			if  !reflect.DeepEqual(expect, tt.want) {
+				t.Errorf("Lookup() = %v, want %v", expect, tt.want)
+			}
+		})
+	}
 }

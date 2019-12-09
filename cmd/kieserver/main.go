@@ -101,6 +101,9 @@ func main() {
 	if err := service.DBInit(); err != nil {
 		openlogging.Fatal(err.Error())
 	}
+	if err := service.CryptoInit(); err != nil {
+		openlogging.Fatal(err.Error())
+	}
 	if err := chassis.Run(); err != nil {
 		openlogging.Fatal("service exit: " + err.Error())
 	}

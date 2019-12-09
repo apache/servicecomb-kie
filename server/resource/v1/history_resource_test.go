@@ -61,7 +61,11 @@ var _ = Describe("v1 history resource", func() {
 				Domain:  "default",
 				Project: "test",
 			}
-			kv, _ = service.KVService.CreateOrUpdate(context.Background(), kv)
+			kv, err = service.KVService.CreateOrUpdate(context.Background(), kv)
+			It("should not return err or nil", func() {
+				Expect(err).Should(BeNil())
+			})
+
 			path := fmt.Sprintf("/v1/%s/kie/revision/%s", "test", kv.LabelID)
 			r, _ := http.NewRequest("GET", path, nil)
 			revision := &v1.HistoryResource{}

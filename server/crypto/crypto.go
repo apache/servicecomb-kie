@@ -15,39 +15,30 @@
  * limitations under the License.
  */
 
-package config_test
+package crypto
 
-import (
-	"github.com/apache/servicecomb-kie/server/config"
-	"github.com/go-chassis/go-archaius"
-	"github.com/stretchr/testify/assert"
-	"io"
-	"os"
-	"testing"
-)
+//Cipher interface declares two function for encryption and decryption
+//See https://github.com/go-chassis/foundation/blob/master/security/cipher.go
+type Cipher interface {
+	Encrypt(src string) (string, error)
 
-func TestInit(t *testing.T) {
-	err := archaius.Init()
-	assert.NoError(t, err)
-	b := []byte(`
-db:
-  uri: mongodb://admin:123@127.0.0.1:27017/kie
-  type: mongodb
-  poolSize: 10
-  ssl: false
-  sslCA:
-  sslCert:
-crypto:
-  name: noop
-`)
-	defer os.Remove("test.yaml")
-	f1, err := os.Create("test.yaml")
-	assert.NoError(t, err)
-	_, err = io.WriteString(f1, string(b))
-	assert.NoError(t, err)
-	err = config.Init("test.yaml")
-	assert.NoError(t, err)
-	assert.Equal(t, 10, config.GetDB().PoolSize)
-	assert.Equal(t, "mongodb://admin:123@127.0.0.1:27017/kie", config.GetDB().URI)
-	assert.Equal(t, "noop", config.GetCrypto().Name)
+	Decrypt(src string) (string, error)
+}
+
+var ciphers map[string]Cipher
+
+func Register(name string, c Cipher) {
+	if ciphers == nil {
+		ciphers = make(map[string]Cipher)
+	}
+	ciphers[name] = c
+}
+
+func Lookup(name string) Cipher {
+	cipher, ok := ciphers[name]
+	if !ok {
+		return &namedNoop{Name: name}
+	}
+
+	return cipher
 }
