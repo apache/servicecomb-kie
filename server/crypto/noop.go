@@ -22,13 +22,16 @@ import (
 	"github.com/go-mesh/openlogging"
 )
 
+// Noop is none implement
 type Noop struct {
 }
 
+// Encrypt implement
 func (*Noop) Encrypt(src string) (string, error) {
 	return src, nil
 }
 
+// Decrypt implement
 func (*Noop) Decrypt(src string) (string, error) {
 	return src, nil
 }

@@ -24,6 +24,7 @@ import (
 	"github.com/apache/servicecomb-kie/server/crypto"
 )
 
+// CryptoInit init crypto config
 func CryptoInit() error {
 	if config.GetCrypto().Name == "" {
 		return nil

@@ -27,13 +27,14 @@ type Cipher interface {
 
 var ciphers map[string]Cipher
 
+// Register is register crypto
 func Register(name string, c Cipher) {
 	if ciphers == nil {
 		ciphers = make(map[string]Cipher)
 	}
 	ciphers[name] = c
 }
-
+// Lookup is lookup crypto
 func Lookup(name string) Cipher {
 	cipher, ok := ciphers[name]
 	if !ok {

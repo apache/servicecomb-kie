@@ -120,7 +120,7 @@ func (r *KVResource) List(rctx *restful.Context) {
 		return
 	}
 	var limit int64 = 20
-	var offset int64 = 0
+	var offset int64
 	labels := make(map[string]string, 0)
 	var err error
 	for k, v := range rctx.ReadRequest().URL.Query() {

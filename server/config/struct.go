@@ -32,6 +32,7 @@ type DB struct {
 	Timeout    string `yaml:"timeout"`
 }
 
+// Crypto is yaml file struct to set crypto config
 type Crypto struct {
 	Name string `yaml:"name"`
 }
