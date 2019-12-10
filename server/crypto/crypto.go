@@ -34,6 +34,7 @@ func Register(name string, c Cipher) {
 	}
 	ciphers[name] = c
 }
+
 // Lookup is lookup crypto
 func Lookup(name string) Cipher {
 	cipher, ok := ciphers[name]
