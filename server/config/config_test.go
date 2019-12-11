@@ -37,7 +37,7 @@ db:
   ssl: false
   sslCA:
   sslCert:
-crypto:
+cipher:
   name: noop
 `)
 	defer os.Remove("test.yaml")

@@ -7,5 +7,5 @@ db:
   sslEnabled: false
   rootCAFile: /opt/kie/ca.crt
 
-crypto:
+cipher:
   name: noop

@@ -15,28 +15,27 @@
  * limitations under the License.
  */
 
-package crypto
+package cipher
 
-//Cipher interface declares two function for encryption and decryption
+import (
+	"github.com/apache/servicecomb-kie/server/config"
+	"github.com/apache/servicecomb-kie/server/service"
+	"github.com/go-chassis/foundation/security"
+)
+
 //See https://github.com/go-chassis/foundation/blob/master/security/cipher.go
-type Cipher interface {
-	Encrypt(src string) (string, error)
-
-	Decrypt(src string) (string, error)
-}
-
-var ciphers map[string]Cipher
+var ciphers map[string]security.Cipher
 
 // Register is register crypto
-func Register(name string, c Cipher) {
+func Register(name string, c security.Cipher) {
 	if ciphers == nil {
-		ciphers = make(map[string]Cipher)
+		ciphers = make(map[string]security.Cipher)
 	}
 	ciphers[name] = c
 }
 
 // Lookup is lookup crypto
-func Lookup(name string) Cipher {
+func Lookup(name string) security.Cipher {
 	cipher, ok := ciphers[name]
 	if !ok {
 		cipher = &namedNoop{Name: name}
@@ -44,4 +43,19 @@ func Lookup(name string) Cipher {
 	}
 
 	return cipher
+}
+
+// Init init crypto config
+func Init() error {
+	if config.GetCrypto().Name == "" {
+		return nil
+	}
+	if service.KVService != nil {
+		service.KVService = newCipherKV(service.KVService)
+	}
+	if service.HistoryService != nil {
+		service.HistoryService = newCipherHistory(service.HistoryService)
+	}
+
+	return nil
 }

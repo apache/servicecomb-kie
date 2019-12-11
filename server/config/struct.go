@@ -20,7 +20,7 @@ package config
 //Config is yaml file struct
 type Config struct {
 	DB     DB     `yaml:"db"`
-	Crypto Crypto `yaml:"crypto"`
+	Cipher Cipher `yaml:"cipher"`
 }
 
 //DB is yaml file struct to set mongodb config
@@ -32,7 +32,7 @@ type DB struct {
 	Timeout    string `yaml:"timeout"`
 }
 
-// Crypto is yaml file struct to set crypto config
-type Crypto struct {
+// Cipher is yaml file struct to set crypto config
+type Cipher struct {
 	Name string `yaml:"name"`
 }

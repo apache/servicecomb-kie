@@ -15,8 +15,33 @@
  * limitations under the License.
  */
 
-package crypto
+package cipher
 
-func init() {
-	Register("noop", &Noop{})
+import (
+	"reflect"
+	"testing"
+)
+
+func TestLookup(t *testing.T) {
+	type args struct {
+		name  string
+		value string
+	}
+	tests := []struct {
+		name string
+		args args
+		want string
+	}{
+		{"noop", args{"noop", "123"}, "123"},
+		{"namedNoop", args{"not_implemented", "123"}, "123"},
+	}
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			gotCipher := Lookup(tt.args.name)
+			expect, _ := gotCipher.Encrypt(tt.args.value)
+			if !reflect.DeepEqual(expect, tt.want) {
+				t.Errorf("Lookup() = %v, want %v", expect, tt.want)
+			}
+		})
+	}
 }

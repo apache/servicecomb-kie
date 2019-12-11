@@ -15,49 +15,35 @@
  * limitations under the License.
  */
 
-package service
+package cipher
 
 import (
 	"context"
 	"github.com/apache/servicecomb-kie/pkg/model"
 	"github.com/apache/servicecomb-kie/server/config"
-	"github.com/apache/servicecomb-kie/server/crypto"
+	"github.com/apache/servicecomb-kie/server/service"
+	"github.com/go-chassis/foundation/security"
 )
 
-// CryptoInit init crypto config
-func CryptoInit() error {
-	if config.GetCrypto().Name == "" {
-		return nil
-	}
-	if KVService != nil {
-		KVService = newCryptoKV(KVService)
-	}
-	if HistoryService != nil {
-		HistoryService = newCryptoHistory(HistoryService)
-	}
-
-	return nil
-}
-
-func newCryptoHistory(service History) History {
+func newCipherHistory(service service.History) service.History {
 	return &cryptoHistory{service: service}
 }
 
-func newCryptoKV(service KV) KV {
+func newCipherKV(service service.KV) service.KV {
 	return &cryptoKV{service: service}
 }
 
-// lookup Crypto
-func lookupCrypto(kv *model.KVDoc) crypto.Cipher {
-	return crypto.Lookup(config.GetCrypto().Name)
+// lookup Cipher
+func lookupCrypto(unused *model.KVDoc) security.Cipher {
+	return Lookup(config.GetCrypto().Name)
 }
 
 // History service security proxy
 type cryptoHistory struct {
-	service History
+	service service.History
 }
 
-func (history *cryptoHistory) GetHistory(ctx context.Context, labelID string, options ...FindOption) ([]*model.LabelRevisionDoc, error) {
+func (history *cryptoHistory) GetHistory(ctx context.Context, labelID string, options ...service.FindOption) ([]*model.LabelRevisionDoc, error) {
 	res, err := history.service.GetHistory(ctx, labelID, options...)
 
 	cipher := lookupCrypto(nil)
@@ -79,7 +65,7 @@ func (history *cryptoHistory) GetHistory(ctx context.Context, labelID string, op
 
 // KV service security proxy
 type cryptoKV struct {
-	service KV
+	service service.KV
 }
 
 func (ckv *cryptoKV) CreateOrUpdate(ctx context.Context, kv *model.KVDoc) (*model.KVDoc, error) {
@@ -127,7 +113,7 @@ func (ckv *cryptoKV) Delete(kvID string, labelID string, domain, project string)
 	return ckv.Delete(kvID, labelID, domain, project)
 }
 
-func (ckv *cryptoKV) FindKV(ctx context.Context, domain, project string, options ...FindOption) ([]*model.KVResponse, error) {
+func (ckv *cryptoKV) FindKV(ctx context.Context, domain, project string, options ...service.FindOption) ([]*model.KVResponse, error) {
 	res, err := ckv.service.FindKV(ctx, domain, project, options...)
 	cipher := lookupCrypto(nil)
 	if res == nil {

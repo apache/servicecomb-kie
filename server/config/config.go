@@ -44,6 +44,6 @@ func GetDB() DB {
 }
 
 //GetCrypto return crypto configs
-func GetCrypto() Crypto {
-	return Configurations.Crypto
+func GetCrypto() Cipher {
+	return Configurations.Cipher
 }

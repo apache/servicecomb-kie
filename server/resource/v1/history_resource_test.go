@@ -19,6 +19,7 @@ package v1_test
 import (
 	"context"
 	"encoding/json"
+	"github.com/apache/servicecomb-kie/server/cipher"
 	"github.com/apache/servicecomb-kie/server/service"
 	"io/ioutil"
 
@@ -43,7 +44,7 @@ var _ = Describe("v1 history resource", func() {
 
 	config.Configurations = &config.Config{
 		DB:     config.DB{},
-		Crypto: config.Crypto{},
+		Cipher: config.Cipher{},
 	}
 
 	Describe("get history revisions", func() {
@@ -52,7 +53,7 @@ var _ = Describe("v1 history resource", func() {
 		It("should not return err", func() {
 			Expect(err).Should(BeNil())
 		})
-		err = service.CryptoInit()
+		err = cipher.Init()
 		It("should not return err", func() {
 			Expect(err).Should(BeNil())
 		})
