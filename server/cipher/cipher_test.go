@@ -51,14 +51,14 @@ func TestLookup(t *testing.T) {
 	}
 }
 
-type testCipher struct {}
+type testCipher struct{}
 
 func (*testCipher) Encrypt(src string) (string, error) {
-	panic("implement me")
+	return src, nil
 }
 
 func (*testCipher) Decrypt(src string) (string, error) {
-	panic("implement me")
+	return src, nil
 }
 
 func TestRegister(t *testing.T) {
