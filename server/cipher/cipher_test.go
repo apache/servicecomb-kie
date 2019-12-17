@@ -42,6 +42,37 @@ func TestLookup(t *testing.T) {
 			if !reflect.DeepEqual(expect, tt.want) {
 				t.Errorf("Lookup() = %v, want %v", expect, tt.want)
 			}
+
+			expect, _ = gotCipher.Decrypt(tt.args.value)
+			if !reflect.DeepEqual(expect, tt.want) {
+				t.Errorf("Lookup() = %v, want %v", expect, tt.want)
+			}
 		})
+	}
+}
+
+type testCipher struct {}
+
+func (*testCipher) Encrypt(src string) (string, error) {
+	panic("implement me")
+}
+
+func (*testCipher) Decrypt(src string) (string, error) {
+	panic("implement me")
+}
+
+func TestRegister(t *testing.T) {
+	test := &testCipher{}
+	noop2 := &namedNoop{}
+	Register("test", test)
+	Register("noop2", noop2)
+
+	act := Lookup("test")
+	if !reflect.DeepEqual(test, act) {
+		t.Errorf("Register() = %v, want %v", test, act)
+	}
+	act = Lookup("noop2")
+	if !reflect.DeepEqual(noop2, act) {
+		t.Errorf("Register() = %v, want %v", noop2, act)
 	}
 }
