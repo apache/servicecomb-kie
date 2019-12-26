@@ -93,7 +93,7 @@ this will generate a "servicecomb-kie-0.0.1-linux-amd64.tar" in "release" folder
 and a docker image "servicecomb/kie:0.0.1"
 
 # API Doc
-After you launch kie server, you can browse API doc in http://127.0.0.1:30110/apidocs, 
+After you launch kie server, you can browse API doc in http://127.0.0.1:30110/apidocs.json, 
 copy this doc to http://editor.swagger.io/
 # Documentations
 https://servicecomb.apache.org/docs/users/
