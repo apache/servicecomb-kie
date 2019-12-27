@@ -123,7 +123,7 @@ func (c *Client) Put(ctx context.Context, kv model.KVRequest, opts ...OpOption) 
 }
 
 //Get get value of a key
-func (c *Client) Get(ctx context.Context, key string, opts ...GetOption) ([]*model.KVResponse, error) {
+func (c *Client) Get(ctx context.Context, key string, opts ...GetOption) (*model.KVResponse, error) {
 	options := GetOptions{}
 	for _, o := range opts {
 		o(&options)
@@ -131,7 +131,13 @@ func (c *Client) Get(ctx context.Context, key string, opts ...GetOption) ([]*mod
 	if options.Project == "" {
 		options.Project = defaultProject
 	}
-	url := fmt.Sprintf("%s/%s/%s/%s/%s", c.opts.Endpoint, version, options.Project, APIPathKV, key)
+	labels := ""
+	if len(options.Labels) != 0 {
+		for k, v := range options.Labels[0] {
+			labels = labels + k + ":" + v + ","
+		}
+	}
+	url := fmt.Sprintf("%s/%s/%s/%s/%s?label=%s", c.opts.Endpoint, version, options.Project, APIPathKV, key, strings.TrimSuffix(labels, ","))
 	h := http.Header{}
 	resp, err := c.c.Do(ctx, "GET", url, h, nil)
 	if err != nil {
@@ -149,7 +155,7 @@ func (c *Client) Get(ctx context.Context, key string, opts ...GetOption) ([]*mod
 		}))
 		return nil, fmt.Errorf("get %s failed,http status [%s], body [%s]", key, resp.Status, b)
 	}
-	var kvs []*model.KVResponse
+	var kvs *model.KVResponse
 	err = json.Unmarshal(b, &kvs)
 	if err != nil {
 		openlogging.Error("unmarshal kv failed:" + err.Error())
@@ -181,7 +187,7 @@ func (c *Client) Search(ctx context.Context, opts ...GetOption) ([]*model.KVResp
 	if options.Labels != nil && len(options.Labels) > 0 {
 		lableReq = strings.TrimRight(lableReq, common.QueryByLabelsCon)
 	}
-	url := fmt.Sprintf("%s/%s/%s/%s?%s", c.opts.Endpoint, version, options.Project, APIPathKV, lableReq)
+	url := fmt.Sprintf("%s/%s/%s/%s?%s", c.opts.Endpoint, version, options.Project, "kie/summary", lableReq)
 	h := http.Header{}
 	resp, err := c.c.Do(ctx, "GET", url, h, nil)
 	if err != nil {

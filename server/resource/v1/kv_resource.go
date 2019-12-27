@@ -19,13 +19,13 @@
 package v1
 
 import (
+	"github.com/apache/servicecomb-kie/server/pubsub"
 	"net/http"
-	"strconv"
+	"time"
 
 	"github.com/apache/servicecomb-kie/pkg/common"
 	"github.com/apache/servicecomb-kie/pkg/model"
 	"github.com/apache/servicecomb-kie/server/service"
-
 	goRestful "github.com/emicklei/go-restful"
 	"github.com/go-chassis/go-chassis/server/restful"
 	"github.com/go-mesh/openlogging"
@@ -58,6 +58,16 @@ func (r *KVResource) Put(context *restful.Context) {
 		WriteErrResponse(context, http.StatusInternalServerError, err.Error(), common.ContentTypeText)
 		return
 	}
+	err = pubsub.Publish(&pubsub.KVChangeEvent{
+		Key:      kv.Key,
+		Labels:   kv.Labels,
+		Project:  project,
+		DomainID: kv.Domain,
+		Action:   "put",
+	})
+	if err != nil {
+		openlogging.Warn("lost kv change event:" + err.Error())
+	}
 	InfoLog("put", kv)
 	err = writeResponse(context, kv)
 	if err != nil {
@@ -67,97 +77,117 @@ func (r *KVResource) Put(context *restful.Context) {
 }
 
 //GetByKey search key by label and key
-func (r *KVResource) GetByKey(context *restful.Context) {
+func (r *KVResource) GetByKey(rctx *restful.Context) {
 	var err error
-	key := context.ReadPathParameter("key")
+	key := rctx.ReadPathParameter("key")
 	if key == "" {
-		WriteErrResponse(context, http.StatusBadRequest, "key must not be empty", common.ContentTypeText)
+		WriteErrResponse(rctx, http.StatusBadRequest, "key must not be empty", common.ContentTypeText)
 		return
 	}
-	project := context.ReadPathParameter("project")
-	values := context.ReadRequest().URL.Query()
-	labels := make(map[string]string, len(values))
-	for k, v := range values {
-		if len(v) != 1 {
-			WriteErrResponse(context, http.StatusBadRequest, MsgIllegalLabels, common.ContentTypeText)
+	project := rctx.ReadPathParameter("project")
+	labelStr := rctx.ReadQueryParameter("label")
+	var labels map[string]string
+	if labelStr != "" {
+		labels, err = getLabels(labelStr)
+		if err != nil {
+			WriteErrResponse(rctx, http.StatusBadRequest, MsgIllegalLabels, common.ContentTypeText)
 			return
 		}
-		labels[k] = v[0]
 	}
-	domain := ReadDomain(context)
+	domain := ReadDomain(rctx)
 	if domain == nil {
-		WriteErrResponse(context, http.StatusInternalServerError, MsgDomainMustNotBeEmpty, common.ContentTypeText)
+		WriteErrResponse(rctx, http.StatusInternalServerError, MsgDomainMustNotBeEmpty, common.ContentTypeText)
 		return
 	}
-	d, err := ReadFindDepth(context)
-	if err != nil {
-		WriteErrResponse(context, http.StatusBadRequest, MsgIllegalDepth, common.ContentTypeText)
+	waitStr := getWaitDuration(rctx)
+	d, err := time.ParseDuration(waitStr)
+	if err != nil || d > 5*time.Minute {
+		WriteErrResponse(rctx, http.StatusBadRequest, MsgInvalidWait, common.ContentTypeText)
 		return
 	}
-	kvs, err := service.KVService.FindKV(context.Ctx, domain.(string), project,
-		service.WithKey(key), service.WithLabels(labels), service.WithDepth(d))
-	if err != nil {
-		if err == service.ErrKeyNotExists {
-			WriteErrResponse(context, http.StatusNotFound, err.Error(), common.ContentTypeText)
+	changed := wait(d, rctx, &pubsub.Topic{
+		Key:      key,
+		Labels:   labels,
+		Project:  project,
+		DomainID: domain.(string),
+	})
+	if changed {
+		kv, err := service.KVService.List(rctx.Ctx, domain.(string), project,
+			key, labels, 0, 0)
+		if err != nil {
+			if err == service.ErrKeyNotExists {
+				WriteErrResponse(rctx, http.StatusNotFound, err.Error(), common.ContentTypeText)
+				return
+			}
+			WriteErrResponse(rctx, http.StatusInternalServerError, err.Error(), common.ContentTypeText)
 			return
 		}
-		WriteErrResponse(context, http.StatusInternalServerError, err.Error(), common.ContentTypeText)
+		err = writeResponse(rctx, kv)
+		if err != nil {
+			openlogging.Error(err.Error())
+		}
 		return
 	}
-	err = writeResponse(context, kvs)
-	if err != nil {
-		openlogging.Error(err.Error())
-	}
-
+	rctx.WriteHeader(http.StatusNotModified)
 }
 
 //List TODO pagination
 func (r *KVResource) List(rctx *restful.Context) {
+	var err error
 	project := rctx.ReadPathParameter("project")
 	domain := ReadDomain(rctx)
 	if domain == nil {
 		WriteErrResponse(rctx, http.StatusInternalServerError, MsgDomainMustNotBeEmpty, common.ContentTypeText)
 		return
 	}
-	var limit int64 = 20
-	var offset int64 = 0
-	labels := make(map[string]string, 0)
-	var err error
-	for k, v := range rctx.ReadRequest().URL.Query() {
-		if k == "limit" {
-			limit, err = strconv.ParseInt(v[0], 10, 64)
-			if err != nil {
-				WriteErrResponse(rctx, http.StatusBadRequest, "invalid limit number", common.ContentTypeText)
-			}
-			if limit < 1 || limit > 50 {
-				WriteErrResponse(rctx, http.StatusBadRequest, "invalid limit number", common.ContentTypeText)
-			}
-			continue
+	labelStr := rctx.ReadQueryParameter("label")
+	var labels map[string]string
+	if labelStr != "" {
+		labels, err = getLabels(labelStr)
+		if err != nil {
+			WriteErrResponse(rctx, http.StatusBadRequest, MsgIllegalLabels, common.ContentTypeText)
+			return
 		}
-		if k == "offset" {
-			offset, err = strconv.ParseInt(v[0], 10, 64)
-			if err != nil {
-				WriteErrResponse(rctx, http.StatusBadRequest, "invalid offset number", common.ContentTypeText)
-			}
-			if offset < 1 {
-				WriteErrResponse(rctx, http.StatusBadRequest, "invalid offset number", common.ContentTypeText)
-			}
-			continue
-		}
-		labels[k] = v[0]
 	}
-	result, err := service.KVService.List(rctx.Ctx, domain.(string), project, "", labels, int(limit), int(offset))
+	limitStr := rctx.ReadPathParameter("limit")
+	offsetStr := rctx.ReadPathParameter("offset")
+	limit, offset, err := checkPagination(limitStr, offsetStr)
 	if err != nil {
-		openlogging.Error("can not find by labels", openlogging.WithTags(openlogging.Tags{
-			"err": err.Error(),
-		}))
-		WriteErrResponse(rctx, http.StatusInternalServerError, err.Error(), common.ContentTypeText)
+		WriteErrResponse(rctx, http.StatusBadRequest, err.Error(), common.ContentTypeText)
 		return
 	}
-	err = writeResponse(rctx, result)
-	if err != nil {
-		openlogging.Error(err.Error())
+	waitStr := getWaitDuration(rctx)
+	d, err := time.ParseDuration(waitStr)
+	if err != nil || d > 5*time.Minute {
+		WriteErrResponse(rctx, http.StatusBadRequest, MsgInvalidWait, common.ContentTypeText)
+		return
 	}
+	changed := wait(d, rctx, &pubsub.Topic{
+		Labels:   labels,
+		Project:  project,
+		DomainID: domain.(string),
+	})
+	if changed {
+		result, err := service.KVService.List(rctx.Ctx, domain.(string), project, "", labels, int(limit), int(offset))
+		if err != nil {
+			if err == service.ErrKeyNotExists {
+				WriteErrResponse(rctx, http.StatusNotFound, err.Error(), common.ContentTypeText)
+				return
+			}
+			openlogging.Error("can not find by labels", openlogging.WithTags(openlogging.Tags{
+				"err": err.Error(),
+			}))
+			WriteErrResponse(rctx, http.StatusInternalServerError, err.Error(), common.ContentTypeText)
+			return
+		}
+		err = writeResponse(rctx, result)
+		if err != nil {
+			openlogging.Error(err.Error())
+		}
+		return
+	}
+	rctx.WriteHeader(http.StatusNotModified)
+
 }
 
 //Search search key only by label
@@ -270,7 +300,6 @@ func (r *KVResource) URLPatterns() []restful.Route {
 			FuncDesc:     "get key values by key and labels",
 			Parameters: []*restful.Parameters{
 				DocPathProject, DocPathKey,
-				DocHeaderDepth,
 				DocQueryLabelParameters,
 			},
 			Returns: []*restful.Returns{
@@ -284,9 +313,9 @@ func (r *KVResource) URLPatterns() []restful.Route {
 			Produces: []string{goRestful.MIME_JSON, common.ContentTypeYaml},
 		}, {
 			Method:       http.MethodGet,
-			Path:         "/v1/{project}/kie/kv",
+			Path:         "/v1/{project}/kie/summary",
 			ResourceFunc: r.Search,
-			FuncDesc:     "search key values by labels combination",
+			FuncDesc:     "search key values by labels combination, it returns multiple labels group",
 			Parameters: []*restful.Parameters{
 				DocPathProject, DocQueryCombination,
 			},
@@ -301,11 +330,11 @@ func (r *KVResource) URLPatterns() []restful.Route {
 			Produces: []string{goRestful.MIME_JSON, common.ContentTypeYaml},
 		}, {
 			Method:       http.MethodGet,
-			Path:         "/v1/{project}/kie/kv:list",
+			Path:         "/v1/{project}/kie/kv",
 			ResourceFunc: r.List,
 			FuncDesc:     "list key values by labels and key",
 			Parameters: []*restful.Parameters{
-				DocPathProject, DocQueryLabelParameters,
+				DocPathProject, DocQueryLabelParameters, DocQueryWait,
 			},
 			Returns: []*restful.Returns{
 				{

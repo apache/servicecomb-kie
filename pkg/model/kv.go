@@ -32,7 +32,7 @@ type KVResponse struct {
 	PageNum  int               `json:"num,omitempty"`
 	Size     int               `json:"size,omitempty"`
 	Total    int               `json:"total,omitempty"`
-	Data     []*KVDoc          `json:"data"`
+	Data     []*KVDoc          `json:"data,omitempty"`
 }
 
 //LabelDocResponse is label struct

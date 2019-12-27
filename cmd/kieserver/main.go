@@ -18,6 +18,7 @@
 package main
 
 import (
+	"github.com/apache/servicecomb-kie/server/pubsub"
 	"github.com/apache/servicecomb-kie/server/service"
 	"os"
 
@@ -34,14 +35,6 @@ const (
 	defaultConfigFile = "/etc/servicecomb-kie/kie-conf.yaml"
 )
 
-//ConfigFromCmd store cmd params
-type ConfigFromCmd struct {
-	ConfigFile string
-}
-
-//Configs is a pointer of struct ConfigFromCmd
-var Configs *ConfigFromCmd
-
 // parseConfigFromCmd
 func parseConfigFromCmd(args []string) (err error) {
 	app := cli.NewApp()
@@ -51,25 +44,24 @@ func parseConfigFromCmd(args []string) (err error) {
 		cli.StringFlag{
 			Name:        "config",
 			Usage:       "config file, example: --config=kie-conf.yaml",
-			Destination: &Configs.ConfigFile,
+			Destination: &config.Configurations.ConfigFile,
 			Value:       defaultConfigFile,
 		},
 		cli.StringFlag{
 			Name:        "name",
 			Usage:       "node name, example: --name=kie0",
-			Destination: &Configs.ConfigFile,
+			Destination: &config.Configurations.NodeName,
 			EnvVar:      "NODE_NAME",
 		},
 		cli.StringFlag{
 			Name:        "peer-addr",
-			Usage:       "peer address any node address in a cluster, example: --peer-addr=10.1.1.10:5000",
-			Destination: &Configs.ConfigFile,
+			Usage:       "kie use this ip port to join a kie cluster, example: --peer-addr=10.1.1.10:5000",
+			Destination: &config.Configurations.PeerAddr,
 			EnvVar:      "PEER_ADDR",
-		},
-		cli.StringFlag{
+		}, cli.StringFlag{
 			Name:        "listen-peer-addr",
-			Usage:       "peer address, example: --listen-peer-addr=0.0.0.0:5000",
-			Destination: &Configs.ConfigFile,
+			Usage:       "listen on ip port, kie receive events example: --listen-peer-addr=10.1.1.10:5000",
+			Destination: &config.Configurations.ListenPeerAddr,
 			EnvVar:      "LISTEN_PEER_ADDR",
 		},
 	}
@@ -81,13 +73,8 @@ func parseConfigFromCmd(args []string) (err error) {
 	return
 }
 
-//Init get config and parses those command
-func Init() error {
-	Configs = &ConfigFromCmd{}
-	return parseConfigFromCmd(os.Args)
-}
 func main() {
-	if err := Init(); err != nil {
+	if err := parseConfigFromCmd(os.Args); err != nil {
 		openlogging.Fatal(err.Error())
 	}
 	chassis.RegisterSchema("rest", &v1.KVResource{})
@@ -95,12 +82,14 @@ func main() {
 	if err := chassis.Init(); err != nil {
 		openlogging.Fatal(err.Error())
 	}
-	if err := config.Init(Configs.ConfigFile); err != nil {
+	if err := config.Init(); err != nil {
 		openlogging.Fatal(err.Error())
 	}
 	if err := service.DBInit(); err != nil {
 		openlogging.Fatal(err.Error())
 	}
+	pubsub.Init()
+	pubsub.Start()
 	if err := chassis.Run(); err != nil {
 		openlogging.Fatal("service exit: " + err.Error())
 	}

@@ -22,7 +22,7 @@ import (
 	"encoding/json"
 	"fmt"
 	"github.com/apache/servicecomb-kie/pkg/model"
-	config "github.com/go-chassis/go-chassis-config"
+	"github.com/go-chassis/go-archaius/source/remote"
 	"github.com/stretchr/testify/assert"
 	"net/http"
 	"os"
@@ -37,10 +37,10 @@ func init() {
 func TestKieClient_NewKieClient(t *testing.T) {
 	gopath := os.Getenv("GOPATH")
 	os.Setenv("CHASSIS_HOME", gopath+"src/github.com/go-chassis/go-chassis/examples/discovery/server/")
-	_, err := NewClient(config.Options{Labels: map[string]string{
-		config.LabelVersion: "1",
-		config.LabelApp:     "",
-		config.LabelService: "test",
+	_, err := NewClient(remote.Options{Labels: map[string]string{
+		remote.LabelVersion: "1",
+		remote.LabelApp:     "",
+		remote.LabelService: "test",
 	}, ServerURI: "http://127.0.0.1:49800",
 		Endpoint: "http://127.0.0.1:49800"})
 	assert.Equal(t, err, nil)
@@ -52,15 +52,15 @@ func TestKieClient_PullConfig(t *testing.T) {
 	helper := startHttpServer(":49800", "/v1/test/kie/kv/test")
 	gopath := os.Getenv("GOPATH")
 	os.Setenv("CHASSIS_HOME", gopath+"src/github.com/go-chassis/go-chassis/examples/discovery/server/")
-	kieClient, err := NewClient(config.Options{Labels: map[string]string{
-		config.LabelVersion: "1",
-		config.LabelApp:     "",
-		config.LabelService: "test",
+	kieClient, err := NewClient(remote.Options{Labels: map[string]string{
+		remote.LabelVersion: "1",
+		remote.LabelApp:     "",
+		remote.LabelService: "test",
 	}, ServerURI: "http://127.0.0.1:49800", Endpoint: "http://127.0.0.1:49800"})
 	_, err = kieClient.PullConfig("test", "1", map[string]string{
-		config.LabelVersion: "1",
-		config.LabelApp:     "",
-		config.LabelService: "test",
+		remote.LabelVersion: "1",
+		remote.LabelApp:     "",
+		remote.LabelService: "test",
 	})
 	//assert.Equal(t, resp.StatusCode, 404)
 	assert.Equal(t, err.Error(), "can not find value")
@@ -76,15 +76,15 @@ func TestKieClient_PullConfigs(t *testing.T) {
 	helper := startHttpServer(":49800", "/v1/calculator/kie/kv?q=version:0.0.1+app:+env:+servicename:calculator")
 	gopath := os.Getenv("GOPATH")
 	os.Setenv("CHASSIS_HOME", gopath+"src/github.com/go-chassis/go-chassis/examples/discovery/server/")
-	kieClient, err := NewClient(config.Options{Labels: map[string]string{
-		config.LabelVersion: "1",
-		config.LabelApp:     "",
-		config.LabelService: "test",
+	kieClient, err := NewClient(remote.Options{Labels: map[string]string{
+		remote.LabelVersion: "1",
+		remote.LabelApp:     "",
+		remote.LabelService: "test",
 	}, ServerURI: "http://127.0.0.1:49800", Endpoint: "http://127.0.0.1:49800"})
 	_, err = kieClient.PullConfigs(map[string]string{
-		config.LabelVersion: "1",
-		config.LabelApp:     "",
-		config.LabelService: "test",
+		remote.LabelVersion: "1",
+		remote.LabelApp:     "",
+		remote.LabelService: "test",
 	})
 	//assert.Equal(t, resp.StatusCode, 404)
 	assert.Equal(t, err.Error(), "can not find value")
@@ -100,17 +100,17 @@ func TestKieClient_PushConfigs(t *testing.T) {
 	helper := startHttpServer(":49800", "/")
 	gopath := os.Getenv("GOPATH")
 	os.Setenv("CHASSIS_HOME", gopath+"src/github.com/go-chassis/go-chassis/examples/discovery/server/")
-	kieClient, err := NewClient(config.Options{Labels: map[string]string{
-		config.LabelVersion: "1",
-		config.LabelApp:     "",
-		config.LabelService: "test",
+	kieClient, err := NewClient(remote.Options{Labels: map[string]string{
+		remote.LabelVersion: "1",
+		remote.LabelApp:     "",
+		remote.LabelService: "test",
 	}, ServerURI: "http://127.0.0.1:49800", Endpoint: "http://127.0.0.1:49800"})
 	data := make(map[string]interface{})
 	data["test_info"] = "test_info"
 	_, err = kieClient.PushConfigs(data, map[string]string{
-		config.LabelVersion: "1",
-		config.LabelApp:     "",
-		config.LabelService: "test",
+		remote.LabelVersion: "1",
+		remote.LabelApp:     "",
+		remote.LabelService: "test",
 	})
 	//assert.Equal(t, resp.StatusCode, 404)
 	assert.Equal(t, err.Error(), "json: cannot unmarshal array into Go value of type model.KVDoc")
@@ -126,19 +126,19 @@ func TestKieClient_DeleteConfigs(t *testing.T) {
 	helper := startHttpServer(":49800", "/v1/calculator/kie/kv/?kvID=s")
 	gopath := os.Getenv("GOPATH")
 	os.Setenv("CHASSIS_HOME", gopath+"src/github.com/go-chassis/go-chassis/examples/discovery/server/")
-	kieClient, err := NewClient(config.Options{Labels: map[string]string{
-		config.LabelVersion: "1",
-		config.LabelApp:     "",
-		config.LabelService: "test",
+	kieClient, err := NewClient(remote.Options{Labels: map[string]string{
+		remote.LabelVersion: "1",
+		remote.LabelApp:     "",
+		remote.LabelService: "test",
 	}, ServerURI: "http://127.0.0.1:49800", Endpoint: "http://127.0.0.1:49800"})
 	data := []string{"1"}
 	_, err = kieClient.DeleteConfigsByKeys(data, map[string]string{
-		config.LabelVersion: "1",
-		config.LabelApp:     "",
-		config.LabelService: "test",
+		remote.LabelVersion: "1",
+		remote.LabelApp:     "",
+		remote.LabelService: "test",
 	})
 	//assert.Equal(t, resp.StatusCode, 404)
-	assert.Equal(t, "delete 1 failed,http status [200 OK], body [[{\"data\":null}]]", err.Error())
+	assert.Equal(t, "delete 1 failed,http status [200 OK], body [[{}]]", err.Error())
 	// Shutdown the helper server gracefully
 	if err := helper.Shutdown(context.Background()); err != nil {
 		panic(err)

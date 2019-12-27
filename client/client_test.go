@@ -93,9 +93,10 @@ var _ = Describe("Client", func() {
 				Expect(res.Project).Should(Equal(""))
 				Expect(res.Domain).Should(Equal(""))
 			})
-			kvs, _ := c1.Get(context.TODO(), "app.properties", WithGetProject("test"))
+			kvs, _ := c1.Get(context.TODO(), "app.properties",
+				WithGetProject("test"), WithLabels(map[string]string{"service": "tester"}))
 			It("should exactly 1 kv", func() {
-				Expect(len(kvs)).Should(Equal(1))
+				Expect(kvs).Should(Not(BeNil()))
 			})
 		})
 	})
@@ -111,7 +112,7 @@ var _ = Describe("Client", func() {
 			kvBody.Value = "100s"
 			kvBody.ValueType = "string"
 			kvBody.Labels = make(map[string]string)
-			kvBody.Labels["evn"] = "test"
+			kvBody.Labels["env"] = "test"
 			kv, err := client2.Put(context.TODO(), kvBody, WithProject("test"))
 			It("should not be error", func() {
 				Ω(err).ShouldNot(HaveOccurred())
@@ -121,9 +122,10 @@ var _ = Describe("Client", func() {
 				Expect(kv.Project).To(Equal(""))
 				Expect(kv.Domain).To(Equal(""))
 			})
-			kvs, err := client2.Get(context.TODO(), "time", WithGetProject("test"))
+			kvs, err := client2.Get(context.TODO(), "time",
+				WithGetProject("test"), WithLabels(map[string]string{"env": "test"}))
 			It("should return exactly 1 kv", func() {
-				Expect(len(kvs)).Should(Equal(1))
+				Expect(kvs).Should(Not(BeNil()))
 				Expect(err).Should(BeNil())
 			})
 			client3, err := New(Config{

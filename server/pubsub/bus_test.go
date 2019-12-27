@@ -15,27 +15,43 @@
  * limitations under the License.
  */
 
-package common
+package pubsub_test
 
-//match mode
-const (
-	QueryParamQ      = "q"
-	QueryByLabelsCon = "&"
-	QueryParamWait   = "wait"
+import (
+	"github.com/apache/servicecomb-kie/server/config"
+	"github.com/apache/servicecomb-kie/server/pubsub"
+	uuid "github.com/satori/go.uuid"
+	"testing"
 )
 
-//http headers
-const (
-	HeaderMatch       = "X-Match"
-	HeaderDepth       = "X-Depth"
-	HeaderTenant      = "X-Domain"
-	HeaderContentType = "Content-Type"
-	HeaderAccept      = "Accept"
-)
+func TestInit(t *testing.T) {
+	config.Configurations = &config.Config{}
+	pubsub.Init()
+	pubsub.Start()
 
-//ContentType
-const (
-	ContentTypeText = "application/text"
-	ContentTypeJSON = "application/json"
-	ContentTypeYaml = "text/yaml"
-)
+	o := &pubsub.Observer{
+		UUID:  uuid.NewV4().String(),
+		Event: make(chan *pubsub.KVChangeEvent, 1),
+	}
+	_ = pubsub.ObserveOnce(o, &pubsub.Topic{
+		Key:      "some_key",
+		Project:  "1",
+		DomainID: "2",
+		Labels: map[string]string{
+			"a": "b",
+			"c": "d",
+		},
+	})
+	_ = pubsub.Publish(&pubsub.KVChangeEvent{
+		Key:    "some_key",
+		Action: "put",
+		Labels: map[string]string{
+			"a": "b",
+			"c": "d",
+		},
+		Project:  "1",
+		DomainID: "2",
+	})
+	e := <-o.Event
+	t.Log(e.Key)
+}

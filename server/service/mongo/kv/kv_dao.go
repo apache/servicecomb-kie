@@ -117,8 +117,12 @@ func findKV(ctx context.Context, domain string, project string, opts service.Fin
 	if opts.Key != "" {
 		filter["key"] = opts.Key
 	}
-	for k, v := range opts.Labels {
-		filter["labels."+k] = v
+	if len(opts.Labels) != 0 {
+		for k, v := range opts.Labels {
+			filter["labels."+k] = v
+		}
+	} else {
+		filter["labels"] = ""
 	}
 
 	cur, err := collection.Find(ctx, filter)

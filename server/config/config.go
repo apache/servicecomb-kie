@@ -25,16 +25,15 @@ import (
 )
 
 //Configurations is kie config items
-var Configurations *Config
+var Configurations = &Config{}
 
 //Init initiate config files
-func Init(file string) error {
-	if err := archaius.AddFile(file, archaius.WithFileHandler(util.UseFileNameAsKeyContentAsValue)); err != nil {
+func Init() error {
+	if err := archaius.AddFile(Configurations.ConfigFile, archaius.WithFileHandler(util.UseFileNameAsKeyContentAsValue)); err != nil {
 		return err
 	}
-	_, filename := filepath.Split(file)
+	_, filename := filepath.Split(Configurations.ConfigFile)
 	content := archaius.GetString(filename, "")
-	Configurations = &Config{}
 	return yaml.Unmarshal([]byte(content), Configurations)
 }
 

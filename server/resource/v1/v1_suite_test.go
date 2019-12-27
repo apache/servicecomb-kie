@@ -27,6 +27,7 @@ import (
 )
 
 func TestV1(t *testing.T) {
+
 	RegisterFailHandler(Fail)
 	RunSpecs(t, "V1 Suite")
 

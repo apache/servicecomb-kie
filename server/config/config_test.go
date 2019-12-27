@@ -44,7 +44,8 @@ db:
 	assert.NoError(t, err)
 	_, err = io.WriteString(f1, string(b))
 	assert.NoError(t, err)
-	err = config.Init("test.yaml")
+	config.Configurations.ConfigFile = "test.yaml"
+	err = config.Init()
 	assert.NoError(t, err)
 	assert.Equal(t, 10, config.GetDB().PoolSize)
 	assert.Equal(t, "mongodb://admin:123@127.0.0.1:27017/kie", config.GetDB().URI)

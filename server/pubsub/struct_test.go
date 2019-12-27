@@ -15,27 +15,42 @@
  * limitations under the License.
  */
 
-package common
+package pubsub_test
 
-//match mode
-const (
-	QueryParamQ      = "q"
-	QueryByLabelsCon = "&"
-	QueryParamWait   = "wait"
+import (
+	"encoding/json"
+	"github.com/apache/servicecomb-kie/server/pubsub"
+	"testing"
 )
 
-//http headers
-const (
-	HeaderMatch       = "X-Match"
-	HeaderDepth       = "X-Depth"
-	HeaderTenant      = "X-Domain"
-	HeaderContentType = "Content-Type"
-	HeaderAccept      = "Accept"
-)
+func TestTopic_String(t *testing.T) {
+	topic := &pubsub.Topic{
+		Key: "test",
+		Labels: map[string]string{
+			"a": "b",
+			"c": "d",
+		},
+	}
+	t.Log(topic)
+	b, _ := json.Marshal(topic)
+	t.Log(string(b))
+	topic = &pubsub.Topic{
+		Labels: map[string]string{
+			"a": "b",
+			"c": "d",
+		},
+	}
+	t.Log(topic)
+	b, _ = json.Marshal(topic)
+	t.Log(string(b))
+	topic = &pubsub.Topic{
+		Key: "test",
+	}
+	t.Log(topic)
+	b, _ = json.Marshal(topic)
+	t.Log(string(b))
 
-//ContentType
-const (
-	ContentTypeText = "application/text"
-	ContentTypeJSON = "application/json"
-	ContentTypeYaml = "text/yaml"
-)
+	mock := []byte(`{"key":"some_key","labels":"a=b::c=d","domainID":"2","project":"1"}`)
+	topic, _ = pubsub.ParseTopicString(string(mock))
+	t.Log(topic)
+}
