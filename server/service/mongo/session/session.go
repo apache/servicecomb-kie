@@ -88,7 +88,8 @@ func Init() error {
 			RegisterEncoder(reflect.TypeOf(model.KVDoc{}), sc).
 			RegisterEncoder(reflect.TypeOf(model.LabelRevisionDoc{}), sc).
 			Build()
-		clientOps := []*options.ClientOptions{options.Client().ApplyURI(config.GetDB().URI)}
+		opt := options.Client().ApplyURI(config.GetDB().URI).SetRegistry(reg)
+		clientOps := []*options.ClientOptions{opt}
 		if config.GetDB().SSLEnabled {
 			if config.GetDB().RootCA == "" {
 				err = ErrRootCAMissing

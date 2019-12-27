@@ -15,39 +15,37 @@
  * limitations under the License.
  */
 
-package config_test
+package cipher
 
 import (
-	"github.com/apache/servicecomb-kie/server/config"
-	"github.com/go-chassis/go-archaius"
-	"github.com/stretchr/testify/assert"
-	"io"
-	"os"
-	"testing"
+	"fmt"
+	"github.com/go-mesh/openlogging"
 )
 
-func TestInit(t *testing.T) {
-	err := archaius.Init()
-	assert.NoError(t, err)
-	b := []byte(`
-db:
-  uri: mongodb://admin:123@127.0.0.1:27017/kie
-  type: mongodb
-  poolSize: 10
-  ssl: false
-  sslCA:
-  sslCert:
-cipher:
-  name: noop
-`)
-	defer os.Remove("test.yaml")
-	f1, err := os.Create("test.yaml")
-	assert.NoError(t, err)
-	_, err = io.WriteString(f1, string(b))
-	assert.NoError(t, err)
-	err = config.Init("test.yaml")
-	assert.NoError(t, err)
-	assert.Equal(t, 10, config.GetDB().PoolSize)
-	assert.Equal(t, "mongodb://admin:123@127.0.0.1:27017/kie", config.GetDB().URI)
-	assert.Equal(t, "noop", config.GetCrypto().Name)
+// Noop is none implement
+type Noop struct {
+}
+
+// Encrypt implement
+func (*Noop) Encrypt(src string) (string, error) {
+	return src, nil
+}
+
+// Decrypt implement
+func (*Noop) Decrypt(src string) (string, error) {
+	return src, nil
+}
+
+type namedNoop struct {
+	Name string
+}
+
+func (nn *namedNoop) Encrypt(src string) (string, error) {
+	openlogging.Warn(fmt.Sprintf("security name [%s] not implemented.", nn.Name))
+	return src, nil
+}
+
+func (nn *namedNoop) Decrypt(src string) (string, error) {
+	openlogging.Warn(fmt.Sprintf("security name [%s] not implemented.", nn.Name))
+	return src, nil
 }

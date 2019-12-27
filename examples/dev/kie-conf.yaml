@@ -6,3 +6,6 @@ db:
   timeout:  5m
   sslEnabled: false
   rootCAFile: /opt/kie/ca.crt
+
+cipher:
+  name: noop

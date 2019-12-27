@@ -19,6 +19,7 @@ package v1_test
 import (
 	"context"
 	"encoding/json"
+	"github.com/apache/servicecomb-kie/server/cipher"
 	"github.com/apache/servicecomb-kie/server/service"
 	"io/ioutil"
 
@@ -42,12 +43,17 @@ import (
 var _ = Describe("v1 history resource", func() {
 
 	config.Configurations = &config.Config{
-		DB: config.DB{},
+		DB:     config.DB{},
+		Cipher: config.Cipher{},
 	}
 
 	Describe("get history revisions", func() {
 		config.Configurations.DB.URI = "mongodb://kie:123@127.0.0.1:27017"
 		err := service.DBInit()
+		It("should not return err", func() {
+			Expect(err).Should(BeNil())
+		})
+		err = cipher.Init()
 		It("should not return err", func() {
 			Expect(err).Should(BeNil())
 		})
@@ -61,7 +67,11 @@ var _ = Describe("v1 history resource", func() {
 				Domain:  "default",
 				Project: "test",
 			}
-			kv, _ = service.KVService.CreateOrUpdate(context.Background(), kv)
+			kv, err = service.KVService.CreateOrUpdate(context.Background(), kv)
+			It("should not return err or nil", func() {
+				Expect(err).Should(BeNil())
+			})
+
 			path := fmt.Sprintf("/v1/%s/kie/revision/%s", "test", kv.LabelID)
 			r, _ := http.NewRequest("GET", path, nil)
 			revision := &v1.HistoryResource{}

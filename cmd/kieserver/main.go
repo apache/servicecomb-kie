@@ -18,6 +18,7 @@
 package main
 
 import (
+	"github.com/apache/servicecomb-kie/server/cipher"
 	"github.com/apache/servicecomb-kie/server/service"
 	"os"
 
@@ -99,6 +100,9 @@ func main() {
 		openlogging.Fatal(err.Error())
 	}
 	if err := service.DBInit(); err != nil {
+		openlogging.Fatal(err.Error())
+	}
+	if err := cipher.Init(); err != nil {
 		openlogging.Fatal(err.Error())
 	}
 	if err := chassis.Run(); err != nil {

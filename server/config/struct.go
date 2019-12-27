@@ -19,7 +19,8 @@ package config
 
 //Config is yaml file struct
 type Config struct {
-	DB DB `yaml:"db"`
+	DB     DB     `yaml:"db"`
+	Cipher Cipher `yaml:"cipher"`
 }
 
 //DB is yaml file struct to set mongodb config
@@ -29,4 +30,9 @@ type DB struct {
 	SSLEnabled bool   `yaml:"sslEnabled"`
 	RootCA     string `yaml:"rootCAFile"`
 	Timeout    string `yaml:"timeout"`
+}
+
+// Cipher is yaml file struct to set crypto config
+type Cipher struct {
+	Name string `yaml:"name"`
 }

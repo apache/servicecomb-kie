@@ -42,3 +42,8 @@ func Init(file string) error {
 func GetDB() DB {
 	return Configurations.DB
 }
+
+//GetCrypto return crypto configs
+func GetCrypto() Cipher {
+	return Configurations.Cipher
+}
