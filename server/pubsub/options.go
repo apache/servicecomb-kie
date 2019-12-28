@@ -15,27 +15,11 @@
  * limitations under the License.
  */
 
-package common
+package pubsub
 
-//match mode
-const (
-	QueryParamQ      = "q"
-	QueryByLabelsCon = "&"
-	QueryParamWait   = "wait"
-)
-
-//http headers
-const (
-	HeaderMatch       = "X-Match"
-	HeaderDepth       = "X-Depth"
-	HeaderTenant      = "X-Domain"
-	HeaderContentType = "Content-Type"
-	HeaderAccept      = "Accept"
-)
-
-//ContentType
-const (
-	ContentTypeText = "application/text"
-	ContentTypeJSON = "application/json"
-	ContentTypeYaml = "text/yaml"
-)
+//Options is serf options
+type Options struct {
+	BindAddr      string
+	AdvertiseAddr string
+	RPCAddr       string
+}

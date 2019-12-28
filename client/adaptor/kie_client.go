@@ -20,17 +20,16 @@ package adaptor
 import (
 	"context"
 	"errors"
-
 	"github.com/apache/servicecomb-kie/client"
 	"github.com/apache/servicecomb-kie/pkg/model"
-	"github.com/go-chassis/go-chassis-config"
+	"github.com/go-chassis/go-archaius/source/remote"
 	"github.com/go-mesh/openlogging"
 )
 
 // Client contains the implementation of Client
 type Client struct {
 	KieClient *client.Client
-	opts      config.Options
+	opts      remote.Options
 }
 
 const (
@@ -39,7 +38,7 @@ const (
 )
 
 // NewClient init the necessary objects needed for seamless communication to Kie Server
-func NewClient(options config.Options) (config.Client, error) {
+func NewClient(options remote.Options) (remote.Client, error) {
 	kieClient := &Client{
 		opts: options,
 	}
@@ -85,12 +84,10 @@ func (c *Client) PullConfig(key, contentType string, labels map[string]string) (
 		openlogging.GetLogger().Error("Error in Querying the Response from Kie: " + err.Error())
 		return nil, err
 	}
-	for _, doc := range configurationsValue {
-		for _, kvDoc := range doc.Data {
-			if key == kvDoc.Key {
-				openlogging.GetLogger().Debugf("The Key Value of : ", kvDoc.Value)
-				return doc, nil
-			}
+	for _, kvDoc := range configurationsValue.Data {
+		if key == kvDoc.Key {
+			openlogging.GetLogger().Debugf("The Key Value of : ", kvDoc.Value)
+			return kvDoc, nil
 		}
 	}
 	return nil, errors.New("can not find value")
@@ -136,10 +133,10 @@ func (c *Client) Watch(f func(map[string]interface{}), errHandler func(err error
 }
 
 //Options return settings
-func (c *Client) Options() config.Options {
+func (c *Client) Options() remote.Options {
 	return c.opts
 }
 
 func init() {
-	config.InstallConfigClientPlugin(Name, NewClient)
+	remote.InstallConfigClientPlugin(Name, NewClient)
 }

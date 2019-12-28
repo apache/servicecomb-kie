@@ -20,6 +20,13 @@ package config
 //Config is yaml file struct
 type Config struct {
 	DB DB `yaml:"db"`
+
+	//config from cli
+	ConfigFile     string
+	NodeName       string
+	ListenPeerAddr string
+	PeerAddr       string
+	AdvertiseAddr  string
 }
 
 //DB is yaml file struct to set mongodb config

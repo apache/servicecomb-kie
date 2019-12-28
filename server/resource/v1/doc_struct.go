@@ -44,6 +44,13 @@ var (
 			"for example: /v1/test/kie/kv?q=app:mall&q=app:mall+service:cart, " +
 			"that will query key values from 2 kinds of labels",
 	}
+	DocQueryWait = &restful.Parameters{
+		DataType:  "string",
+		Name:      common.QueryParamWait,
+		ParamType: goRestful.QueryParameterKind,
+		Desc: "wait until any kv changed, for example wait=5s, server will not response until 5 seconds, " +
+			"during that time window, if any kv changed, server will response",
+	}
 	DocQueryKVIDParameters = &restful.Parameters{
 		DataType:  "string",
 		Name:      "kvID",
@@ -58,9 +65,9 @@ var (
 	}
 	DocQueryLabelParameters = &restful.Parameters{
 		DataType:  "string",
-		Name:      "any",
+		Name:      "label",
 		ParamType: goRestful.QueryParameterKind,
-		Desc:      "label pairs",
+		Desc:      "label pairs,for example &label=service:order&label=version:1.0.0",
 	}
 	DocQueryLabelIDParameters = &restful.Parameters{
 		DataType:  "string",

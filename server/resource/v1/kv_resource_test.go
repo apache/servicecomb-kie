@@ -20,9 +20,11 @@ package v1_test
 import (
 	"bytes"
 	"encoding/json"
+	"github.com/apache/servicecomb-kie/server/pubsub"
 	"github.com/apache/servicecomb-kie/server/service"
+	log "github.com/go-chassis/paas-lager"
+	"github.com/go-mesh/openlogging"
 	"io/ioutil"
-	"log"
 	"net/http"
 	"net/http/httptest"
 
@@ -40,19 +42,30 @@ import (
 )
 
 var _ = Describe("v1 kv resource", func() {
+	log.Init(log.Config{
+		Writers:       []string{"stdout"},
+		LoggerLevel:   "DEBUG",
+		LogFormatText: false,
+	})
+
+	logger := log.NewLogger("ut")
+	openlogging.SetLogger(logger)
 	//for UT
 	config.Configurations = &config.Config{
-		DB: config.DB{},
+		DB:             config.DB{},
+		ListenPeerAddr: "127.0.0.1:4000",
+		AdvertiseAddr:  "127.0.0.1:4000",
 	}
 	config.Configurations.DB.URI = "mongodb://kie:123@127.0.0.1:27017"
 	err := service.DBInit()
 	if err != nil {
 		panic(err)
 	}
+	pubsub.Init()
+	pubsub.Start()
 	Describe("put kv", func() {
 		Context("valid param", func() {
 			kv := &model.KVDoc{
-				Key:    "timeout",
 				Value:  "1s",
 				Labels: map[string]string{"service": "tester"},
 			}
@@ -62,10 +75,7 @@ var _ = Describe("v1 kv resource", func() {
 			chain, _ := handler.CreateChain(common.Provider, "testchain1", noopH.Name())
 			r.Header.Set("Content-Type", "application/json")
 			kvr := &v1.KVResource{}
-			c, err := restfultest.New(kvr, chain)
-			It("should not return error", func() {
-				Expect(err).Should(BeNil())
-			})
+			c, _ := restfultest.New(kvr, chain)
 			resp := httptest.NewRecorder()
 			c.ServeHTTP(resp, r)
 
@@ -88,7 +98,7 @@ var _ = Describe("v1 kv resource", func() {
 	})
 	Describe("list kv", func() {
 		Context("with no label", func() {
-			r, _ := http.NewRequest("GET", "/v1/test/kie/kv:list", nil)
+			r, _ := http.NewRequest("GET", "/v1/test/kie/kv?label=service:tester", nil)
 			noopH := &noop.NoopAuthHandler{}
 			chain, _ := handler.CreateChain(common.Provider, "testchain1", noopH.Name())
 			r.Header.Set("Content-Type", "application/json")
@@ -104,7 +114,6 @@ var _ = Describe("v1 kv resource", func() {
 			It("should not return err", func() {
 				Expect(err).Should(BeNil())
 			})
-			log.Println(string(body))
 			result := &model.KVResponse{}
 			err = json.Unmarshal(body, result)
 			It("should not return err", func() {

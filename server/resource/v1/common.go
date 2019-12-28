@@ -21,9 +21,12 @@ import (
 	"encoding/json"
 	"errors"
 	"fmt"
+	"github.com/apache/servicecomb-kie/server/pubsub"
+	uuid "github.com/satori/go.uuid"
 	"net/http"
 	"strconv"
 	"strings"
+	"time"
 
 	"github.com/apache/servicecomb-kie/pkg/common"
 	"github.com/apache/servicecomb-kie/pkg/model"
@@ -37,9 +40,10 @@ import (
 //const of server
 const (
 	MsgDomainMustNotBeEmpty = "domain must not be empty"
-	MsgIllegalLabels        = "label's value can not be empty, " +
-		"label can not be duplicated, please check your query parameters"
+	MsgIllegalLabels        = "label value can not be empty, " +
+		"label can not be duplicated, please check query parameters"
 	MsgIllegalDepth     = "X-Depth must be number"
+	MsgInvalidWait      = "wait param should be formed with number and time unit like 5s,100ms, and less than 5m"
 	ErrKvIDMustNotEmpty = "must supply kv id if you want to remove key"
 )
 
@@ -105,7 +109,7 @@ func ErrLog(action string, kv *model.KVDoc, err error) {
 //InfoLog record info
 func InfoLog(action string, kv *model.KVDoc) {
 	openlogging.Info(
-		fmt.Sprintf("[%s] [%s:%s] in [%s] success", action, kv.Key, kv.Value, kv.Domain))
+		fmt.Sprintf("[%s] [%s] success", action, kv.Key))
 }
 
 func readRequest(ctx *restful.Context, v interface{}) error {
@@ -130,4 +134,65 @@ func writeResponse(ctx *restful.Context, v interface{}) error {
 		return writeYaml(ctx.Resp, v)
 	}
 	return ctx.WriteJSON(v, goRestful.MIME_JSON) // json is default
+}
+func getLabels(labelStr string) (map[string]string, error) {
+	labelsSlice := strings.Split(labelStr, ",")
+	labels := make(map[string]string, len(labelsSlice))
+	for _, v := range labelsSlice {
+		v := strings.Split(v, ":")
+		if len(v) != 2 {
+			return nil, errors.New(MsgIllegalLabels)
+		}
+		labels[v[0]] = v[1]
+	}
+	return labels, nil
+}
+func wait(d time.Duration, rctx *restful.Context, topic *pubsub.Topic) bool {
+	result := true
+	if d != 0 {
+		o := &pubsub.Observer{
+			UUID:      uuid.NewV4().String(),
+			RemoteIP:  rctx.ReadRequest().RemoteAddr,
+			UserAgent: rctx.ReadHeader("User-Agent"),
+			Event:     make(chan *pubsub.KVChangeEvent, 1),
+		}
+		pubsub.ObserveOnce(o, topic)
+		select {
+		case <-time.After(d):
+			result = false
+		case <-o.Event:
+		}
+	}
+	return result
+}
+func getWaitDuration(rctx *restful.Context) string {
+	wait := rctx.ReadQueryParameter(common.QueryParamWait)
+	if wait == "" {
+		wait = "0s"
+	}
+	return wait
+}
+func checkPagination(limitStr, offsetStr string) (int64, int64, error) {
+	var err error
+	var limit, offset int64
+	if limitStr != "" {
+		limit, err = strconv.ParseInt(limitStr, 10, 64)
+		if err != nil {
+			return 0, 0, err
+		}
+		if limit < 1 || limit > 50 {
+			return 0, 0, errors.New("invalid limit number")
+		}
+	}
+
+	if offsetStr != "" {
+		offset, err = strconv.ParseInt(offsetStr, 10, 64)
+		if err != nil {
+			return 0, 0, errors.New("invalid offset number")
+		}
+		if offset < 1 {
+			return 0, 0, errors.New("invalid offset number")
+		}
+	}
+	return limit, offset, err
 }

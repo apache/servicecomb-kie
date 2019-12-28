@@ -49,11 +49,6 @@ func (s *Service) CreateOrUpdate(ctx context.Context, kv *model.KVDoc) (*model.K
 	if kv.Domain == "" {
 		return nil, session.ErrMissingDomain
 	}
-	if len(kv.Labels) == 0 {
-		kv.Labels = map[string]string{
-			"default": "default",
-		}
-	}
 
 	//check whether the project has certain labels or not
 	labelID, err := label.Exist(ctx, kv.Domain, kv.Project, kv.Labels)
@@ -205,13 +200,15 @@ func (s *Service) List(ctx context.Context, domain, project, key string, labels 
 	result := &model.KVResponse{}
 	for cur.Next(ctx) {
 		curKV := &model.KVDoc{}
-
 		if err := cur.Decode(curKV); err != nil {
 			openlogging.Error("decode to KVs error: " + err.Error())
 			return nil, err
 		}
 		clearPart(curKV)
 		result.Data = append(result.Data, curKV)
+	}
+	if len(result.Data) == 0 {
+		return nil, service.ErrKeyNotExists
 	}
 	return result, nil
 }
