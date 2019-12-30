@@ -105,6 +105,10 @@ func (r *KVResource) GetByKey(rctx *restful.Context) {
 		WriteErrResponse(rctx, http.StatusBadRequest, MsgInvalidWait, common.ContentTypeText)
 		return
 	}
+	if d == 0 {
+		queryAndResponse(rctx, domain, project, key, labels, 0, 0)
+		return
+	}
 	changed := wait(d, rctx, &pubsub.Topic{
 		Key:      key,
 		Labels:   labels,
@@ -112,20 +116,7 @@ func (r *KVResource) GetByKey(rctx *restful.Context) {
 		DomainID: domain.(string),
 	})
 	if changed {
-		kv, err := service.KVService.List(rctx.Ctx, domain.(string), project,
-			key, labels, 0, 0)
-		if err != nil {
-			if err == service.ErrKeyNotExists {
-				WriteErrResponse(rctx, http.StatusNotFound, err.Error(), common.ContentTypeText)
-				return
-			}
-			WriteErrResponse(rctx, http.StatusInternalServerError, err.Error(), common.ContentTypeText)
-			return
-		}
-		err = writeResponse(rctx, kv)
-		if err != nil {
-			openlogging.Error(err.Error())
-		}
+		queryAndResponse(rctx, domain, project, key, labels, 0, 0)
 		return
 	}
 	rctx.WriteHeader(http.StatusNotModified)
@@ -162,28 +153,17 @@ func (r *KVResource) List(rctx *restful.Context) {
 		WriteErrResponse(rctx, http.StatusBadRequest, MsgInvalidWait, common.ContentTypeText)
 		return
 	}
+	if d == 0 {
+		queryAndResponse(rctx, domain, project, "", labels, int(limit), int(offset))
+		return
+	}
 	changed := wait(d, rctx, &pubsub.Topic{
 		Labels:   labels,
 		Project:  project,
 		DomainID: domain.(string),
 	})
 	if changed {
-		result, err := service.KVService.List(rctx.Ctx, domain.(string), project, "", labels, int(limit), int(offset))
-		if err != nil {
-			if err == service.ErrKeyNotExists {
-				WriteErrResponse(rctx, http.StatusNotFound, err.Error(), common.ContentTypeText)
-				return
-			}
-			openlogging.Error("can not find by labels", openlogging.WithTags(openlogging.Tags{
-				"err": err.Error(),
-			}))
-			WriteErrResponse(rctx, http.StatusInternalServerError, err.Error(), common.ContentTypeText)
-			return
-		}
-		err = writeResponse(rctx, result)
-		if err != nil {
-			openlogging.Error(err.Error())
-		}
+		queryAndResponse(rctx, domain, project, "", labels, int(limit), int(offset))
 		return
 	}
 	rctx.WriteHeader(http.StatusNotModified)
@@ -287,8 +267,8 @@ func (r *KVResource) URLPatterns() []restful.Route {
 			Read: KVBody{},
 			Returns: []*restful.Returns{
 				{
-					Code:    http.StatusOK,
-					Message: "true",
+					Code:  http.StatusOK,
+					Model: KVBody{},
 				},
 			},
 			Consumes: []string{goRestful.MIME_JSON, common.ContentTypeYaml},
@@ -308,8 +288,11 @@ func (r *KVResource) URLPatterns() []restful.Route {
 					Message: "get key value success",
 					Model:   []model.KVResponse{},
 				},
+				{
+					Code:    http.StatusNotModified,
+					Message: "empty body",
+				},
 			},
-			Consumes: []string{goRestful.MIME_JSON, common.ContentTypeYaml},
 			Produces: []string{goRestful.MIME_JSON, common.ContentTypeYaml},
 		}, {
 			Method:       http.MethodGet,
@@ -326,7 +309,6 @@ func (r *KVResource) URLPatterns() []restful.Route {
 					Model:   []model.KVResponse{},
 				},
 			},
-			Consumes: []string{goRestful.MIME_JSON, common.ContentTypeYaml},
 			Produces: []string{goRestful.MIME_JSON, common.ContentTypeYaml},
 		}, {
 			Method:       http.MethodGet,
@@ -340,9 +322,11 @@ func (r *KVResource) URLPatterns() []restful.Route {
 				{
 					Code:  http.StatusOK,
 					Model: model.KVResponse{},
+				}, {
+					Code:    http.StatusNotModified,
+					Message: "empty body",
 				},
 			},
-			Consumes: []string{goRestful.MIME_JSON, common.ContentTypeYaml},
 			Produces: []string{goRestful.MIME_JSON, common.ContentTypeYaml},
 		}, {
 			Method:       http.MethodDelete,

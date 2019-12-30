@@ -188,10 +188,11 @@ func (s *Service) Delete(kvID string, labelID string, domain string, project str
 }
 
 //List get kv list by key and criteria
-func (s *Service) List(ctx context.Context, domain, project, key string, labels map[string]string, limit, offset int) (*model.KVResponse, error) {
+func (s *Service) List(ctx context.Context, domain, project string, limit, offset int, options ...service.FindOption) (*model.KVResponse, error) {
 	opts := service.NewDefaultFindOpts()
-	opts.Labels = labels
-	opts.Key = key
+	for _, o := range options {
+		o(&opts)
+	}
 	cur, err := findKV(ctx, domain, project, opts)
 	if err != nil {
 		return nil, err
