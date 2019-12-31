@@ -22,6 +22,7 @@ import (
 	"errors"
 	"fmt"
 	"github.com/apache/servicecomb-kie/server/pubsub"
+	"github.com/apache/servicecomb-kie/server/service"
 	uuid "github.com/satori/go.uuid"
 	"net/http"
 	"strconv"
@@ -147,30 +148,30 @@ func getLabels(labelStr string) (map[string]string, error) {
 	}
 	return labels, nil
 }
-func wait(d time.Duration, rctx *restful.Context, topic *pubsub.Topic) bool {
-	result := true
-	if d != 0 {
-		o := &pubsub.Observer{
-			UUID:      uuid.NewV4().String(),
-			RemoteIP:  rctx.ReadRequest().RemoteAddr,
-			UserAgent: rctx.ReadHeader("User-Agent"),
-			Event:     make(chan *pubsub.KVChangeEvent, 1),
-		}
-		pubsub.ObserveOnce(o, topic)
-		select {
-		case <-time.After(d):
-			result = false
-		case <-o.Event:
-		}
-	}
-	return result
-}
 func getWaitDuration(rctx *restful.Context) string {
 	wait := rctx.ReadQueryParameter(common.QueryParamWait)
 	if wait == "" {
 		wait = "0s"
 	}
 	return wait
+}
+func wait(d time.Duration, rctx *restful.Context, topic *pubsub.Topic) bool {
+	changed := true
+	if d != 0 {
+		o := &pubsub.Observer{
+			UUID:      uuid.NewV4().String(),
+			RemoteIP:  rctx.ReadRequest().RemoteAddr, //TODO x forward ip
+			UserAgent: rctx.ReadHeader("User-Agent"),
+			Event:     make(chan *pubsub.KVChangeEvent, 1),
+		}
+		pubsub.ObserveOnce(o, topic)
+		select {
+		case <-time.After(d):
+			changed = false
+		case <-o.Event:
+		}
+	}
+	return changed
 }
 func checkPagination(limitStr, offsetStr string) (int64, int64, error) {
 	var err error
@@ -195,4 +196,20 @@ func checkPagination(limitStr, offsetStr string) (int64, int64, error) {
 		}
 	}
 	return limit, offset, err
+}
+func queryAndResponse(rctx *restful.Context, domain interface{}, project string, key string, labels map[string]string, limit, offset int) {
+	kv, err := service.KVService.List(rctx.Ctx, domain.(string), project,
+		limit, offset, service.WithKey(key), service.WithLabels(labels))
+	if err != nil {
+		if err == service.ErrKeyNotExists {
+			WriteErrResponse(rctx, http.StatusNotFound, err.Error(), common.ContentTypeText)
+			return
+		}
+		WriteErrResponse(rctx, http.StatusInternalServerError, err.Error(), common.ContentTypeText)
+		return
+	}
+	err = writeResponse(rctx, kv)
+	if err != nil {
+		openlogging.Error(err.Error())
+	}
 }
