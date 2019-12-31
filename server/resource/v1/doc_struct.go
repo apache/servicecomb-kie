@@ -48,9 +48,19 @@ var (
 		DataType:  "string",
 		Name:      common.QueryParamWait,
 		ParamType: goRestful.QueryParameterKind,
+		Required:  false,
 		Desc: "wait until any kv changed. " +
 			"for example wait=5s, server will not response until 5 seconds during that time window, " +
 			"if any kv changed, server will return 200 and kv list, otherwise return 304 and empty body",
+	}
+	DocQueryMatch = &restful.Parameters{
+		DataType:  "string",
+		Name:      common.QueryParamMatch,
+		ParamType: goRestful.QueryParameterKind,
+		Required:  false,
+		Desc: "match works with label query param, it specifies label match pattern. " +
+			"if it is empty, server will return kv which's labels partial match the label query param. " +
+			"uf it is exact, server will return kv which's labels exact match the label query param",
 	}
 	DocQueryKVIDParameters = &restful.Parameters{
 		DataType:  "string",

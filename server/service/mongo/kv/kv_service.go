@@ -205,6 +205,11 @@ func (s *Service) List(ctx context.Context, domain, project string, limit, offse
 			openlogging.Error("decode to KVs error: " + err.Error())
 			return nil, err
 		}
+		if opts.ExactLabels {
+			if !reflect.DeepEqual(opts.Labels, curKV.Labels) {
+				continue
+			}
+		}
 		clearPart(curKV)
 		result.Data = append(result.Data, curKV)
 	}
