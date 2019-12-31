@@ -121,10 +121,7 @@ func findKV(ctx context.Context, domain string, project string, opts service.Fin
 		for k, v := range opts.Labels {
 			filter["labels."+k] = v
 		}
-	} else {
-		filter["labels"] = ""
 	}
-
 	cur, err := collection.Find(ctx, filter)
 	if err != nil {
 		if err.Error() == context.DeadlineExceeded.Error() {

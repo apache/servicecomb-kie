@@ -77,7 +77,7 @@ var _ = Describe("v1 history resource", func() {
 			It("should not return err", func() {
 				Expect(err).Should(BeNil())
 			})
-			data := []*model.LabelRevisionDoc{}
+			data := make([]*model.LabelRevisionDoc, 0)
 			err = json.Unmarshal(body, &data)
 			It("should not return err", func() {
 				Expect(err).Should(BeNil())

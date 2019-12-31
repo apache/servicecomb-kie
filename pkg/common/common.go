@@ -22,6 +22,7 @@ const (
 	QueryParamQ      = "q"
 	QueryByLabelsCon = "&"
 	QueryParamWait   = "wait"
+	QueryParamMatch  = "match"
 )
 
 //http headers

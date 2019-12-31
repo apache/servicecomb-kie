@@ -40,6 +40,7 @@ import (
 
 //const of server
 const (
+	PatternExact            = "exact"
 	MsgDomainMustNotBeEmpty = "domain must not be empty"
 	MsgIllegalLabels        = "label value can not be empty, " +
 		"label can not be duplicated, please check query parameters"
@@ -155,6 +156,14 @@ func getWaitDuration(rctx *restful.Context) string {
 	}
 	return wait
 }
+func getMatchPattern(rctx *restful.Context) string {
+	m := rctx.ReadQueryParameter(common.QueryParamMatch)
+
+	if m != "" && m != PatternExact {
+		return ""
+	}
+	return m
+}
 func wait(d time.Duration, rctx *restful.Context, topic *pubsub.Topic) bool {
 	changed := true
 	if d != 0 {
@@ -197,9 +206,15 @@ func checkPagination(limitStr, offsetStr string) (int64, int64, error) {
 	}
 	return limit, offset, err
 }
-func queryAndResponse(rctx *restful.Context, domain interface{}, project string, key string, labels map[string]string, limit, offset int) {
+func queryAndResponse(rctx *restful.Context,
+	domain interface{}, project string, key string, labels map[string]string, limit, offset int) {
+	m := getMatchPattern(rctx)
+	opts := []service.FindOption{service.WithKey(key), service.WithLabels(labels)}
+	if m == PatternExact {
+		opts = append(opts, service.WithExactLabels())
+	}
 	kv, err := service.KVService.List(rctx.Ctx, domain.(string), project,
-		limit, offset, service.WithKey(key), service.WithLabels(labels))
+		limit, offset, opts...)
 	if err != nil {
 		if err == service.ErrKeyNotExists {
 			WriteErrResponse(rctx, http.StatusNotFound, err.Error(), common.ContentTypeText)
