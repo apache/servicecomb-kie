@@ -16,16 +16,3 @@
  */
 
 package history
-
-import (
-	"github.com/apache/servicecomb-kie/pkg/model"
-)
-
-//clearRevisionKV clean attr which don't need to return to client side
-func clearRevisionKV(revision *model.LabelRevisionDoc) {
-	for _, v := range revision.KVs {
-		v.Domain = ""
-		v.Project = ""
-		v.LabelID = ""
-	}
-}

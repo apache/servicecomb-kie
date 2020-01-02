@@ -33,7 +33,7 @@ var (
 //db errors
 var (
 	ErrKeyNotExists     = errors.New("key with labels does not exits")
-	ErrRevisionNotExist = errors.New("label revision not exist")
+	ErrRevisionNotExist = errors.New("revision does not exist")
 )
 
 //KV provide api of KV entity
@@ -41,14 +41,14 @@ type KV interface {
 	//below 3 methods is usually for admin console
 	CreateOrUpdate(ctx context.Context, kv *model.KVDoc) (*model.KVDoc, error)
 	List(ctx context.Context, domain, project string, limit, offset int, options ...FindOption) (*model.KVResponse, error)
-	Delete(kvID string, labelID string, domain, project string) error
+	Delete(ctx context.Context, kvID string, domain, project string) error
 	//FindKV is usually for service to pull configs
 	FindKV(ctx context.Context, domain, project string, options ...FindOption) ([]*model.KVResponse, error)
 }
 
 //History provide api of History entity
 type History interface {
-	GetHistory(ctx context.Context, labelID string, options ...FindOption) ([]*model.LabelRevisionDoc, error)
+	GetHistory(ctx context.Context, keyID string, options ...FindOption) ([]*model.KVDoc, error)
 }
 
 //Init init db session

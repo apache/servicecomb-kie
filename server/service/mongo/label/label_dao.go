@@ -21,13 +21,10 @@ import (
 	"context"
 	"fmt"
 	"github.com/apache/servicecomb-kie/pkg/model"
-	"github.com/apache/servicecomb-kie/server/id"
-	"github.com/apache/servicecomb-kie/server/service"
 	"github.com/apache/servicecomb-kie/server/service/mongo/session"
 	"github.com/go-mesh/openlogging"
+	uuid "github.com/satori/go.uuid"
 	"go.mongodb.org/mongo-driver/bson"
-	"go.mongodb.org/mongo-driver/bson/primitive"
-	"go.mongodb.org/mongo-driver/mongo/options"
 )
 
 const (
@@ -75,37 +72,8 @@ func FindLabels(ctx context.Context, domain, project string, labels map[string]s
 	return nil, session.ErrLabelNotExists
 }
 
-//GetLatestLabel query revision table and find maximum revision number
-func GetLatestLabel(ctx context.Context, labelID string) (*model.LabelRevisionDoc, error) {
-	collection := session.GetDB().Collection(session.CollectionLabelRevision)
-
-	filter := bson.M{"label_id": labelID}
-
-	cur, err := collection.Find(ctx, filter,
-		options.Find().SetSort(map[string]interface{}{
-			"revision": -1,
-		}), options.Find().SetLimit(1))
-	if err != nil {
-		return nil, err
-	}
-	h := &model.LabelRevisionDoc{}
-	var exist bool
-	for cur.Next(ctx) {
-		if err := cur.Decode(h); err != nil {
-			openlogging.Error("decode to KVs error: " + err.Error())
-			return nil, err
-		}
-		exist = true
-		break
-	}
-	if !exist {
-		return nil, service.ErrRevisionNotExist
-	}
-	return h, nil
-}
-
 //Exist check whether the project has certain label or not and return label ID
-func Exist(ctx context.Context, domain string, project string, labels map[string]string) (id.ID, error) {
+func Exist(ctx context.Context, domain string, project string, labels map[string]string) (string, error) {
 	l, err := FindLabels(ctx, domain, project, labels)
 	if err != nil {
 		if err.Error() == context.DeadlineExceeded.Error() {
@@ -127,13 +95,12 @@ func CreateLabel(ctx context.Context, domain string, labels map[string]string, p
 		Domain:  domain,
 		Labels:  labels,
 		Project: project,
+		ID:      uuid.NewV4().String(),
 	}
 	collection := session.GetDB().Collection(session.CollectionLabel)
-	res, err := collection.InsertOne(ctx, l)
+	_, err := collection.InsertOne(ctx, l)
 	if err != nil {
 		return nil, err
 	}
-	objectID, _ := res.InsertedID.(primitive.ObjectID)
-	l.ID = id.ID(objectID.Hex())
 	return l, nil
 }

@@ -40,7 +40,7 @@ import (
 	_ "github.com/apache/servicecomb-kie/server/service/mongo"
 )
 
-func TestKVResource_List(t *testing.T) {
+func init() {
 	log.Init(log.Config{
 		Writers:       []string{"stdout"},
 		LoggerLevel:   "DEBUG",
@@ -59,6 +59,9 @@ func TestKVResource_List(t *testing.T) {
 	if err != nil {
 		panic(err)
 	}
+}
+func TestKVResource_List(t *testing.T) {
+
 	pubsub.Init()
 	pubsub.Start()
 	t.Run("put kv, label is service", func(t *testing.T) {
@@ -141,5 +144,39 @@ func TestKVResource_List(t *testing.T) {
 		err = json.Unmarshal(body, result)
 		assert.NoError(t, err)
 		assert.Equal(t, 1, len(result.Data))
+	})
+	t.Run("get one key by label, exact match,should return 1 kv", func(t *testing.T) {
+		r, _ := http.NewRequest("GET", "/v1/test/kie/kv/timeout?label=service:utService&match=exact", nil)
+		noopH := &handler2.NoopAuthHandler{}
+		chain, _ := handler.CreateChain(common.Provider, "testchain1", noopH.Name())
+		r.Header.Set("Content-Type", "application/json")
+		kvr := &v1.KVResource{}
+		c, err := restfultest.New(kvr, chain)
+		assert.NoError(t, err)
+		resp := httptest.NewRecorder()
+		c.ServeHTTP(resp, r)
+		body, err := ioutil.ReadAll(resp.Body)
+		assert.NoError(t, err)
+		result := &model.KVResponse{}
+		err = json.Unmarshal(body, result)
+		assert.NoError(t, err)
+		assert.Equal(t, 1, len(result.Data))
+	})
+	t.Run("get one key by service label should return 2 kv", func(t *testing.T) {
+		r, _ := http.NewRequest("GET", "/v1/test/kie/kv/timeout?label=service:utService", nil)
+		noopH := &handler2.NoopAuthHandler{}
+		chain, _ := handler.CreateChain(common.Provider, "testchain1", noopH.Name())
+		r.Header.Set("Content-Type", "application/json")
+		kvr := &v1.KVResource{}
+		c, err := restfultest.New(kvr, chain)
+		assert.NoError(t, err)
+		resp := httptest.NewRecorder()
+		c.ServeHTTP(resp, r)
+		body, err := ioutil.ReadAll(resp.Body)
+		assert.NoError(t, err)
+		result := &model.KVResponse{}
+		err = json.Unmarshal(body, result)
+		assert.NoError(t, err)
+		assert.Equal(t, 2, len(result.Data))
 	})
 }

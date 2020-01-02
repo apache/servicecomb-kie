@@ -36,10 +36,10 @@ type HistoryResource struct {
 //GetRevisions search key only by label
 func (r *HistoryResource) GetRevisions(context *restful.Context) {
 	var err error
-	labelID := context.ReadPathParameter("label_id")
+	labelID := context.ReadPathParameter("key_id")
 	if labelID == "" {
-		openlogging.Debug("label id is null")
-		WriteErrResponse(context, http.StatusForbidden, "label_id must not be empty", common.ContentTypeText)
+		openlogging.Error("key id is nil")
+		WriteErrResponse(context, http.StatusForbidden, "key_id must not be empty", common.ContentTypeText)
 		return
 	}
 	key := context.ReadQueryParameter("key")
@@ -67,17 +67,17 @@ func (r *HistoryResource) URLPatterns() []restful.Route {
 	return []restful.Route{
 		{
 			Method:       http.MethodGet,
-			Path:         "/v1/{project}/kie/revision/{label_id}",
+			Path:         "/v1/{project}/kie/revision/{key_id}",
 			ResourceFunc: r.GetRevisions,
-			FuncDesc:     "get all revisions by label id",
+			FuncDesc:     "get all revisions by key id",
 			Parameters: []*restful.Parameters{
-				DocPathProject, DocPathLabelID, DocQueryKeyParameters,
+				DocPathProject, DocPathKeyID,
 			},
 			Returns: []*restful.Returns{
 				{
 					Code:    http.StatusOK,
 					Message: "true",
-					Model:   []model.LabelHistoryResponse{},
+					Model:   []model.KVDoc{},
 				},
 			},
 			Consumes: []string{goRestful.MIME_JSON, common.ContentTypeYaml},

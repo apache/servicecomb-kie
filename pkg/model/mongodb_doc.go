@@ -17,22 +17,17 @@
 
 package model
 
-import (
-	"github.com/apache/servicecomb-kie/server/id"
-)
-
 //LabelDoc is database struct to store labels
 type LabelDoc struct {
-	ID       id.ID             `json:"_id,omitempty" bson:"_id,omitempty" yaml:"_id,omitempty" swag:"string"`
-	Labels   map[string]string `json:"labels,omitempty" yaml:"labels,omitempty"`
-	Revision int               `json:"revision,omitempty" yaml:"revision,omitempty"`
-	Domain   string            `json:"domain,omitempty" yaml:"domain,omitempty"` //tenant info
-	Project  string            `json:"project,omitempty" yaml:"project,omitempty"`
+	ID      string            `json:"id,omitempty" bson:"id,omitempty" yaml:"id,omitempty" swag:"string"`
+	Labels  map[string]string `json:"labels,omitempty" yaml:"labels,omitempty"`
+	Domain  string            `json:"domain,omitempty" yaml:"domain,omitempty"` //tenant info
+	Project string            `json:"project,omitempty" yaml:"project,omitempty"`
 }
 
 //KVDoc is database struct to store kv
 type KVDoc struct {
-	ID        id.ID  `json:"_id,omitempty" bson:"_id,omitempty" yaml:"_id,omitempty" swag:"string"`
+	ID        string `json:"id,omitempty" bson:"id,omitempty" yaml:"id,omitempty" swag:"string"`
 	LabelID   string `json:"label_id,omitempty" bson:"label_id,omitempty" yaml:"label_id,omitempty"`
 	Key       string `json:"key" yaml:"key"`
 	Value     string `json:"value,omitempty" yaml:"value,omitempty"`
@@ -41,16 +36,6 @@ type KVDoc struct {
 
 	Labels   map[string]string `json:"labels,omitempty" yaml:"labels,omitempty"` //redundant
 	Domain   string            `json:"domain,omitempty" yaml:"domain,omitempty"` //redundant
-	Revision int               `json:"revision,omitempty" bson:"-" yaml:"revision,omitempty"`
+	Revision int               `json:"revision,omitempty" bson:"revision," yaml:"revision,omitempty"`
 	Project  string            `json:"project,omitempty" yaml:"project,omitempty"`
-}
-
-//LabelRevisionDoc is database struct to store label history stats
-type LabelRevisionDoc struct {
-	ID       id.ID             `json:"_id,omitempty" bson:"_id,omitempty" yaml:"_id,omitempty" swag:"string"`
-	LabelID  string            `json:"label_id,omitempty"  bson:"label_id,omitempty" yaml:"label_id,omitempty"`
-	Labels   map[string]string `json:"labels,omitempty" yaml:"labels,omitempty"`
-	Domain   string            `json:"-" yaml:"-"`
-	KVs      []*KVDoc          `json:"data,omitempty" bson:"data,omitempty" yaml:"data,omitempty"`
-	Revision int               `json:"revision" yaml:"revision"`
 }

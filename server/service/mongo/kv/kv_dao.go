@@ -20,16 +20,13 @@ package kv
 import (
 	"context"
 	"fmt"
-	"github.com/apache/servicecomb-kie/server/id"
-	"github.com/apache/servicecomb-kie/server/service"
-	"github.com/apache/servicecomb-kie/server/service/mongo/label"
-	"github.com/apache/servicecomb-kie/server/service/mongo/session"
-
 	"github.com/apache/servicecomb-kie/pkg/model"
+	"github.com/apache/servicecomb-kie/server/service"
 	"github.com/apache/servicecomb-kie/server/service/mongo/history"
+	"github.com/apache/servicecomb-kie/server/service/mongo/session"
 	"github.com/go-mesh/openlogging"
+	uuid "github.com/satori/go.uuid"
 	"go.mongodb.org/mongo-driver/bson"
-	"go.mongodb.org/mongo-driver/bson/primitive"
 	"go.mongodb.org/mongo-driver/mongo"
 )
 
@@ -37,76 +34,51 @@ import (
 //and increase revision of label
 //and insert key
 func createKey(ctx context.Context, kv *model.KVDoc) (*model.KVDoc, error) {
-	r, err := label.GetLatestLabel(ctx, kv.LabelID)
-	if err != nil {
-		if err != service.ErrRevisionNotExist {
-			openlogging.Error(fmt.Sprintf("get latest [%s][%s] in [%s],err: %s",
-				kv.Key, kv.Labels, kv.Domain, err.Error()))
-			return nil, err
-		}
-		//the first time labels is created, at this time, labels has no revision yet
-		//after first key created, labels got revision 1
-		r = &model.LabelRevisionDoc{Revision: 0}
-	}
-	if r != nil {
-		r.Revision = r.Revision + 1
-	}
 	collection := session.GetDB().Collection(session.CollectionKV)
-	res, err := collection.InsertOne(ctx, kv)
+	kv.ID = uuid.NewV4().String()
+	kv.Revision = 1
+	_, err := collection.InsertOne(ctx, kv)
 	if err != nil {
 		return nil, err
 	}
-	objectID, _ := res.InsertedID.(primitive.ObjectID)
-	kv.ID = id.ID(objectID.Hex())
-	kvs, err := findKeys(ctx, bson.M{"label_id": kv.LabelID}, true)
-	//Key may be empty When delete
-	if err != nil && err != service.ErrKeyNotExists {
-		return nil, err
-	}
-	revision, err := history.GetAndAddHistory(ctx, kv.LabelID, kv.Labels, kvs, kv.Domain, kv.Project)
+	err = history.AddHistory(ctx, kv)
 	if err != nil {
 		openlogging.Warn(
 			fmt.Sprintf("can not updateKeyValue version for [%s] [%s] in [%s]",
 				kv.Key, kv.Labels, kv.Domain))
 	}
 	openlogging.Debug(fmt.Sprintf("create %s with labels %s value [%s]", kv.Key, kv.Labels, kv.Value))
-	kv.Revision = revision
+
 	return kv, nil
 
 }
 
-//updateKeyValue get latest revision from history
-//and increase revision of label
-//and updateKeyValue and them add new revision
-func updateKeyValue(ctx context.Context, kv *model.KVDoc) (int, error) {
+//updateKeyValue update key value and add new revision
+func updateKeyValue(ctx context.Context, kv *model.KVDoc) error {
 	collection := session.GetDB().Collection(session.CollectionKV)
 	ur, err := collection.UpdateOne(ctx, bson.M{"key": kv.Key, "label_id": kv.LabelID}, bson.D{
 		{"$set", bson.D{
 			{"value", kv.Value},
 			{"checker", kv.Checker},
+			{"revision", kv.Revision},
 		}},
 	})
 	if err != nil {
-		return 0, err
+		return err
 	}
 	openlogging.Debug(
 		fmt.Sprintf("updateKeyValue %s with labels %s value [%s] %d ",
 			kv.Key, kv.Labels, kv.Value, ur.ModifiedCount))
-	kvs, err := findKeys(ctx, bson.M{"label_id": kv.LabelID}, true)
-	//Key may be empty When delete
-	if err != nil && err != service.ErrKeyNotExists {
-		return 0, err
-	}
-	revision, err := history.GetAndAddHistory(ctx, kv.LabelID, kv.Labels, kvs, kv.Domain, kv.Project)
+	err = history.AddHistory(ctx, kv)
 	if err != nil {
-		openlogging.Warn(
-			fmt.Sprintf("can not label revision for [%s] [%s] in [%s],err: %s",
+		openlogging.Error(
+			fmt.Sprintf("can not add revision for [%s] [%s] in [%s],err: %s",
 				kv.Key, kv.Labels, kv.Domain, err))
 	}
 	openlogging.Debug(
 		fmt.Sprintf("add history %s with labels %s value [%s] %d ",
 			kv.Key, kv.Labels, kv.Value, ur.ModifiedCount))
-	return revision, nil
+	return nil
 
 }
 
@@ -153,18 +125,18 @@ func findOneKey(ctx context.Context, filter bson.M) ([]*model.KVDoc, error) {
 }
 
 //deleteKV by kvID
-func deleteKV(ctx context.Context, hexID primitive.ObjectID, project string) error {
+func deleteKV(ctx context.Context, kvID, project, domain string) error {
 	collection := session.GetDB().Collection(session.CollectionKV)
-	dr, err := collection.DeleteOne(ctx, bson.M{"_id": hexID, "project": project})
+	dr, err := collection.DeleteOne(ctx, bson.M{"id": kvID, "project": project, "domain": domain})
 	//check error and delete number
 	if err != nil {
-		openlogging.Error(fmt.Sprintf("delete [%s] failed : [%s]", hexID, err))
+		openlogging.Error(fmt.Sprintf("delete [%s] failed : [%s]", kvID, err))
 		return err
 	}
 	if dr.DeletedCount != 1 {
-		openlogging.Warn(fmt.Sprintf("Failed,May have been deleted,kvID=%s", hexID))
+		openlogging.Warn(fmt.Sprintf("failed, may have been deleted,kvID=%s", kvID))
 	} else {
-		openlogging.Info(fmt.Sprintf("delete success,kvID=%s", hexID))
+		openlogging.Info(fmt.Sprintf("delete success,kvID=%s", kvID))
 	}
 	return err
 }

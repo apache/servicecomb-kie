@@ -234,18 +234,16 @@ func (r *KVResource) Delete(context *restful.Context) {
 	if domain == nil {
 		WriteErrResponse(context, http.StatusInternalServerError, MsgDomainMustNotBeEmpty, common.ContentTypeText)
 	}
-	kvID := context.ReadQueryParameter("kvID")
+	kvID := context.ReadQueryParameter(common.QueryParamKeyID)
 	if kvID == "" {
 		WriteErrResponse(context, http.StatusBadRequest, ErrKvIDMustNotEmpty, common.ContentTypeText)
 		return
 	}
-	labelID := context.ReadQueryParameter("labelID")
-	err := service.KVService.Delete(kvID, labelID, domain.(string), project)
+	err := service.KVService.Delete(context.Ctx, kvID, domain.(string), project)
 	if err != nil {
 		openlogging.Error("delete failed ,", openlogging.WithTags(openlogging.Tags{
-			"kvID":    kvID,
-			"labelID": labelID,
-			"error":   err.Error(),
+			"kvID":  kvID,
+			"error": err.Error(),
 		}))
 		WriteErrResponse(context, http.StatusInternalServerError, err.Error(), common.ContentTypeText)
 		return
@@ -334,7 +332,7 @@ func (r *KVResource) URLPatterns() []restful.Route {
 			FuncDesc:     "delete key by kvID and labelID. Want better performance, give labelID",
 			Parameters: []*restful.Parameters{
 				DocPathProject,
-				DocQueryKVIDParameters,
+				DocQueryKeyIDParameters,
 				DocQueryLabelIDParameters,
 			},
 			Returns: []*restful.Returns{

@@ -19,19 +19,16 @@ package kv
 
 import (
 	"context"
+	"errors"
 	"fmt"
-	"github.com/apache/servicecomb-kie/server/id"
 	"reflect"
 	"time"
 
 	"github.com/apache/servicecomb-kie/pkg/model"
 	"github.com/apache/servicecomb-kie/server/service"
-	"github.com/apache/servicecomb-kie/server/service/mongo/history"
 	"github.com/apache/servicecomb-kie/server/service/mongo/label"
 	"github.com/apache/servicecomb-kie/server/service/mongo/session"
 	"github.com/go-mesh/openlogging"
-	"go.mongodb.org/mongo-driver/bson"
-	"go.mongodb.org/mongo-driver/bson/primitive"
 )
 
 //Service operate data in mongodb
@@ -49,7 +46,6 @@ func (s *Service) CreateOrUpdate(ctx context.Context, kv *model.KVDoc) (*model.K
 	if kv.Domain == "" {
 		return nil, session.ErrMissingDomain
 	}
-
 	//check whether the project has certain labels or not
 	labelID, err := label.Exist(ctx, kv.Domain, kv.Project, kv.Labels)
 	if err != nil {
@@ -68,11 +64,11 @@ func (s *Service) CreateOrUpdate(ctx context.Context, kv *model.KVDoc) (*model.K
 			return nil, err
 		}
 	}
-	kv.LabelID = string(labelID)
+	kv.LabelID = labelID
 	if kv.ValueType == "" {
 		kv.ValueType = session.DefaultValueType
 	}
-	keyID, err := s.Exist(ctx, kv.Domain, kv.Key, kv.Project, service.WithLabelID(kv.LabelID))
+	oldKV, err := s.Exist(ctx, kv.Domain, kv.Key, kv.Project, service.WithLabelID(kv.LabelID))
 	if err != nil {
 		if err == service.ErrKeyNotExists {
 			kv, err := createKey(ctx, kv)
@@ -85,20 +81,20 @@ func (s *Service) CreateOrUpdate(ctx context.Context, kv *model.KVDoc) (*model.K
 		}
 		return nil, err
 	}
-	kv.ID = keyID
-	revision, err := updateKeyValue(ctx, kv)
+	kv.ID = oldKV.ID
+	kv.Revision = oldKV.Revision + 1
+	err = updateKeyValue(ctx, kv)
 	if err != nil {
 		return nil, err
 	}
-	kv.Revision = revision
 	kv.Domain = ""
 	kv.Project = ""
 	return kv, nil
 
 }
 
-//Exist supports you query by label map or labels id
-func (s *Service) Exist(ctx context.Context, domain, key string, project string, options ...service.FindOption) (id.ID, error) {
+//Exist supports you query a key value by label map or labels id
+func (s *Service) Exist(ctx context.Context, domain, key string, project string, options ...service.FindOption) (*model.KVDoc, error) {
 	ctx, _ = context.WithTimeout(context.Background(), session.Timeout)
 	opts := service.FindOptions{}
 	for _, o := range options {
@@ -107,82 +103,38 @@ func (s *Service) Exist(ctx context.Context, domain, key string, project string,
 	if opts.LabelID != "" {
 		kvs, err := findKVByLabelID(ctx, domain, opts.LabelID, key, project)
 		if err != nil {
-			return "", err
+			return nil, err
 		}
-		return kvs[0].ID, nil
+		return kvs[0], nil
 	}
-	kvs, err := s.FindKV(ctx, domain, project, service.WithExactLabels(), service.WithLabels(opts.Labels), service.WithKey(key))
+	kvs, err := s.FindKV(ctx, domain, project,
+		service.WithExactLabels(), service.WithLabels(opts.Labels), service.WithKey(key))
 	if err != nil {
-		return "", err
+		return nil, err
 	}
 	if len(kvs) != 1 {
-		return "", session.ErrTooMany
+		return nil, session.ErrTooMany
 	}
 
-	return kvs[0].Data[0].ID, nil
+	return kvs[0].Data[0], nil
 
 }
 
 //Delete delete kv,If the labelID is "", query the collection kv to get it
 //domain=tenant
-//1.delete kv;2.add history
-func (s *Service) Delete(kvID string, labelID string, domain string, project string) error {
-	ctx, _ := context.WithTimeout(context.Background(), session.Timeout)
+func (s *Service) Delete(ctx context.Context, kvID string, domain string, project string) error {
+	ctx, _ = context.WithTimeout(context.Background(), session.Timeout)
 	if domain == "" {
 		return session.ErrMissingDomain
 	}
 	if project == "" {
 		return session.ErrMissingProject
 	}
-	hex, err := primitive.ObjectIDFromHex(kvID)
-	if err != nil {
-		return err
-	}
-	//if labelID == "",get labelID by kvID
-	var kv *model.KVDoc
-	if labelID == "" {
-		kvArray, err := findOneKey(ctx, bson.M{"_id": hex, "project": project})
-		if err != nil {
-			return err
-		}
-		if len(kvArray) > 0 {
-			kv = kvArray[0]
-			labelID = kv.LabelID
-		}
-	}
-	//get Label and check labelID
-	r, err := label.GetLatestLabel(ctx, labelID)
-	if err != nil {
-		if err == service.ErrRevisionNotExist {
-			openlogging.Warn(fmt.Sprintf("failed,kvID and labelID do not match"))
-			return session.ErrKvIDAndLabelIDNotMatch
-		}
-		return err
-	}
 	//delete kv
-	err = deleteKV(ctx, hex, project)
+	err := deleteKV(ctx, kvID, project, domain)
 	if err != nil {
-		return err
-	}
-	kvs, err := findKeys(ctx, bson.M{"label_id": labelID, "project": project}, true)
-	//Key may be empty When delete
-	if err != nil && err != service.ErrKeyNotExists {
-		return err
-	}
-	//Labels will not be empty when deleted
-	revision, err := history.AddHistory(ctx, r, labelID, kvs)
-	if err != nil {
-		openlogging.Warn("add history failed ,", openlogging.WithTags(openlogging.Tags{
-			"kvID":    kvID,
-			"labelID": labelID,
-			"error":   err.Error(),
-		}))
-	} else {
-		openlogging.Info("add history success,", openlogging.WithTags(openlogging.Tags{
-			"kvID":     kvID,
-			"labelID":  labelID,
-			"revision": revision,
-		}))
+		openlogging.Error("can not delete key, err:" + err.Error())
+		return errors.New("can not delete key")
 	}
 	return nil
 }
