@@ -137,8 +137,9 @@ func writeResponse(ctx *restful.Context, v interface{}) error {
 	}
 	return ctx.WriteJSON(v, goRestful.MIME_JSON) // json is default
 }
-func getLabels(labelStr string) (map[string]string, error) {
-	labelsSlice := strings.Split(labelStr, ",")
+
+//GetLabels parse labels
+func GetLabels(labelsSlice []string) (map[string]string, error) {
 	labels := make(map[string]string, len(labelsSlice))
 	for _, v := range labelsSlice {
 		v := strings.Split(v, ":")

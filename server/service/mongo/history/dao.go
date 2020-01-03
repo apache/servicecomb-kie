@@ -30,7 +30,7 @@ import (
 func getHistoryByKeyID(ctx context.Context, filter bson.M) ([]*model.KVDoc, error) {
 	collection := session.GetDB().Collection(session.CollectionKVRevision)
 	cur, err := collection.Find(ctx, filter, options.Find().SetSort(map[string]interface{}{
-		"revisions": -1,
+		"revision": -1,
 	}))
 	if err != nil {
 		return nil, err

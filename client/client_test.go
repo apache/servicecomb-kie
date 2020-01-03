@@ -132,7 +132,7 @@ var _ = Describe("Client", func() {
 				Endpoint: "http://127.0.0.1:30110",
 			})
 			It("should be 204", func() {
-				err := client3.Delete(context.TODO(), kv.ID.String(), "", WithProject("test"))
+				err := client3.Delete(context.TODO(), kv.ID, "", WithProject("test"))
 				Ω(err).ShouldNot(HaveOccurred())
 			})
 		})

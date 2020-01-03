@@ -85,10 +85,10 @@ func (r *KVResource) GetByKey(rctx *restful.Context) {
 		return
 	}
 	project := rctx.ReadPathParameter("project")
-	labelStr := rctx.ReadQueryParameter("label")
+	labelSlice := rctx.Req.QueryParameters("label")
 	var labels map[string]string
-	if labelStr != "" {
-		labels, err = getLabels(labelStr)
+	if len(labelSlice) != 0 {
+		labels, err = GetLabels(labelSlice)
 		if err != nil {
 			WriteErrResponse(rctx, http.StatusBadRequest, MsgIllegalLabels, common.ContentTypeText)
 			return
@@ -131,10 +131,10 @@ func (r *KVResource) List(rctx *restful.Context) {
 		WriteErrResponse(rctx, http.StatusInternalServerError, MsgDomainMustNotBeEmpty, common.ContentTypeText)
 		return
 	}
-	labelStr := rctx.ReadQueryParameter("label")
+	labelSlice := rctx.Req.QueryParameters("label")
 	var labels map[string]string
-	if labelStr != "" {
-		labels, err = getLabels(labelStr)
+	if len(labelSlice) != 0 {
+		labels, err = GetLabels(labelSlice)
 		if err != nil {
 			WriteErrResponse(rctx, http.StatusBadRequest, MsgIllegalLabels, common.ContentTypeText)
 			return
@@ -333,7 +333,6 @@ func (r *KVResource) URLPatterns() []restful.Route {
 			Parameters: []*restful.Parameters{
 				DocPathProject,
 				DocQueryKeyIDParameters,
-				DocQueryLabelIDParameters,
 			},
 			Returns: []*restful.Returns{
 				{

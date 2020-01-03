@@ -57,11 +57,10 @@ func TestHistoryResource_GetRevisions(t *testing.T) {
 	body, err := ioutil.ReadAll(resp.Body)
 	assert.NoError(t, err)
 	data := make([]*model.KVDoc, 0)
-	t.Log(string(body))
 	err = json.Unmarshal(body, &data)
 	assert.NoError(t, err)
 	before := len(data)
-	assert.Greater(t, before, 1)
+	assert.GreaterOrEqual(t, before, 1)
 
 	t.Run("put again, should has 2 revision", func(t *testing.T) {
 		kv.Domain = "default"

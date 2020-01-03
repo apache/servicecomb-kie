@@ -18,47 +18,36 @@
 package v1_test
 
 import (
-	. "github.com/onsi/ginkgo"
-	. "github.com/onsi/gomega"
-
-	. "github.com/apache/servicecomb-kie/server/resource/v1"
+	v1 "github.com/apache/servicecomb-kie/server/resource/v1"
 	"github.com/emicklei/go-restful"
+	"github.com/stretchr/testify/assert"
 	"net/http"
+	"testing"
 )
 
-var _ = Describe("Common", func() {
-	Describe("set query combination", func() {
-		Context("valid param", func() {
-			r, err := http.NewRequest("GET",
-				"/kv?q=app:mall+service:payment&q=app:mall+service:payment+version:1.0.0",
-				nil)
-			It("should not return err ", func() {
-				Expect(err).Should(BeNil())
-			})
-			c, err := ReadLabelCombinations(restful.NewRequest(r))
-			It("should not return err ", func() {
-				Expect(err).Should(BeNil())
-			})
-			It("should has 2 combinations", func() {
-				Expect(len(c)).Should(Equal(2))
-			})
+func TestGetLabels(t *testing.T) {
+	r, err := http.NewRequest("GET",
+		"/kv?q=app:mall+service:payment&q=app:mall+service:payment+version:1.0.0",
+		nil)
+	assert.NoError(t, err)
+	c, err := v1.ReadLabelCombinations(restful.NewRequest(r))
+	assert.NoError(t, err)
+	assert.Equal(t, 2, len(c))
 
-		})
-		Context("find default", func() {
-			r, err := http.NewRequest("GET",
-				"/kv",
-				nil)
-			It("should not return err ", func() {
-				Expect(err).Should(BeNil())
-			})
-			c, err := ReadLabelCombinations(restful.NewRequest(r))
-			It("should not return err ", func() {
-				Expect(err).Should(BeNil())
-			})
-			It("should has 1 combinations", func() {
-				Expect(len(c)).Should(Equal(1))
-			})
+	r, err = http.NewRequest("GET",
+		"/kv",
+		nil)
+	assert.NoError(t, err)
+	c, err = v1.ReadLabelCombinations(restful.NewRequest(r))
+	assert.NoError(t, err)
+	assert.Equal(t, 1, len(c))
 
-		})
-	})
-})
+	r, err = http.NewRequest("GET",
+		"/kv?label=app:mall&label=service:payment",
+		nil)
+	assert.NoError(t, err)
+	req := restful.NewRequest(r)
+	m, err := v1.GetLabels(req.QueryParameters("label"))
+	assert.NoError(t, err)
+	assert.Equal(t, 2, len(m))
+}

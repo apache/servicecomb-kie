@@ -130,6 +130,9 @@ func (s *Service) Delete(ctx context.Context, kvID string, domain string, projec
 	if project == "" {
 		return session.ErrMissingProject
 	}
+	if kvID == "" {
+		return errors.New("key id is empty")
+	}
 	//delete kv
 	err := deleteKV(ctx, kvID, project, domain)
 	if err != nil {
