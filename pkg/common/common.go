@@ -23,6 +23,7 @@ const (
 	QueryByLabelsCon = "&"
 	QueryParamWait   = "wait"
 	QueryParamMatch  = "match"
+	QueryParamKeyID  = "kvID"
 )
 
 //http headers

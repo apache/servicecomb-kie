@@ -30,20 +30,15 @@ type Service struct {
 }
 
 //GetHistory get all history by label id
-func (s *Service) GetHistory(ctx context.Context, labelID string, options ...service.FindOption) ([]*model.LabelRevisionDoc, error) {
+func (s *Service) GetHistory(ctx context.Context, kvID string, options ...service.FindOption) ([]*model.KVDoc, error) {
 	var filter primitive.M
 	opts := service.FindOptions{}
 	for _, o := range options {
 		o(&opts)
 	}
-	if opts.Key != "" {
-		filter = bson.M{
-			"label_id": labelID,
-			"data.key": opts.Key,
-		}
-
-	} else {
-		filter = bson.M{"label_id": labelID}
+	filter = bson.M{
+		"id": kvID,
 	}
-	return getHistoryByLabelID(ctx, filter)
+
+	return getHistoryByKeyID(ctx, filter)
 }

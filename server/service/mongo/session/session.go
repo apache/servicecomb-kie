@@ -40,10 +40,10 @@ import (
 
 //const for db name and collection name
 const (
-	DBName                  = "kie"
-	CollectionLabel         = "label"
-	CollectionKV            = "kv"
-	CollectionLabelRevision = "label_revision"
+	DBName               = "kie"
+	CollectionLabel      = "label"
+	CollectionKV         = "kv"
+	CollectionKVRevision = "kv_revision"
 
 	DefaultTimeout   = 5 * time.Second
 	DefaultValueType = "text"
@@ -86,7 +86,6 @@ func Init() error {
 		reg := bson.NewRegistryBuilder().
 			RegisterEncoder(reflect.TypeOf(model.LabelDoc{}), sc).
 			RegisterEncoder(reflect.TypeOf(model.KVDoc{}), sc).
-			RegisterEncoder(reflect.TypeOf(model.LabelRevisionDoc{}), sc).
 			Build()
 		clientOps := []*options.ClientOptions{options.Client().ApplyURI(config.GetDB().URI)}
 		if config.GetDB().SSLEnabled {

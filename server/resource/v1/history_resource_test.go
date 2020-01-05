@@ -19,74 +19,67 @@ package v1_test
 import (
 	"context"
 	"encoding/json"
+	"fmt"
+	"github.com/apache/servicecomb-kie/pkg/model"
+	v1 "github.com/apache/servicecomb-kie/server/resource/v1"
 	"github.com/apache/servicecomb-kie/server/service"
-	"io/ioutil"
-
 	"github.com/go-chassis/go-chassis/core/common"
 	"github.com/go-chassis/go-chassis/core/handler"
-
-	"fmt"
+	"github.com/go-chassis/go-chassis/server/restful/restfultest"
+	"github.com/stretchr/testify/assert"
+	"io/ioutil"
 	"net/http"
 	"net/http/httptest"
+	"testing"
 
-	"github.com/apache/servicecomb-kie/pkg/model"
-	"github.com/apache/servicecomb-kie/server/config"
-	v1 "github.com/apache/servicecomb-kie/server/resource/v1"
 	_ "github.com/apache/servicecomb-kie/server/service/mongo"
-	"github.com/go-chassis/go-chassis/server/restful/restfultest"
-
-	. "github.com/onsi/ginkgo"
-	. "github.com/onsi/gomega"
 )
 
-var _ = Describe("v1 history resource", func() {
-
-	config.Configurations = &config.Config{
-		DB: config.DB{},
+func TestHistoryResource_GetRevisions(t *testing.T) {
+	kv := &model.KVDoc{
+		Key:   "test",
+		Value: "revisions",
+		Labels: map[string]string{
+			"test": "revisions",
+		},
+		Domain:  "default",
+		Project: "test",
 	}
+	kv, _ = service.KVService.CreateOrUpdate(context.Background(), kv)
+	path := fmt.Sprintf("/v1/test/kie/revision/%s", kv.ID)
+	r, _ := http.NewRequest("GET", path, nil)
+	revision := &v1.HistoryResource{}
+	chain, _ := handler.GetChain(common.Provider, "")
+	c, err := restfultest.New(revision, chain)
+	assert.NoError(t, err)
+	resp := httptest.NewRecorder()
+	c.ServeHTTP(resp, r)
+	body, err := ioutil.ReadAll(resp.Body)
+	assert.NoError(t, err)
+	data := make([]*model.KVDoc, 0)
+	err = json.Unmarshal(body, &data)
+	assert.NoError(t, err)
+	before := len(data)
+	assert.GreaterOrEqual(t, before, 1)
 
-	Describe("get history revisions", func() {
-		config.Configurations.DB.URI = "mongodb://kie:123@127.0.0.1:27017"
-		err := service.DBInit()
-		It("should not return err", func() {
-			Expect(err).Should(BeNil())
-		})
-		Context("valid param", func() {
-			kv := &model.KVDoc{
-				Key:   "test",
-				Value: "revisions",
-				Labels: map[string]string{
-					"test": "revisions",
-				},
-				Domain:  "default",
-				Project: "test",
-			}
-			kv, _ = service.KVService.CreateOrUpdate(context.Background(), kv)
-			path := fmt.Sprintf("/v1/%s/kie/revision/%s", "test", kv.LabelID)
-			r, _ := http.NewRequest("GET", path, nil)
-			revision := &v1.HistoryResource{}
-			chain, _ := handler.GetChain(common.Provider, "")
-			c, err := restfultest.New(revision, chain)
-			It("should not return err or nil", func() {
-				Expect(err).Should(BeNil())
-			})
-			resp := httptest.NewRecorder()
-			c.ServeHTTP(resp, r)
-
-			body, err := ioutil.ReadAll(resp.Body)
-			It("should not return err", func() {
-				Expect(err).Should(BeNil())
-			})
-			data := make([]*model.LabelRevisionDoc, 0)
-			err = json.Unmarshal(body, &data)
-			It("should not return err", func() {
-				Expect(err).Should(BeNil())
-			})
-
-			It("should return all revisions with the same label ID", func() {
-				Expect(len(data) > 0).Should(Equal(true))
-				Expect((data[0]).LabelID).Should(Equal(kv.LabelID))
-			})
-		})
+	t.Run("put again, should has 2 revision", func(t *testing.T) {
+		kv.Domain = "default"
+		kv.Project = "test"
+		kv, err = service.KVService.CreateOrUpdate(context.Background(), kv)
+		assert.NoError(t, err)
+		path := fmt.Sprintf("/v1/test/kie/revision/%s", kv.ID)
+		r, _ := http.NewRequest("GET", path, nil)
+		revision := &v1.HistoryResource{}
+		chain, _ := handler.GetChain(common.Provider, "")
+		c, err := restfultest.New(revision, chain)
+		assert.NoError(t, err)
+		resp := httptest.NewRecorder()
+		c.ServeHTTP(resp, r)
+		body, err := ioutil.ReadAll(resp.Body)
+		assert.NoError(t, err)
+		data := make([]*model.KVDoc, 0)
+		err = json.Unmarshal(body, &data)
+		assert.Equal(t, before+1, len(data))
 	})
-})
+
+}

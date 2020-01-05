@@ -18,22 +18,12 @@
 package kv_test
 
 import (
-	"testing"
-
 	"github.com/go-chassis/paas-lager"
 	"github.com/go-mesh/openlogging"
-	. "github.com/onsi/ginkgo"
-	"github.com/onsi/ginkgo/reporters"
-	. "github.com/onsi/gomega"
 )
 
-func TestModel(t *testing.T) {
-	RegisterFailHandler(Fail)
-	junitReporter := reporters.NewJUnitReporter("junit.xml")
-	RunSpecsWithDefaultAndCustomReporters(t, "kv Suite", []Reporter{junitReporter})
-}
+func init() {
 
-var _ = BeforeSuite(func() {
 	log.Init(log.Config{
 		Writers:     []string{"stdout"},
 		LoggerLevel: "DEBUG",
@@ -41,4 +31,4 @@ var _ = BeforeSuite(func() {
 
 	logger := log.NewLogger("ut")
 	openlogging.SetLogger(logger)
-})
+}

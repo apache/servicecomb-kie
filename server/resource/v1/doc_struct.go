@@ -62,9 +62,9 @@ var (
 			"if it is empty, server will return kv which's labels partial match the label query param. " +
 			"uf it is exact, server will return kv which's labels exact match the label query param",
 	}
-	DocQueryKVIDParameters = &restful.Parameters{
+	DocQueryKeyIDParameters = &restful.Parameters{
 		DataType:  "string",
-		Name:      "kvID",
+		Name:      common.QueryParamKeyID,
 		ParamType: goRestful.QueryParameterKind,
 		Required:  true,
 	}
@@ -101,9 +101,9 @@ var (
 		ParamType: goRestful.PathParameterKind,
 		Required:  true,
 	}
-	DocPathLabelID = &restful.Parameters{
+	DocPathKeyID = &restful.Parameters{
 		DataType:  "string",
-		Name:      "label_id",
+		Name:      "key_id",
 		ParamType: goRestful.PathParameterKind,
 		Required:  true,
 	}

@@ -85,10 +85,10 @@ func (r *KVResource) GetByKey(rctx *restful.Context) {
 		return
 	}
 	project := rctx.ReadPathParameter("project")
-	labelStr := rctx.ReadQueryParameter("label")
+	labelSlice := rctx.Req.QueryParameters("label")
 	var labels map[string]string
-	if labelStr != "" {
-		labels, err = getLabels(labelStr)
+	if len(labelSlice) != 0 {
+		labels, err = GetLabels(labelSlice)
 		if err != nil {
 			WriteErrResponse(rctx, http.StatusBadRequest, MsgIllegalLabels, common.ContentTypeText)
 			return
@@ -131,10 +131,10 @@ func (r *KVResource) List(rctx *restful.Context) {
 		WriteErrResponse(rctx, http.StatusInternalServerError, MsgDomainMustNotBeEmpty, common.ContentTypeText)
 		return
 	}
-	labelStr := rctx.ReadQueryParameter("label")
+	labelSlice := rctx.Req.QueryParameters("label")
 	var labels map[string]string
-	if labelStr != "" {
-		labels, err = getLabels(labelStr)
+	if len(labelSlice) != 0 {
+		labels, err = GetLabels(labelSlice)
 		if err != nil {
 			WriteErrResponse(rctx, http.StatusBadRequest, MsgIllegalLabels, common.ContentTypeText)
 			return
@@ -234,18 +234,16 @@ func (r *KVResource) Delete(context *restful.Context) {
 	if domain == nil {
 		WriteErrResponse(context, http.StatusInternalServerError, MsgDomainMustNotBeEmpty, common.ContentTypeText)
 	}
-	kvID := context.ReadQueryParameter("kvID")
+	kvID := context.ReadQueryParameter(common.QueryParamKeyID)
 	if kvID == "" {
 		WriteErrResponse(context, http.StatusBadRequest, ErrKvIDMustNotEmpty, common.ContentTypeText)
 		return
 	}
-	labelID := context.ReadQueryParameter("labelID")
-	err := service.KVService.Delete(kvID, labelID, domain.(string), project)
+	err := service.KVService.Delete(context.Ctx, kvID, domain.(string), project)
 	if err != nil {
 		openlogging.Error("delete failed ,", openlogging.WithTags(openlogging.Tags{
-			"kvID":    kvID,
-			"labelID": labelID,
-			"error":   err.Error(),
+			"kvID":  kvID,
+			"error": err.Error(),
 		}))
 		WriteErrResponse(context, http.StatusInternalServerError, err.Error(), common.ContentTypeText)
 		return
@@ -334,8 +332,7 @@ func (r *KVResource) URLPatterns() []restful.Route {
 			FuncDesc:     "delete key by kvID and labelID. Want better performance, give labelID",
 			Parameters: []*restful.Parameters{
 				DocPathProject,
-				DocQueryKVIDParameters,
-				DocQueryLabelIDParameters,
+				DocQueryKeyIDParameters,
 			},
 			Returns: []*restful.Returns{
 				{
