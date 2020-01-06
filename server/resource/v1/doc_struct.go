@@ -112,7 +112,7 @@ var (
 //KVBody is open api doc
 type KVBody struct {
 	Labels    map[string]string `json:"labels"`
-	ValueType string            `json:"valueType"`
+	ValueType string            `json:"value_type"`
 	Value     string            `json:"value"`
 }
 
