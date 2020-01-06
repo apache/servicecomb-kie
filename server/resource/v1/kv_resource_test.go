@@ -59,11 +59,10 @@ func init() {
 	if err != nil {
 		panic(err)
 	}
-}
-func TestKVResource_List(t *testing.T) {
-
 	pubsub.Init()
 	pubsub.Start()
+}
+func TestKVResource_Put(t *testing.T) {
 	t.Run("put kv, label is service", func(t *testing.T) {
 		kv := &model.KVDoc{
 			Value:  "1s",
@@ -111,6 +110,8 @@ func TestKVResource_List(t *testing.T) {
 		assert.NoError(t, err)
 		assert.NotEmpty(t, data.ID)
 	})
+}
+func TestKVResource_List(t *testing.T) {
 	t.Run("list kv by service label, should return 2 kvs", func(t *testing.T) {
 		r, _ := http.NewRequest("GET", "/v1/test/kie/kv?label=service:utService", nil)
 		noopH := &handler2.NoopAuthHandler{}
@@ -145,6 +146,9 @@ func TestKVResource_List(t *testing.T) {
 		assert.NoError(t, err)
 		assert.Equal(t, 1, len(result.Data))
 	})
+
+}
+func TestKVResource_GetByKey(t *testing.T) {
 	t.Run("get one key by label, exact match,should return 1 kv", func(t *testing.T) {
 		r, _ := http.NewRequest("GET", "/v1/test/kie/kv/timeout?label=service:utService&match=exact", nil)
 		noopH := &handler2.NoopAuthHandler{}
@@ -162,7 +166,7 @@ func TestKVResource_List(t *testing.T) {
 		assert.NoError(t, err)
 		assert.Equal(t, 1, len(result.Data))
 	})
-	t.Run("get one key by service label should return 2 kv", func(t *testing.T) {
+	t.Run("get one key by service label should return 2 kv,delete one", func(t *testing.T) {
 		r, _ := http.NewRequest("GET", "/v1/test/kie/kv/timeout?label=service:utService", nil)
 		noopH := &handler2.NoopAuthHandler{}
 		chain, _ := handler.CreateChain(common.Provider, "testchain1", noopH.Name())
@@ -178,5 +182,13 @@ func TestKVResource_List(t *testing.T) {
 		err = json.Unmarshal(body, result)
 		assert.NoError(t, err)
 		assert.Equal(t, 2, len(result.Data))
+
+		r2, _ := http.NewRequest("DELETE", "/v1/test/kie/kv?kv_id="+result.Data[0].ID, nil)
+		c2, err := restfultest.New(kvr, chain)
+		assert.NoError(t, err)
+		resp2 := httptest.NewRecorder()
+		c2.ServeHTTP(resp2, r2)
+		assert.Equal(t, http.StatusNoContent, resp2.Code)
+
 	})
 }

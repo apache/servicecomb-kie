@@ -329,7 +329,7 @@ func (r *KVResource) URLPatterns() []restful.Route {
 			Method:       http.MethodDelete,
 			Path:         "/v1/{project}/kie/kv",
 			ResourceFunc: r.Delete,
-			FuncDesc:     "delete key by kvID and labelID. Want better performance, give labelID",
+			FuncDesc:     "delete key by kv ID.",
 			Parameters: []*restful.Parameters{
 				DocPathProject,
 				DocQueryKeyIDParameters,
