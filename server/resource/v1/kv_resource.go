@@ -233,6 +233,7 @@ func (r *KVResource) Delete(context *restful.Context) {
 	domain := ReadDomain(context)
 	if domain == nil {
 		WriteErrResponse(context, http.StatusInternalServerError, MsgDomainMustNotBeEmpty, common.ContentTypeText)
+		return
 	}
 	kvID := context.ReadQueryParameter(common.QueryParamKeyID)
 	if kvID == "" {
