@@ -123,7 +123,7 @@ func TestKieClient_PushConfigs(t *testing.T) {
 //TestKieClient_DeleteConfigs for test DeleteConfigs.
 func TestKieClient_DeleteConfigs(t *testing.T) {
 	//v1/calculator/kie/kv?q=env:+servicename:calculator+version:0.0.1+app:
-	helper := startHttpServer(":49800", "/v1/calculator/kie/kv/?kvID=s")
+	helper := startHttpServer(":49800", "/v1/calculator/kie/kv/?kv_id=s")
 	gopath := os.Getenv("GOPATH")
 	os.Setenv("CHASSIS_HOME", gopath+"src/github.com/go-chassis/go-chassis/examples/discovery/server/")
 	kieClient, err := NewClient(remote.Options{Labels: map[string]string{

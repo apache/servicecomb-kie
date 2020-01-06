@@ -68,22 +68,11 @@ var (
 		ParamType: goRestful.QueryParameterKind,
 		Required:  true,
 	}
-	DocQueryKeyParameters = &restful.Parameters{
-		DataType:  "string",
-		Name:      "key",
-		ParamType: goRestful.QueryParameterKind,
-		Desc:      "only return history about a specific key",
-	}
 	DocQueryLabelParameters = &restful.Parameters{
 		DataType:  "string",
 		Name:      "label",
 		ParamType: goRestful.QueryParameterKind,
 		Desc:      "label pairs,for example &label=service:order&label=version:1.0.0",
-	}
-	DocQueryLabelIDParameters = &restful.Parameters{
-		DataType:  "string",
-		Name:      "labelID",
-		ParamType: goRestful.QueryParameterKind,
 	}
 )
 
@@ -112,7 +101,7 @@ var (
 //KVBody is open api doc
 type KVBody struct {
 	Labels    map[string]string `json:"labels"`
-	ValueType string            `json:"valueType"`
+	ValueType string            `json:"value_type"`
 	Value     string            `json:"value"`
 }
 

@@ -233,6 +233,7 @@ func (r *KVResource) Delete(context *restful.Context) {
 	domain := ReadDomain(context)
 	if domain == nil {
 		WriteErrResponse(context, http.StatusInternalServerError, MsgDomainMustNotBeEmpty, common.ContentTypeText)
+		return
 	}
 	kvID := context.ReadQueryParameter(common.QueryParamKeyID)
 	if kvID == "" {
@@ -329,7 +330,7 @@ func (r *KVResource) URLPatterns() []restful.Route {
 			Method:       http.MethodDelete,
 			Path:         "/v1/{project}/kie/kv",
 			ResourceFunc: r.Delete,
-			FuncDesc:     "delete key by kvID and labelID. Want better performance, give labelID",
+			FuncDesc:     "delete key by kv ID.",
 			Parameters: []*restful.Parameters{
 				DocPathProject,
 				DocQueryKeyIDParameters,
