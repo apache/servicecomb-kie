@@ -223,7 +223,8 @@ func (c *Client) Delete(ctx context.Context, kvID, labelID string, opts ...OpOpt
 	if options.Project == "" {
 		options.Project = defaultProject
 	}
-	url := fmt.Sprintf("%s/%s/%s/%s/?kvID=%s", c.opts.Endpoint, version, options.Project, APIPathKV, kvID)
+	url := fmt.Sprintf("%s/%s/%s/%s/?%s=%s", c.opts.Endpoint, version, options.Project, APIPathKV,
+		common.QueryParamKeyID, kvID)
 	if labelID != "" {
 		url = fmt.Sprintf("%s?labelID=%s", url, labelID)
 	}
