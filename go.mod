@@ -8,6 +8,7 @@ require (
 	github.com/go-chassis/paas-lager v1.1.1
 	github.com/go-mesh/openlogging v1.0.1
 	github.com/golang/snappy v0.0.1 // indirect
+	github.com/hashicorp/mdns v1.0.1 // indirect
 	github.com/hashicorp/serf v0.8.5
 	github.com/onsi/ginkgo v1.10.1
 	github.com/onsi/gomega v1.7.0
