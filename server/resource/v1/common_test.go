@@ -42,12 +42,4 @@ func TestGetLabels(t *testing.T) {
 	assert.NoError(t, err)
 	assert.Equal(t, 1, len(c))
 
-	r, err = http.NewRequest("GET",
-		"/kv?label=app:mall&label=service:payment",
-		nil)
-	assert.NoError(t, err)
-	req := restful.NewRequest(r)
-	m, err := v1.GetLabels(req.QueryParameters("label"))
-	assert.NoError(t, err)
-	assert.Equal(t, 2, len(m))
 }

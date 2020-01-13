@@ -20,6 +20,7 @@ package v1_test
 import (
 	"bytes"
 	"encoding/json"
+	common2 "github.com/apache/servicecomb-kie/pkg/common"
 	"github.com/apache/servicecomb-kie/pkg/model"
 	"github.com/apache/servicecomb-kie/server/config"
 	handler2 "github.com/apache/servicecomb-kie/server/handler"
@@ -36,6 +37,7 @@ import (
 	"net/http"
 	"net/http/httptest"
 	"testing"
+	"time"
 
 	_ "github.com/apache/servicecomb-kie/server/service/mongo"
 )
@@ -129,6 +131,7 @@ func TestKVResource_List(t *testing.T) {
 		assert.NoError(t, err)
 		assert.Equal(t, 2, len(result.Data))
 	})
+	var rev string
 	t.Run("list kv by service label, exact match,should return 1 kv", func(t *testing.T) {
 		r, _ := http.NewRequest("GET", "/v1/test/kie/kv?label=service:utService&match=exact", nil)
 		noopH := &handler2.NoopAuthHandler{}
@@ -145,8 +148,78 @@ func TestKVResource_List(t *testing.T) {
 		err = json.Unmarshal(body, result)
 		assert.NoError(t, err)
 		assert.Equal(t, 1, len(result.Data))
+		rev = resp.Header().Get(common2.HeaderRevision)
 	})
-
+	t.Run("list kv by service label, with current rev param,should return 304 ", func(t *testing.T) {
+		r, _ := http.NewRequest("GET", "/v1/test/kie/kv?label=service:utService&"+common2.QueryParamRev+"="+rev, nil)
+		noopH := &handler2.NoopAuthHandler{}
+		chain, _ := handler.CreateChain(common.Provider, "testchain1", noopH.Name())
+		r.Header.Set("Content-Type", "application/json")
+		kvr := &v1.KVResource{}
+		c, err := restfultest.New(kvr, chain)
+		assert.NoError(t, err)
+		resp := httptest.NewRecorder()
+		c.ServeHTTP(resp, r)
+		assert.NoError(t, err)
+		assert.Equal(t, http.StatusNotModified, resp.Result().StatusCode)
+	})
+	t.Run("list kv by service label, with old rev param,should return latest revision", func(t *testing.T) {
+		r, _ := http.NewRequest("GET", "/v1/test/kie/kv?label=service:utService&"+common2.QueryParamRev+"=1", nil)
+		noopH := &handler2.NoopAuthHandler{}
+		chain, _ := handler.CreateChain(common.Provider, "testchain1", noopH.Name())
+		r.Header.Set("Content-Type", "application/json")
+		kvr := &v1.KVResource{}
+		c, err := restfultest.New(kvr, chain)
+		assert.NoError(t, err)
+		resp := httptest.NewRecorder()
+		c.ServeHTTP(resp, r)
+		assert.NoError(t, err)
+		assert.Equal(t, http.StatusOK, resp.Result().StatusCode)
+	})
+	t.Run("list kv by service label, with wait and old rev param,should return latest revision,no wait", func(t *testing.T) {
+		r, _ := http.NewRequest("GET", "/v1/test/kie/kv?label=service:utService&wait=1s&"+common2.QueryParamRev+"=1", nil)
+		noopH := &handler2.NoopAuthHandler{}
+		chain, _ := handler.CreateChain(common.Provider, "testchain1", noopH.Name())
+		r.Header.Set("Content-Type", "application/json")
+		kvr := &v1.KVResource{}
+		c, err := restfultest.New(kvr, chain)
+		assert.NoError(t, err)
+		resp := httptest.NewRecorder()
+		start := time.Now()
+		c.ServeHTTP(resp, r)
+		duration := time.Since(start)
+		t.Log(duration)
+		assert.Equal(t, http.StatusOK, resp.Result().StatusCode)
+	})
+	t.Run("list kv by service label, with wait and current rev param,should wait and return 304 ", func(t *testing.T) {
+		r, _ := http.NewRequest("GET", "/v1/test/kie/kv?label=service:utService&wait=1s&"+common2.QueryParamRev+"="+rev, nil)
+		noopH := &handler2.NoopAuthHandler{}
+		chain, _ := handler.CreateChain(common.Provider, "testchain1", noopH.Name())
+		r.Header.Set("Content-Type", "application/json")
+		kvr := &v1.KVResource{}
+		c, err := restfultest.New(kvr, chain)
+		assert.NoError(t, err)
+		resp := httptest.NewRecorder()
+		start := time.Now()
+		c.ServeHTTP(resp, r)
+		duration := time.Since(start)
+		t.Log(duration)
+		assert.Equal(t, http.StatusNotModified, resp.Result().StatusCode)
+	})
+	t.Run("list kv by service label, with wait param,will too 1s and return 304", func(t *testing.T) {
+		r, _ := http.NewRequest("GET", "/v1/test/kie/kv?label=service:utService&wait=1s", nil)
+		noopH := &handler2.NoopAuthHandler{}
+		chain, _ := handler.CreateChain(common.Provider, "testchain1", noopH.Name())
+		r.Header.Set("Content-Type", "application/json")
+		kvr := &v1.KVResource{}
+		c, err := restfultest.New(kvr, chain)
+		assert.NoError(t, err)
+		resp := httptest.NewRecorder()
+		start := time.Now()
+		c.ServeHTTP(resp, r)
+		duration := time.Since(start)
+		t.Log(duration)
+	})
 }
 func TestKVResource_GetByKey(t *testing.T) {
 	t.Run("get one key by label, exact match,should return 1 kv", func(t *testing.T) {

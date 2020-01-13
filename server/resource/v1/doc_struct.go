@@ -59,6 +59,15 @@ var (
 			"for example wait=5s, server will not response until 5 seconds during that time window, " +
 			"if any kv changed, server will return 200 and kv list, otherwise return 304 and empty body",
 	}
+	DocQueryRev = &restful.Parameters{
+		DataType:  "string",
+		Name:      common.QueryParamRev,
+		ParamType: goRestful.QueryParameterKind,
+		Required:  false,
+		Desc: "each time you query,server will return a number in header X-Kie-Revision. " +
+			"you can record it in client side, use this number as param value. " +
+			"if current revision is greater than it, server will return data",
+	}
 	DocQueryMatch = &restful.Parameters{
 		DataType:  "string",
 		Name:      common.QueryParamMatch,
