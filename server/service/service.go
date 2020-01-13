@@ -25,9 +25,10 @@ import (
 
 //services
 var (
-	KVService      KV
-	HistoryService History
-	DBInit         Init
+	KVService       KV
+	HistoryService  History
+	RevisionService Revision
+	DBInit          Init
 )
 
 //db errors
@@ -49,6 +50,9 @@ type KV interface {
 //History provide api of History entity
 type History interface {
 	GetHistory(ctx context.Context, keyID string, options ...FindOption) ([]*model.KVDoc, error)
+}
+type Revision interface {
+	GetRevision(ctx context.Context) (int64, error)
 }
 
 //Init init db session

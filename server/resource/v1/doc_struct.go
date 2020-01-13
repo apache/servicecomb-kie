@@ -32,6 +32,12 @@ var (
 		ParamType: goRestful.HeaderParameterKind,
 		Desc:      "integer, default is 1, if you set match policy, you can set,depth to decide label number",
 	}
+	DocHeaderRevision = &restful.Parameters{
+		DataType:  "string",
+		Name:      common.HeaderRevision,
+		ParamType: goRestful.HeaderParameterKind,
+		Desc:      "integer, current revision of kie",
+	}
 )
 
 //swagger doc query params

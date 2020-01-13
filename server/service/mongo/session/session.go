@@ -40,10 +40,12 @@ import (
 
 //const for db name and collection name
 const (
-	DBName               = "kie"
+	DBName = "kie"
+
 	CollectionLabel      = "label"
 	CollectionKV         = "kv"
 	CollectionKVRevision = "kv_revision"
+	CollectionCounter    = "counter"
 
 	DefaultTimeout   = 5 * time.Second
 	DefaultValueType = "text"
@@ -121,6 +123,7 @@ func Init() error {
 		db = client.Database(DBName, &options.DatabaseOptions{
 			Registry: reg,
 		})
+
 	})
 	return nil
 }

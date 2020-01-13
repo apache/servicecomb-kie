@@ -27,15 +27,17 @@ type LabelDoc struct {
 
 //KVDoc is database struct to store kv
 type KVDoc struct {
-	ID        string `json:"id,omitempty" bson:"id,omitempty" yaml:"id,omitempty" swag:"string"`
-	LabelID   string `json:"label_id,omitempty" bson:"label_id,omitempty" yaml:"label_id,omitempty"`
-	Key       string `json:"key" yaml:"key"`
-	Value     string `json:"value,omitempty" yaml:"value,omitempty"`
-	ValueType string `json:"value_type,omitempty" bson:"value_type,omitempty" yaml:"value_type,omitempty"` //ini,json,text,yaml,properties
-	Checker   string `json:"check,omitempty" yaml:"check,omitempty"`                                       //python script
+	ID             string `json:"id,omitempty" bson:"id,omitempty" yaml:"id,omitempty" swag:"string"`
+	LabelID        string `json:"label_id,omitempty" bson:"label_id,omitempty" yaml:"label_id,omitempty"`
+	Key            string `json:"key" yaml:"key"`
+	Value          string `json:"value,omitempty" yaml:"value,omitempty"`
+	ValueType      string `json:"value_type,omitempty" bson:"value_type,omitempty" yaml:"value_type,omitempty"` //ini,json,text,yaml,properties
+	Checker        string `json:"check,omitempty" yaml:"check,omitempty"`                                       //python script
+	CreateRevision int64  `json:"create_revision,omitempty" bson:"create_revision," yaml:"create_revision,omitempty"`
+	UpdateRevision int64  `json:"update_revision,omitempty" bson:"update_revision," yaml:"update_revision,omitempty"`
+	Project        string `json:"project,omitempty" yaml:"project,omitempty"`
 
-	Labels   map[string]string `json:"labels,omitempty" yaml:"labels,omitempty"` //redundant
-	Domain   string            `json:"domain,omitempty" yaml:"domain,omitempty"` //redundant
-	Revision int               `json:"revision,omitempty" bson:"revision," yaml:"revision,omitempty"`
-	Project  string            `json:"project,omitempty" yaml:"project,omitempty"`
+	Labels map[string]string `json:"labels,omitempty" yaml:"labels,omitempty"` //redundant
+	Domain string            `json:"domain,omitempty" yaml:"domain,omitempty"` //redundant
+
 }

@@ -15,36 +15,26 @@
  * limitations under the License.
  */
 
-package id
+package counter_test
 
 import (
-	"fmt"
-	"go.mongodb.org/mongo-driver/bson/bsontype"
-	"go.mongodb.org/mongo-driver/bson/primitive"
-	"go.mongodb.org/mongo-driver/x/bsonx/bsoncore"
+	"context"
+	"github.com/apache/servicecomb-kie/server/config"
+	"github.com/apache/servicecomb-kie/server/service/mongo/counter"
+	"github.com/apache/servicecomb-kie/server/service/mongo/session"
+	"github.com/stretchr/testify/assert"
+	"testing"
 )
 
-//ID decouple mongodb
-type ID string
+func TestIncreaseAndGetRevision(t *testing.T) {
+	var err error
+	config.Configurations = &config.Config{DB: config.DB{URI: "mongodb://kie:123@127.0.0.1:27017"}}
+	err = session.Init()
+	assert.NoError(t, err)
+	s := &counter.Service{}
+	n, _ := s.GetRevision(context.TODO())
+	t.Log(n)
 
-//UnmarshalBSONValue is implement
-func (id *ID) UnmarshalBSONValue(t bsontype.Type, raw []byte) error {
-	if t == bsontype.ObjectID && len(raw) == 12 {
-		var objID primitive.ObjectID
-		copy(objID[:], raw)
-		*id = ID(objID.Hex())
-		return nil
-	} else if t == bsontype.String {
-		if str, _, ok := bsoncore.ReadString(raw); ok {
-			*id = ID(str)
-			return nil
-		}
-	}
-
-	return fmt.Errorf("unable to unmarshal bson id &mdash; type: %v, length: %v", len(raw), t)
-}
-
-//String return string
-func (id ID) String() string {
-	return string(id)
+	next, _ := counter.ApplyRevision(context.TODO())
+	assert.Equal(t, n+1, next)
 }

@@ -15,30 +15,10 @@
  * limitations under the License.
  */
 
-package id_test
+package counter
 
-import (
-	"github.com/apache/servicecomb-kie/server/id"
-	"github.com/stretchr/testify/assert"
-	"go.mongodb.org/mongo-driver/bson"
-	"go.mongodb.org/mongo-driver/bson/primitive"
-	"testing"
-)
-
-func TestID_MarshalBSONValue(t *testing.T) {
-	type Obj struct {
-		ID id.ID `bson:"label_id,omitempty"`
-	}
-
-	o := new(Obj)
-	o.ID = id.ID(primitive.NewObjectID().Hex())
-
-	b, err := bson.Marshal(o)
-	assert.NoError(t, err)
-	t.Log(b)
-
-	o2 := new(Obj)
-	err = bson.Unmarshal(b, o2)
-	assert.NoError(t, err)
-	t.Log(o2)
+//Counter is db schema
+type Counter struct {
+	Name  string `bson:"name,omitempty"`
+	Count int64  `bson:"count,omitempty"`
 }
