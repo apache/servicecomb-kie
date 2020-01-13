@@ -36,10 +36,9 @@ db.createCollection( "kv", {
             properties: {
                 key: {
                     bsonType: "string",
-                    description: "must be a string and is required"
                 },
                 value_type: {
-                    enum: [ "text", "yaml", "json", "properties", "ini" ]
+                    enum: [ "text","string","yaml", "json", "properties", "ini" ]
                 },
                 labels: {
                     bsonType: "object"

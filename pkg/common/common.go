@@ -22,15 +22,15 @@ const (
 	QueryParamQ      = "q"
 	QueryByLabelsCon = "&"
 	QueryParamWait   = "wait"
+	QueryParamRev    = "revision"
 	QueryParamMatch  = "match"
 	QueryParamKeyID  = "kv_id"
 )
 
 //http headers
 const (
-	HeaderMatch       = "X-Match"
 	HeaderDepth       = "X-Depth"
-	HeaderTenant      = "X-Domain"
+	HeaderRevision    = "X-Kie-Revision"
 	HeaderContentType = "Content-Type"
 	HeaderAccept      = "Accept"
 )

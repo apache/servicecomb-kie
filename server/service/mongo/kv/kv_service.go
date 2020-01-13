@@ -70,19 +70,21 @@ func (s *Service) CreateOrUpdate(ctx context.Context, kv *model.KVDoc) (*model.K
 	}
 	oldKV, err := s.Exist(ctx, kv.Domain, kv.Key, kv.Project, service.WithLabelID(kv.LabelID))
 	if err != nil {
-		if err == service.ErrKeyNotExists {
-			kv, err := createKey(ctx, kv)
-			if err != nil {
-				return nil, err
-			}
-			kv.Domain = ""
-			kv.Project = ""
-			return kv, nil
+		if err != service.ErrKeyNotExists {
+			openlogging.Error(err.Error())
+			return nil, err
 		}
-		return nil, err
+		kv, err := createKey(ctx, kv)
+		if err != nil {
+			openlogging.Error(err.Error())
+			return nil, err
+		}
+		kv.Domain = ""
+		kv.Project = ""
+		return kv, nil
 	}
 	kv.ID = oldKV.ID
-	kv.Revision = oldKV.Revision + 1
+	kv.CreateRevision = oldKV.CreateRevision
 	err = updateKeyValue(ctx, kv)
 	if err != nil {
 		return nil, err
@@ -103,6 +105,7 @@ func (s *Service) Exist(ctx context.Context, domain, key string, project string,
 	if opts.LabelID != "" {
 		kvs, err := findKVByLabelID(ctx, domain, opts.LabelID, key, project)
 		if err != nil {
+			openlogging.Error(err.Error())
 			return nil, err
 		}
 		return kvs[0], nil
@@ -110,6 +113,7 @@ func (s *Service) Exist(ctx context.Context, domain, key string, project string,
 	kvs, err := s.FindKV(ctx, domain, project,
 		service.WithExactLabels(), service.WithLabels(opts.Labels), service.WithKey(key))
 	if err != nil {
+		openlogging.Error(err.Error())
 		return nil, err
 	}
 	if len(kvs) != 1 {

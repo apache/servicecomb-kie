@@ -103,11 +103,6 @@ func WriteErrResponse(context *restful.Context, status int, msg, contentType str
 
 }
 
-//ErrLog record error
-func ErrLog(action string, kv *model.KVDoc, err error) {
-	openlogging.Error(fmt.Sprintf("[%s] [%v] err:%s", action, kv, err.Error()))
-}
-
 //InfoLog record info
 func InfoLog(action string, kv *model.KVDoc) {
 	openlogging.Info(
@@ -156,6 +151,13 @@ func getWaitDuration(rctx *restful.Context) string {
 		wait = "0s"
 	}
 	return wait
+}
+func getRevision(rctx *restful.Context) string {
+	rev := rctx.ReadQueryParameter(common.QueryParamRev)
+	if rev == "" {
+		rev = "0"
+	}
+	return rev
 }
 func getMatchPattern(rctx *restful.Context) string {
 	m := rctx.ReadQueryParameter(common.QueryParamMatch)

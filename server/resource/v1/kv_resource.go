@@ -19,6 +19,7 @@
 package v1
 
 import (
+	"fmt"
 	"github.com/apache/servicecomb-kie/server/pubsub"
 	"net/http"
 	"time"
@@ -54,7 +55,7 @@ func (r *KVResource) Put(context *restful.Context) {
 	kv.Project = project
 	kv, err = service.KVService.CreateOrUpdate(context.Ctx, kv)
 	if err != nil {
-		ErrLog("put", kv, err)
+		openlogging.Error(fmt.Sprintf("put [%v] err:%s", kv, err.Error()))
 		WriteErrResponse(context, http.StatusInternalServerError, err.Error(), common.ContentTypeText)
 		return
 	}

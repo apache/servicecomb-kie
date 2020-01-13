@@ -1,6 +1,7 @@
 module github.com/apache/servicecomb-kie
 
 require (
+	github.com/DataDog/zstd v1.4.4 // indirect
 	github.com/emicklei/go-restful v2.11.1+incompatible
 	github.com/go-chassis/foundation v0.1.1-0.20191113114104-2b05871e9ec4
 	github.com/go-chassis/go-archaius v1.0.0
@@ -17,7 +18,7 @@ require (
 	github.com/urfave/cli v1.20.0
 	github.com/xdg/scram v0.0.0-20180814205039-7eeb5667e42c // indirect
 	github.com/xdg/stringprep v1.0.0 // indirect
-	go.mongodb.org/mongo-driver v1.0.3
+	go.mongodb.org/mongo-driver v1.2.1
 	gopkg.in/yaml.v2 v2.2.4
 )
 

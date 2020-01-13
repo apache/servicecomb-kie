@@ -22,6 +22,7 @@ import (
 	"fmt"
 	"github.com/apache/servicecomb-kie/pkg/model"
 	"github.com/apache/servicecomb-kie/server/service"
+	"github.com/apache/servicecomb-kie/server/service/mongo/counter"
 	"github.com/apache/servicecomb-kie/server/service/mongo/history"
 	"github.com/apache/servicecomb-kie/server/service/mongo/session"
 	"github.com/go-mesh/openlogging"
@@ -35,10 +36,21 @@ import (
 //and insert key
 func createKey(ctx context.Context, kv *model.KVDoc) (*model.KVDoc, error) {
 	collection := session.GetDB().Collection(session.CollectionKV)
+	var err error
 	kv.ID = uuid.NewV4().String()
-	kv.Revision = 1
-	_, err := collection.InsertOne(ctx, kv)
+	revision, err := counter.ApplyRevision(ctx)
 	if err != nil {
+		openlogging.Error(err.Error())
+		return nil, err
+	}
+	kv.UpdateRevision = revision
+	kv.CreateRevision = revision
+	_, err = collection.InsertOne(ctx, kv)
+	if err != nil {
+		openlogging.Error("create error", openlogging.WithTags(openlogging.Tags{
+			"err": err.Error(),
+			"kv":  kv,
+		}))
 		return nil, err
 	}
 	err = history.AddHistory(ctx, kv)
@@ -55,12 +67,17 @@ func createKey(ctx context.Context, kv *model.KVDoc) (*model.KVDoc, error) {
 
 //updateKeyValue update key value and add new revision
 func updateKeyValue(ctx context.Context, kv *model.KVDoc) error {
+	var err error
+	kv.UpdateRevision, err = counter.ApplyRevision(ctx)
+	if err != nil {
+		return err
+	}
 	collection := session.GetDB().Collection(session.CollectionKV)
 	ur, err := collection.UpdateOne(ctx, bson.M{"key": kv.Key, "label_id": kv.LabelID}, bson.D{
 		{"$set", bson.D{
 			{"value", kv.Value},
 			{"checker", kv.Checker},
-			{"revision", kv.Revision},
+			{"update_revision", kv.UpdateRevision},
 		}},
 	})
 	if err != nil {
@@ -110,14 +127,14 @@ func findOneKey(ctx context.Context, filter bson.M) ([]*model.KVDoc, error) {
 	collection := session.GetDB().Collection(session.CollectionKV)
 	sr := collection.FindOne(ctx, filter)
 	if sr.Err() != nil {
+		if sr.Err() == mongo.ErrNoDocuments {
+			return nil, service.ErrKeyNotExists
+		}
 		return nil, sr.Err()
 	}
 	curKV := &model.KVDoc{}
 	err := sr.Decode(curKV)
 	if err != nil {
-		if err == mongo.ErrNoDocuments {
-			return nil, service.ErrKeyNotExists
-		}
 		openlogging.Error("decode error: " + err.Error())
 		return nil, err
 	}
@@ -182,6 +199,7 @@ func findKVByLabelID(ctx context.Context, domain, labelID, key string, project s
 	filter := bson.M{"label_id": labelID, "domain": domain, "project": project}
 	if key != "" {
 		filter["key"] = key
+		openlogging.Debug("find one key")
 		return findOneKey(ctx, filter)
 	}
 	return findKeys(ctx, filter, true)

@@ -19,6 +19,7 @@ package mongo
 
 import (
 	"github.com/apache/servicecomb-kie/server/service"
+	"github.com/apache/servicecomb-kie/server/service/mongo/counter"
 	"github.com/apache/servicecomb-kie/server/service/mongo/history"
 	"github.com/apache/servicecomb-kie/server/service/mongo/kv"
 	"github.com/apache/servicecomb-kie/server/service/mongo/session"
@@ -30,4 +31,5 @@ func init() {
 	service.DBInit = session.Init
 	service.KVService = &kv.Service{}
 	service.HistoryService = &history.Service{}
+	service.RevisionService = &counter.Service{}
 }
