@@ -15,23 +15,38 @@
  * limitations under the License.
  */
 
-package mongo
+package label_test
 
 import (
-	"github.com/apache/servicecomb-kie/server/service"
-	"github.com/apache/servicecomb-kie/server/service/mongo/counter"
-	"github.com/apache/servicecomb-kie/server/service/mongo/history"
-	"github.com/apache/servicecomb-kie/server/service/mongo/kv"
+	"context"
+	"github.com/apache/servicecomb-kie/server/config"
 	"github.com/apache/servicecomb-kie/server/service/mongo/label"
 	"github.com/apache/servicecomb-kie/server/service/mongo/session"
-	"github.com/go-mesh/openlogging"
+	"github.com/stretchr/testify/assert"
+	"testing"
 )
 
-func init() {
-	openlogging.Info("use mongodb as storage")
-	service.DBInit = session.Init
-	service.KVService = &kv.Service{}
-	service.HistoryService = &history.Service{}
-	service.RevisionService = &counter.Service{}
-	service.LabelService = &label.Service{}
+func TestCreateLabel(t *testing.T) {
+	var err error
+	config.Configurations = &config.Config{DB: config.DB{URI: "mongodb://kie:123@127.0.0.1:27017/kie"}}
+	err = session.Init()
+	assert.NoError(t, err)
+	d, err := label.CreateLabel(context.TODO(), "default",
+		map[string]string{
+			"cluster":   "a",
+			"role":      "b",
+			"component": "c",
+		}, "default")
+	assert.NoError(t, err)
+	assert.NotEmpty(t, d.ID)
+	assert.Equal(t, "cluster=a::component=c::role=b", d.Format)
+	t.Log(d)
+
+	id, err := label.Exist(context.TODO(), "default", "default", map[string]string{
+		"cluster":   "a",
+		"role":      "b",
+		"component": "c",
+	})
+	assert.NoError(t, err)
+	assert.NotEmpty(t, id)
 }

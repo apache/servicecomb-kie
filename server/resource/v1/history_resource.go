@@ -36,14 +36,24 @@ type HistoryResource struct {
 //GetRevisions search key only by label
 func (r *HistoryResource) GetRevisions(context *restful.Context) {
 	var err error
-	labelID := context.ReadPathParameter("key_id")
-	if labelID == "" {
+	keyID := context.ReadPathParameter("key_id")
+	limitStr := context.ReadQueryParameter("limit")
+	offsetStr := context.ReadQueryParameter("offset")
+	limit, offset, err := checkPagination(limitStr, offsetStr)
+	if err != nil {
+		WriteErrResponse(context, http.StatusBadRequest, err.Error(), common.ContentTypeText)
+		return
+	}
+	if keyID == "" {
 		openlogging.Error("key id is nil")
 		WriteErrResponse(context, http.StatusForbidden, "key_id must not be empty", common.ContentTypeText)
 		return
 	}
 	key := context.ReadQueryParameter("key")
-	revisions, err := service.HistoryService.GetHistory(context.Ctx, labelID, service.WithKey(key))
+	revisions, err := service.HistoryService.GetHistory(context.Ctx, keyID,
+		service.WithKey(key),
+		service.WithLimit(limit),
+		service.WithOffset(offset))
 	if err != nil {
 		if err == service.ErrRevisionNotExist {
 			WriteErrResponse(context, http.StatusNotFound, err.Error(), common.ContentTypeText)

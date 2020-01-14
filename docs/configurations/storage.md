@@ -20,7 +20,7 @@ you can use mongo db as kie server storage to save configuration
 ### Example
 ```yaml
 db:
-  uri: mongodb://kie:123@127.0.0.1:27017
+  uri: mongodb://kie:123@127.0.0.1:27017/kie
   poolSize: 10
   timeout:  5m
   sslEnabled: true

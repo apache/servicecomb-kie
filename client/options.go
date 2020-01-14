@@ -30,8 +30,10 @@ type OpOption func(*OpOptions)
 //GetOptions is the options of client func
 type GetOptions struct {
 	Labels  []map[string]string
-	Depth   int
 	Project string
+	Key     string
+	Wait    string
+	Exact   bool
 }
 
 //OpOptions is the options of client func
@@ -48,17 +50,31 @@ func WithLabels(l ...map[string]string) GetOption {
 	}
 }
 
-//WithDepth query keys with partial match query labels
-func WithDepth(d int) GetOption {
-	return func(options *GetOptions) {
-		options.Depth = d
-	}
-}
-
 //WithGetProject query keys with certain project
 func WithGetProject(project string) GetOption {
 	return func(options *GetOptions) {
 		options.Project = project
+	}
+}
+
+//WithExact means label exact match
+func WithExact() GetOption {
+	return func(options *GetOptions) {
+		options.Exact = true
+	}
+}
+
+//WithWait is for long polling,format is 1s,2m
+func WithWait(duration string) GetOption {
+	return func(options *GetOptions) {
+		options.Wait = duration
+	}
+}
+
+//WithKey query keys with certain key
+func WithKey(k string) GetOption {
+	return func(options *GetOptions) {
+		options.Key = k
 	}
 }
 

@@ -15,31 +15,25 @@
  * limitations under the License.
  */
 
-package common
+package stringutil_test
 
-//match mode
-const (
-	QueryParamQ      = "q"
-	QueryByLabelsCon = "&"
-	QueryParamWait   = "wait"
-	QueryParamRev    = "revision"
-	QueryParamMatch  = "match"
-	QueryParamKeyID  = "kv_id"
-	QueryLimit       = "limit"
-	QueryOffset      = "offset"
+import (
+	"github.com/apache/servicecomb-kie/pkg/stringutil"
+	"github.com/stretchr/testify/assert"
+	"testing"
 )
 
-//http headers
-const (
-	HeaderDepth       = "X-Depth"
-	HeaderRevision    = "X-Kie-Revision"
-	HeaderContentType = "Content-Type"
-	HeaderAccept      = "Accept"
-)
-
-//ContentType
-const (
-	ContentTypeText = "application/text"
-	ContentTypeJSON = "application/json"
-	ContentTypeYaml = "text/yaml"
-)
+func TestFormat(t *testing.T) {
+	s := stringutil.FormatMap(map[string]string{
+		"service": "a",
+		"version": "1",
+	})
+	s2 := stringutil.FormatMap(map[string]string{
+		"version": "1",
+		"service": "a",
+	})
+	t.Log(s)
+	assert.Equal(t, s, s2)
+	s3 := stringutil.FormatMap(nil)
+	assert.Equal(t, "none", s3)
+}

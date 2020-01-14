@@ -1,6 +1,6 @@
 db:
   #uri: mongodb://rwuser:xxx@x.x.x.x:8635/test?authSource=admin
-  uri: mongodb://kie:123@127.0.0.1:27017
+  uri: mongodb://kie:123@127.0.0.1:27017/kie
   type: mongodb
   poolSize: 10
   timeout:  5m

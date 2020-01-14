@@ -31,6 +31,12 @@ import (
 	"github.com/go-mesh/openlogging"
 )
 
+//const
+const (
+	existKvLimit  = 2
+	existKvOffset = 0
+)
+
 //Service operate data in mongodb
 type Service struct {
 	timeout time.Duration
@@ -111,7 +117,11 @@ func (s *Service) Exist(ctx context.Context, domain, key string, project string,
 		return kvs[0], nil
 	}
 	kvs, err := s.FindKV(ctx, domain, project,
-		service.WithExactLabels(), service.WithLabels(opts.Labels), service.WithKey(key))
+		service.WithExactLabels(),
+		service.WithLabels(opts.Labels),
+		service.WithKey(key),
+		service.WithLimit(existKvLimit),
+		service.WithOffset(existKvOffset))
 	if err != nil {
 		openlogging.Error(err.Error())
 		return nil, err
@@ -147,7 +157,7 @@ func (s *Service) Delete(ctx context.Context, kvID string, domain string, projec
 }
 
 //List get kv list by key and criteria
-func (s *Service) List(ctx context.Context, domain, project string, limit, offset int, options ...service.FindOption) (*model.KVResponse, error) {
+func (s *Service) List(ctx context.Context, domain, project string, options ...service.FindOption) (*model.KVResponse, error) {
 	opts := service.NewDefaultFindOpts()
 	for _, o := range options {
 		o(&opts)

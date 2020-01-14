@@ -21,8 +21,10 @@ package model
 type LabelDoc struct {
 	ID      string            `json:"id,omitempty" bson:"id,omitempty" yaml:"id,omitempty" swag:"string"`
 	Labels  map[string]string `json:"labels,omitempty" yaml:"labels,omitempty"`
+	Format  string            `bson:"format,omitempty"`
 	Domain  string            `json:"domain,omitempty" yaml:"domain,omitempty"` //tenant info
 	Project string            `json:"project,omitempty" yaml:"project,omitempty"`
+	Alias   string            `json:"alias,omitempty" yaml:"alias,omitempty"`
 }
 
 //KVDoc is database struct to store kv

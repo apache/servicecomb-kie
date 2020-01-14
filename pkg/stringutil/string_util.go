@@ -15,32 +15,31 @@
  * limitations under the License.
  */
 
-package client_test
+package stringutil
 
 import (
-	"testing"
-
-	"github.com/go-chassis/paas-lager"
-	"github.com/go-mesh/openlogging"
-	. "github.com/onsi/ginkgo"
-	"github.com/onsi/ginkgo/reporters"
-	. "github.com/onsi/gomega"
-	"os"
+	"sort"
+	"strings"
 )
 
-func TestClient(t *testing.T) {
-	RegisterFailHandler(Fail)
-	junitReporter := reporters.NewJUnitReporter("junit.xml")
-	RunSpecsWithDefaultAndCustomReporters(t, "Client Suite", []Reporter{junitReporter})
+//FormatMap format map to string
+func FormatMap(m map[string]string) string {
+	if len(m) == 0 {
+		return "none"
+	}
+	sb := strings.Builder{}
+	s := make([]string, 0, len(m))
+	for k := range m {
+		s = append(s, k)
+	}
+	sort.Strings(s)
+	for i, k := range s {
+		sb.WriteString(k)
+		sb.WriteString("=")
+		sb.WriteString(m[k])
+		if i != (len(s) - 1) {
+			sb.WriteString("::")
+		}
+	}
+	return sb.String()
 }
-
-var _ = BeforeSuite(func() {
-	log.Init(log.Config{
-		Writers:     []string{"stdout"},
-		LoggerLevel: "DEBUG",
-	})
-
-	logger := log.NewLogger("ut")
-	openlogging.SetLogger(logger)
-	os.Setenv("HTTP_DEBUG", "1")
-})

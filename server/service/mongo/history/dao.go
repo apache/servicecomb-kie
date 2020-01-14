@@ -27,11 +27,18 @@ import (
 	"go.mongodb.org/mongo-driver/mongo/options"
 )
 
-func getHistoryByKeyID(ctx context.Context, filter bson.M) ([]*model.KVDoc, error) {
+func getHistoryByKeyID(ctx context.Context, filter bson.M, limit, offset int64) ([]*model.KVDoc, error) {
 	collection := session.GetDB().Collection(session.CollectionKVRevision)
-	cur, err := collection.Find(ctx, filter, options.Find().SetSort(map[string]interface{}{
+	opt := options.Find().SetSort(map[string]interface{}{
 		"revision": -1,
-	}))
+	})
+	if limit != 0 {
+		opt = opt.SetLimit(limit)
+	}
+	if offset != 0 {
+		opt = opt.SetSkip(offset)
+	}
+	cur, err := collection.Find(ctx, filter, opt)
 	if err != nil {
 		return nil, err
 	}

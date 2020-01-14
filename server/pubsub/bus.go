@@ -19,6 +19,7 @@ package pubsub
 
 import (
 	"encoding/json"
+	"github.com/apache/servicecomb-kie/pkg/stringutil"
 	"github.com/apache/servicecomb-kie/server/config"
 	"github.com/go-mesh/openlogging"
 	"github.com/hashicorp/serf/cmd/serf/command/agent"
@@ -104,7 +105,7 @@ func Publish(event *KVChangeEvent) error {
 
 //ObserveOnce observe key changes by (key or labels) or (key and labels)
 func ObserveOnce(o *Observer, topic *Topic) error {
-	topic.Format()
+	topic.LabelsFormat = stringutil.FormatMap(topic.Labels)
 	b, err := json.Marshal(topic)
 	if err != nil {
 		return err

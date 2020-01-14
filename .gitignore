@@ -21,4 +21,5 @@ release
 etc/data/
 etc/ssl/
 tmp/
+conf/
 glide.lock

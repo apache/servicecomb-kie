@@ -89,6 +89,18 @@ var (
 		ParamType: goRestful.QueryParameterKind,
 		Desc:      "label pairs,for example &label=service:order&label=version:1.0.0",
 	}
+	DocQueryLimitParameters = &restful.Parameters{
+		DataType:  "string",
+		Name:      common.QueryLimit,
+		ParamType: goRestful.QueryParameterKind,
+		Desc:      "limit,for example &limit=10",
+	}
+	DocQueryOffsetParameters = &restful.Parameters{
+		DataType:  "string",
+		Name:      common.QueryOffset,
+		ParamType: goRestful.QueryParameterKind,
+		Desc:      "offset,for example &offset=10",
+	}
 )
 
 //swagger doc path params
