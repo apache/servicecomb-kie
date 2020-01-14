@@ -26,7 +26,6 @@ import (
 	"github.com/apache/servicecomb-kie/server/service/mongo/history"
 	"github.com/apache/servicecomb-kie/server/service/mongo/session"
 	"github.com/go-mesh/openlogging"
-	uuid "github.com/satori/go.uuid"
 	"go.mongodb.org/mongo-driver/bson"
 	"go.mongodb.org/mongo-driver/mongo"
 )
@@ -37,7 +36,7 @@ import (
 func createKey(ctx context.Context, kv *model.KVDoc) (*model.KVDoc, error) {
 	collection := session.GetDB().Collection(session.CollectionKV)
 	var err error
-	kv.ID = uuid.NewV4().String()
+	generateId(kv)
 	revision, err := counter.ApplyRevision(ctx)
 	if err != nil {
 		openlogging.Error(err.Error())

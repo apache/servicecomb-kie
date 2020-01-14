@@ -20,6 +20,7 @@ package kv
 import (
 	"context"
 	"github.com/apache/servicecomb-kie/server/service"
+	uuid "github.com/satori/go.uuid"
 
 	"github.com/apache/servicecomb-kie/pkg/model"
 	"github.com/go-mesh/openlogging"
@@ -67,4 +68,16 @@ func cursorToOneKV(ctx context.Context, cur *mongo.Cursor, labels map[string]str
 
 	}
 	return nil, service.ErrKeyNotExists
+}
+
+//generate unique id by key, labelID and project
+func generateId(kv *model.KVDoc) {
+	kv.ID = nameUUID(kv.Domain, kv.Key, kv.LabelID, kv.Project).String()
+}
+func nameUUID(salts ...string) (id uuid.UUID) {
+	base, _ := uuid.FromString("f5394eef-e576-4709-9e4b-a7c231bd34a4")
+	for _, salt := range salts {
+		base = uuid.NewV5(base, salt)
+	}
+	return base
 }
