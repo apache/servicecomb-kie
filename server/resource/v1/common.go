@@ -18,9 +18,9 @@
 package v1
 
 import (
+	"context"
 	"encoding/json"
 	"errors"
-	"fmt"
 	"github.com/apache/servicecomb-kie/server/pubsub"
 	"github.com/apache/servicecomb-kie/server/service"
 	uuid "github.com/satori/go.uuid"
@@ -30,8 +30,6 @@ import (
 	"time"
 
 	"github.com/apache/servicecomb-kie/pkg/common"
-	"github.com/apache/servicecomb-kie/pkg/model"
-
 	goRestful "github.com/emicklei/go-restful"
 	"github.com/go-chassis/go-chassis/server/restful"
 	"github.com/go-mesh/openlogging"
@@ -46,7 +44,14 @@ const (
 		"label can not be duplicated, please check query parameters"
 	MsgIllegalDepth     = "X-Depth must be number"
 	MsgInvalidWait      = "wait param should be formed with number and time unit like 5s,100ms, and less than 5m"
+	MsgInvalidRev       = "revision param should be formed with number greater than 0"
 	ErrKvIDMustNotEmpty = "must supply kv id if you want to remove key"
+
+	MaxWait = 5 * time.Minute
+)
+
+var (
+	ErrInvalidRev = errors.New(MsgInvalidRev)
 )
 
 //ReadDomain get domain info from attribute
@@ -103,12 +108,6 @@ func WriteErrResponse(context *restful.Context, status int, msg, contentType str
 
 }
 
-//InfoLog record info
-func InfoLog(action string, kv *model.KVDoc) {
-	openlogging.Info(
-		fmt.Sprintf("[%s] [%s] success", action, kv.Key))
-}
-
 func readRequest(ctx *restful.Context, v interface{}) error {
 	if ctx.ReadHeader(common.HeaderContentType) == common.ContentTypeYaml {
 		return yaml.NewDecoder(ctx.ReadRequest().Body).Decode(v)
@@ -132,11 +131,13 @@ func writeResponse(ctx *restful.Context, v interface{}) error {
 	}
 	return ctx.WriteJSON(v, goRestful.MIME_JSON) // json is default
 }
-
-//GetLabels parse labels
-func GetLabels(labelsSlice []string) (map[string]string, error) {
-	labels := make(map[string]string, len(labelsSlice))
-	for _, v := range labelsSlice {
+func getLabels(rctx *restful.Context) (map[string]string, error) {
+	labelSlice := rctx.Req.QueryParameters("label")
+	if len(labelSlice) == 0 {
+		return nil, nil
+	}
+	labels := make(map[string]string, len(labelSlice))
+	for _, v := range labelSlice {
 		v := strings.Split(v, ":")
 		if len(v) != 2 {
 			return nil, errors.New(MsgIllegalLabels)
@@ -145,45 +146,46 @@ func GetLabels(labelsSlice []string) (map[string]string, error) {
 	}
 	return labels, nil
 }
-func getWaitDuration(rctx *restful.Context) string {
-	wait := rctx.ReadQueryParameter(common.QueryParamWait)
-	if wait == "" {
-		wait = "0s"
+func isRevised(ctx context.Context, revStr string) (bool, error) {
+	rev, err := strconv.ParseInt(revStr, 10, 64)
+	if err != nil {
+		return false, ErrInvalidRev
 	}
-	return wait
-}
-func getRevision(rctx *restful.Context) string {
-	rev := rctx.ReadQueryParameter(common.QueryParamRev)
-	if rev == "" {
-		rev = "0"
+	latest, err := service.RevisionService.GetRevision(ctx)
+	if err != nil {
+		return false, err
 	}
-	return rev
+	if latest > rev {
+		return true, nil
+	}
+	return false, nil
 }
 func getMatchPattern(rctx *restful.Context) string {
 	m := rctx.ReadQueryParameter(common.QueryParamMatch)
-
 	if m != "" && m != PatternExact {
 		return ""
 	}
 	return m
 }
-func wait(d time.Duration, rctx *restful.Context, topic *pubsub.Topic) bool {
-	changed := true
-	if d != 0 {
-		o := &pubsub.Observer{
-			UUID:      uuid.NewV4().String(),
-			RemoteIP:  rctx.ReadRequest().RemoteAddr, //TODO x forward ip
-			UserAgent: rctx.ReadHeader("User-Agent"),
-			Event:     make(chan *pubsub.KVChangeEvent, 1),
-		}
-		pubsub.ObserveOnce(o, topic)
-		select {
-		case <-time.After(d):
-			changed = false
-		case <-o.Event:
-		}
+func eventHappened(rctx *restful.Context, waitStr string, topic *pubsub.Topic) (bool, error) {
+	d, err := time.ParseDuration(waitStr)
+	if err != nil || d > MaxWait {
+		return false, errors.New(MsgInvalidWait)
 	}
-	return changed
+	happened := true
+	o := &pubsub.Observer{
+		UUID:      uuid.NewV4().String(),
+		RemoteIP:  rctx.ReadRequest().RemoteAddr, //TODO x forward ip
+		UserAgent: rctx.ReadHeader("User-Agent"),
+		Event:     make(chan *pubsub.KVChangeEvent, 1),
+	}
+	pubsub.ObserveOnce(o, topic)
+	select {
+	case <-time.After(d):
+		happened = false
+	case <-o.Event:
+	}
+	return happened, nil
 }
 func checkPagination(limitStr, offsetStr string) (int64, int64, error) {
 	var err error
@@ -226,6 +228,12 @@ func queryAndResponse(rctx *restful.Context,
 		WriteErrResponse(rctx, http.StatusInternalServerError, err.Error(), common.ContentTypeText)
 		return
 	}
+	rev, err := service.RevisionService.GetRevision(rctx.Ctx)
+	if err != nil {
+		WriteErrResponse(rctx, http.StatusInternalServerError, err.Error(), common.ContentTypeText)
+		return
+	}
+	rctx.ReadResponseWriter().Header().Set(common.HeaderRevision, strconv.FormatInt(rev, 10))
 	err = writeResponse(rctx, kv)
 	if err != nil {
 		openlogging.Error(err.Error())

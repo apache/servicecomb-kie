@@ -20,16 +20,14 @@ package v1
 
 import (
 	"fmt"
-	"github.com/apache/servicecomb-kie/server/pubsub"
-	"net/http"
-	"time"
-
 	"github.com/apache/servicecomb-kie/pkg/common"
 	"github.com/apache/servicecomb-kie/pkg/model"
+	"github.com/apache/servicecomb-kie/server/pubsub"
 	"github.com/apache/servicecomb-kie/server/service"
 	goRestful "github.com/emicklei/go-restful"
 	"github.com/go-chassis/go-chassis/server/restful"
 	"github.com/go-mesh/openlogging"
+	"net/http"
 )
 
 //KVResource has API about kv operations
@@ -49,6 +47,7 @@ func (r *KVResource) Put(context *restful.Context) {
 	domain := ReadDomain(context)
 	if domain == nil {
 		WriteErrResponse(context, http.StatusInternalServerError, MsgDomainMustNotBeEmpty, common.ContentTypeText)
+		return
 	}
 	kv.Key = key
 	kv.Domain = domain.(string)
@@ -69,7 +68,8 @@ func (r *KVResource) Put(context *restful.Context) {
 	if err != nil {
 		openlogging.Warn("lost kv change event:" + err.Error())
 	}
-	InfoLog("put", kv)
+	openlogging.Info(
+		fmt.Sprintf("put [%s] success", kv.Key))
 	err = writeResponse(context, kv)
 	if err != nil {
 		openlogging.Error(err.Error())
@@ -86,41 +86,17 @@ func (r *KVResource) GetByKey(rctx *restful.Context) {
 		return
 	}
 	project := rctx.ReadPathParameter("project")
-	labelSlice := rctx.Req.QueryParameters("label")
-	var labels map[string]string
-	if len(labelSlice) != 0 {
-		labels, err = GetLabels(labelSlice)
-		if err != nil {
-			WriteErrResponse(rctx, http.StatusBadRequest, MsgIllegalLabels, common.ContentTypeText)
-			return
-		}
+	labels, err := getLabels(rctx)
+	if err != nil {
+		WriteErrResponse(rctx, http.StatusBadRequest, MsgIllegalLabels, common.ContentTypeText)
+		return
 	}
 	domain := ReadDomain(rctx)
 	if domain == nil {
 		WriteErrResponse(rctx, http.StatusInternalServerError, MsgDomainMustNotBeEmpty, common.ContentTypeText)
 		return
 	}
-	waitStr := getWaitDuration(rctx)
-	d, err := time.ParseDuration(waitStr)
-	if err != nil || d > 5*time.Minute {
-		WriteErrResponse(rctx, http.StatusBadRequest, MsgInvalidWait, common.ContentTypeText)
-		return
-	}
-	if d == 0 {
-		queryAndResponse(rctx, domain, project, key, labels, 0, 0)
-		return
-	}
-	changed := wait(d, rctx, &pubsub.Topic{
-		Key:      key,
-		Labels:   labels,
-		Project:  project,
-		DomainID: domain.(string),
-	})
-	if changed {
-		queryAndResponse(rctx, domain, project, key, labels, 0, 0)
-		return
-	}
-	rctx.WriteHeader(http.StatusNotModified)
+	returnData(rctx, domain, project, labels, 0, 0)
 }
 
 //List TODO pagination
@@ -132,14 +108,10 @@ func (r *KVResource) List(rctx *restful.Context) {
 		WriteErrResponse(rctx, http.StatusInternalServerError, MsgDomainMustNotBeEmpty, common.ContentTypeText)
 		return
 	}
-	labelSlice := rctx.Req.QueryParameters("label")
-	var labels map[string]string
-	if len(labelSlice) != 0 {
-		labels, err = GetLabels(labelSlice)
-		if err != nil {
-			WriteErrResponse(rctx, http.StatusBadRequest, MsgIllegalLabels, common.ContentTypeText)
-			return
-		}
+	labels, err := getLabels(rctx)
+	if err != nil {
+		WriteErrResponse(rctx, http.StatusBadRequest, err.Error(), common.ContentTypeText)
+		return
 	}
 	limitStr := rctx.ReadPathParameter("limit")
 	offsetStr := rctx.ReadPathParameter("offset")
@@ -148,27 +120,64 @@ func (r *KVResource) List(rctx *restful.Context) {
 		WriteErrResponse(rctx, http.StatusBadRequest, err.Error(), common.ContentTypeText)
 		return
 	}
-	waitStr := getWaitDuration(rctx)
-	d, err := time.ParseDuration(waitStr)
-	if err != nil || d > 5*time.Minute {
-		WriteErrResponse(rctx, http.StatusBadRequest, MsgInvalidWait, common.ContentTypeText)
-		return
-	}
-	if d == 0 {
-		queryAndResponse(rctx, domain, project, "", labels, int(limit), int(offset))
-		return
-	}
-	changed := wait(d, rctx, &pubsub.Topic{
-		Labels:   labels,
-		Project:  project,
-		DomainID: domain.(string),
-	})
-	if changed {
-		queryAndResponse(rctx, domain, project, "", labels, int(limit), int(offset))
-		return
-	}
-	rctx.WriteHeader(http.StatusNotModified)
+	returnData(rctx, domain, project, labels, limit, offset)
+}
 
+func returnData(rctx *restful.Context, domain interface{}, project string, labels map[string]string, limit int64, offset int64) {
+	revStr := rctx.ReadQueryParameter(common.QueryParamRev)
+	wait := rctx.ReadQueryParameter(common.QueryParamWait)
+	if revStr == "" {
+		if wait == "" {
+			queryAndResponse(rctx, domain, project, "", labels, int(limit), int(offset))
+			return
+		}
+		changed, err := eventHappened(rctx, wait, &pubsub.Topic{
+			Labels:   labels,
+			Project:  project,
+			DomainID: domain.(string),
+		})
+		if err != nil {
+			WriteErrResponse(rctx, http.StatusBadRequest, err.Error(), common.ContentTypeText)
+			return
+		}
+		if changed {
+			queryAndResponse(rctx, domain, project, "", labels, int(limit), int(offset))
+			return
+		}
+		rctx.WriteHeader(http.StatusNotModified)
+	} else {
+		revised, err := isRevised(rctx.Ctx, revStr)
+		if err != nil {
+			if err == ErrInvalidRev {
+				WriteErrResponse(rctx, http.StatusBadRequest, err.Error(), common.ContentTypeText)
+				return
+			}
+			WriteErrResponse(rctx, http.StatusInternalServerError, err.Error(), common.ContentTypeText)
+			return
+		}
+		if revised {
+			queryAndResponse(rctx, domain, project, "", labels, int(limit), int(offset))
+			return
+		} else if wait != "" {
+			changed, err := eventHappened(rctx, wait, &pubsub.Topic{
+				Labels:   labels,
+				Project:  project,
+				DomainID: domain.(string),
+			})
+			if err != nil {
+				WriteErrResponse(rctx, http.StatusBadRequest, err.Error(), common.ContentTypeText)
+				return
+			}
+			if changed {
+				queryAndResponse(rctx, domain, project, "", labels, int(limit), int(offset))
+				return
+			}
+			rctx.WriteHeader(http.StatusNotModified)
+			return
+		} else {
+			rctx.WriteHeader(http.StatusNotModified)
+		}
+	}
 }
 
 //Search search key only by label
@@ -279,7 +288,7 @@ func (r *KVResource) URLPatterns() []restful.Route {
 			ResourceFunc: r.GetByKey,
 			FuncDesc:     "get key values by key and labels",
 			Parameters: []*restful.Parameters{
-				DocPathProject, DocPathKey, DocQueryLabelParameters, DocQueryMatch,
+				DocPathProject, DocPathKey, DocQueryLabelParameters, DocQueryMatch, DocQueryRev,
 			},
 			Returns: []*restful.Returns{
 				{
