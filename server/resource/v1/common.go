@@ -212,7 +212,7 @@ func checkPagination(limitStr, offsetStr string) (int64, int64, error) {
 	return limit, offset, err
 }
 func queryAndResponse(rctx *restful.Context,
-	domain interface{}, project string, key string, labels map[string]string, limit, offset int) {
+	domain interface{}, project string, key string, labels map[string]string, limit, offset int64) {
 	m := getMatchPattern(rctx)
 	opts := []service.FindOption{service.WithKey(key), service.WithLabels(labels)}
 	if m == PatternExact {

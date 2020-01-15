@@ -81,7 +81,7 @@ func TestService_CreateOrUpdate(t *testing.T) {
 			Project: "test",
 		})
 		assert.NoError(t, err)
-		kvs1, err := kvsvc.FindKV(context.Background(), "default", "test", service.WithKey("timeout"), service.WithLabels(map[string]string{
+		kvs1, err := kvsvc.FindKV(context.Background(), "default", "test", 10, 0, service.WithKey("timeout"), service.WithLabels(map[string]string{
 			"app": "mall",
 		}), service.WithExactLabels())
 		assert.Equal(t, beforeKV.Value, kvs1[0].Data[0].Value)
@@ -99,7 +99,7 @@ func TestService_CreateOrUpdate(t *testing.T) {
 			"app": "mall",
 		}))
 		assert.Equal(t, beforeKV.ID, savedKV.ID)
-		kvs, err := kvsvc.FindKV(context.Background(), "default", "test", service.WithKey("timeout"), service.WithLabels(map[string]string{
+		kvs, err := kvsvc.FindKV(context.Background(), "default", "test", 10, 0, service.WithKey("timeout"), service.WithLabels(map[string]string{
 			"app": "mall",
 		}), service.WithExactLabels())
 		assert.Equal(t, afterKV.Value, kvs[0].Data[0].Value)
@@ -110,7 +110,7 @@ func TestService_CreateOrUpdate(t *testing.T) {
 func TestService_FindKV(t *testing.T) {
 	kvsvc := &kv.Service{}
 	t.Run("exact find by kv and labels with label app", func(t *testing.T) {
-		kvs, err := kvsvc.FindKV(context.Background(), "default", "test",
+		kvs, err := kvsvc.FindKV(context.Background(), "default", "test", 10, 0,
 			service.WithKey("timeout"),
 			service.WithLabels(map[string]string{
 				"app": "mall",
@@ -120,7 +120,7 @@ func TestService_FindKV(t *testing.T) {
 		assert.Equal(t, 1, len(kvs))
 	})
 	t.Run("greedy find by labels,with labels app ans service ", func(t *testing.T) {
-		kvs, err := kvsvc.FindKV(context.Background(), "default", "test", service.WithLabels(map[string]string{
+		kvs, err := kvsvc.FindKV(context.Background(), "default", "test", 10, 0, service.WithLabels(map[string]string{
 			"app":     "mall",
 			"service": "cart",
 		}))
