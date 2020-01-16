@@ -27,7 +27,7 @@ import (
 )
 
 func init() {
-	config.Configurations = &config.Config{DB: config.DB{URI: "mongodb://kie:123@127.0.0.1:27017"}}
+	config.Configurations = &config.Config{DB: config.DB{URI: "mongodb://kie:123@127.0.0.1:27017/kie"}}
 	_ = session.Init()
 }
 

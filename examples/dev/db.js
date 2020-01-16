@@ -48,3 +48,4 @@ db.createCollection( "kv", {
 } );
 db.kv.createIndex({"id": 1}, { unique: true } );
 db.kv.createIndex({key: 1, label_id: 1,domain:1,project:1},{ unique: true });
+db.setProfilingLevel(1, {slowms: 80, sampleRate: 1} );
