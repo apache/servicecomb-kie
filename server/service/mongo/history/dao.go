@@ -31,7 +31,7 @@ func getHistoryByKeyID(ctx context.Context, filter bson.M, limit, offset int64) 
 	collection := session.GetDB().Collection(session.CollectionKVRevision)
 	cur, err := collection.Find(ctx, filter, options.Find().SetSort(map[string]interface{}{
 		"revision": -1,
-	}).SetSkip(offset*limit).SetLimit(limit))
+	}).SetSkip(offset).SetLimit(limit))
 	if err != nil {
 		return nil, err
 	}

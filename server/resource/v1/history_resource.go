@@ -50,7 +50,10 @@ func (r *HistoryResource) GetRevisions(context *restful.Context) {
 		return
 	}
 	key := context.ReadQueryParameter("key")
-	revisions, err := service.HistoryService.GetHistory(context.Ctx, labelID, limit, offset, service.WithKey(key))
+	revisions, err := service.HistoryService.GetHistory(context.Ctx, labelID,
+		service.WithKey(key),
+		service.WithLimit(limit),
+		service.WithOffset(offset))
 	if err != nil {
 		if err == service.ErrRevisionNotExist {
 			WriteErrResponse(context, http.StatusNotFound, err.Error(), common.ContentTypeText)

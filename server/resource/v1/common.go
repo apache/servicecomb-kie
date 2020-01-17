@@ -214,12 +214,16 @@ func checkPagination(limitStr, offsetStr string) (int64, int64, error) {
 func queryAndResponse(rctx *restful.Context,
 	domain interface{}, project string, key string, labels map[string]string, limit, offset int64) {
 	m := getMatchPattern(rctx)
-	opts := []service.FindOption{service.WithKey(key), service.WithLabels(labels)}
+	opts := []service.FindOption{
+		service.WithKey(key),
+		service.WithLabels(labels),
+		service.WithLimit(limit),
+		service.WithOffset(offset),
+	}
 	if m == PatternExact {
 		opts = append(opts, service.WithExactLabels())
 	}
-	kv, err := service.KVService.List(rctx.Ctx, domain.(string), project,
-		limit, offset, opts...)
+	kv, err := service.KVService.List(rctx.Ctx, domain.(string), project, opts...)
 	if err != nil {
 		if err == service.ErrKeyNotExists {
 			WriteErrResponse(rctx, http.StatusNotFound, err.Error(), common.ContentTypeText)

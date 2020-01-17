@@ -209,7 +209,9 @@ func (r *KVResource) Search(context *restful.Context) {
 		return
 	}
 	if labelCombinations == nil {
-		result, err := service.KVService.FindKV(context.Ctx, domain.(string), project, limit, offset)
+		result, err := service.KVService.FindKV(context.Ctx, domain.(string), project,
+			service.WithLimit(limit),
+			service.WithOffset(offset))
 		if err != nil {
 			openlogging.Error("can not find by labels", openlogging.WithTags(openlogging.Tags{
 				"err": err.Error(),
@@ -223,7 +225,10 @@ func (r *KVResource) Search(context *restful.Context) {
 		openlogging.Debug("find by combination", openlogging.WithTags(openlogging.Tags{
 			"q": labels,
 		}))
-		result, err := service.KVService.FindKV(context.Ctx, domain.(string), project, limit, offset, service.WithLabels(labels))
+		result, err := service.KVService.FindKV(context.Ctx, domain.(string), project,
+			service.WithLabels(labels),
+			service.WithLimit(limit),
+			service.WithOffset(offset))
 		if err != nil {
 			if err == service.ErrKeyNotExists {
 				continue

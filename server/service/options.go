@@ -38,6 +38,8 @@ type FindOptions struct {
 	LabelID     string
 	ClearLabel  bool
 	Timeout     time.Duration
+	Limit       int64
+	Offset      int64
 }
 
 //FindOption is functional option to find key value
@@ -89,5 +91,19 @@ func WithDepth(d int) FindOption {
 func WithOutLabelField() FindOption {
 	return func(o *FindOptions) {
 		o.ClearLabel = true
+	}
+}
+
+//WithLimit tells service paging limit
+func WithLimit(l int64) FindOption {
+	return func(o *FindOptions) {
+		o.Limit = l
+	}
+}
+
+//WithOffset tells service paging offset
+func WithOffset(os int64) FindOption {
+	return func(o *FindOptions) {
+		o.Offset = os
 	}
 }

@@ -31,6 +31,12 @@ import (
 	"github.com/go-mesh/openlogging"
 )
 
+//const
+const (
+	existKvLimit  = 2
+	existKvOffset = 0
+)
+
 //Service operate data in mongodb
 type Service struct {
 	timeout time.Duration
@@ -110,8 +116,12 @@ func (s *Service) Exist(ctx context.Context, domain, key string, project string,
 		}
 		return kvs[0], nil
 	}
-	kvs, err := s.FindKV(ctx, domain, project, 2, 0,
-		service.WithExactLabels(), service.WithLabels(opts.Labels), service.WithKey(key))
+	kvs, err := s.FindKV(ctx, domain, project,
+		service.WithExactLabels(),
+		service.WithLabels(opts.Labels),
+		service.WithKey(key),
+		service.WithLimit(existKvLimit),
+		service.WithOffset(existKvOffset))
 	if err != nil {
 		openlogging.Error(err.Error())
 		return nil, err
@@ -147,12 +157,12 @@ func (s *Service) Delete(ctx context.Context, kvID string, domain string, projec
 }
 
 //List get kv list by key and criteria
-func (s *Service) List(ctx context.Context, domain, project string, limit, offset int64, options ...service.FindOption) (*model.KVResponse, error) {
+func (s *Service) List(ctx context.Context, domain, project string, options ...service.FindOption) (*model.KVResponse, error) {
 	opts := service.NewDefaultFindOpts()
 	for _, o := range options {
 		o(&opts)
 	}
-	cur, err := findKV(ctx, domain, project, opts, limit, offset)
+	cur, err := findKV(ctx, domain, project, opts)
 	if err != nil {
 		return nil, err
 	}
@@ -181,7 +191,7 @@ func (s *Service) List(ctx context.Context, domain, project string, limit, offse
 //FindKV get kvs by key, labels
 //because labels has a a lot of combination,
 //you can use WithDepth(0) to return only one kv which's labels exactly match the criteria
-func (s *Service) FindKV(ctx context.Context, domain string, project string, limit, offset int64, options ...service.FindOption) ([]*model.KVResponse, error) {
+func (s *Service) FindKV(ctx context.Context, domain string, project string, options ...service.FindOption) ([]*model.KVResponse, error) {
 	opts := service.FindOptions{}
 	for _, o := range options {
 		o(&opts)
@@ -196,7 +206,7 @@ func (s *Service) FindKV(ctx context.Context, domain string, project string, lim
 		return nil, session.ErrMissingProject
 	}
 
-	cur, err := findKV(ctx, domain, project, opts, limit, offset)
+	cur, err := findKV(ctx, domain, project, opts)
 	if err != nil {
 		return nil, err
 	}
