@@ -205,7 +205,7 @@ func checkPagination(limitStr, offsetStr string) (int64, int64, error) {
 		if err != nil {
 			return 0, 0, errors.New("invalid offset number")
 		}
-		if offset < 1 {
+		if offset < 0 {
 			return 0, 0, errors.New("invalid offset number")
 		}
 	}

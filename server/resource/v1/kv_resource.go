@@ -96,8 +96,8 @@ func (r *KVResource) GetByKey(rctx *restful.Context) {
 		WriteErrResponse(rctx, http.StatusInternalServerError, MsgDomainMustNotBeEmpty, common.ContentTypeText)
 		return
 	}
-	limitStr := rctx.ReadPathParameter("limit")
-	offsetStr := rctx.ReadPathParameter("offset")
+	limitStr := rctx.ReadQueryParameter("limit")
+	offsetStr := rctx.ReadQueryParameter("offset")
 	limit, offset, err := checkPagination(limitStr, offsetStr)
 	if err != nil {
 		WriteErrResponse(rctx, http.StatusBadRequest, err.Error(), common.ContentTypeText)
@@ -119,8 +119,8 @@ func (r *KVResource) List(rctx *restful.Context) {
 		WriteErrResponse(rctx, http.StatusBadRequest, err.Error(), common.ContentTypeText)
 		return
 	}
-	limitStr := rctx.ReadPathParameter("limit")
-	offsetStr := rctx.ReadPathParameter("offset")
+	limitStr := rctx.ReadQueryParameter("limit")
+	offsetStr := rctx.ReadQueryParameter("offset")
 	limit, offset, err := checkPagination(limitStr, offsetStr)
 	if err != nil {
 		WriteErrResponse(rctx, http.StatusBadRequest, err.Error(), common.ContentTypeText)
@@ -201,8 +201,8 @@ func (r *KVResource) Search(context *restful.Context) {
 		return
 	}
 	var kvs []*model.KVResponse
-	limitStr := context.ReadPathParameter("limit")
-	offsetStr := context.ReadPathParameter("offset")
+	limitStr := context.ReadQueryParameter("limit")
+	offsetStr := context.ReadQueryParameter("offset")
 	limit, offset, err := checkPagination(limitStr, offsetStr)
 	if err != nil {
 		WriteErrResponse(context, http.StatusBadRequest, err.Error(), common.ContentTypeText)

@@ -28,12 +28,6 @@ import (
 	"testing"
 )
 
-//const
-const (
-	defaultLimit  = 10
-	defaultOffset = 0
-)
-
 func TestService_CreateOrUpdate(t *testing.T) {
 	var err error
 	config.Configurations = &config.Config{DB: config.DB{URI: "mongodb://kie:123@127.0.0.1:27017/kie"}}
@@ -92,9 +86,7 @@ func TestService_CreateOrUpdate(t *testing.T) {
 			service.WithLabels(map[string]string{
 				"app": "mall",
 			}),
-			service.WithExactLabels(),
-			service.WithLimit(defaultLimit),
-			service.WithOffset(defaultOffset))
+			service.WithExactLabels())
 		assert.Equal(t, beforeKV.Value, kvs1[0].Data[0].Value)
 		afterKV, err := kvsvc.CreateOrUpdate(context.Background(), &model.KVDoc{
 			Key:   "timeout",
@@ -115,9 +107,7 @@ func TestService_CreateOrUpdate(t *testing.T) {
 			service.WithLabels(map[string]string{
 				"app": "mall",
 			}),
-			service.WithExactLabels(),
-			service.WithLimit(defaultLimit),
-			service.WithOffset(defaultOffset))
+			service.WithExactLabels())
 		assert.Equal(t, afterKV.Value, kvs[0].Data[0].Value)
 	})
 
@@ -131,9 +121,7 @@ func TestService_FindKV(t *testing.T) {
 			service.WithLabels(map[string]string{
 				"app": "mall",
 			}),
-			service.WithExactLabels(),
-			service.WithLimit(defaultLimit),
-			service.WithOffset(defaultOffset))
+			service.WithExactLabels())
 		assert.NoError(t, err)
 		assert.Equal(t, 1, len(kvs))
 	})
@@ -142,9 +130,7 @@ func TestService_FindKV(t *testing.T) {
 			service.WithLabels(map[string]string{
 				"app":     "mall",
 				"service": "cart",
-			}),
-			service.WithLimit(defaultLimit),
-			service.WithOffset(defaultOffset))
+			}))
 		assert.NoError(t, err)
 		assert.Equal(t, 1, len(kvs))
 	})

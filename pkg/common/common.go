@@ -25,6 +25,8 @@ const (
 	QueryParamRev    = "revision"
 	QueryParamMatch  = "match"
 	QueryParamKeyID  = "kv_id"
+	QueryLimit       = "limit"
+	QueryOffset      = "offset"
 )
 
 //http headers
