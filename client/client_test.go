@@ -54,6 +54,24 @@ func TestClient_Put(t *testing.T) {
 	_, err = c.Get(context.TODO(),
 		WithLabels(map[string]string{"service": "client"}))
 	assert.Error(t, err)
+
+	t.Run("long polling,wait 10s,change value,should return result", func(t *testing.T) {
+		go func() {
+			kvs, err = c.Get(context.TODO(),
+				WithLabels(map[string]string{"service": "client"}),
+				WithWait("10s"))
+			assert.Error(t, err)
+			assert.Equal(t, "timeout: 2s", kvs.Data[0].Value)
+		}()
+		kv := model.KVRequest{
+			Key:    "app.properties",
+			Labels: map[string]string{"service": "client"},
+			Value:  "timeout: 2s",
+		}
+		_, err := c.Put(context.TODO(), kv, WithProject("test"))
+		assert.NoError(t, err)
+	})
+
 }
 func TestClient_Delete(t *testing.T) {
 	c, err := New(Config{
