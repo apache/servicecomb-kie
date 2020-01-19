@@ -44,14 +44,16 @@ const (
 //client errors
 var (
 	ErrKeyNotExist = errors.New("can not find value")
+	ErrNoChanges   = errors.New("kv has not been changed since last polling")
 )
 
 //Client is the servicecomb kie rest client.
 //it is concurrency safe
 type Client struct {
-	opts   Config
-	cipher security.Cipher
-	c      *httpclient.Requests
+	opts            Config
+	cipher          security.Cipher
+	c               *httpclient.Requests
+	currentRevision string
 }
 
 //Config is the config of client
@@ -102,9 +104,6 @@ func (c *Client) Put(ctx context.Context, kv model.KVRequest, opts ...OpOption) 
 	}
 	b := httputil.ReadBody(resp)
 	if resp.StatusCode != http.StatusOK {
-		if resp.StatusCode == http.StatusNotFound {
-			return nil, ErrKeyNotExist
-		}
 		openlogging.Error("get failed", openlogging.WithTags(openlogging.Tags{
 			"k":      kv.Key,
 			"status": resp.Status,
@@ -123,7 +122,7 @@ func (c *Client) Put(ctx context.Context, kv model.KVRequest, opts ...OpOption) 
 }
 
 //Get get value of a key
-func (c *Client) Get(ctx context.Context, key string, opts ...GetOption) (*model.KVResponse, error) {
+func (c *Client) Get(ctx context.Context, opts ...GetOption) (*model.KVResponse, error) {
 	options := GetOptions{}
 	for _, o := range opts {
 		o(&options)
@@ -131,13 +130,26 @@ func (c *Client) Get(ctx context.Context, key string, opts ...GetOption) (*model
 	if options.Project == "" {
 		options.Project = defaultProject
 	}
+
+	var url string
+	if options.Key != "" {
+		url = fmt.Sprintf("%s/%s/%s/%s/%s?revision=%s", c.opts.Endpoint, version, options.Project, APIPathKV, options.Key, c.currentRevision)
+	} else {
+		url = fmt.Sprintf("%s/%s/%s/%s?revision=%s", c.opts.Endpoint, version, options.Project, APIPathKV, c.currentRevision)
+	}
+	if options.Wait != "" {
+		url = url + "&wait=" + options.Wait
+	}
+	if options.Exact {
+		url = url + "&" + common.QueryParamMatch + "=exact"
+	}
 	labels := ""
 	if len(options.Labels) != 0 {
 		for k, v := range options.Labels[0] {
-			labels = labels + k + ":" + v + ","
+			labels = labels + "&label=" + k + ":" + v
 		}
+		url = url + labels
 	}
-	url := fmt.Sprintf("%s/%s/%s/%s/%s?label=%s", c.opts.Endpoint, version, options.Project, APIPathKV, key, strings.TrimSuffix(labels, ","))
 	h := http.Header{}
 	resp, err := c.c.Do(ctx, "GET", url, h, nil)
 	if err != nil {
@@ -148,12 +160,15 @@ func (c *Client) Get(ctx context.Context, key string, opts ...GetOption) (*model
 		if resp.StatusCode == http.StatusNotFound {
 			return nil, ErrKeyNotExist
 		}
+		if resp.StatusCode == http.StatusNotModified {
+			return nil, ErrNoChanges
+		}
 		openlogging.Error("get failed", openlogging.WithTags(openlogging.Tags{
-			"k":      key,
+			"k":      options.Key,
 			"status": resp.Status,
 			"body":   b,
 		}))
-		return nil, fmt.Errorf("get %s failed,http status [%s], body [%s]", key, resp.Status, b)
+		return nil, fmt.Errorf("get %s failed,http status [%s], body [%s]", options.Key, resp.Status, b)
 	}
 	var kvs *model.KVResponse
 	err = json.Unmarshal(b, &kvs)
@@ -161,11 +176,12 @@ func (c *Client) Get(ctx context.Context, key string, opts ...GetOption) (*model
 		openlogging.Error("unmarshal kv failed:" + err.Error())
 		return nil, err
 	}
+	c.currentRevision = resp.Header.Get(common.HeaderRevision)
 	return kvs, nil
 }
 
-//Search get value by labels
-func (c *Client) Search(ctx context.Context, opts ...GetOption) ([]*model.KVResponse, error) {
+//Summary get value by labels
+func (c *Client) Summary(ctx context.Context, opts ...GetOption) ([]*model.KVResponse, error) {
 	options := GetOptions{}
 	for _, o := range opts {
 		o(&options)
@@ -173,21 +189,21 @@ func (c *Client) Search(ctx context.Context, opts ...GetOption) ([]*model.KVResp
 	if options.Project == "" {
 		options.Project = defaultProject
 	}
-	lableReq := ""
+	labelParams := ""
 	for _, labels := range options.Labels {
-		lableReq += common.QueryParamQ + "="
+		labelParams += common.QueryParamQ + "="
 		for labelKey, labelValue := range labels {
-			lableReq += labelKey + ":" + labelValue + "+"
+			labelParams += labelKey + ":" + labelValue + "+"
 		}
 		if labels != nil && len(labels) > 0 {
-			lableReq = strings.TrimRight(lableReq, "+")
+			labelParams = strings.TrimRight(labelParams, "+")
 		}
-		lableReq += common.QueryByLabelsCon
+		labelParams += common.QueryByLabelsCon
 	}
 	if options.Labels != nil && len(options.Labels) > 0 {
-		lableReq = strings.TrimRight(lableReq, common.QueryByLabelsCon)
+		labelParams = strings.TrimRight(labelParams, common.QueryByLabelsCon)
 	}
-	url := fmt.Sprintf("%s/%s/%s/%s?%s", c.opts.Endpoint, version, options.Project, "kie/summary", lableReq)
+	url := fmt.Sprintf("%s/%s/%s/%s?%s", c.opts.Endpoint, version, options.Project, "kie/summary", labelParams)
 	h := http.Header{}
 	resp, err := c.c.Do(ctx, "GET", url, h, nil)
 	if err != nil {
@@ -203,7 +219,7 @@ func (c *Client) Search(ctx context.Context, opts ...GetOption) ([]*model.KVResp
 			"status": resp.Status,
 			"body":   b,
 		}))
-		return nil, fmt.Errorf("search %s failed,http status [%s], body [%s]", lableReq, resp.Status, b)
+		return nil, fmt.Errorf("search %s failed,http status [%s], body [%s]", labelParams, resp.Status, b)
 	}
 	var kvs []*model.KVResponse
 	err = json.Unmarshal(b, &kvs)

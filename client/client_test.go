@@ -19,123 +19,95 @@ package client_test
 
 import (
 	"context"
+	"github.com/stretchr/testify/assert"
 	"os"
+	"testing"
 
 	. "github.com/apache/servicecomb-kie/client"
 	"github.com/apache/servicecomb-kie/pkg/model"
-	. "github.com/onsi/ginkgo"
-	. "github.com/onsi/gomega"
 )
 
-var _ = Describe("Client", func() {
-	var c1 *Client
+func TestClient_Put(t *testing.T) {
 	os.Setenv("HTTP_DEBUG", "1")
-	Describe("new client ", func() {
-		Context("with http protocol", func() {
-			var err error
-			c1, err = New(Config{
-				Endpoint: "http://127.0.0.1:8081",
-			})
-			It("should not return err", func() {
-				Expect(err).Should(BeNil())
-			})
-			It("should return client", func() {
-				Expect(c1).ShouldNot(BeNil())
-			})
+	c, _ := New(Config{
+		Endpoint: "http://127.0.0.1:30110",
+	})
+	kv := model.KVRequest{
+		Key:    "app.properties",
+		Labels: map[string]string{"service": "client"},
+		Value:  "timeout: 1s",
+	}
+	_, err := c.Put(context.TODO(), kv, WithProject("test"))
+	assert.NoError(t, err)
 
-		})
+	kvs, _ := c.Get(context.TODO(),
+		WithKey("app.properties"),
+		WithGetProject("test"),
+		WithLabels(map[string]string{"service": "client"}))
+	assert.GreaterOrEqual(t, len(kvs.Data), 1)
+
+	_, err = c.Get(context.TODO(),
+		WithGetProject("test"),
+		WithLabels(map[string]string{"service": "client"}))
+	assert.Equal(t, ErrNoChanges, err)
+
+	_, err = c.Get(context.TODO(),
+		WithLabels(map[string]string{"service": "client"}))
+	assert.Error(t, err)
+
+	t.Run("long polling,wait 10s,change value,should return result", func(t *testing.T) {
+		go func() {
+			kvs, err = c.Get(context.TODO(),
+				WithLabels(map[string]string{"service": "client"}),
+				WithGetProject("test"),
+				WithWait("10s"))
+			assert.NoError(t, err)
+			assert.Equal(t, "timeout: 2s", kvs.Data[0].Value)
+		}()
+		kv := model.KVRequest{
+			Key:    "app.properties",
+			Labels: map[string]string{"service": "client"},
+			Value:  "timeout: 2s",
+		}
+		_, err := c.Put(context.TODO(), kv, WithProject("test"))
+		assert.NoError(t, err)
+	})
+	t.Run("exact match", func(t *testing.T) {
+		kv := model.KVRequest{
+			Key:    "app.properties",
+			Labels: map[string]string{"service": "client", "version": "1.0"},
+			Value:  "timeout: 2s",
+		}
+		_, err := c.Put(context.TODO(), kv, WithProject("test"))
+		assert.NoError(t, err)
+		kvs, err = c.Get(context.TODO(),
+			WithGetProject("test"),
+			WithLabels(map[string]string{"service": "client"}),
+			WithExact())
+		assert.NoError(t, err)
+		assert.Equal(t, 1, len(kvs.Data))
 	})
 
-	Describe("get ", func() {
-		Context("only by key with default project", func() {
-			_, err := c1.Get(context.TODO(), "app.properties")
-			It("should be 404 error", func() {
-				Expect(err).Should(Equal(ErrKeyNotExist))
-			})
-
-		})
-		Context("by key and labels", func() {
-			_, err := c1.Get(context.TODO(), "app.properties", WithLabels(map[string]string{
-				"app": "mall",
-			}))
-			It("should be 404 error", func() {
-				Expect(err).Should(Equal(ErrKeyNotExist))
-			})
-
-		})
-
-		Context("by project", func() {
-			_, err := c1.Get(context.TODO(), "app.properties", WithGetProject("test"))
-			It("should be 404 error", func() {
-				Expect(err).Should(Equal(ErrKeyNotExist))
-			})
-		})
+}
+func TestClient_Delete(t *testing.T) {
+	c, err := New(Config{
+		Endpoint: "http://127.0.0.1:30110",
 	})
 
-	Describe("put /v1/{project}/kie/kv/{key}", func() {
-		Context("create or update key value", func() {
-			c1, _ = New(Config{
-				Endpoint: "http://127.0.0.1:30110",
-			})
-			kv := model.KVRequest{
-				Key:    "app.properties",
-				Labels: map[string]string{"service": "tester"},
-				Value:  "1s",
-			}
-			res, err := c1.Put(context.TODO(), kv, WithProject("test"))
-			It("should not be error", func() {
-				Expect(err).Should(BeNil())
-			})
-			It("should return the exact content passed", func() {
-				Expect(res.Key).Should(Equal(kv.Key))
-				Expect(res.Labels).Should(Equal(kv.Labels))
-				Expect(res.Value).Should(Equal(kv.Value))
-				Expect(res.Project).Should(Equal(""))
-				Expect(res.Domain).Should(Equal(""))
-			})
-			kvs, _ := c1.Get(context.TODO(), "app.properties",
-				WithGetProject("test"), WithLabels(map[string]string{"service": "tester"}))
-			It("should exactly 1 kv", func() {
-				Expect(kvs).Should(Not(BeNil()))
-			})
-		})
-	})
-
-	Describe("DELETE /v1/{project}/kie/kv/", func() {
-		Context("by kvID", func() {
-			client2, err := New(Config{
-				Endpoint: "http://127.0.0.1:30110",
-			})
-
-			kvBody := model.KVRequest{}
-			kvBody.Key = "time"
-			kvBody.Value = "100s"
-			kvBody.ValueType = "text"
-			kvBody.Labels = make(map[string]string)
-			kvBody.Labels["env"] = "test"
-			kv, err := client2.Put(context.TODO(), kvBody, WithProject("test"))
-			It("should not be error", func() {
-				Ω(err).ShouldNot(HaveOccurred())
-				Expect(kv.Key).To(Equal(kvBody.Key))
-				Expect(kv.Value).To(Equal(kvBody.Value))
-				Expect(kv.Labels).To(Equal(kvBody.Labels))
-				Expect(kv.Project).To(Equal(""))
-				Expect(kv.Domain).To(Equal(""))
-			})
-			kvs, err := client2.Get(context.TODO(), "time",
-				WithGetProject("test"), WithLabels(map[string]string{"env": "test"}))
-			It("should return exactly 1 kv", func() {
-				Expect(kvs).Should(Not(BeNil()))
-				Expect(err).Should(BeNil())
-			})
-			client3, err := New(Config{
-				Endpoint: "http://127.0.0.1:30110",
-			})
-			It("should be 204", func() {
-				err := client3.Delete(context.TODO(), kv.ID, "", WithProject("test"))
-				Ω(err).ShouldNot(HaveOccurred())
-			})
-		})
-	})
-
-})
+	kvBody := model.KVRequest{}
+	kvBody.Key = "time"
+	kvBody.Value = "100s"
+	kvBody.ValueType = "text"
+	kvBody.Labels = make(map[string]string)
+	kvBody.Labels["env"] = "test"
+	kv, err := c.Put(context.TODO(), kvBody, WithProject("test"))
+	assert.NoError(t, err)
+	kvs, err := c.Get(context.TODO(),
+		WithKey("time"),
+		WithGetProject("test"),
+		WithLabels(map[string]string{"env": "test"}))
+	assert.NoError(t, err)
+	assert.NotNil(t, kvs)
+	err = c.Delete(context.TODO(), kv.ID, "", WithProject("test"))
+	assert.NoError(t, err)
+}
