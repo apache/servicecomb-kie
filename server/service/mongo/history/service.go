@@ -40,5 +40,5 @@ func (s *Service) GetHistory(ctx context.Context, kvID string, options ...servic
 		"id": kvID,
 	}
 
-	return getHistoryByKeyID(ctx, filter)
+	return getHistoryByKeyID(ctx, filter, opts.Limit, opts.Offset)
 }

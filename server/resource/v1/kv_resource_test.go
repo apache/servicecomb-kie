@@ -56,7 +56,7 @@ func init() {
 		ListenPeerAddr: "127.0.0.1:4000",
 		AdvertiseAddr:  "127.0.0.1:4000",
 	}
-	config.Configurations.DB.URI = "mongodb://kie:123@127.0.0.1:27017"
+	config.Configurations.DB.URI = "mongodb://kie:123@127.0.0.1:27017/kie"
 	err := service.DBInit()
 	if err != nil {
 		panic(err)
@@ -219,6 +219,40 @@ func TestKVResource_List(t *testing.T) {
 		c.ServeHTTP(resp, r)
 		duration := time.Since(start)
 		t.Log(duration)
+	})
+	t.Run("list kv by service label offset, should return 1kv", func(t *testing.T) {
+		r, _ := http.NewRequest("GET", "/v1/test/kie/kv?label=service:utService&offset=1", nil)
+		noopH := &handler2.NoopAuthHandler{}
+		chain, _ := handler.CreateChain(common.Provider, "testchain1", noopH.Name())
+		r.Header.Set("Content-Type", "application/json")
+		kvr := &v1.KVResource{}
+		c, err := restfultest.New(kvr, chain)
+		assert.NoError(t, err)
+		resp := httptest.NewRecorder()
+		c.ServeHTTP(resp, r)
+		body, err := ioutil.ReadAll(resp.Body)
+		assert.NoError(t, err)
+		result := &model.KVResponse{}
+		err = json.Unmarshal(body, result)
+		assert.NoError(t, err)
+		assert.Equal(t, 1, len(result.Data))
+	})
+	t.Run("list kv by service label limit, should return 1kv", func(t *testing.T) {
+		r, _ := http.NewRequest("GET", "/v1/test/kie/kv?label=service:utService&limit=1", nil)
+		noopH := &handler2.NoopAuthHandler{}
+		chain, _ := handler.CreateChain(common.Provider, "testchain1", noopH.Name())
+		r.Header.Set("Content-Type", "application/json")
+		kvr := &v1.KVResource{}
+		c, err := restfultest.New(kvr, chain)
+		assert.NoError(t, err)
+		resp := httptest.NewRecorder()
+		c.ServeHTTP(resp, r)
+		body, err := ioutil.ReadAll(resp.Body)
+		assert.NoError(t, err)
+		result := &model.KVResponse{}
+		err = json.Unmarshal(body, result)
+		assert.NoError(t, err)
+		assert.Equal(t, 1, len(result.Data))
 	})
 }
 func TestKVResource_GetByKey(t *testing.T) {

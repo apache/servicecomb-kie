@@ -30,7 +30,7 @@ import (
 
 func TestService_CreateOrUpdate(t *testing.T) {
 	var err error
-	config.Configurations = &config.Config{DB: config.DB{URI: "mongodb://kie:123@127.0.0.1:27017"}}
+	config.Configurations = &config.Config{DB: config.DB{URI: "mongodb://kie:123@127.0.0.1:27017/kie"}}
 	err = session.Init()
 	assert.NoError(t, err)
 	kvsvc := &kv.Service{}
@@ -81,9 +81,12 @@ func TestService_CreateOrUpdate(t *testing.T) {
 			Project: "test",
 		})
 		assert.NoError(t, err)
-		kvs1, err := kvsvc.FindKV(context.Background(), "default", "test", service.WithKey("timeout"), service.WithLabels(map[string]string{
-			"app": "mall",
-		}), service.WithExactLabels())
+		kvs1, err := kvsvc.FindKV(context.Background(), "default", "test",
+			service.WithKey("timeout"),
+			service.WithLabels(map[string]string{
+				"app": "mall",
+			}),
+			service.WithExactLabels())
 		assert.Equal(t, beforeKV.Value, kvs1[0].Data[0].Value)
 		afterKV, err := kvsvc.CreateOrUpdate(context.Background(), &model.KVDoc{
 			Key:   "timeout",
@@ -99,9 +102,12 @@ func TestService_CreateOrUpdate(t *testing.T) {
 			"app": "mall",
 		}))
 		assert.Equal(t, beforeKV.ID, savedKV.ID)
-		kvs, err := kvsvc.FindKV(context.Background(), "default", "test", service.WithKey("timeout"), service.WithLabels(map[string]string{
-			"app": "mall",
-		}), service.WithExactLabels())
+		kvs, err := kvsvc.FindKV(context.Background(), "default", "test",
+			service.WithKey("timeout"),
+			service.WithLabels(map[string]string{
+				"app": "mall",
+			}),
+			service.WithExactLabels())
 		assert.Equal(t, afterKV.Value, kvs[0].Data[0].Value)
 	})
 
@@ -120,10 +126,11 @@ func TestService_FindKV(t *testing.T) {
 		assert.Equal(t, 1, len(kvs))
 	})
 	t.Run("greedy find by labels,with labels app ans service ", func(t *testing.T) {
-		kvs, err := kvsvc.FindKV(context.Background(), "default", "test", service.WithLabels(map[string]string{
-			"app":     "mall",
-			"service": "cart",
-		}))
+		kvs, err := kvsvc.FindKV(context.Background(), "default", "test",
+			service.WithLabels(map[string]string{
+				"app":     "mall",
+				"service": "cart",
+			}))
 		assert.NoError(t, err)
 		assert.Equal(t, 1, len(kvs))
 	})

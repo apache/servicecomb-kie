@@ -96,10 +96,16 @@ func (r *KVResource) GetByKey(rctx *restful.Context) {
 		WriteErrResponse(rctx, http.StatusInternalServerError, MsgDomainMustNotBeEmpty, common.ContentTypeText)
 		return
 	}
-	returnData(rctx, domain, project, labels, 0, 0)
+	limitStr := rctx.ReadQueryParameter("limit")
+	offsetStr := rctx.ReadQueryParameter("offset")
+	limit, offset, err := checkPagination(limitStr, offsetStr)
+	if err != nil {
+		WriteErrResponse(rctx, http.StatusBadRequest, err.Error(), common.ContentTypeText)
+		return
+	}
+	returnData(rctx, domain, project, labels, limit, offset)
 }
 
-//List TODO pagination
 func (r *KVResource) List(rctx *restful.Context) {
 	var err error
 	project := rctx.ReadPathParameter("project")
@@ -113,8 +119,8 @@ func (r *KVResource) List(rctx *restful.Context) {
 		WriteErrResponse(rctx, http.StatusBadRequest, err.Error(), common.ContentTypeText)
 		return
 	}
-	limitStr := rctx.ReadPathParameter("limit")
-	offsetStr := rctx.ReadPathParameter("offset")
+	limitStr := rctx.ReadQueryParameter("limit")
+	offsetStr := rctx.ReadQueryParameter("offset")
 	limit, offset, err := checkPagination(limitStr, offsetStr)
 	if err != nil {
 		WriteErrResponse(rctx, http.StatusBadRequest, err.Error(), common.ContentTypeText)
@@ -123,12 +129,12 @@ func (r *KVResource) List(rctx *restful.Context) {
 	returnData(rctx, domain, project, labels, limit, offset)
 }
 
-func returnData(rctx *restful.Context, domain interface{}, project string, labels map[string]string, limit int64, offset int64) {
+func returnData(rctx *restful.Context, domain interface{}, project string, labels map[string]string, limit, offset int64) {
 	revStr := rctx.ReadQueryParameter(common.QueryParamRev)
 	wait := rctx.ReadQueryParameter(common.QueryParamWait)
 	if revStr == "" {
 		if wait == "" {
-			queryAndResponse(rctx, domain, project, "", labels, int(limit), int(offset))
+			queryAndResponse(rctx, domain, project, "", labels, limit, offset)
 			return
 		}
 		changed, err := eventHappened(rctx, wait, &pubsub.Topic{
@@ -141,7 +147,7 @@ func returnData(rctx *restful.Context, domain interface{}, project string, label
 			return
 		}
 		if changed {
-			queryAndResponse(rctx, domain, project, "", labels, int(limit), int(offset))
+			queryAndResponse(rctx, domain, project, "", labels, limit, offset)
 			return
 		}
 		rctx.WriteHeader(http.StatusNotModified)
@@ -156,7 +162,7 @@ func returnData(rctx *restful.Context, domain interface{}, project string, label
 			return
 		}
 		if revised {
-			queryAndResponse(rctx, domain, project, "", labels, int(limit), int(offset))
+			queryAndResponse(rctx, domain, project, "", labels, limit, offset)
 			return
 		} else if wait != "" {
 			changed, err := eventHappened(rctx, wait, &pubsub.Topic{
@@ -169,7 +175,7 @@ func returnData(rctx *restful.Context, domain interface{}, project string, label
 				return
 			}
 			if changed {
-				queryAndResponse(rctx, domain, project, "", labels, int(limit), int(offset))
+				queryAndResponse(rctx, domain, project, "", labels, limit, offset)
 				return
 			}
 			rctx.WriteHeader(http.StatusNotModified)
@@ -195,8 +201,17 @@ func (r *KVResource) Search(context *restful.Context) {
 		return
 	}
 	var kvs []*model.KVResponse
+	limitStr := context.ReadQueryParameter("limit")
+	offsetStr := context.ReadQueryParameter("offset")
+	limit, offset, err := checkPagination(limitStr, offsetStr)
+	if err != nil {
+		WriteErrResponse(context, http.StatusBadRequest, err.Error(), common.ContentTypeText)
+		return
+	}
 	if labelCombinations == nil {
-		result, err := service.KVService.FindKV(context.Ctx, domain.(string), project)
+		result, err := service.KVService.FindKV(context.Ctx, domain.(string), project,
+			service.WithLimit(limit),
+			service.WithOffset(offset))
 		if err != nil {
 			openlogging.Error("can not find by labels", openlogging.WithTags(openlogging.Tags{
 				"err": err.Error(),
@@ -210,7 +225,10 @@ func (r *KVResource) Search(context *restful.Context) {
 		openlogging.Debug("find by combination", openlogging.WithTags(openlogging.Tags{
 			"q": labels,
 		}))
-		result, err := service.KVService.FindKV(context.Ctx, domain.(string), project, service.WithLabels(labels))
+		result, err := service.KVService.FindKV(context.Ctx, domain.(string), project,
+			service.WithLabels(labels),
+			service.WithLimit(limit),
+			service.WithOffset(offset))
 		if err != nil {
 			if err == service.ErrKeyNotExists {
 				continue

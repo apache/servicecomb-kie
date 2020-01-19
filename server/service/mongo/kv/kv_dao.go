@@ -29,6 +29,7 @@ import (
 	uuid "github.com/satori/go.uuid"
 	"go.mongodb.org/mongo-driver/bson"
 	"go.mongodb.org/mongo-driver/mongo"
+	"go.mongodb.org/mongo-driver/mongo/options"
 )
 
 //createKey get latest revision from history
@@ -111,7 +112,14 @@ func findKV(ctx context.Context, domain string, project string, opts service.Fin
 			filter["labels."+k] = v
 		}
 	}
-	cur, err := collection.Find(ctx, filter)
+	opt := options.Find()
+	if opts.Limit != 0 {
+		opt = opt.SetLimit(opts.Limit)
+	}
+	if opts.Offset != 0 {
+		opt = opt.SetSkip(opts.Offset)
+	}
+	cur, err := collection.Find(ctx, filter, opt)
 	if err != nil {
 		if err.Error() == context.DeadlineExceeded.Error() {
 			openlogging.Error("find kv failed, deadline exceeded", openlogging.WithTags(openlogging.Tags{

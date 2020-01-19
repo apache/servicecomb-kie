@@ -41,7 +41,7 @@ var (
 type KV interface {
 	//below 3 methods is usually for admin console
 	CreateOrUpdate(ctx context.Context, kv *model.KVDoc) (*model.KVDoc, error)
-	List(ctx context.Context, domain, project string, limit, offset int, options ...FindOption) (*model.KVResponse, error)
+	List(ctx context.Context, domain, project string, options ...FindOption) (*model.KVResponse, error)
 	Delete(ctx context.Context, kvID string, domain, project string) error
 	//FindKV is usually for service to pull configs
 	FindKV(ctx context.Context, domain, project string, options ...FindOption) ([]*model.KVResponse, error)

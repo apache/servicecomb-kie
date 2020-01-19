@@ -28,7 +28,7 @@ import (
 
 func TestIncreaseAndGetRevision(t *testing.T) {
 	var err error
-	config.Configurations = &config.Config{DB: config.DB{URI: "mongodb://kie:123@127.0.0.1:27017"}}
+	config.Configurations = &config.Config{DB: config.DB{URI: "mongodb://kie:123@127.0.0.1:27017/kie"}}
 	err = session.Init()
 	assert.NoError(t, err)
 	s := &counter.Service{}
