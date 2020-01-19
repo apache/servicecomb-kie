@@ -44,7 +44,7 @@ func TestClient_Put(t *testing.T) {
 		WithKey("app.properties"),
 		WithGetProject("test"),
 		WithLabels(map[string]string{"service": "client"}))
-	assert.Equal(t, 1, len(kvs.Data))
+	assert.GreaterOrEqual(t, len(kvs.Data), 1)
 
 	_, err = c.Get(context.TODO(),
 		WithGetProject("test"),
@@ -59,8 +59,9 @@ func TestClient_Put(t *testing.T) {
 		go func() {
 			kvs, err = c.Get(context.TODO(),
 				WithLabels(map[string]string{"service": "client"}),
+				WithGetProject("test"),
 				WithWait("10s"))
-			assert.Error(t, err)
+			assert.NoError(t, err)
 			assert.Equal(t, "timeout: 2s", kvs.Data[0].Value)
 		}()
 		kv := model.KVRequest{
@@ -70,6 +71,21 @@ func TestClient_Put(t *testing.T) {
 		}
 		_, err := c.Put(context.TODO(), kv, WithProject("test"))
 		assert.NoError(t, err)
+	})
+	t.Run("exact match", func(t *testing.T) {
+		kv := model.KVRequest{
+			Key:    "app.properties",
+			Labels: map[string]string{"service": "client", "version": "1.0"},
+			Value:  "timeout: 2s",
+		}
+		_, err := c.Put(context.TODO(), kv, WithProject("test"))
+		assert.NoError(t, err)
+		kvs, err = c.Get(context.TODO(),
+			WithGetProject("test"),
+			WithLabels(map[string]string{"service": "client"}),
+			WithExact())
+		assert.NoError(t, err)
+		assert.Equal(t, 1, len(kvs.Data))
 	})
 
 }

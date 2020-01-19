@@ -33,6 +33,7 @@ type GetOptions struct {
 	Project string
 	Key     string
 	Wait    string
+	Exact   bool
 }
 
 //OpOptions is the options of client func
@@ -53,6 +54,13 @@ func WithLabels(l ...map[string]string) GetOption {
 func WithGetProject(project string) GetOption {
 	return func(options *GetOptions) {
 		options.Project = project
+	}
+}
+
+//WithExact means label exact match
+func WithExact() GetOption {
+	return func(options *GetOptions) {
+		options.Exact = true
 	}
 }
 

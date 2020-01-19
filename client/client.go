@@ -140,6 +140,9 @@ func (c *Client) Get(ctx context.Context, opts ...GetOption) (*model.KVResponse,
 	if options.Wait != "" {
 		url = url + "&wait=" + options.Wait
 	}
+	if options.Exact {
+		url = url + "&" + common.QueryParamMatch + "=exact"
+	}
 	labels := ""
 	if len(options.Labels) != 0 {
 		for k, v := range options.Labels[0] {
