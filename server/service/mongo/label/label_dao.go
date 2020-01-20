@@ -21,6 +21,7 @@ import (
 	"context"
 	"fmt"
 	"github.com/apache/servicecomb-kie/pkg/model"
+	"github.com/apache/servicecomb-kie/pkg/stringutil"
 	"github.com/apache/servicecomb-kie/server/service/mongo/session"
 	"github.com/go-mesh/openlogging"
 	uuid "github.com/satori/go.uuid"
@@ -35,17 +36,10 @@ const (
 //if map is empty. will return default labels doc which has no labels
 func FindLabels(ctx context.Context, domain, project string, labels map[string]string) (*model.LabelDoc, error) {
 	collection := session.GetDB().Collection(session.CollectionLabel)
-
 	filter := bson.M{"domain": domain, "project": project}
-	for k, v := range labels {
-		filter["labels."+k] = v
-	}
-	if len(labels) == 0 {
-		filter["labels"] = defaultLabels //allow key without labels
-	}
+	filter["format"] = stringutil.FormatMap(labels) //allow key without labels
 	cur, err := collection.Find(ctx, filter)
 	if err != nil {
-
 		return nil, err
 	}
 	defer cur.Close(ctx)
@@ -94,6 +88,7 @@ func CreateLabel(ctx context.Context, domain string, labels map[string]string, p
 	l := &model.LabelDoc{
 		Domain:  domain,
 		Labels:  labels,
+		Format:  stringutil.FormatMap(labels),
 		Project: project,
 		ID:      uuid.NewV4().String(),
 	}
