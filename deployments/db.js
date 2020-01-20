@@ -46,6 +46,32 @@ db.createCollection( "kv", {
             }
         } }
 } );
+
+db.createCollection( "label", {
+    validator: { $jsonSchema: {
+            bsonType: "object",
+            required: [ "id","domain","project","format" ],
+            properties: {
+                label_id: {
+                    bsonType: "string",
+                },
+                domain: {
+                    bsonType: "string"
+                },
+                project: {
+                    bsonType: "string"
+                },
+                alias: {
+                    bsonType: "string"
+                }
+            }
+        } }
+} );
+
+//index
 db.kv.createIndex({"id": 1}, { unique: true } );
 db.kv.createIndex({key: 1, label_id: 1,domain:1,project:1},{ unique: true });
+db.label.createIndex({"id": 1}, { unique: true } );
+db.label.createIndex({format: 1,domain:1,project:1},{ unique: true });
+//db config
 db.setProfilingLevel(1, {slowms: 80, sampleRate: 1} );

@@ -20,7 +20,6 @@ package pubsub
 import (
 	"encoding/json"
 	"errors"
-	"sort"
 	"strings"
 )
 
@@ -86,26 +85,6 @@ func (t *Topic) Match(event *KVChangeEvent) bool {
 		match = true
 	}
 	return match
-}
-
-//Format format to string
-func (t *Topic) Format() string {
-	sb := strings.Builder{}
-	s := make([]string, 0, len(t.Labels))
-	for k := range t.Labels {
-		s = append(s, k)
-	}
-	sort.Strings(s)
-	for i, k := range s {
-		sb.WriteString(k)
-		sb.WriteString("=")
-		sb.WriteString(t.Labels[k])
-		if i != (len(s) - 1) {
-			sb.WriteString("::")
-		}
-	}
-	t.LabelsFormat = sb.String()
-	return t.LabelsFormat
 }
 
 //Observer represents a client polling request

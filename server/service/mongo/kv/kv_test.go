@@ -101,6 +101,7 @@ func TestService_CreateOrUpdate(t *testing.T) {
 		savedKV, err := kvsvc.Exist(context.Background(), "default", "timeout", "test", service.WithLabels(map[string]string{
 			"app": "mall",
 		}))
+		assert.NoError(t, err)
 		assert.Equal(t, beforeKV.ID, savedKV.ID)
 		kvs, err := kvsvc.FindKV(context.Background(), "default", "test",
 			service.WithKey("timeout"),
