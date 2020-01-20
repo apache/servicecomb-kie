@@ -34,4 +34,6 @@ func TestFormat(t *testing.T) {
 	})
 	t.Log(s)
 	assert.Equal(t, s, s2)
+	s3 := stringutil.FormatMap(nil)
+	assert.Equal(t, "none", s3)
 }

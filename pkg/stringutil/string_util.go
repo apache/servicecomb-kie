@@ -24,6 +24,9 @@ import (
 
 //FormatMap format map to string
 func FormatMap(m map[string]string) string {
+	if len(m) == 0 {
+		return "none"
+	}
 	sb := strings.Builder{}
 	s := make([]string, 0, len(m))
 	for k := range m {
