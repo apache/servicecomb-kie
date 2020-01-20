@@ -26,7 +26,7 @@ services:
       MONGO_INITDB_ROOT_USERNAME: kie
       MONGO_INITDB_ROOT_PASSWORD: 123
     volumes:
-      - ./db.js:/docker-entrypoint-initdb.d/db.js:ro
+      - ../db.js:/docker-entrypoint-initdb.d/db.js:ro
   mongo-express:
     image: mongo-express
     restart: always
