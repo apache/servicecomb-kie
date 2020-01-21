@@ -19,20 +19,27 @@
 package v1
 
 import (
+	"encoding/json"
 	"fmt"
 	"github.com/apache/servicecomb-kie/pkg/common"
 	"github.com/apache/servicecomb-kie/pkg/model"
 	"github.com/apache/servicecomb-kie/server/pubsub"
 	"github.com/apache/servicecomb-kie/server/service"
+	"github.com/apache/servicecomb-kie/server/service/mongo/record"
 	goRestful "github.com/emicklei/go-restful"
 	"github.com/go-chassis/go-chassis/server/restful"
 	"github.com/go-mesh/openlogging"
+	uuid "github.com/satori/go.uuid"
 	"net/http"
+	"sync"
 )
 
 //KVResource has API about kv operations
 type KVResource struct {
 }
+
+//Wg for record polling data
+var Wg sync.WaitGroup
 
 //Put create or update kv
 func (r *KVResource) Put(context *restful.Context) {
@@ -130,9 +137,11 @@ func (r *KVResource) List(rctx *restful.Context) {
 	returnData(rctx, domain, project, labels, limit, offset)
 }
 
+//
 func returnData(rctx *restful.Context, domain interface{}, project string, labels map[string]string, limit, offset int64) {
 	revStr := rctx.ReadQueryParameter(common.QueryParamRev)
 	wait := rctx.ReadQueryParameter(common.QueryParamWait)
+	go RecordPollingDetail(rctx, revStr, wait, domain.(string), project, labels, limit, offset)
 	if revStr == "" {
 		if wait == "" {
 			queryAndResponse(rctx, domain, project, "", labels, limit, offset)
@@ -186,6 +195,37 @@ func returnData(rctx *restful.Context, domain interface{}, project string, label
 		} else {
 			rctx.WriteHeader(http.StatusNotModified)
 		}
+	}
+}
+
+//RecordPollingDetail to record data after get or list
+func RecordPollingDetail(context *restful.Context, revStr, wait, domain, project string, labels map[string]string, limit, offset int64) {
+	Wg.Add(1)
+	data := &model.PollingDetail{}
+	data.ID = uuid.NewV4().String()
+	data.IP = ClientIP(context.Req.Request)
+	dataMap := map[string]interface{}{
+		"revStr":  revStr,
+		"wait":    wait,
+		"domain":  domain,
+		"project": project,
+		"labels":  labels,
+		"limit":   limit,
+		"offset":  offset,
+	}
+	data.PollingData = dataMap
+	data.UserAgent = context.Req.HeaderParameter("User-Agent")
+	data.URLPath = context.ReadRequest().Method + " " + context.ReadRequest().URL.Path
+	Wg.Wait()
+	respHeader, _ := json.Marshal(context.Resp.Header())
+	data.ResponseHeader = string(respHeader)
+	data.ResponseCode = context.Resp.StatusCode()
+	//todo : get the response body data is private
+	//data.ResponseBody = context.Resp
+	_, err := record.CreateRecord(context.Ctx, data)
+	if err != nil {
+		openlogging.Warn("record polling detail failed" + err.Error())
+		return
 	}
 }
 

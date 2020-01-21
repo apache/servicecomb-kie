@@ -42,13 +42,14 @@ import (
 const (
 	DBName = "kie"
 
-	CollectionLabel      = "label"
-	CollectionKV         = "kv"
-	CollectionKVRevision = "kv_revision"
-	CollectionCounter    = "counter"
-	CollectionView       = "view"
-	DefaultTimeout       = 5 * time.Second
-	DefaultValueType     = "text"
+	CollectionLabel         = "label"
+	CollectionKV            = "kv"
+	CollectionKVRevision    = "kv_revision"
+	CollectionPollingDetail = "polling_detail"
+	CollectionCounter       = "counter"
+	CollectionView          = "view"
+	DefaultTimeout          = 5 * time.Second
+	DefaultValueType        = "text"
 )
 
 //db errors

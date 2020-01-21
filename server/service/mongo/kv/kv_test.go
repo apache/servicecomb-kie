@@ -28,6 +28,7 @@ import (
 	"testing"
 )
 
+//
 func TestService_CreateOrUpdate(t *testing.T) {
 	var err error
 	config.Configurations = &config.Config{DB: config.DB{URI: "mongodb://kie:123@127.0.0.1:27017/kie"}}
@@ -43,7 +44,7 @@ func TestService_CreateOrUpdate(t *testing.T) {
 				"service": "cart",
 			},
 			Domain:  "default",
-			Project: "test",
+			Project: "kv-test",
 		})
 		assert.NoError(t, err)
 		assert.NotEmpty(t, kv.ID)
@@ -58,9 +59,9 @@ func TestService_CreateOrUpdate(t *testing.T) {
 				"version": "1.0.0",
 			},
 			Domain:  "default",
-			Project: "test",
+			Project: "kv-test",
 		})
-		oid, err := kvsvc.Exist(context.TODO(), "default", "timeout", "test", service.WithLabels(map[string]string{
+		oid, err := kvsvc.Exist(context.TODO(), "default", "timeout", "kv-test", service.WithLabels(map[string]string{
 			"app":     "mall",
 			"service": "cart",
 			"version": "1.0.0",
@@ -78,10 +79,10 @@ func TestService_CreateOrUpdate(t *testing.T) {
 				"app": "mall",
 			},
 			Domain:  "default",
-			Project: "test",
+			Project: "kv-test",
 		})
 		assert.NoError(t, err)
-		kvs1, err := kvsvc.FindKV(context.Background(), "default", "test",
+		kvs1, err := kvsvc.FindKV(context.Background(), "default", "kv-test",
 			service.WithKey("timeout"),
 			service.WithLabels(map[string]string{
 				"app": "mall",
@@ -95,15 +96,15 @@ func TestService_CreateOrUpdate(t *testing.T) {
 				"app": "mall",
 			},
 			Domain:  "default",
-			Project: "test",
+			Project: "kv-test",
 		})
 		assert.Equal(t, "3s", afterKV.Value)
-		savedKV, err := kvsvc.Exist(context.Background(), "default", "timeout", "test", service.WithLabels(map[string]string{
+		savedKV, err := kvsvc.Exist(context.Background(), "default", "timeout", "kv-test", service.WithLabels(map[string]string{
 			"app": "mall",
 		}))
 		assert.NoError(t, err)
 		assert.Equal(t, afterKV.Value, savedKV.Value)
-		kvs, err := kvsvc.FindKV(context.Background(), "default", "test",
+		kvs, err := kvsvc.FindKV(context.Background(), "default", "kv-test",
 			service.WithKey("timeout"),
 			service.WithLabels(map[string]string{
 				"app": "mall",
@@ -117,7 +118,7 @@ func TestService_CreateOrUpdate(t *testing.T) {
 func TestService_FindKV(t *testing.T) {
 	kvsvc := &kv.Service{}
 	t.Run("exact find by kv and labels with label app", func(t *testing.T) {
-		kvs, err := kvsvc.FindKV(context.Background(), "default", "test",
+		kvs, err := kvsvc.FindKV(context.Background(), "default", "kv-test",
 			service.WithKey("timeout"),
 			service.WithLabels(map[string]string{
 				"app": "mall",
@@ -127,7 +128,7 @@ func TestService_FindKV(t *testing.T) {
 		assert.Equal(t, 1, len(kvs))
 	})
 	t.Run("greedy find by labels,with labels app ans service ", func(t *testing.T) {
-		kvs, err := kvsvc.FindKV(context.Background(), "default", "test",
+		kvs, err := kvsvc.FindKV(context.Background(), "default", "kv-test",
 			service.WithLabels(map[string]string{
 				"app":     "mall",
 				"service": "cart",
@@ -146,20 +147,20 @@ func TestService_Delete(t *testing.T) {
 				"env": "test",
 			},
 			Domain:  "default",
-			Project: "test",
+			Project: "kv-test",
 		})
 		assert.NoError(t, err)
 
-		err = kvsvc.Delete(context.TODO(), kv1.ID, "default", "test")
+		err = kvsvc.Delete(context.TODO(), kv1.ID, "default", "kv-test")
 		assert.NoError(t, err)
 
 	})
 	t.Run("miss id", func(t *testing.T) {
-		err := kvsvc.Delete(context.TODO(), "", "default", "test")
+		err := kvsvc.Delete(context.TODO(), "", "default", "kv-test")
 		assert.Error(t, err)
 	})
 	t.Run("miss domain", func(t *testing.T) {
-		err := kvsvc.Delete(context.TODO(), "2", "", "test")
+		err := kvsvc.Delete(context.TODO(), "2", "", "kv-test")
 		assert.Equal(t, session.ErrMissingDomain, err)
 	})
 }
