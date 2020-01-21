@@ -21,12 +21,15 @@ package v1
 import (
 	"fmt"
 	"github.com/apache/servicecomb-kie/pkg/common"
+	"github.com/apache/servicecomb-kie/pkg/iputil"
 	"github.com/apache/servicecomb-kie/pkg/model"
 	"github.com/apache/servicecomb-kie/server/pubsub"
 	"github.com/apache/servicecomb-kie/server/service"
+	"github.com/apache/servicecomb-kie/server/service/mongo/record"
 	goRestful "github.com/emicklei/go-restful"
 	"github.com/go-chassis/go-chassis/server/restful"
 	"github.com/go-mesh/openlogging"
+	uuid "github.com/satori/go.uuid"
 	"net/http"
 )
 
@@ -108,13 +111,14 @@ func (r *KVResource) GetByKey(rctx *restful.Context) {
 		WriteErrResponse(rctx, http.StatusBadRequest, err.Error(), common.ContentTypeText)
 		return
 	}
+	insID := rctx.ReadHeader("instanceID")
 	statusStr := rctx.ReadQueryParameter("status")
 	status, err := checkStatus(statusStr)
 	if err != nil {
 		WriteErrResponse(rctx, http.StatusBadRequest, err.Error(), common.ContentTypeText)
 		return
 	}
-	returnData(rctx, domain, project, labels, pageNum, pageSize, status)
+	returnData(rctx, domain, project, labels, pageNum, pageSize, status, insID)
 }
 
 //List response kv list
@@ -138,18 +142,20 @@ func (r *KVResource) List(rctx *restful.Context) {
 		WriteErrResponse(rctx, http.StatusBadRequest, err.Error(), common.ContentTypeText)
 		return
 	}
+	insID := rctx.ReadHeader("instanceID")
 	statusStr := rctx.ReadQueryParameter("status")
 	status, err := checkStatus(statusStr)
 	if err != nil {
 		WriteErrResponse(rctx, http.StatusBadRequest, err.Error(), common.ContentTypeText)
 		return
 	}
-	returnData(rctx, domain, project, labels, pageNum, pageSize, status)
+	returnData(rctx, domain, project, labels, pageNum, pageSize, status, insID)
 }
 
-func returnData(rctx *restful.Context, domain interface{}, project string, labels map[string]string, pageNum, pageSize int64, status string) {
+func returnData(rctx *restful.Context, domain interface{}, project string, labels map[string]string, pageNum, pageSize int64, status, insID string) {
 	revStr := rctx.ReadQueryParameter(common.QueryParamRev)
 	wait := rctx.ReadQueryParameter(common.QueryParamWait)
+	defer RecordPollingDetail(rctx, revStr, wait, domain.(string), project, labels, pageNum, pageSize, insID)
 	if revStr == "" {
 		if wait == "" {
 			queryAndResponse(rctx, domain, project, "", labels, pageNum, pageSize, status)
@@ -203,6 +209,35 @@ func returnData(rctx *restful.Context, domain interface{}, project string, label
 		} else {
 			rctx.WriteHeader(http.StatusNotModified)
 		}
+	}
+}
+
+//RecordPollingDetail to record data after get or list
+func RecordPollingDetail(context *restful.Context, revStr, wait, domain, project string, labels map[string]string, limit, offset int64, insID string) {
+	data := &model.PollingDetail{}
+	data.ID = uuid.NewV4().String()
+	data.SessionID = insID
+	data.Domain = domain
+	data.IP = iputil.ClientIP(context.Req.Request)
+	dataMap := map[string]interface{}{
+		"revStr":  revStr,
+		"wait":    wait,
+		"domain":  domain,
+		"project": project,
+		"labels":  labels,
+		"limit":   limit,
+		"offset":  offset,
+	}
+	data.PollingData = dataMap
+	data.UserAgent = context.Req.HeaderParameter("User-Agent")
+	data.URLPath = context.ReadRequest().Method + " " + context.ReadRequest().URL.Path
+	data.ResponseHeader = context.Resp.Header()
+	data.ResponseCode = context.Resp.StatusCode()
+	//data.ResponseBody = context.Ctx.Value("responseBody")
+	_, err := record.CreateOrUpdate(context.Ctx, data)
+	if err != nil {
+		openlogging.Warn("record polling detail failed" + err.Error())
+		return
 	}
 }
 

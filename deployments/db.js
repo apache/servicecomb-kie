@@ -96,11 +96,53 @@ db.createCollection( "view", {
             }
         } }
 } );
+
+db.createCollection( "polling_detail", {
+    validator: { $jsonSchema: {
+            bsonType: "object",
+            required: [ "id","polling_date","ip","user_agent","url_path","response_body","response_header" ],
+            properties: {
+                id: {
+                    bsonType: "string",
+                },
+                session_id: {
+                    bsonType: "string",
+                },
+                domain: {
+                    bsonType: "string",
+                },
+                polling_date: {
+                    bsonType: "string"
+                },
+                ip: {
+                    bsonType: "string"
+                },
+                user_agent: {
+                    bsonType: "string"
+                },
+                url_path: {
+                    bsonType: "string"
+                },
+                response_body: {
+                    bsonType: "object"
+                },
+                response_header: {
+                    bsonType: "object"
+                },
+                response_code: {
+                    bsonType: "string"
+                }
+            }
+        } }
+} );
+
 //index
 db.kv.createIndex({"id": 1}, { unique: true } );
 db.kv.createIndex({key: 1, label_id: 1,domain:1,project:1},{ unique: true });
 db.label.createIndex({"id": 1}, { unique: true } );
 db.label.createIndex({format: 1,domain:1,project:1},{ unique: true });
+db.polling_detail.createIndex({"id": 1}, { unique: true } );
+db.polling_detail.createIndex({session:1,domain:1}, { unique: true } );
 db.view.createIndex({"id": 1}, { unique: true } );
 db.view.createIndex({display:1,domain:1,project:1},{ unique: true });
 //db config
