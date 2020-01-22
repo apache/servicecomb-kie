@@ -12,5 +12,5 @@ func (s *Service) CreateOrUpdate(ctx context.Context, label *model.LabelDoc) (*m
 	if label.ID != "" {
 		return UpdateLabel(ctx, label)
 	}
-	return CreateLabel(ctx, label.Domain, label.Labels, label.Project)
+	return CreateLabel(ctx, label)
 }

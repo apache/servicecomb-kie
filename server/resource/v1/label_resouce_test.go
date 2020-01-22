@@ -70,6 +70,6 @@ func TestLabelResource_PutLabel(t *testing.T) {
 		data := &model.LabelDoc{}
 		err = json.Unmarshal(body, &data)
 		assert.NoError(t, err)
-		//assert.NotEmpty(t, data.ID)
+		assert.NotEmpty(t, data.ID)
 	})
 }

@@ -86,20 +86,15 @@ func Exist(ctx context.Context, domain string, project string, labels map[string
 }
 
 //CreateLabel create a new label
-func CreateLabel(ctx context.Context, domain string, labels map[string]string, project string) (*model.LabelDoc, error) {
-	l := &model.LabelDoc{
-		Domain:  domain,
-		Labels:  labels,
-		Format:  stringutil.FormatMap(labels),
-		Project: project,
-		ID:      uuid.NewV4().String(),
-	}
+func CreateLabel(ctx context.Context, label *model.LabelDoc) (*model.LabelDoc, error) {
+	label.ID = uuid.NewV4().String()
+	label.Format = stringutil.FormatMap(label.Labels)
 	collection := session.GetDB().Collection(session.CollectionLabel)
-	_, err := collection.InsertOne(ctx, l)
+	_, err := collection.InsertOne(ctx, label)
 	if err != nil {
 		return nil, err
 	}
-	return l, nil
+	return label, nil
 }
 
 //UpdateLabel

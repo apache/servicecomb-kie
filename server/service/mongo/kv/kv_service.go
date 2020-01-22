@@ -56,8 +56,12 @@ func (s *Service) CreateOrUpdate(ctx context.Context, kv *model.KVDoc) (*model.K
 	labelID, err := label.Exist(ctx, kv.Domain, kv.Project, kv.Labels)
 	if err != nil {
 		if err == session.ErrLabelNotExists {
-			var l *model.LabelDoc
-			l, err = label.CreateLabel(ctx, kv.Domain, kv.Labels, kv.Project)
+			l := &model.LabelDoc{
+				Domain:  kv.Domain,
+				Labels:  kv.Labels,
+				Project: kv.Project,
+			}
+			l, err = label.CreateLabel(ctx, l)
 			if err != nil {
 				openlogging.Error("create label failed", openlogging.WithTags(openlogging.Tags{
 					"k":      kv.Key,
