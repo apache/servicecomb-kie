@@ -68,36 +68,6 @@ db.createCollection( "label", {
         } }
 } );
 
-db.createCollection( "polling_detail", {
-    validator: { $jsonSchema: {
-            bsonType: "object",
-            required: [ "id","polling_date","ip","user_agent","url_path","response_body","response_header" ],
-            properties: {
-                id: {
-                    bsonType: "string",
-                },
-                polling_date: {
-                    bsonType: "string"
-                },
-                ip: {
-                    bsonType: "string"
-                },
-                user_agent: {
-                    bsonType: "string"
-                },
-                url_path: {
-                    bsonType: "string"
-                },
-                response_body: {
-                    bsonType: "string"
-                },
-                response_header: {
-                    bsonType: "string"
-                }
-            }
-        } }
-} );
-
 //index
 db.kv.createIndex({"id": 1}, { unique: true } );
 db.kv.createIndex({key: 1, label_id: 1,domain:1,project:1},{ unique: true });
