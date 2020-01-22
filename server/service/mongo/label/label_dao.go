@@ -22,6 +22,7 @@ import (
 	"fmt"
 	"github.com/apache/servicecomb-kie/pkg/model"
 	"github.com/apache/servicecomb-kie/pkg/stringutil"
+	"github.com/apache/servicecomb-kie/server/service"
 	"github.com/apache/servicecomb-kie/server/service/mongo/session"
 	"github.com/go-mesh/openlogging"
 	uuid "github.com/satori/go.uuid"
@@ -106,7 +107,7 @@ func UpdateLabel(ctx context.Context, label *model.LabelDoc) (*model.LabelDoc, e
 	collection := session.GetDB().Collection(session.CollectionLabel)
 	queryFilter := bson.M{"id": label.ID}
 	if label.Alias == "" {
-		return nil, nil
+		return nil, service.ErrAliasNotGiven
 	}
 	updateFilter := bson.D{primitive.E{Key: "$set", Value: bson.M{"alias": label.Alias}}}
 	cur := collection.FindOneAndUpdate(ctx, queryFilter, updateFilter)

@@ -30,6 +30,7 @@ func (r *LabelResource) PutLabel(context *restful.Context) {
 		WriteErrResponse(context, http.StatusInternalServerError, MsgDomainMustNotBeEmpty, common.ContentTypeText)
 		return
 	}
+	entity.Domain = domain.(string)
 	res, err := service.LabelService.CreateOrUpdate(context.Ctx, entity)
 	if err != nil {
 		if err == service.ErrRevisionNotExist {

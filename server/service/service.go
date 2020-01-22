@@ -36,6 +36,7 @@ var (
 var (
 	ErrKeyNotExists     = errors.New("key with labels does not exits")
 	ErrRevisionNotExist = errors.New("revision does not exist")
+	ErrAliasNotGiven    = errors.New("label alias not given")
 )
 
 //KV provide api of KV entity
