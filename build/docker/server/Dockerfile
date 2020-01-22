@@ -15,7 +15,6 @@
 
 FROM ubuntu:19.04
 
-RUN apt-get update && apt-get install -y net-tools
 RUN mkdir -p /etc/servicecomb-kie/
 RUN mkdir -p /opt/servicecomb-kie/conf
 

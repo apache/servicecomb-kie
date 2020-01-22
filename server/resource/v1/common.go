@@ -146,12 +146,12 @@ func getLabels(rctx *restful.Context) (map[string]string, error) {
 	}
 	return labels, nil
 }
-func isRevised(ctx context.Context, revStr string) (bool, error) {
+func isRevised(ctx context.Context, revStr, domain string) (bool, error) {
 	rev, err := strconv.ParseInt(revStr, 10, 64)
 	if err != nil {
 		return false, ErrInvalidRev
 	}
-	latest, err := service.RevisionService.GetRevision(ctx)
+	latest, err := service.RevisionService.GetRevision(ctx, domain)
 	if err != nil {
 		return false, err
 	}
@@ -232,7 +232,7 @@ func queryAndResponse(rctx *restful.Context,
 		WriteErrResponse(rctx, http.StatusInternalServerError, err.Error(), common.ContentTypeText)
 		return
 	}
-	rev, err := service.RevisionService.GetRevision(rctx.Ctx)
+	rev, err := service.RevisionService.GetRevision(rctx.Ctx, domain.(string))
 	if err != nil {
 		WriteErrResponse(rctx, http.StatusInternalServerError, err.Error(), common.ContentTypeText)
 		return
