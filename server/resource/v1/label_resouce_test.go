@@ -18,7 +18,7 @@ import (
 	"testing"
 )
 
-func TestLabelResource_PostLabel(t *testing.T) {
+func TestLabelResource_PutLabel(t *testing.T) {
 	t.Run("update label alias", func(t *testing.T) {
 		kv := &model.KVDoc{
 			Key:   "test",
@@ -70,6 +70,6 @@ func TestLabelResource_PostLabel(t *testing.T) {
 		data := &model.LabelDoc{}
 		err = json.Unmarshal(body, &data)
 		assert.NoError(t, err)
-		assert.Equal(t, data.Labels, label.Labels)
+		assert.NotEmpty(t, data.ID)
 	})
 }
