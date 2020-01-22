@@ -22,7 +22,7 @@ you can use mongo db as kie server storage to save configuration
 db:
   uri: mongodb://kie:123@127.0.0.1:27017/kie
   poolSize: 10
-  timeout:  5m
+  timeout:  5s
   sslEnabled: true
   rootCAFile: /opt/kie/ca.crt
 ```

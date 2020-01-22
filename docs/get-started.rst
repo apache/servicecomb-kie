@@ -6,3 +6,4 @@ Get started
    :glob:
 
    getstarted/install.md
+   getstarted/verify.md

@@ -152,7 +152,7 @@ func returnData(rctx *restful.Context, domain interface{}, project string, label
 		}
 		rctx.WriteHeader(http.StatusNotModified)
 	} else {
-		revised, err := isRevised(rctx.Ctx, revStr)
+		revised, err := isRevised(rctx.Ctx, revStr, domain.(string))
 		if err != nil {
 			if err == ErrInvalidRev {
 				WriteErrResponse(rctx, http.StatusBadRequest, err.Error(), common.ContentTypeText)

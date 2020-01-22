@@ -28,7 +28,7 @@ db.createUser(
     }
 );
 db.createCollection("counter");
-db.counter.insertOne( { name:"revision_counter",count: 1 } );
+db.counter.insertOne( { name:"revision_counter",count: 1,domain:"default" } );
 db.createCollection( "kv", {
     validator: { $jsonSchema: {
             bsonType: "object",

@@ -32,9 +32,9 @@ func TestIncreaseAndGetRevision(t *testing.T) {
 	err = session.Init()
 	assert.NoError(t, err)
 	s := &counter.Service{}
-	n, _ := s.GetRevision(context.TODO())
+	n, _ := s.GetRevision(context.TODO(), "default")
 	t.Log(n)
 
-	next, _ := counter.ApplyRevision(context.TODO())
+	next, _ := counter.ApplyRevision(context.TODO(), "default")
 	assert.Equal(t, n+1, next)
 }

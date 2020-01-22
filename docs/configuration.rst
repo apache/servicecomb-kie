@@ -7,3 +7,4 @@ User guides
 
    configurations/storage
    configurations/registry
+   configurations/long_polling

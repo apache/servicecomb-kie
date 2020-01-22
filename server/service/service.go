@@ -52,7 +52,7 @@ type History interface {
 	GetHistory(ctx context.Context, keyID string, options ...FindOption) ([]*model.KVDoc, error)
 }
 type Revision interface {
-	GetRevision(ctx context.Context) (int64, error)
+	GetRevision(ctx context.Context, domain string) (int64, error)
 }
 
 //Init init db session

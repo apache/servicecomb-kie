@@ -33,9 +33,9 @@ type Service struct {
 }
 
 //GetRevision return current revision number
-func (s *Service) GetRevision(ctx context.Context) (int64, error) {
+func (s *Service) GetRevision(ctx context.Context, domain string) (int64, error) {
 	collection := session.GetDB().Collection(session.CollectionCounter)
-	filter := bson.M{"name": revision}
+	filter := bson.M{"name": revision, "domain": domain}
 	cur, err := collection.Find(ctx, filter)
 	if err != nil {
 		if err.Error() == context.DeadlineExceeded.Error() {
@@ -56,9 +56,9 @@ func (s *Service) GetRevision(ctx context.Context) (int64, error) {
 }
 
 //ApplyRevision increase revision number and return modified value
-func ApplyRevision(ctx context.Context) (int64, error) {
+func ApplyRevision(ctx context.Context, domain string) (int64, error) {
 	collection := session.GetDB().Collection(session.CollectionCounter)
-	filter := bson.M{"name": revision}
+	filter := bson.M{"name": revision, "domain": domain}
 	sr := collection.FindOneAndUpdate(ctx, filter,
 		bson.D{
 			{"$inc", bson.D{

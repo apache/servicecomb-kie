@@ -39,7 +39,7 @@ func createKey(ctx context.Context, kv *model.KVDoc) (*model.KVDoc, error) {
 	collection := session.GetDB().Collection(session.CollectionKV)
 	var err error
 	kv.ID = uuid.NewV4().String()
-	revision, err := counter.ApplyRevision(ctx)
+	revision, err := counter.ApplyRevision(ctx, kv.Domain)
 	if err != nil {
 		openlogging.Error(err.Error())
 		return nil, err
@@ -69,7 +69,7 @@ func createKey(ctx context.Context, kv *model.KVDoc) (*model.KVDoc, error) {
 //updateKeyValue update key value and add new revision
 func updateKeyValue(ctx context.Context, kv *model.KVDoc) error {
 	var err error
-	kv.UpdateRevision, err = counter.ApplyRevision(ctx)
+	kv.UpdateRevision, err = counter.ApplyRevision(ctx, kv.Domain)
 	if err != nil {
 		return err
 	}
