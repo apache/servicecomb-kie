@@ -19,6 +19,7 @@ package label_test
 
 import (
 	"context"
+	"github.com/apache/servicecomb-kie/pkg/model"
 	"github.com/apache/servicecomb-kie/server/config"
 	"github.com/apache/servicecomb-kie/server/service/mongo/label"
 	"github.com/apache/servicecomb-kie/server/service/mongo/session"
@@ -31,12 +32,16 @@ func TestCreateLabel(t *testing.T) {
 	config.Configurations = &config.Config{DB: config.DB{URI: "mongodb://kie:123@127.0.0.1:27017/kie"}}
 	err = session.Init()
 	assert.NoError(t, err)
-	d, err := label.CreateLabel(context.TODO(), "default",
-		map[string]string{
+	d := &model.LabelDoc{
+		Domain: "default",
+		Labels: map[string]string{
 			"cluster":   "a",
 			"role":      "b",
 			"component": "c",
-		}, "default")
+		},
+		Project: "default",
+	}
+	d, err = label.CreateLabel(context.TODO(), d)
 	assert.NoError(t, err)
 	assert.NotEmpty(t, d.ID)
 	assert.Equal(t, "cluster=a::component=c::role=b", d.Format)

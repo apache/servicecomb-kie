@@ -29,12 +29,14 @@ var (
 	HistoryService  History
 	RevisionService Revision
 	DBInit          Init
+	LabelService    Label
 )
 
 //db errors
 var (
 	ErrKeyNotExists     = errors.New("key with labels does not exits")
 	ErrRevisionNotExist = errors.New("revision does not exist")
+	ErrAliasNotGiven    = errors.New("label alias not given")
 )
 
 //KV provide api of KV entity
@@ -53,6 +55,10 @@ type History interface {
 }
 type Revision interface {
 	GetRevision(ctx context.Context, domain string) (int64, error)
+}
+
+type Label interface {
+	CreateOrUpdate(ctx context.Context, label *model.LabelDoc) (*model.LabelDoc, error)
 }
 
 //Init init db session

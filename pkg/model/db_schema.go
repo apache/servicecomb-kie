@@ -24,6 +24,7 @@ type LabelDoc struct {
 	Format  string            `bson:"format,omitempty"`
 	Domain  string            `json:"domain,omitempty" yaml:"domain,omitempty"` //tenant info
 	Project string            `json:"project,omitempty" yaml:"project,omitempty"`
+	Alias   string            `json:"alias,omitempty" yaml:"alias,omitempty"`
 }
 
 //KVDoc is database struct to store kv

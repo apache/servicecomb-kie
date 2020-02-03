@@ -22,10 +22,12 @@ import (
 	"fmt"
 	"github.com/apache/servicecomb-kie/pkg/model"
 	"github.com/apache/servicecomb-kie/pkg/stringutil"
+	"github.com/apache/servicecomb-kie/server/service"
 	"github.com/apache/servicecomb-kie/server/service/mongo/session"
 	"github.com/go-mesh/openlogging"
 	uuid "github.com/satori/go.uuid"
 	"go.mongodb.org/mongo-driver/bson"
+	"go.mongodb.org/mongo-driver/bson/primitive"
 )
 
 const (
@@ -84,18 +86,28 @@ func Exist(ctx context.Context, domain string, project string, labels map[string
 }
 
 //CreateLabel create a new label
-func CreateLabel(ctx context.Context, domain string, labels map[string]string, project string) (*model.LabelDoc, error) {
-	l := &model.LabelDoc{
-		Domain:  domain,
-		Labels:  labels,
-		Format:  stringutil.FormatMap(labels),
-		Project: project,
-		ID:      uuid.NewV4().String(),
-	}
+func CreateLabel(ctx context.Context, label *model.LabelDoc) (*model.LabelDoc, error) {
+	label.ID = uuid.NewV4().String()
+	label.Format = stringutil.FormatMap(label.Labels)
 	collection := session.GetDB().Collection(session.CollectionLabel)
-	_, err := collection.InsertOne(ctx, l)
+	_, err := collection.InsertOne(ctx, label)
 	if err != nil {
 		return nil, err
 	}
-	return l, nil
+	return label, nil
+}
+
+//UpdateLabel
+func UpdateLabel(ctx context.Context, label *model.LabelDoc) (*model.LabelDoc, error) {
+	collection := session.GetDB().Collection(session.CollectionLabel)
+	queryFilter := bson.M{"id": label.ID}
+	if label.Alias == "" {
+		return nil, service.ErrAliasNotGiven
+	}
+	updateFilter := bson.D{primitive.E{Key: "$set", Value: bson.M{"alias": label.Alias}}}
+	cur := collection.FindOneAndUpdate(ctx, queryFilter, updateFilter)
+	if cur.Err() != nil {
+		return nil, cur.Err()
+	}
+	return label, nil
 }
