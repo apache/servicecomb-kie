@@ -20,6 +20,7 @@ package pubsub
 import (
 	"encoding/json"
 	"errors"
+	"reflect"
 	"strings"
 )
 
@@ -31,6 +32,10 @@ type KVChangeEvent struct {
 	DomainID string
 	Project  string
 }
+
+const (
+	PatternExact = "exact"
+)
 
 //NewKVChangeEvent create a struct base on event payload
 func NewKVChangeEvent(payload []byte) (*KVChangeEvent, error) {
@@ -46,6 +51,7 @@ type Topic struct {
 	LabelsFormat string            `json:"labels,omitempty"`
 	DomainID     string            `json:"domainID,omitempty"`
 	Project      string            `json:"project,omitempty"`
+	MatchType    string            `json:"match,omitempty"`
 }
 
 //ParseTopicString parse topic string to topic struct
@@ -76,6 +82,11 @@ func (t *Topic) Match(event *KVChangeEvent) bool {
 	if t.Key != "" {
 		if t.Key == event.Key {
 			match = true
+		}
+	}
+	if t.MatchType == PatternExact {
+		if !reflect.DeepEqual(t.Labels, event.Labels) {
+			return false
 		}
 	}
 	for k, v := range t.Labels {

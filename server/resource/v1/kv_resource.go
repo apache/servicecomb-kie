@@ -138,9 +138,10 @@ func returnData(rctx *restful.Context, domain interface{}, project string, label
 			return
 		}
 		changed, err := eventHappened(rctx, wait, &pubsub.Topic{
-			Labels:   labels,
-			Project:  project,
-			DomainID: domain.(string),
+			Labels:    labels,
+			Project:   project,
+			MatchType: getMatchPattern(rctx),
+			DomainID:  domain.(string),
 		})
 		if err != nil {
 			WriteErrResponse(rctx, http.StatusBadRequest, err.Error(), common.ContentTypeText)
@@ -166,9 +167,10 @@ func returnData(rctx *restful.Context, domain interface{}, project string, label
 			return
 		} else if wait != "" {
 			changed, err := eventHappened(rctx, wait, &pubsub.Topic{
-				Labels:   labels,
-				Project:  project,
-				DomainID: domain.(string),
+				Labels:    labels,
+				Project:   project,
+				MatchType: getMatchPattern(rctx),
+				DomainID:  domain.(string),
 			})
 			if err != nil {
 				WriteErrResponse(rctx, http.StatusBadRequest, err.Error(), common.ContentTypeText)
