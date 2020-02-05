@@ -44,7 +44,7 @@ type KVDoc struct {
 
 }
 
-//ViewDoc is db struct
+//ViewDoc is db struct, it saves user's custom view name and criteria
 type ViewDoc struct {
 	ID       string `json:"id,omitempty" bson:"id,omitempty" yaml:"id,omitempty" swag:"string"`
 	Display  string `json:"display,omitempty" yaml:"display,omitempty"`

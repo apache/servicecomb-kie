@@ -71,6 +71,7 @@ func (s *Service) Create(ctx context.Context, viewDoc *model.ViewDoc, options ..
 	return viewDoc, nil
 }
 
+//Update is only able to update name and criteria
 func (s *Service) Update(ctx context.Context, viewDoc *model.ViewDoc) error {
 	if viewDoc.Domain == "" {
 		return session.ErrMissingDomain
@@ -104,8 +105,11 @@ func (s *Service) Update(ctx context.Context, viewDoc *model.ViewDoc) error {
 		openlogging.Error("can not update view: " + err.Error())
 		return session.ErrViewUpdate
 	}
+	//TODO delete and create a new view
 	return nil
 }
+
+//List return all view user created
 func (s *Service) List(ctx context.Context, domain, project string, opts ...service.FindOption) (*model.ViewResponse, error) {
 	option := service.FindOptions{}
 	for _, o := range opts {
@@ -136,7 +140,9 @@ func (s *Service) List(ctx context.Context, domain, project string, opts ...serv
 	}
 	return result, nil
 }
-func (s *Service) GetContent(ctx context.Context, id, domain, project string, opts ...service.FindOption) (*model.ViewResponse, error) {
+
+//GetContent query view's kv data
+func (s *Service) GetContent(ctx context.Context, id, domain, project string, opts ...service.FindOption) (*model.KVResponse, error) {
 	option := service.FindOptions{}
 	for _, o := range opts {
 		o(&option)
@@ -154,9 +160,9 @@ func (s *Service) GetContent(ctx context.Context, id, domain, project string, op
 		openlogging.Error("can not find view content: " + err.Error())
 		return nil, session.ErrViewFinding
 	}
-	result := &model.ViewResponse{}
+	result := &model.KVResponse{}
 	for cur.Next(ctx) {
-		v := &model.ViewDoc{}
+		v := &model.KVDoc{}
 		if err := cur.Decode(v); err != nil {
 			openlogging.Error("decode error: " + err.Error())
 			return nil, err

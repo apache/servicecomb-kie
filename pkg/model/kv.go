@@ -51,6 +51,6 @@ type LabelHistoryResponse struct {
 
 //ViewResponse represents the view list
 type ViewResponse struct {
-	Total   int        `json:"total,omitempty"`
-	Data    []*ViewDoc `json:"data,omitempty"`
+	Total int        `json:"total,omitempty"`
+	Data  []*ViewDoc `json:"data,omitempty"`
 }

@@ -59,6 +59,7 @@ type Revision interface {
 type Label interface {
 	CreateOrUpdate(ctx context.Context, label *model.LabelDoc) (*model.LabelDoc, error)
 }
+
 //View create update and get view data
 type View interface {
 	Create(ctx context.Context, viewDoc *model.ViewDoc, options ...FindOption) error
