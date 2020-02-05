@@ -43,3 +43,12 @@ type KVDoc struct {
 	Domain string            `json:"domain,omitempty" yaml:"domain,omitempty"` //redundant
 
 }
+
+//ViewDoc is db struct
+type ViewDoc struct {
+	ID       string `json:"id,omitempty" bson:"id,omitempty" yaml:"id,omitempty" swag:"string"`
+	Display  string `json:"display,omitempty" yaml:"display,omitempty"`
+	Project  string `json:"project,omitempty" yaml:"project,omitempty"`
+	Domain   string `json:"domain,omitempty" yaml:"domain,omitempty"`
+	Criteria string `json:"criteria,omitempty" yaml:"criteria,omitempty"`
+}

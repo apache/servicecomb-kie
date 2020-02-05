@@ -36,7 +36,7 @@ func newDomainResolver() handler.Handler {
 	return &NoopAuthHandler{}
 }
 
-//Name is handler name
+//Display is handler name
 func (bk *NoopAuthHandler) Name() string {
 	return "auth-handler"
 }
