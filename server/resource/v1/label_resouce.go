@@ -10,12 +10,11 @@ import (
 	"net/http"
 )
 
-//LabelResource
+//LabelResource is label API
 type LabelResource struct {
 }
 
-//PutLabel
-// update by label_id , only can modify alias
+//PutLabel update by label_id , only can modify alias
 // create return 201 / update return 200
 func (r *LabelResource) PutLabel(context *restful.Context) {
 	var err error

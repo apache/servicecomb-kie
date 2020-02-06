@@ -106,6 +106,7 @@ func (r *KVResource) GetByKey(rctx *restful.Context) {
 	returnData(rctx, domain, project, labels, limit, offset)
 }
 
+//List response kv list
 func (r *KVResource) List(rctx *restful.Context) {
 	var err error
 	project := rctx.ReadPathParameter("project")
