@@ -138,6 +138,7 @@ func GetDB() *mongo.Database {
 	return db
 }
 
+//CreateView run mongo db command to create view
 func CreateView(ctx context.Context, view, source string, pipeline mongo.Pipeline) error {
 	sr := GetDB().RunCommand(ctx,
 		bson.D{
