@@ -53,7 +53,7 @@ type Client struct {
 	opts            Config
 	cipher          security.Cipher
 	c               *httpclient.Requests
-	currentRevision string
+	CurrentRevision string
 }
 
 //Config is the config of client
@@ -133,9 +133,9 @@ func (c *Client) Get(ctx context.Context, opts ...GetOption) (*model.KVResponse,
 
 	var url string
 	if options.Key != "" {
-		url = fmt.Sprintf("%s/%s/%s/%s/%s?revision=%s", c.opts.Endpoint, version, options.Project, APIPathKV, options.Key, c.currentRevision)
+		url = fmt.Sprintf("%s/%s/%s/%s/%s?revision=%s", c.opts.Endpoint, version, options.Project, APIPathKV, options.Key, c.CurrentRevision)
 	} else {
-		url = fmt.Sprintf("%s/%s/%s/%s?revision=%s", c.opts.Endpoint, version, options.Project, APIPathKV, c.currentRevision)
+		url = fmt.Sprintf("%s/%s/%s/%s?revision=%s", c.opts.Endpoint, version, options.Project, APIPathKV, c.CurrentRevision)
 	}
 	if options.Wait != "" {
 		url = url + "&wait=" + options.Wait
@@ -176,7 +176,7 @@ func (c *Client) Get(ctx context.Context, opts ...GetOption) (*model.KVResponse,
 		openlogging.Error("unmarshal kv failed:" + err.Error())
 		return nil, err
 	}
-	c.currentRevision = resp.Header.Get(common.HeaderRevision)
+	c.CurrentRevision = resp.Header.Get(common.HeaderRevision)
 	return kvs, nil
 }
 

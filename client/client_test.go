@@ -80,6 +80,7 @@ func TestClient_Put(t *testing.T) {
 		}
 		_, err := c.Put(context.TODO(), kv, WithProject("client_test"))
 		assert.NoError(t, err)
+		t.Log(c.CurrentRevision)
 		kvs, err = c.Get(context.TODO(),
 			WithGetProject("client_test"),
 			WithLabels(map[string]string{"service": "client"}),
