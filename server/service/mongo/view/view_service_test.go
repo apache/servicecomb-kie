@@ -42,10 +42,10 @@ func TestGet(t *testing.T) {
 			Labels: map[string]string{
 				"app":     "mall",
 				"service": "cart",
-				"view":    "test",
+				"view":    "view_test",
 			},
 			Domain:  "default",
-			Project: "test",
+			Project: "view_test",
 		})
 		assert.NoError(t, err)
 		assert.NotEmpty(t, kv.ID)
@@ -57,7 +57,7 @@ func TestGet(t *testing.T) {
 				"app": "mall",
 			},
 			Domain:  "default",
-			Project: "test",
+			Project: "view_test",
 		})
 		assert.NoError(t, err)
 		assert.NotEmpty(t, kv.ID)
@@ -69,7 +69,7 @@ func TestGet(t *testing.T) {
 				"app": "mall",
 			},
 			Domain:  "default",
-			Project: "test",
+			Project: "view_test",
 		})
 		assert.NoError(t, err)
 		assert.NotEmpty(t, kv.ID)
@@ -79,14 +79,14 @@ func TestGet(t *testing.T) {
 	t.Run("create and get view content", func(t *testing.T) {
 		view1, err := svc.Create(context.TODO(), &model.ViewDoc{
 			Display: "timeout_config",
-			Project: "test",
+			Project: "view_test",
 			Domain:  "default",
 		}, service.WithKey("timeout"))
 		assert.NoError(t, err)
 		assert.NotEmpty(t, view1.ID)
 		view2, err := svc.Create(context.TODO(), &model.ViewDoc{
 			Display: "mall_config",
-			Project: "test",
+			Project: "view_test",
 			Domain:  "default",
 		}, service.WithLabels(map[string]string{
 			"app": "mall",
@@ -94,18 +94,18 @@ func TestGet(t *testing.T) {
 		assert.NoError(t, err)
 		assert.NotEmpty(t, view2.ID)
 
-		resp1, err := svc.GetContent(context.TODO(), view1.ID, "default", "test")
+		resp1, err := svc.GetContent(context.TODO(), view1.ID, "default", "view_test")
 		assert.NoError(t, err)
 		assert.Equal(t, 2, len(resp1.Data))
 		assert.Equal(t, "timeout", resp1.Data[0].Key)
 
-		resp2, err := svc.GetContent(context.TODO(), view2.ID, "default", "test")
+		resp2, err := svc.GetContent(context.TODO(), view2.ID, "default", "view_test")
 		assert.NoError(t, err)
 		assert.Equal(t, "mall", resp1.Data[0].Labels["app"])
 		t.Log(resp2.Data)
 	})
 	t.Run(" list view", func(t *testing.T) {
-		r, err := svc.List(context.TODO(), "default", "test")
+		r, err := svc.List(context.TODO(), "default", "view_test")
 		assert.NoError(t, err)
 		assert.Equal(t, 2, len(r.Data))
 	})
