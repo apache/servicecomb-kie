@@ -129,7 +129,6 @@ func (r *KVResource) List(rctx *restful.Context) {
 	returnData(rctx, domain, project, labels, limit, offset)
 }
 
-//
 func returnData(rctx *restful.Context, domain interface{}, project string, labels map[string]string, limit, offset int64) {
 	revStr := rctx.ReadQueryParameter(common.QueryParamRev)
 	wait := rctx.ReadQueryParameter(common.QueryParamWait)

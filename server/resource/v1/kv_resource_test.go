@@ -57,7 +57,7 @@ func init() {
 		ListenPeerAddr: "127.0.0.1:4000",
 		AdvertiseAddr:  "127.0.0.1:4000",
 	}
-	config.Configurations.DB.URI = "mongodb://kie:123@192.168.0.5:27017/kie"
+	config.Configurations.DB.URI = "mongodb://kie:123@127.0.0.1:27017/kie"
 	err := service.DBInit()
 	if err != nil {
 		panic(err)
@@ -258,7 +258,7 @@ func TestKVResource_List(t *testing.T) {
 	t.Run("list kv by service label, with wait and match param,not exact match and return 304", func(t *testing.T) {
 		r, _ := http.NewRequest("GET", "/v1/test/kie/kv?label=match:test&wait=10s&match=exact", nil)
 		noopH := &handler2.NoopAuthHandler{}
-		chain, _ := handler.CreateChain(common.Provider, "testchain1", noopH.Name())
+		chain, _ := handler.CreateChain(common.Provider, "testchain-match", noopH.Name())
 		r.Header.Set("Content-Type", "application/json")
 		kvr := &v1.KVResource{}
 		c, err := restfultest.New(kvr, chain)
@@ -274,7 +274,7 @@ func TestKVResource_List(t *testing.T) {
 			j, _ := json.Marshal(kv)
 			r2, _ := http.NewRequest("PUT", "/v1/test/kie/kv/testKey", bytes.NewBuffer(j))
 			noopH2 := &handler2.NoopAuthHandler{}
-			chain2, _ := handler.CreateChain(common.Provider, "testchain1", noopH2.Name())
+			chain2, _ := handler.CreateChain(common.Provider, "testchain-match", noopH2.Name())
 			r2.Header.Set("Content-Type", "application/json")
 			kvr2 := &v1.KVResource{}
 			c2, _ := restfultest.New(kvr2, chain2)
