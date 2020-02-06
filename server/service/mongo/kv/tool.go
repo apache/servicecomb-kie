@@ -20,6 +20,7 @@ package kv
 import (
 	"context"
 	"github.com/apache/servicecomb-kie/server/service"
+	"reflect"
 
 	"github.com/apache/servicecomb-kie/pkg/model"
 	"github.com/go-mesh/openlogging"
@@ -38,19 +39,18 @@ func clearPart(kv *model.KVDoc) {
 }
 func cursorToOneKV(ctx context.Context, cur *mongo.Cursor, labels map[string]string) ([]*model.KVResponse, error) {
 	result := make([]*model.KVResponse, 0)
-	curKV := &model.KVDoc{} //reuse this pointer to reduce GC, only clear label
 	//check label length to get the exact match
 	for cur.Next(ctx) { //although complexity is O(n), but there won't be so much labels for one key
 		if cur.Err() != nil {
 			return nil, cur.Err()
 		}
-		curKV.Labels = nil
+		curKV := &model.KVDoc{}
 		err := cur.Decode(curKV)
 		if err != nil {
 			openlogging.Error("decode error: " + err.Error())
 			return nil, err
 		}
-		if len(curKV.Labels) == len(labels) {
+		if reflect.DeepEqual(curKV.Labels, labels) {
 			openlogging.Debug("hit exact labels")
 			labelGroup := &model.KVResponse{
 				LabelDoc: &model.LabelDocResponse{
