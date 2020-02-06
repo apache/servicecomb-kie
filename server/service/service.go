@@ -28,6 +28,7 @@ var (
 	KVService       KV
 	HistoryService  History
 	RevisionService Revision
+	LabelService    Label
 	DBInit          Init
 )
 
