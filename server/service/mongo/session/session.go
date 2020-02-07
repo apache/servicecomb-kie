@@ -46,9 +46,9 @@ const (
 	CollectionKV         = "kv"
 	CollectionKVRevision = "kv_revision"
 	CollectionCounter    = "counter"
-
-	DefaultTimeout   = 5 * time.Second
-	DefaultValueType = "text"
+	CollectionView       = "view"
+	DefaultTimeout       = 5 * time.Second
+	DefaultValueType     = "text"
 )
 
 //db errors
@@ -59,9 +59,14 @@ var (
 	ErrTooMany         = errors.New("key with labels should be only one")
 	ErrKeyMustNotEmpty = errors.New("must supply key if you want to get exact one result")
 
-	ErrKVIDIsNil              = errors.New("kvID id is nil")
+	ErrIDIsNil                = errors.New("id is empty")
 	ErrKvIDAndLabelIDNotMatch = errors.New("kvID and labelID do not match")
 	ErrRootCAMissing          = errors.New("rootCAFile is empty in config file")
+
+	ErrViewCreation = errors.New("can not create view")
+	ErrViewUpdate   = errors.New("can not update view")
+	ErrViewNotExist = errors.New("view not exists")
+	ErrViewFinding  = errors.New("view search error")
 )
 
 var client *mongo.Client
@@ -131,4 +136,19 @@ func Init() error {
 //GetDB get mongo db client
 func GetDB() *mongo.Database {
 	return db
+}
+
+//CreateView run mongo db command to create view
+func CreateView(ctx context.Context, view, source string, pipeline mongo.Pipeline) error {
+	sr := GetDB().RunCommand(ctx,
+		bson.D{
+			{"create", view},
+			{"viewOn", source},
+			{"pipeline", pipeline},
+		})
+	if sr.Err() != nil {
+		openlogging.Error("can not create view: " + sr.Err().Error())
+		return ErrViewCreation
+	}
+	return nil
 }

@@ -97,7 +97,7 @@ func CreateLabel(ctx context.Context, label *model.LabelDoc) (*model.LabelDoc, e
 	return label, nil
 }
 
-//UpdateLabel
+//UpdateLabel update alias
 func UpdateLabel(ctx context.Context, label *model.LabelDoc) (*model.LabelDoc, error) {
 	collection := session.GetDB().Collection(session.CollectionLabel)
 	queryFilter := bson.M{"id": label.ID}

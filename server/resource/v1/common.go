@@ -50,6 +50,7 @@ const (
 	MaxWait = 5 * time.Minute
 )
 
+//err
 var (
 	ErrInvalidRev = errors.New(MsgInvalidRev)
 )
