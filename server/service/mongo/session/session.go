@@ -164,6 +164,8 @@ func DropView(ctx context.Context, view string) error {
 	}
 	return nil
 }
+
+//GetColInfo get collection info
 func GetColInfo(ctx context.Context, name string) (*CollectionInfo, error) {
 	cur, err := GetDB().ListCollections(ctx, bson.M{"name": name, "type": "view"})
 	if err != nil {
