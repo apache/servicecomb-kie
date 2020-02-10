@@ -38,6 +38,7 @@ import (
 
 //const of server
 
+//err
 var (
 	ErrInvalidRev = errors.New(common.MsgInvalidRev)
 )

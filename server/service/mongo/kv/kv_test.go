@@ -97,12 +97,12 @@ func TestService_CreateOrUpdate(t *testing.T) {
 			Domain:  "default",
 			Project: "test",
 		})
-		assert.Equal(t, beforeKV.ID, afterKV.ID)
+		assert.Equal(t, "3s", afterKV.Value)
 		savedKV, err := kvsvc.Exist(context.Background(), "default", "timeout", "test", service.WithLabels(map[string]string{
 			"app": "mall",
 		}))
 		assert.NoError(t, err)
-		assert.Equal(t, beforeKV.ID, savedKV.ID)
+		assert.Equal(t, afterKV.Value, savedKV.Value)
 		kvs, err := kvsvc.FindKV(context.Background(), "default", "test",
 			service.WithKey("timeout"),
 			service.WithLabels(map[string]string{

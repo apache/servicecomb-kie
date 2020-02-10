@@ -28,13 +28,13 @@ var (
 	KVService       KV
 	HistoryService  History
 	RevisionService Revision
-	DBInit          Init
 	LabelService    Label
+	DBInit          Init
 )
 
 //db errors
 var (
-	ErrKeyNotExists     = errors.New("key with labels does not exits")
+	ErrKeyNotExists     = errors.New("can not find any key value")
 	ErrRevisionNotExist = errors.New("revision does not exist")
 	ErrAliasNotGiven    = errors.New("label alias not given")
 )
@@ -53,12 +53,25 @@ type KV interface {
 type History interface {
 	GetHistory(ctx context.Context, keyID string, options ...FindOption) ([]*model.KVDoc, error)
 }
+
+//Revision is global revision number management
 type Revision interface {
 	GetRevision(ctx context.Context, domain string) (int64, error)
 }
 
+//Label manages labels data
 type Label interface {
 	CreateOrUpdate(ctx context.Context, label *model.LabelDoc) (*model.LabelDoc, error)
+}
+
+//View create update and get view data
+type View interface {
+	Create(ctx context.Context, viewDoc *model.ViewDoc, options ...FindOption) error
+	Update(ctx context.Context, viewDoc *model.ViewDoc) error
+	//TODO
+	List(ctx context.Context, domain, project string, options ...FindOption) ([]*model.ViewDoc, error)
+	GetCriteria(ctx context.Context, viewName, domain, project string) (map[string]map[string]string, error)
+	GetContent(ctx context.Context, id, domain, project string, options ...FindOption) ([]*model.KVResponse, error)
 }
 
 //Init init db session

@@ -48,3 +48,9 @@ type LabelHistoryResponse struct {
 	KVs      []*KVDoc          `json:"data,omitempty"`
 	Revision int               `json:"revision"`
 }
+
+//ViewResponse represents the view list
+type ViewResponse struct {
+	Total int        `json:"total,omitempty"`
+	Data  []*ViewDoc `json:"data,omitempty"`
+}
