@@ -19,6 +19,7 @@ package view_test
 
 import (
 	"context"
+	"encoding/json"
 	"github.com/apache/servicecomb-kie/pkg/model"
 	"github.com/apache/servicecomb-kie/server/config"
 	"github.com/apache/servicecomb-kie/server/service"
@@ -26,6 +27,8 @@ import (
 	"github.com/apache/servicecomb-kie/server/service/mongo/session"
 	"github.com/apache/servicecomb-kie/server/service/mongo/view"
 	"github.com/stretchr/testify/assert"
+	"go.mongodb.org/mongo-driver/bson"
+	"go.mongodb.org/mongo-driver/mongo"
 	"testing"
 )
 
@@ -110,4 +113,17 @@ func TestGet(t *testing.T) {
 		assert.Equal(t, 2, len(r.Data))
 	})
 
+}
+
+func TestService_List(t *testing.T) {
+	var pipeline mongo.Pipeline = []bson.D{
+		{{
+			"$match",
+			bson.D{{"domain", "default"}, {"project", "default"}},
+		}},
+	}
+
+	s, err := json.Marshal(pipeline)
+	assert.NoError(t, err)
+	t.Log(string(s))
 }

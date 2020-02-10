@@ -69,7 +69,8 @@ type View interface {
 	Create(ctx context.Context, viewDoc *model.ViewDoc, options ...FindOption) error
 	Update(ctx context.Context, viewDoc *model.ViewDoc) error
 	//TODO
-	//List(ctx context.Context, domain, project string, options ...FindOption) ([]*model.ViewDoc, error)
+	List(ctx context.Context, domain, project string, options ...FindOption) ([]*model.ViewDoc, error)
+	GetCriteria(ctx context.Context, viewName, domain, project string) (map[string]map[string]string, error)
 	GetContent(ctx context.Context, id, domain, project string, options ...FindOption) ([]*model.KVResponse, error)
 }
 

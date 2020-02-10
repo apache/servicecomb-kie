@@ -65,8 +65,10 @@ var (
 
 	ErrViewCreation = errors.New("can not create view")
 	ErrViewUpdate   = errors.New("can not update view")
+	ErrViewDelete   = errors.New("can not delete view")
 	ErrViewNotExist = errors.New("view not exists")
 	ErrViewFinding  = errors.New("view search error")
+	ErrGetPipeline  = errors.New("can not get criteria")
 )
 
 var client *mongo.Client
@@ -151,4 +153,36 @@ func CreateView(ctx context.Context, view, source string, pipeline mongo.Pipelin
 		return ErrViewCreation
 	}
 	return nil
+}
+
+//DropView deletes view
+func DropView(ctx context.Context, view string) error {
+	err := GetDB().Collection(view).Drop(ctx)
+	if err != nil {
+		openlogging.Error(err.Error())
+		return err
+	}
+	return nil
+}
+
+//GetColInfo get collection info
+func GetColInfo(ctx context.Context, name string) (*CollectionInfo, error) {
+	cur, err := GetDB().ListCollections(ctx, bson.M{"name": name, "type": "view"})
+	if err != nil {
+		openlogging.Error(err.Error())
+		return nil, ErrGetPipeline
+	}
+	defer cur.Close(ctx)
+	for cur.Next(ctx) {
+		openlogging.Debug(cur.Current.String())
+		c := &CollectionInfo{}
+		err := cur.Decode(c)
+		if err != nil {
+			openlogging.Error(err.Error())
+			return nil, ErrGetPipeline
+		}
+		return c, nil
+		break
+	}
+	return nil, ErrGetPipeline
 }

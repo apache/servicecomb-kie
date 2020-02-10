@@ -1,0 +1,260 @@
+swagger: '2.0'
+info:
+  title: ''
+  version: ''
+basePath: /
+paths:
+  '/v1/{project}/kie/kv':
+    get:
+      summary: list key values by labels and key
+      operationId: List
+      parameters:
+        - name: project
+          in: path
+          required: true
+          type: string
+        - name: label
+          in: query
+          description: 'label pairs,for example &label=service:order&label=version:1.0.0'
+          type: string
+        - name: wait
+          in: query
+          description: 'wait until any kv changed. for example wait=5s, server will not response until 5 seconds during that time window, if any kv changed, server will return 200 and kv list, otherwise return 304 and empty body'
+          type: string
+      consumes:
+        - '*/*'
+      produces:
+        - application/json
+        - text/yaml
+      responses:
+        '200':
+          description: ''
+          schema:
+            $ref: '#/definitions/KVResponse'
+          headers:
+            X-RateLimit-Limit:
+              type: integer
+              description: Request limit per hour.
+        '304':
+          description: empty body
+    delete:
+      summary: 'delete key by kvID and labelID. Want better performance, give labelID'
+      operationId: Delete
+      parameters:
+        - name: project
+          in: path
+          required: true
+          type: string
+        - name: kvID
+          in: query
+          required: true
+          type: string
+        - name: labelID
+          in: query
+          type: string
+      consumes:
+        - '*/*'
+      produces:
+        - '*/*'
+      responses:
+        '204':
+          description: Delete success
+        '400':
+          description: 'Failed,check url'
+        '500':
+          description: Server error
+  '/v1/{project}/kie/kv/{key}':
+    get:
+      summary: get key values by key and labels
+      operationId: GetByKey
+      parameters:
+        - name: project
+          in: path
+          required: true
+          type: string
+        - name: key
+          in: path
+          required: true
+          type: string
+        - name: label
+          in: query
+          description: 'label pairs,for example &label=service:order&label=version:1.0.0'
+          type: string
+      consumes:
+        - '*/*'
+      produces:
+        - application/json
+        - text/yaml
+      responses:
+        '200':
+          description: get key value success
+          schema:
+            type: array
+            items:
+              $ref: '#/definitions/KVResponse'
+        '304':
+          description: empty body
+    put:
+      summary: create or update key value
+      operationId: Put
+      parameters:
+        - name: project
+          in: path
+          required: true
+          type: string
+        - name: key
+          in: path
+          required: true
+          type: string
+        - name: body
+          in: body
+          required: true
+          schema:
+            $ref: '#/definitions/v1.KVBody'
+      consumes:
+        - application/json
+        - text/yaml
+      produces:
+        - application/json
+        - text/yaml
+      responses:
+        '200':
+          description: ''
+          schema:
+            $ref: '#/definitions/v1.KVBody'
+  '/v1/{project}/kie/revision/{label_id}':
+    get:
+      summary: get all revisions by label id
+      operationId: GetRevisions
+      parameters:
+        - name: project
+          in: path
+          required: true
+          type: string
+        - name: label_id
+          in: path
+          required: true
+          type: string
+        - name: key
+          in: query
+          description: only return history about a specific key
+          type: string
+      consumes:
+        - application/json
+        - text/yaml
+      produces:
+        - application/json
+        - text/yaml
+      responses:
+        '200':
+          description: 'true'
+          schema:
+            type: array
+            items:
+              $ref: '#/definitions/LabelHistoryResponse'
+  '/v1/{project}/kie/summary':
+    get:
+      summary: 'search key values by labels combination, it returns multiple labels group'
+      operationId: Search
+      parameters:
+        - name: project
+          in: path
+          required: true
+          type: string
+        - name: q
+          in: query
+          description: 'the combination format is {label_key}:{label_value}+{label_key}:{label_value} for example: /v1/test/kie/kv?q=app:mall&q=app:mall+service:cart, that will query key values from 2 kinds of labels'
+          type: string
+      consumes:
+        - '*/*'
+      produces:
+        - application/json
+        - text/yaml
+      responses:
+        '200':
+          description: get key value success
+          schema:
+            type: array
+            items:
+              $ref: '#/definitions/KVResponse'
+definitions:
+  KVDoc:
+    type: object
+    properties:
+      _id:
+        type: string
+      check:
+        type: string
+      domain:
+        type: string
+      key:
+        type: string
+      label_id:
+        type: string
+      labels:
+        type: object
+        additionalProperties:
+          type: string
+      project:
+        type: string
+      revision:
+        type: integer
+        format: int32
+      value:
+        type: string
+      value_type:
+        type: string
+  KVResponse:
+    type: object
+    properties:
+      data:
+        type: array
+        items:
+          $ref: '#/definitions/KVDoc'
+      label:
+        $ref: '#/definitions/LabelDocResponse'
+      num:
+        type: integer
+        format: int32
+      size:
+        type: integer
+        format: int32
+      total:
+        type: integer
+        format: int32
+  LabelDocResponse:
+    type: object
+    properties:
+      label_id:
+        type: string
+      labels:
+        type: object
+        additionalProperties:
+          type: string
+  LabelHistoryResponse:
+    type: object
+    properties:
+      data:
+        type: array
+        items:
+          $ref: '#/definitions/KVDoc'
+      label_id:
+        type: string
+      labels:
+        type: object
+        additionalProperties:
+          type: string
+      revision:
+        type: integer
+        format: int32
+  v1.KVBody:
+    type: object
+    properties:
+      labels:
+        type: object
+        additionalProperties:
+          type: string
+      value:
+        type: string
+      valueType:
+        type: string

@@ -41,8 +41,10 @@ func (s *Service) Create(ctx context.Context, viewDoc *model.ViewDoc, options ..
 		return nil, session.ErrMissingDomain
 	}
 	var pipeline mongo.Pipeline = []bson.D{
-		{{"$match", bson.D{{"domain", viewDoc.Domain}}}},
-		{{"$match", bson.D{{"project", viewDoc.Project}}}},
+		{{
+			"$match",
+			bson.D{{"domain", viewDoc.Domain}, {"project", viewDoc.Project}},
+		}},
 	}
 	opts := service.FindOptions{}
 	for _, o := range options {
