@@ -27,7 +27,7 @@ func (r *LabelResource) PutLabel(context *restful.Context) {
 	entity.Project = context.ReadPathParameter("project")
 	domain := ReadDomain(context)
 	if domain == nil {
-		WriteErrResponse(context, http.StatusInternalServerError, MsgDomainMustNotBeEmpty, common.ContentTypeText)
+		WriteErrResponse(context, http.StatusInternalServerError, common.MsgDomainMustNotBeEmpty, common.ContentTypeText)
 		return
 	}
 	entity.Domain = domain.(string)

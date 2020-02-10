@@ -20,6 +20,7 @@ package pubsub
 import (
 	"encoding/json"
 	"errors"
+	"github.com/apache/servicecomb-kie/pkg/common"
 	"reflect"
 	"strings"
 )
@@ -32,10 +33,6 @@ type KVChangeEvent struct {
 	DomainID string
 	Project  string
 }
-
-const (
-	PatternExact = "exact"
-)
 
 //NewKVChangeEvent create a struct base on event payload
 func NewKVChangeEvent(payload []byte) (*KVChangeEvent, error) {
@@ -84,7 +81,7 @@ func (t *Topic) Match(event *KVChangeEvent) bool {
 			match = true
 		}
 	}
-	if t.MatchType == PatternExact {
+	if t.MatchType == common.PatternExact {
 		if !reflect.DeepEqual(t.Labels, event.Labels) {
 			return false
 		}
