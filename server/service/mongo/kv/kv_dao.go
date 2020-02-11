@@ -30,6 +30,7 @@ import (
 	"go.mongodb.org/mongo-driver/bson"
 	"go.mongodb.org/mongo-driver/mongo"
 	"go.mongodb.org/mongo-driver/mongo/options"
+	"time"
 )
 
 //createKey get latest revision from history
@@ -46,6 +47,8 @@ func createKey(ctx context.Context, kv *model.KVDoc) (*model.KVDoc, error) {
 	}
 	kv.UpdateRevision = revision
 	kv.CreateRevision = revision
+	kv.CreatTime = time.Now().String()
+	kv.UpdateTime = time.Now().String()
 	_, err = collection.InsertOne(ctx, kv)
 	if err != nil {
 		openlogging.Error("create error", openlogging.WithTags(openlogging.Tags{
@@ -69,6 +72,7 @@ func createKey(ctx context.Context, kv *model.KVDoc) (*model.KVDoc, error) {
 //updateKeyValue update key value and add new revision
 func updateKeyValue(ctx context.Context, kv *model.KVDoc) error {
 	var err error
+	kv.UpdateTime = time.Now().String()
 	kv.UpdateRevision, err = counter.ApplyRevision(ctx, kv.Domain)
 	if err != nil {
 		return err
@@ -118,6 +122,9 @@ func findKV(ctx context.Context, domain string, project string, opts service.Fin
 	}
 	if opts.Offset != 0 {
 		opt = opt.SetSkip(opts.Offset)
+	}
+	if opts.Status != "" {
+		filter["status"] = opts.Status
 	}
 	cur, err := collection.Find(ctx, filter, opt)
 	if err != nil {
