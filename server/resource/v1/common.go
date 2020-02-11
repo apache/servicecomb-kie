@@ -200,13 +200,12 @@ func checkPagination(limitStr, offsetStr string) (int64, int64, error) {
 }
 
 func checkStatus(status string) (string, error) {
-	var err error
 	if status != "" {
-		if status != common.Enabled && status != common.Disabled {
-			return "", err
+		if status != common.StatusEnabled && status != common.StatusDisabled {
+			return "", errors.New("invalid status string")
 		}
 	}
-	return status, err
+	return status, nil
 }
 
 func queryAndResponse(rctx *restful.Context,

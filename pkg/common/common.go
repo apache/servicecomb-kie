@@ -49,8 +49,8 @@ const (
 //const of server
 const (
 	PatternExact            = "exact"
-	Enabled                 = "enabled"
-	Disabled                = "disabled"
+	StatusEnabled           = "enabled"
+	StatusDisabled          = "disabled"
 	MsgDomainMustNotBeEmpty = "domain must not be empty"
 	MsgIllegalLabels        = "label value can not be empty, " +
 		"label can not be duplicated, please check query parameters"
