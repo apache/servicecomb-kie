@@ -32,6 +32,7 @@ func NewDefaultFindOpts() FindOptions {
 //FindOptions is option to find key value
 type FindOptions struct {
 	ExactLabels bool
+	Status      string
 	Depth       int
 	Key         string
 	Labels      map[string]string
@@ -56,6 +57,13 @@ func WithExactLabels() FindOption {
 func WithKey(key string) FindOption {
 	return func(o *FindOptions) {
 		o.Key = key
+	}
+}
+
+//WithStatus enabled/disabled
+func WithStatus(status string) FindOption {
+	return func(o *FindOptions) {
+		o.Status = status
 	}
 }
 

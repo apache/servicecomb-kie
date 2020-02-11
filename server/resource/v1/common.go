@@ -36,8 +36,6 @@ import (
 	"gopkg.in/yaml.v2"
 )
 
-//const of server
-
 //err
 var (
 	ErrInvalidRev = errors.New(common.MsgInvalidRev)
@@ -200,8 +198,19 @@ func checkPagination(limitStr, offsetStr string) (int64, int64, error) {
 	}
 	return limit, offset, err
 }
+
+func checkStatus(status string) (string, error) {
+	var err error
+	if status != "" {
+		if status != common.Enabled && status != common.Disabled {
+			return "", err
+		}
+	}
+	return status, err
+}
+
 func queryAndResponse(rctx *restful.Context,
-	domain interface{}, project string, key string, labels map[string]string, limit, offset int64) {
+	domain interface{}, project string, key string, labels map[string]string, limit, offset int64, status string) {
 	m := getMatchPattern(rctx)
 	opts := []service.FindOption{
 		service.WithKey(key),
@@ -211,6 +220,9 @@ func queryAndResponse(rctx *restful.Context,
 	}
 	if m == common.PatternExact {
 		opts = append(opts, service.WithExactLabels())
+	}
+	if status != "" {
+		opts = append(opts, service.WithStatus(status))
 	}
 	kv, err := service.KVService.List(rctx.Ctx, domain.(string), project, opts...)
 	if err != nil {

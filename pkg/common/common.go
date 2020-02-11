@@ -46,9 +46,11 @@ const (
 	ContentTypeYaml = "text/yaml"
 )
 
-//const for server/resource/v1
+//const of server
 const (
 	PatternExact            = "exact"
+	Enabled                 = "enabled"
+	Disabled                = "disabled"
 	MsgDomainMustNotBeEmpty = "domain must not be empty"
 	MsgIllegalLabels        = "label value can not be empty, " +
 		"label can not be duplicated, please check query parameters"
