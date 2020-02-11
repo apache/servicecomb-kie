@@ -37,22 +37,10 @@ import (
 )
 
 //const of server
-const (
-	PatternExact            = "exact"
-	MsgDomainMustNotBeEmpty = "domain must not be empty"
-	MsgIllegalLabels        = "label value can not be empty, " +
-		"label can not be duplicated, please check query parameters"
-	MsgIllegalDepth     = "X-Depth must be number"
-	MsgInvalidWait      = "wait param should be formed with number and time unit like 5s,100ms, and less than 5m"
-	MsgInvalidRev       = "revision param should be formed with number greater than 0"
-	ErrKvIDMustNotEmpty = "must supply kv id if you want to remove key"
-
-	MaxWait = 5 * time.Minute
-)
 
 //err
 var (
-	ErrInvalidRev = errors.New(MsgInvalidRev)
+	ErrInvalidRev = errors.New(common.MsgInvalidRev)
 )
 
 //ReadDomain get domain info from attribute
@@ -141,7 +129,7 @@ func getLabels(rctx *restful.Context) (map[string]string, error) {
 	for _, v := range labelSlice {
 		v := strings.Split(v, ":")
 		if len(v) != 2 {
-			return nil, errors.New(MsgIllegalLabels)
+			return nil, errors.New(common.MsgIllegalLabels)
 		}
 		labels[v[0]] = v[1]
 	}
@@ -163,15 +151,15 @@ func isRevised(ctx context.Context, revStr, domain string) (bool, error) {
 }
 func getMatchPattern(rctx *restful.Context) string {
 	m := rctx.ReadQueryParameter(common.QueryParamMatch)
-	if m != "" && m != PatternExact {
+	if m != "" && m != common.PatternExact {
 		return ""
 	}
 	return m
 }
 func eventHappened(rctx *restful.Context, waitStr string, topic *pubsub.Topic) (bool, error) {
 	d, err := time.ParseDuration(waitStr)
-	if err != nil || d > MaxWait {
-		return false, errors.New(MsgInvalidWait)
+	if err != nil || d > common.MaxWait {
+		return false, errors.New(common.MsgInvalidWait)
 	}
 	happened := true
 	o := &pubsub.Observer{
@@ -221,7 +209,7 @@ func queryAndResponse(rctx *restful.Context,
 		service.WithLimit(limit),
 		service.WithOffset(offset),
 	}
-	if m == PatternExact {
+	if m == common.PatternExact {
 		opts = append(opts, service.WithExactLabels())
 	}
 	kv, err := service.KVService.List(rctx.Ctx, domain.(string), project, opts...)

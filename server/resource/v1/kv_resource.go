@@ -46,7 +46,7 @@ func (r *KVResource) Put(context *restful.Context) {
 	}
 	domain := ReadDomain(context)
 	if domain == nil {
-		WriteErrResponse(context, http.StatusInternalServerError, MsgDomainMustNotBeEmpty, common.ContentTypeText)
+		WriteErrResponse(context, http.StatusInternalServerError, common.MsgDomainMustNotBeEmpty, common.ContentTypeText)
 		return
 	}
 	kv.Key = key
@@ -88,12 +88,12 @@ func (r *KVResource) GetByKey(rctx *restful.Context) {
 	project := rctx.ReadPathParameter("project")
 	labels, err := getLabels(rctx)
 	if err != nil {
-		WriteErrResponse(rctx, http.StatusBadRequest, MsgIllegalLabels, common.ContentTypeText)
+		WriteErrResponse(rctx, http.StatusBadRequest, common.MsgIllegalLabels, common.ContentTypeText)
 		return
 	}
 	domain := ReadDomain(rctx)
 	if domain == nil {
-		WriteErrResponse(rctx, http.StatusInternalServerError, MsgDomainMustNotBeEmpty, common.ContentTypeText)
+		WriteErrResponse(rctx, http.StatusInternalServerError, common.MsgDomainMustNotBeEmpty, common.ContentTypeText)
 		return
 	}
 	limitStr := rctx.ReadQueryParameter("limit")
@@ -112,7 +112,7 @@ func (r *KVResource) List(rctx *restful.Context) {
 	project := rctx.ReadPathParameter("project")
 	domain := ReadDomain(rctx)
 	if domain == nil {
-		WriteErrResponse(rctx, http.StatusInternalServerError, MsgDomainMustNotBeEmpty, common.ContentTypeText)
+		WriteErrResponse(rctx, http.StatusInternalServerError, common.MsgDomainMustNotBeEmpty, common.ContentTypeText)
 		return
 	}
 	labels, err := getLabels(rctx)
@@ -139,9 +139,10 @@ func returnData(rctx *restful.Context, domain interface{}, project string, label
 			return
 		}
 		changed, err := eventHappened(rctx, wait, &pubsub.Topic{
-			Labels:   labels,
-			Project:  project,
-			DomainID: domain.(string),
+			Labels:    labels,
+			Project:   project,
+			MatchType: getMatchPattern(rctx),
+			DomainID:  domain.(string),
 		})
 		if err != nil {
 			WriteErrResponse(rctx, http.StatusBadRequest, err.Error(), common.ContentTypeText)
@@ -167,9 +168,10 @@ func returnData(rctx *restful.Context, domain interface{}, project string, label
 			return
 		} else if wait != "" {
 			changed, err := eventHappened(rctx, wait, &pubsub.Topic{
-				Labels:   labels,
-				Project:  project,
-				DomainID: domain.(string),
+				Labels:    labels,
+				Project:   project,
+				MatchType: getMatchPattern(rctx),
+				DomainID:  domain.(string),
 			})
 			if err != nil {
 				WriteErrResponse(rctx, http.StatusBadRequest, err.Error(), common.ContentTypeText)
@@ -198,7 +200,7 @@ func (r *KVResource) Search(context *restful.Context) {
 	project := context.ReadPathParameter("project")
 	domain := ReadDomain(context)
 	if domain == nil {
-		WriteErrResponse(context, http.StatusInternalServerError, MsgDomainMustNotBeEmpty, common.ContentTypeText)
+		WriteErrResponse(context, http.StatusInternalServerError, common.MsgDomainMustNotBeEmpty, common.ContentTypeText)
 		return
 	}
 	var kvs []*model.KVResponse
@@ -261,12 +263,12 @@ func (r *KVResource) Delete(context *restful.Context) {
 	project := context.ReadPathParameter("project")
 	domain := ReadDomain(context)
 	if domain == nil {
-		WriteErrResponse(context, http.StatusInternalServerError, MsgDomainMustNotBeEmpty, common.ContentTypeText)
+		WriteErrResponse(context, http.StatusInternalServerError, common.MsgDomainMustNotBeEmpty, common.ContentTypeText)
 		return
 	}
 	kvID := context.ReadQueryParameter(common.QueryParamKeyID)
 	if kvID == "" {
-		WriteErrResponse(context, http.StatusBadRequest, ErrKvIDMustNotEmpty, common.ContentTypeText)
+		WriteErrResponse(context, http.StatusBadRequest, common.ErrKvIDMustNotEmpty, common.ContentTypeText)
 		return
 	}
 	err := service.KVService.Delete(context.Ctx, kvID, domain.(string), project)

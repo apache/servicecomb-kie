@@ -36,6 +36,7 @@ import (
 	"io/ioutil"
 	"net/http"
 	"net/http/httptest"
+	"sync"
 	"testing"
 	"time"
 
@@ -206,7 +207,7 @@ func TestKVResource_List(t *testing.T) {
 		t.Log(duration)
 		assert.Equal(t, http.StatusNotModified, resp.Result().StatusCode)
 	})
-	t.Run("list kv by service label, with wait param,will too 1s and return 304", func(t *testing.T) {
+	t.Run("list kv by service label, with wait param,will exceed 1s and return 304", func(t *testing.T) {
 		r, _ := http.NewRequest("GET", "/v1/test/kie/kv?label=service:utService&wait=1s", nil)
 		noopH := &handler2.NoopAuthHandler{}
 		chain, _ := handler.CreateChain(common.Provider, "testchain1", noopH.Name())
@@ -253,6 +254,47 @@ func TestKVResource_List(t *testing.T) {
 		err = json.Unmarshal(body, result)
 		assert.NoError(t, err)
 		assert.Equal(t, 1, len(result.Data))
+	})
+	t.Run("list kv by service label, with wait and match param,not exact match and return 304", func(t *testing.T) {
+		r, _ := http.NewRequest("GET", "/v1/test/kie/kv?label=match:test&wait=10s&match=exact", nil)
+		noopH := &handler2.NoopAuthHandler{}
+		chain, _ := handler.CreateChain(common.Provider, "testchain-match", noopH.Name())
+		r.Header.Set("Content-Type", "application/json")
+		kvr := &v1.KVResource{}
+		c, err := restfultest.New(kvr, chain)
+		assert.NoError(t, err)
+		resp := httptest.NewRecorder()
+		var wg sync.WaitGroup
+		wg.Add(1)
+		go func() {
+			kv := &model.KVDoc{
+				Value:  "val",
+				Labels: map[string]string{"dummy": "test", "match": "test"},
+			}
+			j, _ := json.Marshal(kv)
+			r2, _ := http.NewRequest("PUT", "/v1/test/kie/kv/testKey", bytes.NewBuffer(j))
+			noopH2 := &handler2.NoopAuthHandler{}
+			chain2, _ := handler.CreateChain(common.Provider, "testchain-match", noopH2.Name())
+			r2.Header.Set("Content-Type", "application/json")
+			kvr2 := &v1.KVResource{}
+			c2, _ := restfultest.New(kvr2, chain2)
+			resp2 := httptest.NewRecorder()
+			c2.ServeHTTP(resp2, r2)
+			body, _ := ioutil.ReadAll(resp2.Body)
+			data := &model.KVDoc{}
+			err = json.Unmarshal(body, data)
+			assert.NotEmpty(t, data.ID)
+			wg.Done()
+		}()
+		start := time.Now()
+		c.ServeHTTP(resp, r)
+		wg.Wait()
+		duration := time.Since(start)
+		body, _ := ioutil.ReadAll(resp.Body)
+		data := &model.KVDoc{}
+		err = json.Unmarshal(body, data)
+		assert.Equal(t, 304, resp.Code)
+		t.Log(duration)
 	})
 }
 func TestKVResource_GetByKey(t *testing.T) {
