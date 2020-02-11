@@ -39,6 +39,6 @@ func TestCreateRecord(t *testing.T) {
 		UserAgent: "xxx",
 		URLPath:   "xx/xx",
 	})
-	///assert.NoError(t, err)
+	//assert.NoError(t, err)
 	assert.NotEmpty(t, d.ID)
 }
