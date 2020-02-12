@@ -38,6 +38,9 @@ type KVDoc struct {
 	CreateRevision int64  `json:"create_revision,omitempty" bson:"create_revision," yaml:"create_revision,omitempty"`
 	UpdateRevision int64  `json:"update_revision,omitempty" bson:"update_revision," yaml:"update_revision,omitempty"`
 	Project        string `json:"project,omitempty" yaml:"project,omitempty"`
+	Status         string `json:"status,omitempty" yaml:"status,omitempty"`
+	CreatTime      string `json:"create_time,omitempty" yaml:"create_time,omitempty"`
+	UpdateTime     string `json:"update_time,omitempty" yaml:"update_time,omitempty"`
 
 	Labels map[string]string `json:"labels,omitempty" yaml:"labels,omitempty"` //redundant
 	Domain string            `json:"domain,omitempty" yaml:"domain,omitempty"` //redundant

@@ -42,7 +42,16 @@ db.createCollection( "kv", {
                 },
                 labels: {
                     bsonType: "object"
-                }
+                },
+                create_time: {
+                    bsonType: "string",
+                },
+                update_time: {
+                    bsonType: "string",
+                },
+                status: {
+                    bsonType: "string",
+                },
             }
         } }
 } );

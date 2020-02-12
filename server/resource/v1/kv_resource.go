@@ -59,6 +59,11 @@ func (r *KVResource) Put(context *restful.Context) {
 	kv.Key = key
 	kv.Domain = domain.(string)
 	kv.Project = project
+	_, err = checkStatus(kv.Status)
+	if err != nil {
+		WriteErrResponse(context, http.StatusInternalServerError, err.Error(), common.ContentTypeText)
+		return
+	}
 	kv, err = service.KVService.CreateOrUpdate(context.Ctx, kv)
 	if err != nil {
 		openlogging.Error(fmt.Sprintf("put [%v] err:%s", kv, err.Error()))
@@ -111,7 +116,13 @@ func (r *KVResource) GetByKey(rctx *restful.Context) {
 		return
 	}
 	insId := rctx.ReadHeader("insId")
-	returnData(rctx, domain, project, labels, limit, offset, insId)
+	statusStr := rctx.ReadQueryParameter("status")
+	status, err := checkStatus(statusStr)
+	if err != nil {
+		WriteErrResponse(rctx, http.StatusBadRequest, err.Error(), common.ContentTypeText)
+		return
+	}
+	returnData(rctx, domain, project, labels, limit, offset, status,insId)
 }
 
 //List response kv list
@@ -136,17 +147,22 @@ func (r *KVResource) List(rctx *restful.Context) {
 		return
 	}
 	insId := rctx.ReadHeader("insId")
-	returnData(rctx, domain, project, labels, limit, offset, insId)
+	statusStr := rctx.ReadQueryParameter("status")
+	status, err := checkStatus(statusStr)
+	if err != nil {
+		WriteErrResponse(rctx, http.StatusBadRequest, err.Error(), common.ContentTypeText)
+		return
+	}
+	returnData(rctx, domain, project, labels, limit, offset, status,insId)
 }
 
-//
-func returnData(rctx *restful.Context, domain interface{}, project string, labels map[string]string, limit, offset int64, insId string) {
+func returnData(rctx *restful.Context, domain interface{}, project string, labels map[string]string, limit, offset int64, status,insId string) {
 	revStr := rctx.ReadQueryParameter(common.QueryParamRev)
 	wait := rctx.ReadQueryParameter(common.QueryParamWait)
 	go RecordPollingDetail(rctx, revStr, wait, domain.(string), project, labels, limit, offset, insId)
 	if revStr == "" {
 		if wait == "" {
-			queryAndResponse(rctx, domain, project, "", labels, limit, offset)
+			queryAndResponse(rctx, domain, project, "", labels, limit, offset, status)
 			return
 		}
 		changed, err := eventHappened(rctx, wait, &pubsub.Topic{
@@ -160,7 +176,7 @@ func returnData(rctx *restful.Context, domain interface{}, project string, label
 			return
 		}
 		if changed {
-			queryAndResponse(rctx, domain, project, "", labels, limit, offset)
+			queryAndResponse(rctx, domain, project, "", labels, limit, offset, status)
 			return
 		}
 		rctx.WriteHeader(http.StatusNotModified)
@@ -175,7 +191,7 @@ func returnData(rctx *restful.Context, domain interface{}, project string, label
 			return
 		}
 		if revised {
-			queryAndResponse(rctx, domain, project, "", labels, limit, offset)
+			queryAndResponse(rctx, domain, project, "", labels, limit, offset, status)
 			return
 		} else if wait != "" {
 			changed, err := eventHappened(rctx, wait, &pubsub.Topic{
@@ -189,7 +205,7 @@ func returnData(rctx *restful.Context, domain interface{}, project string, label
 				return
 			}
 			if changed {
-				queryAndResponse(rctx, domain, project, "", labels, limit, offset)
+				queryAndResponse(rctx, domain, project, "", labels, limit, offset, status)
 				return
 			}
 			rctx.WriteHeader(http.StatusNotModified)
