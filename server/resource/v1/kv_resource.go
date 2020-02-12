@@ -217,7 +217,7 @@ func returnData(rctx *restful.Context, domain interface{}, project string, label
 	}
 }
 
-//RecordPollingDetail to record data after get or list
+//GenPollingDetail to generate data after get or list
 func GenPollingDetail(context *restful.Context, revStr, wait, domain, project string, labels map[string]string, limit, offset int64, insID string) *model.PollingDetail {
 	data := &model.PollingDetail{}
 	data.ID = uuid.NewV4().String()

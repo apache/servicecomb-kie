@@ -23,6 +23,7 @@ import (
 	"github.com/apache/servicecomb-kie/server/service/mongo/history"
 	"github.com/apache/servicecomb-kie/server/service/mongo/kv"
 	"github.com/apache/servicecomb-kie/server/service/mongo/label"
+	"github.com/apache/servicecomb-kie/server/service/mongo/record"
 	"github.com/apache/servicecomb-kie/server/service/mongo/session"
 	"github.com/go-mesh/openlogging"
 )
@@ -32,6 +33,7 @@ func init() {
 	service.DBInit = session.Init
 	service.KVService = &kv.Service{}
 	service.HistoryService = &history.Service{}
+	service.RecordService = &record.Service{}
 	service.RevisionService = &counter.Service{}
 	service.LabelService = &label.Service{}
 }
