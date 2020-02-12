@@ -22,6 +22,7 @@ import (
 	"encoding/json"
 	"fmt"
 	"github.com/apache/servicecomb-kie/pkg/common"
+	"github.com/apache/servicecomb-kie/pkg/iputil"
 	"github.com/apache/servicecomb-kie/pkg/model"
 	"github.com/apache/servicecomb-kie/server/pubsub"
 	"github.com/apache/servicecomb-kie/server/service"
@@ -29,7 +30,6 @@ import (
 	goRestful "github.com/emicklei/go-restful"
 	"github.com/go-chassis/go-chassis/server/restful"
 	"github.com/go-mesh/openlogging"
-	uuid "github.com/satori/go.uuid"
 	"net/http"
 	"sync"
 )
@@ -110,7 +110,8 @@ func (r *KVResource) GetByKey(rctx *restful.Context) {
 		WriteErrResponse(rctx, http.StatusBadRequest, err.Error(), common.ContentTypeText)
 		return
 	}
-	returnData(rctx, domain, project, labels, limit, offset)
+	insId := rctx.ReadHeader("insId")
+	returnData(rctx, domain, project, labels, limit, offset, insId)
 }
 
 //List response kv list
@@ -134,14 +135,15 @@ func (r *KVResource) List(rctx *restful.Context) {
 		WriteErrResponse(rctx, http.StatusBadRequest, err.Error(), common.ContentTypeText)
 		return
 	}
-	returnData(rctx, domain, project, labels, limit, offset)
+	insId := rctx.ReadHeader("insId")
+	returnData(rctx, domain, project, labels, limit, offset, insId)
 }
 
 //
-func returnData(rctx *restful.Context, domain interface{}, project string, labels map[string]string, limit, offset int64) {
+func returnData(rctx *restful.Context, domain interface{}, project string, labels map[string]string, limit, offset int64, insId string) {
 	revStr := rctx.ReadQueryParameter(common.QueryParamRev)
 	wait := rctx.ReadQueryParameter(common.QueryParamWait)
-	go RecordPollingDetail(rctx, revStr, wait, domain.(string), project, labels, limit, offset)
+	go RecordPollingDetail(rctx, revStr, wait, domain.(string), project, labels, limit, offset, insId)
 	if revStr == "" {
 		if wait == "" {
 			queryAndResponse(rctx, domain, project, "", labels, limit, offset)
@@ -199,11 +201,11 @@ func returnData(rctx *restful.Context, domain interface{}, project string, label
 }
 
 //RecordPollingDetail to record data after get or list
-func RecordPollingDetail(context *restful.Context, revStr, wait, domain, project string, labels map[string]string, limit, offset int64) {
+func RecordPollingDetail(context *restful.Context, revStr, wait, domain, project string, labels map[string]string, limit, offset int64, insId string) {
 	Wg.Add(1)
 	data := &model.PollingDetail{}
-	data.ID = uuid.NewV4().String()
-	data.IP = ClientIP(context.Req.Request)
+	data.ID = insId + domain
+	data.IP = iputil.ClientIP(context.Req.Request)
 	dataMap := map[string]interface{}{
 		"revStr":  revStr,
 		"wait":    wait,
@@ -222,7 +224,7 @@ func RecordPollingDetail(context *restful.Context, revStr, wait, domain, project
 	data.ResponseCode = context.Resp.StatusCode()
 	//todo : get the response body data is private
 	//data.ResponseBody = context.Resp
-	_, err := record.CreateRecord(context.Ctx, data)
+	_, err := record.CreateOrUpdateRecord(context.Ctx, data)
 	if err != nil {
 		openlogging.Warn("record polling detail failed" + err.Error())
 		return

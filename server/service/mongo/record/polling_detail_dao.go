@@ -21,12 +21,25 @@ import (
 	"context"
 	"github.com/apache/servicecomb-kie/pkg/model"
 	"github.com/apache/servicecomb-kie/server/service/mongo/session"
+	"go.mongodb.org/mongo-driver/bson"
+	"go.mongodb.org/mongo-driver/mongo"
 )
 
-//CreateRecord to create a record
-func CreateRecord(ctx context.Context, detail *model.PollingDetail) (*model.PollingDetail, error) {
+//CreateOrUpdateRecord create a record or update exist record
+func CreateOrUpdateRecord(ctx context.Context, detail *model.PollingDetail) (*model.PollingDetail, error) {
 	collection := session.GetDB().Collection(session.CollectionPollingDetail)
-	_, err := collection.InsertOne(ctx, detail)
+	queryFilter := bson.M{"id": detail.ID}
+	qres := collection.FindOne(ctx, queryFilter)
+	if qres.Err() != nil {
+		if qres.Err() == mongo.ErrNoDocuments {
+			_, err := collection.InsertOne(ctx, detail)
+			if err != nil {
+				return nil, err
+			}
+		}
+		return nil, qres.Err()
+	}
+	_, err := collection.UpdateOne(ctx, queryFilter, detail)
 	if err != nil {
 		return nil, err
 	}
