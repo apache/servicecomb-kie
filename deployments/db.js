@@ -105,6 +105,9 @@ db.createCollection( "polling_detail", {
                 id: {
                     bsonType: "string",
                 },
+                session_id: {
+                    bsonType: "string",
+                },
                 polling_date: {
                     bsonType: "string"
                 },

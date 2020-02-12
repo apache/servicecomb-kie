@@ -58,6 +58,7 @@ type ViewResponse struct {
 //PollingDetail record operation history
 type PollingDetail struct {
 	ID             string                 `json:"id,omitempty" yaml:"id,omitempty"`
+	SessionID      string                 `json:"session_id,omitempty" yaml:"session_id,omitempty"`
 	PollingData    map[string]interface{} `json:"polling_data,omitempty" yaml:"polling_data,omitempty"`
 	IP             string                 `json:"ip,omitempty" yaml:"ip,omitempty"`
 	UserAgent      string                 `json:"user_agent,omitempty" yaml:"user_agent,omitempty"`

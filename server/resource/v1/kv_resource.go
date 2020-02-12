@@ -30,6 +30,7 @@ import (
 	goRestful "github.com/emicklei/go-restful"
 	"github.com/go-chassis/go-chassis/server/restful"
 	"github.com/go-mesh/openlogging"
+	uuid "github.com/satori/go.uuid"
 	"net/http"
 	"sync"
 )
@@ -122,7 +123,7 @@ func (r *KVResource) GetByKey(rctx *restful.Context) {
 		WriteErrResponse(rctx, http.StatusBadRequest, err.Error(), common.ContentTypeText)
 		return
 	}
-	returnData(rctx, domain, project, labels, limit, offset, status,insId)
+	returnData(rctx, domain, project, labels, limit, offset, status, insId)
 }
 
 //List response kv list
@@ -153,10 +154,10 @@ func (r *KVResource) List(rctx *restful.Context) {
 		WriteErrResponse(rctx, http.StatusBadRequest, err.Error(), common.ContentTypeText)
 		return
 	}
-	returnData(rctx, domain, project, labels, limit, offset, status,insId)
+	returnData(rctx, domain, project, labels, limit, offset, status, insId)
 }
 
-func returnData(rctx *restful.Context, domain interface{}, project string, labels map[string]string, limit, offset int64, status,insId string) {
+func returnData(rctx *restful.Context, domain interface{}, project string, labels map[string]string, limit, offset int64, status, insId string) {
 	revStr := rctx.ReadQueryParameter(common.QueryParamRev)
 	wait := rctx.ReadQueryParameter(common.QueryParamWait)
 	go RecordPollingDetail(rctx, revStr, wait, domain.(string), project, labels, limit, offset, insId)
@@ -220,7 +221,8 @@ func returnData(rctx *restful.Context, domain interface{}, project string, label
 func RecordPollingDetail(context *restful.Context, revStr, wait, domain, project string, labels map[string]string, limit, offset int64, insId string) {
 	Wg.Add(1)
 	data := &model.PollingDetail{}
-	data.ID = insId + domain
+	data.ID = uuid.NewV4().String()
+	data.SessionID = insId + domain
 	data.IP = iputil.ClientIP(context.Req.Request)
 	dataMap := map[string]interface{}{
 		"revStr":  revStr,
