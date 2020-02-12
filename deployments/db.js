@@ -108,6 +108,9 @@ db.createCollection( "polling_detail", {
                 session_id: {
                     bsonType: "string",
                 },
+                domain: {
+                    bsonType: "string",
+                },
                 polling_date: {
                     bsonType: "string"
                 },
@@ -139,6 +142,7 @@ db.kv.createIndex({key: 1, label_id: 1,domain:1,project:1},{ unique: true });
 db.label.createIndex({"id": 1}, { unique: true } );
 db.label.createIndex({format: 1,domain:1,project:1},{ unique: true });
 db.polling_detail.createIndex({"id": 1}, { unique: true } );
+db.polling_detail.createIndex({session:1,domain:1}, { unique: true } );
 db.view.createIndex({"id": 1}, { unique: true } );
 db.view.createIndex({display:1,domain:1,project:1},{ unique: true });
 //db config
