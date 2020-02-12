@@ -33,8 +33,8 @@ func getHistoryByKeyID(ctx context.Context, filter bson.M, pageNum, pageSize int
 		"revision": -1,
 	})
 	if pageNum != 0 && pageSize != 0 {
-		opt = opt.SetLimit(pageNum)
-		opt = opt.SetSkip(pageNum * (pageSize - 1))
+		opt = opt.SetLimit(pageSize)
+		opt = opt.SetSkip(pageSize * (pageNum - 1))
 	}
 	curTotal, errTotal := collection.CountDocuments(ctx, filter)
 	if errTotal != nil {

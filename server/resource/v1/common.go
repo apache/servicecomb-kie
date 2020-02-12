@@ -186,7 +186,7 @@ func checkPagination(pageNum, pageSize string) (int64, int64, error) {
 		if err != nil {
 			return 0, 0, err
 		}
-		if num < 1 || num > 100 {
+		if num < 1 {
 			return 0, 0, errors.New("invalid pageNum number")
 		}
 	}
@@ -196,7 +196,7 @@ func checkPagination(pageNum, pageSize string) (int64, int64, error) {
 		if err != nil {
 			return 0, 0, errors.New("invalid pageSize number")
 		}
-		if size < 1 {
+		if size < 1 || size > 100 {
 			return 0, 0, errors.New("invalid pageSize number")
 		}
 	}

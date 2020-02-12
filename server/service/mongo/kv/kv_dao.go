@@ -118,8 +118,8 @@ func findKV(ctx context.Context, domain string, project string, opts service.Fin
 	}
 	opt := options.Find()
 	if opts.PageSize != 0 && opts.PageNum != 0 {
-		opt = opt.SetLimit(opts.PageNum)
-		opt = opt.SetSkip(opts.PageNum * (opts.PageSize - 1))
+		opt = opt.SetLimit(opts.PageSize)
+		opt = opt.SetSkip(opts.PageSize * (opts.PageNum - 1))
 	}
 	curTotal, errTotal := collection.CountDocuments(ctx, filter)
 	if errTotal != nil {
