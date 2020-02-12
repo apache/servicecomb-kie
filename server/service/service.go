@@ -29,6 +29,7 @@ var (
 	HistoryService  History
 	RevisionService Revision
 	LabelService    Label
+	RecordService   Record
 	DBInit          Init
 )
 
@@ -62,6 +63,12 @@ type Revision interface {
 //Label manages labels data
 type Label interface {
 	CreateOrUpdate(ctx context.Context, label *model.LabelDoc) (*model.LabelDoc, error)
+}
+
+//Record manages record data
+type Record interface {
+	RecordSuccess(ctx context.Context, detail *model.PollingDetail, respStatus int, respData, respHeader string) (*model.PollingDetail, error)
+	RecordFailed(ctx context.Context, detail *model.PollingDetail, respStatus int, respData string) (*model.PollingDetail, error)
 }
 
 //View create update and get view data

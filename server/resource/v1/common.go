@@ -21,6 +21,7 @@ import (
 	"context"
 	"encoding/json"
 	"errors"
+	"github.com/apache/servicecomb-kie/pkg/model"
 	"github.com/apache/servicecomb-kie/server/pubsub"
 	"github.com/apache/servicecomb-kie/server/service"
 	uuid "github.com/satori/go.uuid"
@@ -84,6 +85,15 @@ func ReadLabelCombinations(req *goRestful.Request) ([]map[string]string, error) 
 	}
 
 	return labelCombinations, nil
+}
+
+//WriteErrResponseWithRecord write error message to client and record
+func WriteErrResponseWithRecord(context *restful.Context, status int, msg, contentType string, record *model.PollingDetail) {
+	WriteErrResponse(context, status, msg, contentType)
+	_, recordErr := service.RecordService.RecordFailed(context.Ctx, record, status, msg)
+	if recordErr != nil {
+		openlogging.Error("record detail error error:" + recordErr.Error())
+	}
 }
 
 //WriteErrResponse write error message to client
@@ -209,7 +219,7 @@ func checkStatus(status string) (string, error) {
 }
 
 func queryAndResponse(rctx *restful.Context,
-	domain interface{}, project string, key string, labels map[string]string, limit, offset int64, status string) {
+	domain interface{}, project string, key string, labels map[string]string, limit, offset int64, status string, record *model.PollingDetail) {
 	m := getMatchPattern(rctx)
 	opts := []service.FindOption{
 		service.WithKey(key),
@@ -226,20 +236,26 @@ func queryAndResponse(rctx *restful.Context,
 	kv, err := service.KVService.List(rctx.Ctx, domain.(string), project, opts...)
 	if err != nil {
 		if err == service.ErrKeyNotExists {
-			WriteErrResponse(rctx, http.StatusNotFound, err.Error(), common.ContentTypeText)
+			WriteErrResponseWithRecord(rctx, http.StatusNotFound, err.Error(), common.ContentTypeText, record)
 			return
 		}
-		WriteErrResponse(rctx, http.StatusInternalServerError, err.Error(), common.ContentTypeText)
+		WriteErrResponseWithRecord(rctx, http.StatusInternalServerError, err.Error(), common.ContentTypeText, record)
 		return
 	}
 	rev, err := service.RevisionService.GetRevision(rctx.Ctx, domain.(string))
 	if err != nil {
-		WriteErrResponse(rctx, http.StatusInternalServerError, err.Error(), common.ContentTypeText)
+		WriteErrResponseWithRecord(rctx, http.StatusInternalServerError, err.Error(), common.ContentTypeText, record)
 		return
 	}
 	rctx.ReadResponseWriter().Header().Set(common.HeaderRevision, strconv.FormatInt(rev, 10))
 	err = writeResponse(rctx, kv)
 	if err != nil {
 		openlogging.Error(err.Error())
+	}
+	respData, _ := json.Marshal(kv)
+	respHeader, _ := json.Marshal(rctx.Resp.Header())
+	_, recordErr := service.RecordService.RecordSuccess(rctx.Ctx, record, http.StatusOK, string(respData), string(respHeader))
+	if recordErr != nil {
+		openlogging.Error("record detail error error:" + recordErr.Error())
 	}
 }

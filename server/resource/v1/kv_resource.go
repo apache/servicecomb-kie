@@ -19,28 +19,22 @@
 package v1
 
 import (
-	"encoding/json"
 	"fmt"
 	"github.com/apache/servicecomb-kie/pkg/common"
 	"github.com/apache/servicecomb-kie/pkg/iputil"
 	"github.com/apache/servicecomb-kie/pkg/model"
 	"github.com/apache/servicecomb-kie/server/pubsub"
 	"github.com/apache/servicecomb-kie/server/service"
-	"github.com/apache/servicecomb-kie/server/service/mongo/record"
 	goRestful "github.com/emicklei/go-restful"
 	"github.com/go-chassis/go-chassis/server/restful"
 	"github.com/go-mesh/openlogging"
 	uuid "github.com/satori/go.uuid"
 	"net/http"
-	"sync"
 )
 
 //KVResource has API about kv operations
 type KVResource struct {
 }
-
-//Wg for record polling data
-var Wg sync.WaitGroup
 
 //Put create or update kv
 func (r *KVResource) Put(context *restful.Context) {
@@ -160,10 +154,11 @@ func (r *KVResource) List(rctx *restful.Context) {
 func returnData(rctx *restful.Context, domain interface{}, project string, labels map[string]string, limit, offset int64, status, insID string) {
 	revStr := rctx.ReadQueryParameter(common.QueryParamRev)
 	wait := rctx.ReadQueryParameter(common.QueryParamWait)
-	go RecordPollingDetail(rctx, revStr, wait, domain.(string), project, labels, limit, offset, insID)
+	var recordErr error
+	recordData := GenPollingDetail(rctx, revStr, wait, domain.(string), project, labels, limit, offset, insID)
 	if revStr == "" {
 		if wait == "" {
-			queryAndResponse(rctx, domain, project, "", labels, limit, offset, status)
+			queryAndResponse(rctx, domain, project, "", labels, limit, offset, status, recordData)
 			return
 		}
 		changed, err := eventHappened(rctx, wait, &pubsub.Topic{
@@ -173,26 +168,27 @@ func returnData(rctx *restful.Context, domain interface{}, project string, label
 			DomainID:  domain.(string),
 		})
 		if err != nil {
-			WriteErrResponse(rctx, http.StatusBadRequest, err.Error(), common.ContentTypeText)
+			WriteErrResponseWithRecord(rctx, http.StatusBadRequest, err.Error(), common.ContentTypeText, recordData)
 			return
 		}
 		if changed {
-			queryAndResponse(rctx, domain, project, "", labels, limit, offset, status)
+			queryAndResponse(rctx, domain, project, "", labels, limit, offset, status, recordData)
 			return
 		}
 		rctx.WriteHeader(http.StatusNotModified)
+		_, recordErr = service.RecordService.RecordSuccess(rctx.Ctx, recordData, http.StatusNotModified, "", "")
 	} else {
 		revised, err := isRevised(rctx.Ctx, revStr, domain.(string))
 		if err != nil {
 			if err == ErrInvalidRev {
-				WriteErrResponse(rctx, http.StatusBadRequest, err.Error(), common.ContentTypeText)
+				WriteErrResponseWithRecord(rctx, http.StatusBadRequest, err.Error(), common.ContentTypeText, recordData)
 				return
 			}
-			WriteErrResponse(rctx, http.StatusInternalServerError, err.Error(), common.ContentTypeText)
+			WriteErrResponseWithRecord(rctx, http.StatusInternalServerError, err.Error(), common.ContentTypeText, recordData)
 			return
 		}
 		if revised {
-			queryAndResponse(rctx, domain, project, "", labels, limit, offset, status)
+			queryAndResponse(rctx, domain, project, "", labels, limit, offset, status, recordData)
 			return
 		} else if wait != "" {
 			changed, err := eventHappened(rctx, wait, &pubsub.Topic{
@@ -202,24 +198,27 @@ func returnData(rctx *restful.Context, domain interface{}, project string, label
 				DomainID:  domain.(string),
 			})
 			if err != nil {
-				WriteErrResponse(rctx, http.StatusBadRequest, err.Error(), common.ContentTypeText)
+				WriteErrResponseWithRecord(rctx, http.StatusBadRequest, err.Error(), common.ContentTypeText, recordData)
 				return
 			}
 			if changed {
-				queryAndResponse(rctx, domain, project, "", labels, limit, offset, status)
+				queryAndResponse(rctx, domain, project, "", labels, limit, offset, status, recordData)
 				return
 			}
 			rctx.WriteHeader(http.StatusNotModified)
-			return
+			_, recordErr = service.RecordService.RecordSuccess(rctx.Ctx, recordData, http.StatusNotModified, "", "")
 		} else {
 			rctx.WriteHeader(http.StatusNotModified)
+			_, recordErr = service.RecordService.RecordSuccess(rctx.Ctx, recordData, http.StatusNotModified, "", "")
+		}
+		if recordErr != nil {
+			openlogging.Error("record detail error error:" + recordErr.Error())
 		}
 	}
 }
 
 //RecordPollingDetail to record data after get or list
-func RecordPollingDetail(context *restful.Context, revStr, wait, domain, project string, labels map[string]string, limit, offset int64, insID string) {
-	Wg.Add(1)
+func GenPollingDetail(context *restful.Context, revStr, wait, domain, project string, labels map[string]string, limit, offset int64, insID string) *model.PollingDetail {
 	data := &model.PollingDetail{}
 	data.ID = uuid.NewV4().String()
 	data.SessionID = insID
@@ -237,17 +236,7 @@ func RecordPollingDetail(context *restful.Context, revStr, wait, domain, project
 	data.PollingData = dataMap
 	data.UserAgent = context.Req.HeaderParameter("User-Agent")
 	data.URLPath = context.ReadRequest().Method + " " + context.ReadRequest().URL.Path
-	Wg.Wait()
-	respHeader, _ := json.Marshal(context.Resp.Header())
-	data.ResponseHeader = string(respHeader)
-	data.ResponseCode = context.Resp.StatusCode()
-	//todo : get the response body data is private
-	//data.ResponseBody = context.Resp
-	_, err := record.CreateOrUpdateRecord(context.Ctx, data)
-	if err != nil {
-		openlogging.Warn("record polling detail failed" + err.Error())
-		return
-	}
+	return data
 }
 
 //Search search key only by label
