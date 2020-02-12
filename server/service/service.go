@@ -51,7 +51,7 @@ type KV interface {
 
 //History provide api of History entity
 type History interface {
-	GetHistory(ctx context.Context, keyID string, options ...FindOption) ([]*model.KVDoc, error)
+	GetHistory(ctx context.Context, keyID string, options ...FindOption) ([]*model.KVDoc, int, error)
 }
 
 //Revision is global revision number management

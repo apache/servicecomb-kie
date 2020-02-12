@@ -31,12 +31,6 @@ import (
 	"github.com/go-mesh/openlogging"
 )
 
-//const
-const (
-	existKvLimit  = 2
-	existKvOffset = 0
-)
-
 //Service operate data in mongodb
 type Service struct {
 	timeout time.Duration
@@ -123,9 +117,7 @@ func (s *Service) Exist(ctx context.Context, domain, key string, project string,
 	kvs, err := s.FindKV(ctx, domain, project,
 		service.WithExactLabels(),
 		service.WithLabels(opts.Labels),
-		service.WithKey(key),
-		service.WithLimit(existKvLimit),
-		service.WithOffset(existKvOffset))
+		service.WithKey(key))
 	if err != nil {
 		openlogging.Error(err.Error())
 		return nil, err
@@ -166,7 +158,7 @@ func (s *Service) List(ctx context.Context, domain, project string, options ...s
 	for _, o := range options {
 		o(&opts)
 	}
-	cur, err := findKV(ctx, domain, project, opts)
+	cur, total, err := findKV(ctx, domain, project, opts)
 	if err != nil {
 		return nil, err
 	}
@@ -186,6 +178,9 @@ func (s *Service) List(ctx context.Context, domain, project string, options ...s
 		clearPart(curKV)
 		result.Data = append(result.Data, curKV)
 	}
+	result.Size = opts.PageSize
+	result.PageNum = opts.PageNum
+	result.Total = total
 	if len(result.Data) == 0 {
 		return nil, service.ErrKeyNotExists
 	}
@@ -210,7 +205,7 @@ func (s *Service) FindKV(ctx context.Context, domain string, project string, opt
 		return nil, session.ErrMissingProject
 	}
 
-	cur, err := findKV(ctx, domain, project, opts)
+	cur, _, err := findKV(ctx, domain, project, opts)
 	if err != nil {
 		return nil, err
 	}

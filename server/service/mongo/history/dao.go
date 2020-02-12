@@ -27,20 +27,22 @@ import (
 	"go.mongodb.org/mongo-driver/mongo/options"
 )
 
-func getHistoryByKeyID(ctx context.Context, filter bson.M, limit, offset int64) ([]*model.KVDoc, error) {
+func getHistoryByKeyID(ctx context.Context, filter bson.M, pageNum, pageSize int64) ([]*model.KVDoc, int, error) {
 	collection := session.GetDB().Collection(session.CollectionKVRevision)
 	opt := options.Find().SetSort(map[string]interface{}{
 		"revision": -1,
 	})
-	if limit != 0 {
-		opt = opt.SetLimit(limit)
+	if pageNum != 0 && pageSize != 0 {
+		opt = opt.SetLimit(pageNum)
+		opt = opt.SetSkip(pageNum * (pageSize - 1))
 	}
-	if offset != 0 {
-		opt = opt.SetSkip(offset)
+	curTotal, errTotal := collection.CountDocuments(ctx, filter)
+	if errTotal != nil {
+		return nil, 0, errTotal
 	}
 	cur, err := collection.Find(ctx, filter, opt)
 	if err != nil {
-		return nil, err
+		return nil, 0, err
 	}
 	kvs := make([]*model.KVDoc, 0)
 	var exist bool
@@ -49,15 +51,15 @@ func getHistoryByKeyID(ctx context.Context, filter bson.M, limit, offset int64) 
 		err := cur.Decode(&elem)
 		if err != nil {
 			openlogging.Error("decode error: " + err.Error())
-			return nil, err
+			return nil, 0, err
 		}
 		exist = true
 		kvs = append(kvs, &elem)
 	}
 	if !exist {
-		return nil, service.ErrRevisionNotExist
+		return nil, 0, service.ErrRevisionNotExist
 	}
-	return kvs, nil
+	return kvs, int(curTotal), nil
 }
 
 //AddHistory add kv history

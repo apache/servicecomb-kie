@@ -29,8 +29,8 @@ type KVRequest struct {
 //KVResponse represents the key value list
 type KVResponse struct {
 	LabelDoc *LabelDocResponse `json:"label,omitempty"`
-	PageNum  int               `json:"num,omitempty"`
-	Size     int               `json:"size,omitempty"`
+	PageNum  int64             `json:"num,omitempty"`
+	Size     int64             `json:"size,omitempty"`
 	Total    int               `json:"total,omitempty"`
 	Data     []*KVDoc          `json:"data,omitempty"`
 }

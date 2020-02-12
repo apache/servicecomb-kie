@@ -104,7 +104,7 @@ func updateKeyValue(ctx context.Context, kv *model.KVDoc) error {
 
 }
 
-func findKV(ctx context.Context, domain string, project string, opts service.FindOptions) (*mongo.Cursor, error) {
+func findKV(ctx context.Context, domain string, project string, opts service.FindOptions) (*mongo.Cursor, int, error) {
 	collection := session.GetDB().Collection(session.CollectionKV)
 	ctx, _ = context.WithTimeout(ctx, opts.Timeout)
 	filter := bson.M{"domain": domain, "project": project}
@@ -117,11 +117,19 @@ func findKV(ctx context.Context, domain string, project string, opts service.Fin
 		}
 	}
 	opt := options.Find()
-	if opts.Limit != 0 {
-		opt = opt.SetLimit(opts.Limit)
+	if opts.PageSize != 0 && opts.PageNum != 0 {
+		opt = opt.SetLimit(opts.PageNum)
+		opt = opt.SetSkip(opts.PageNum * (opts.PageSize - 1))
 	}
-	if opts.Offset != 0 {
-		opt = opt.SetSkip(opts.Offset)
+	curTotal, errTotal := collection.CountDocuments(ctx, filter)
+	if errTotal != nil {
+		if errTotal.Error() == context.DeadlineExceeded.Error() {
+			openlogging.Error("find kv failed, deadline exceeded", openlogging.WithTags(openlogging.Tags{
+				"timeout": opts.Timeout,
+			}))
+			return nil, 0, fmt.Errorf("can not find kv in %s", opts.Timeout)
+		}
+		return nil, 0, errTotal
 	}
 	if opts.Status != "" {
 		filter["status"] = opts.Status
@@ -132,11 +140,11 @@ func findKV(ctx context.Context, domain string, project string, opts service.Fin
 			openlogging.Error("find kv failed, deadline exceeded", openlogging.WithTags(openlogging.Tags{
 				"timeout": opts.Timeout,
 			}))
-			return nil, fmt.Errorf("can not find kv in %s", opts.Timeout)
+			return nil, 0, fmt.Errorf("can not find kv in %s", opts.Timeout)
 		}
-		return nil, err
+		return nil, 0, err
 	}
-	return cur, err
+	return cur, int(curTotal), err
 }
 func findOneKey(ctx context.Context, filter bson.M) ([]*model.KVDoc, error) {
 	collection := session.GetDB().Collection(session.CollectionKV)
