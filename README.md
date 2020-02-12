@@ -96,7 +96,7 @@ and a docker image "servicecomb/kie:0.0.1"
 After you launch kie server, you can browse API doc in http://127.0.0.1:30110/apidocs.json, 
 copy this doc to http://editor.swagger.io/
 # Documentations
-https://servicecomb.apache.org/docs/users/
+https://kie.readthedocs.io/en/latest/
 
 or follow [here](docs/README.md) to generate it in local
 
