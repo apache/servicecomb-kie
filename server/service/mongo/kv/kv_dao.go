@@ -121,15 +121,15 @@ func findKV(ctx context.Context, domain string, project string, opts service.Fin
 		opt = opt.SetLimit(opts.PageSize)
 		opt = opt.SetSkip(opts.PageSize * (opts.PageNum - 1))
 	}
-	curTotal, errTotal := collection.CountDocuments(ctx, filter)
-	if errTotal != nil {
-		if errTotal.Error() == context.DeadlineExceeded.Error() {
+	curTotal, err := collection.CountDocuments(ctx, filter)
+	if err != nil {
+		if err.Error() == context.DeadlineExceeded.Error() {
 			openlogging.Error("find kv failed, deadline exceeded", openlogging.WithTags(openlogging.Tags{
 				"timeout": opts.Timeout,
 			}))
 			return nil, 0, fmt.Errorf("can not find kv in %s", opts.Timeout)
 		}
-		return nil, 0, errTotal
+		return nil, 0, err
 	}
 	if opts.Status != "" {
 		filter["status"] = opts.Status

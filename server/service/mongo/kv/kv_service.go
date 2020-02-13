@@ -178,8 +178,6 @@ func (s *Service) List(ctx context.Context, domain, project string, options ...s
 		clearPart(curKV)
 		result.Data = append(result.Data, curKV)
 	}
-	result.Size = opts.PageSize
-	result.PageNum = opts.PageNum
 	result.Total = total
 	if len(result.Data) == 0 {
 		return nil, service.ErrKeyNotExists
