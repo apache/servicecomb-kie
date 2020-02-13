@@ -28,16 +28,17 @@ import (
 //CreateOrUpdate create a record or update exist record
 func CreateOrUpdate(ctx context.Context, detail *model.PollingDetail) (*model.PollingDetail, error) {
 	collection := session.GetDB().Collection(session.CollectionPollingDetail)
-	queryFilter := bson.M{"id": detail.ID}
-	qres := collection.FindOne(ctx, queryFilter)
-	if qres.Err() != nil {
-		if qres.Err() == mongo.ErrNoDocuments {
+	queryFilter := bson.M{"domain": detail.Domain, "session_id": detail.SessionID}
+	res := collection.FindOne(ctx, queryFilter)
+	if res.Err() != nil {
+		if res.Err() == mongo.ErrNoDocuments {
 			_, err := collection.InsertOne(ctx, detail)
 			if err != nil {
 				return nil, err
 			}
+			return detail, nil
 		}
-		return nil, qres.Err()
+		return nil, res.Err()
 	}
 	_, err := collection.UpdateOne(ctx, queryFilter, detail)
 	if err != nil {

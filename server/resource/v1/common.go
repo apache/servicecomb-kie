@@ -213,7 +213,7 @@ func checkStatus(status string) (string, error) {
 }
 
 func queryAndResponse(rctx *restful.Context,
-	domain interface{}, project string, key string, labels map[string]string, pageNum, pageSize int64, status string) {
+	domain interface{}, project string, key string, labels map[string]string, pageNum, pageSize int64, status string, rChan chan interface{}) {
 	m := getMatchPattern(rctx)
 	opts := []service.FindOption{
 		service.WithKey(key),
@@ -243,6 +243,7 @@ func queryAndResponse(rctx *restful.Context,
 	}
 	rctx.ReadResponseWriter().Header().Set(common.HeaderRevision, strconv.FormatInt(rev, 10))
 	err = writeResponse(rctx, kv)
+	rChan <- kv
 	if err != nil {
 		openlogging.Error(err.Error())
 	}
