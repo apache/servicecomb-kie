@@ -36,6 +36,8 @@ import (
 	"gopkg.in/yaml.v2"
 )
 
+//const of server
+
 //err
 var (
 	ErrInvalidRev = errors.New(common.MsgInvalidRev)
@@ -174,29 +176,31 @@ func eventHappened(rctx *restful.Context, waitStr string, topic *pubsub.Topic) (
 	}
 	return happened, nil
 }
-func checkPagination(limitStr, offsetStr string) (int64, int64, error) {
+
+// size from 1 to start
+func checkPagination(pageNum, pageSize string) (int64, int64, error) {
 	var err error
-	var limit, offset int64
-	if limitStr != "" {
-		limit, err = strconv.ParseInt(limitStr, 10, 64)
+	var num, size int64
+	if pageNum != "" {
+		num, err = strconv.ParseInt(pageNum, 10, 64)
 		if err != nil {
 			return 0, 0, err
 		}
-		if limit < 1 || limit > 50 {
-			return 0, 0, errors.New("invalid limit number")
+		if num < 1 {
+			return 0, 0, errors.New("invalid pageNum number")
 		}
 	}
 
-	if offsetStr != "" {
-		offset, err = strconv.ParseInt(offsetStr, 10, 64)
+	if pageSize != "" {
+		size, err = strconv.ParseInt(pageSize, 10, 64)
 		if err != nil {
-			return 0, 0, errors.New("invalid offset number")
+			return 0, 0, errors.New("invalid pageSize number")
 		}
-		if offset < 0 {
-			return 0, 0, errors.New("invalid offset number")
+		if size < 1 || size > 100 {
+			return 0, 0, errors.New("invalid pageSize number")
 		}
 	}
-	return limit, offset, err
+	return num, size, err
 }
 
 func checkStatus(status string) (string, error) {
@@ -209,13 +213,13 @@ func checkStatus(status string) (string, error) {
 }
 
 func queryAndResponse(rctx *restful.Context,
-	domain interface{}, project string, key string, labels map[string]string, limit, offset int64, status string) {
+	domain interface{}, project string, key string, labels map[string]string, pageNum, pageSize int64, status string) {
 	m := getMatchPattern(rctx)
 	opts := []service.FindOption{
 		service.WithKey(key),
 		service.WithLabels(labels),
-		service.WithLimit(limit),
-		service.WithOffset(offset),
+		service.WithPageNum(pageNum),
+		service.WithPageSize(pageSize),
 	}
 	if m == common.PatternExact {
 		opts = append(opts, service.WithExactLabels())

@@ -30,7 +30,7 @@ type Service struct {
 }
 
 //GetHistory get all history by label id
-func (s *Service) GetHistory(ctx context.Context, kvID string, options ...service.FindOption) ([]*model.KVDoc, error) {
+func (s *Service) GetHistory(ctx context.Context, kvID string, options ...service.FindOption) ([]*model.KVDoc, int, error) {
 	var filter primitive.M
 	opts := service.FindOptions{}
 	for _, o := range options {
@@ -40,5 +40,5 @@ func (s *Service) GetHistory(ctx context.Context, kvID string, options ...servic
 		"id": kvID,
 	}
 
-	return getHistoryByKeyID(ctx, filter, opts.Limit, opts.Offset)
+	return getHistoryByKeyID(ctx, filter, opts.PageNum, opts.PageSize)
 }

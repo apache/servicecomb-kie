@@ -101,9 +101,9 @@ func (r *KVResource) GetByKey(rctx *restful.Context) {
 		WriteErrResponse(rctx, http.StatusInternalServerError, common.MsgDomainMustNotBeEmpty, common.ContentTypeText)
 		return
 	}
-	limitStr := rctx.ReadQueryParameter("limit")
-	offsetStr := rctx.ReadQueryParameter("offset")
-	limit, offset, err := checkPagination(limitStr, offsetStr)
+	pageNumStr := rctx.ReadQueryParameter("pageNum")
+	pageSizeStr := rctx.ReadQueryParameter("pageSize")
+	pageNum, pageSize, err := checkPagination(pageNumStr, pageSizeStr)
 	if err != nil {
 		WriteErrResponse(rctx, http.StatusBadRequest, err.Error(), common.ContentTypeText)
 		return
@@ -114,7 +114,7 @@ func (r *KVResource) GetByKey(rctx *restful.Context) {
 		WriteErrResponse(rctx, http.StatusBadRequest, err.Error(), common.ContentTypeText)
 		return
 	}
-	returnData(rctx, domain, project, labels, limit, offset, status)
+	returnData(rctx, domain, project, labels, pageNum, pageSize, status)
 }
 
 //List response kv list
@@ -131,9 +131,9 @@ func (r *KVResource) List(rctx *restful.Context) {
 		WriteErrResponse(rctx, http.StatusBadRequest, err.Error(), common.ContentTypeText)
 		return
 	}
-	limitStr := rctx.ReadQueryParameter("limit")
-	offsetStr := rctx.ReadQueryParameter("offset")
-	limit, offset, err := checkPagination(limitStr, offsetStr)
+	pageNumStr := rctx.ReadQueryParameter("pageNum")
+	pageSizeStr := rctx.ReadQueryParameter("pageSize")
+	pageNum, pageSize, err := checkPagination(pageNumStr, pageSizeStr)
 	if err != nil {
 		WriteErrResponse(rctx, http.StatusBadRequest, err.Error(), common.ContentTypeText)
 		return
@@ -144,15 +144,15 @@ func (r *KVResource) List(rctx *restful.Context) {
 		WriteErrResponse(rctx, http.StatusBadRequest, err.Error(), common.ContentTypeText)
 		return
 	}
-	returnData(rctx, domain, project, labels, limit, offset, status)
+	returnData(rctx, domain, project, labels, pageNum, pageSize, status)
 }
 
-func returnData(rctx *restful.Context, domain interface{}, project string, labels map[string]string, limit, offset int64, status string) {
+func returnData(rctx *restful.Context, domain interface{}, project string, labels map[string]string, pageNum, pageSize int64, status string) {
 	revStr := rctx.ReadQueryParameter(common.QueryParamRev)
 	wait := rctx.ReadQueryParameter(common.QueryParamWait)
 	if revStr == "" {
 		if wait == "" {
-			queryAndResponse(rctx, domain, project, "", labels, limit, offset, status)
+			queryAndResponse(rctx, domain, project, "", labels, pageNum, pageSize, status)
 			return
 		}
 		changed, err := eventHappened(rctx, wait, &pubsub.Topic{
@@ -166,7 +166,7 @@ func returnData(rctx *restful.Context, domain interface{}, project string, label
 			return
 		}
 		if changed {
-			queryAndResponse(rctx, domain, project, "", labels, limit, offset, status)
+			queryAndResponse(rctx, domain, project, "", labels, pageNum, pageSize, status)
 			return
 		}
 		rctx.WriteHeader(http.StatusNotModified)
@@ -181,7 +181,7 @@ func returnData(rctx *restful.Context, domain interface{}, project string, label
 			return
 		}
 		if revised {
-			queryAndResponse(rctx, domain, project, "", labels, limit, offset, status)
+			queryAndResponse(rctx, domain, project, "", labels, pageNum, pageSize, status)
 			return
 		} else if wait != "" {
 			changed, err := eventHappened(rctx, wait, &pubsub.Topic{
@@ -195,7 +195,7 @@ func returnData(rctx *restful.Context, domain interface{}, project string, label
 				return
 			}
 			if changed {
-				queryAndResponse(rctx, domain, project, "", labels, limit, offset, status)
+				queryAndResponse(rctx, domain, project, "", labels, pageNum, pageSize, status)
 				return
 			}
 			rctx.WriteHeader(http.StatusNotModified)
@@ -221,17 +221,17 @@ func (r *KVResource) Search(context *restful.Context) {
 		return
 	}
 	var kvs []*model.KVResponse
-	limitStr := context.ReadQueryParameter("limit")
-	offsetStr := context.ReadQueryParameter("offset")
-	limit, offset, err := checkPagination(limitStr, offsetStr)
+	pageNumStr := context.ReadQueryParameter("pageNum")
+	pageSizeStr := context.ReadQueryParameter("pageSize")
+	pageNum, pageSize, err := checkPagination(pageNumStr, pageSizeStr)
 	if err != nil {
 		WriteErrResponse(context, http.StatusBadRequest, err.Error(), common.ContentTypeText)
 		return
 	}
 	if labelCombinations == nil {
 		result, err := service.KVService.FindKV(context.Ctx, domain.(string), project,
-			service.WithLimit(limit),
-			service.WithOffset(offset))
+			service.WithPageNum(pageNum),
+			service.WithPageSize(pageSize))
 		if err != nil {
 			openlogging.Error("can not find by labels", openlogging.WithTags(openlogging.Tags{
 				"err": err.Error(),
@@ -247,8 +247,8 @@ func (r *KVResource) Search(context *restful.Context) {
 		}))
 		result, err := service.KVService.FindKV(context.Ctx, domain.(string), project,
 			service.WithLabels(labels),
-			service.WithLimit(limit),
-			service.WithOffset(offset))
+			service.WithPageNum(pageNum),
+			service.WithPageSize(pageSize))
 		if err != nil {
 			if err == service.ErrKeyNotExists {
 				continue
