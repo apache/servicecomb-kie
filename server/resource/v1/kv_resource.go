@@ -155,13 +155,12 @@ func (r *KVResource) List(rctx *restful.Context) {
 func returnData(rctx *restful.Context, domain interface{}, project string, labels map[string]string, pageNum, pageSize int64, status, insID string) {
 	revStr := rctx.ReadQueryParameter(common.QueryParamRev)
 	wait := rctx.ReadQueryParameter(common.QueryParamWait)
-	rchan := make(chan interface{}, 1)
 	if insID != "" {
-		defer RecordPollingDetail(rctx, revStr, wait, domain.(string), project, labels, pageNum, pageSize, insID, rchan)
+		defer RecordPollingDetail(rctx, revStr, wait, domain.(string), project, labels, pageNum, pageSize, insID)
 	}
 	if revStr == "" {
 		if wait == "" {
-			queryAndResponse(rctx, domain, project, "", labels, pageNum, pageSize, status, rchan)
+			queryAndResponse(rctx, domain, project, "", labels, pageNum, pageSize, status)
 			return
 		}
 		changed, err := eventHappened(rctx, wait, &pubsub.Topic{
@@ -175,7 +174,7 @@ func returnData(rctx *restful.Context, domain interface{}, project string, label
 			return
 		}
 		if changed {
-			queryAndResponse(rctx, domain, project, "", labels, pageNum, pageSize, status, rchan)
+			queryAndResponse(rctx, domain, project, "", labels, pageNum, pageSize, status)
 			return
 		}
 		rctx.WriteHeader(http.StatusNotModified)
@@ -190,7 +189,7 @@ func returnData(rctx *restful.Context, domain interface{}, project string, label
 			return
 		}
 		if revised {
-			queryAndResponse(rctx, domain, project, "", labels, pageNum, pageSize, status, rchan)
+			queryAndResponse(rctx, domain, project, "", labels, pageNum, pageSize, status)
 			return
 		} else if wait != "" {
 			changed, err := eventHappened(rctx, wait, &pubsub.Topic{
@@ -204,7 +203,7 @@ func returnData(rctx *restful.Context, domain interface{}, project string, label
 				return
 			}
 			if changed {
-				queryAndResponse(rctx, domain, project, "", labels, pageNum, pageSize, status, rchan)
+				queryAndResponse(rctx, domain, project, "", labels, pageNum, pageSize, status)
 				return
 			}
 			rctx.WriteHeader(http.StatusNotModified)
@@ -216,7 +215,7 @@ func returnData(rctx *restful.Context, domain interface{}, project string, label
 }
 
 //RecordPollingDetail to record data after get or list
-func RecordPollingDetail(context *restful.Context, revStr, wait, domain, project string, labels map[string]string, limit, offset int64, insID string, rChan chan interface{}) {
+func RecordPollingDetail(context *restful.Context, revStr, wait, domain, project string, labels map[string]string, limit, offset int64, insID string) {
 	data := &model.PollingDetail{}
 	data.ID = uuid.NewV4().String()
 	data.SessionID = insID
@@ -236,7 +235,7 @@ func RecordPollingDetail(context *restful.Context, revStr, wait, domain, project
 	data.URLPath = context.ReadRequest().Method + " " + context.ReadRequest().URL.Path
 	data.ResponseHeader = context.Resp.Header()
 	data.ResponseCode = context.Resp.StatusCode()
-	data.ResponseBody = <-rChan
+	data.ResponseBody = context.Ctx.Value("responseBody")
 	_, err := record.CreateOrUpdate(context.Ctx, data)
 	if err != nil {
 		openlogging.Warn("record polling detail failed" + err.Error())
