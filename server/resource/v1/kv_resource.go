@@ -235,7 +235,7 @@ func RecordPollingDetail(context *restful.Context, revStr, wait, domain, project
 	data.URLPath = context.ReadRequest().Method + " " + context.ReadRequest().URL.Path
 	data.ResponseHeader = context.Resp.Header()
 	data.ResponseCode = context.Resp.StatusCode()
-	data.ResponseBody = context.Ctx.Value("responseBody")
+	data.ResponseBody = context.Ctx.Value(common.RespBodyContextKey)
 	_, err := record.CreateOrUpdate(context.Ctx, data)
 	if err != nil {
 		openlogging.Warn("record polling detail failed" + err.Error())

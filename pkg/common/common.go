@@ -58,6 +58,7 @@ const (
 	MsgInvalidWait      = "wait param should be formed with number and time unit like 5s,100ms, and less than 5m"
 	MsgInvalidRev       = "revision param should be formed with number greater than 0"
 	ErrKvIDMustNotEmpty = "must supply kv id if you want to remove key"
+	RespBodyContextKey  = "responseBody"
 
 	MaxWait = 5 * time.Minute
 )
