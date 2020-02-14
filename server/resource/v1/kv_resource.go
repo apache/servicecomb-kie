@@ -111,7 +111,7 @@ func (r *KVResource) GetByKey(rctx *restful.Context) {
 		WriteErrResponse(rctx, http.StatusBadRequest, err.Error(), common.ContentTypeText)
 		return
 	}
-	insID := rctx.ReadHeader("instanceID")
+	insID := rctx.ReadHeader("sessionID")
 	statusStr := rctx.ReadQueryParameter("status")
 	status, err := checkStatus(statusStr)
 	if err != nil {
@@ -142,7 +142,7 @@ func (r *KVResource) List(rctx *restful.Context) {
 		WriteErrResponse(rctx, http.StatusBadRequest, err.Error(), common.ContentTypeText)
 		return
 	}
-	insID := rctx.ReadHeader("instanceID")
+	insID := rctx.ReadHeader("sessionID")
 	statusStr := rctx.ReadQueryParameter("status")
 	status, err := checkStatus(statusStr)
 	if err != nil {

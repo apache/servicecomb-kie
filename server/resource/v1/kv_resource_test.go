@@ -76,7 +76,7 @@ func TestKVResource_Put(t *testing.T) {
 		noopH := &handler2.NoopAuthHandler{}
 		chain, _ := handler.CreateChain(common.Provider, "testchain1", noopH.Name())
 		r.Header.Set("Content-Type", "application/json")
-		r.Header.Set("instanceID", "test")
+		r.Header.Set("sessionID", "test")
 		kvr := &v1.KVResource{}
 		c, _ := restfultest.New(kvr, chain)
 		resp := httptest.NewRecorder()
@@ -102,7 +102,7 @@ func TestKVResource_Put(t *testing.T) {
 		noopH := &handler2.NoopAuthHandler{}
 		chain, _ := handler.CreateChain(common.Provider, "testchain1", noopH.Name())
 		r.Header.Set("Content-Type", "application/json")
-		r.Header.Set("instanceID", "test")
+		r.Header.Set("sessionID", "test")
 		kvr := &v1.KVResource{}
 		c, _ := restfultest.New(kvr, chain)
 		resp := httptest.NewRecorder()
