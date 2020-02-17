@@ -142,21 +142,21 @@ func (r *KVResource) List(rctx *restful.Context) {
 		WriteErrResponse(rctx, http.StatusBadRequest, err.Error(), common.ContentTypeText)
 		return
 	}
-	insID := rctx.ReadHeader("sessionID")
+	sessionID := rctx.ReadHeader("sessionID")
 	statusStr := rctx.ReadQueryParameter("status")
 	status, err := checkStatus(statusStr)
 	if err != nil {
 		WriteErrResponse(rctx, http.StatusBadRequest, err.Error(), common.ContentTypeText)
 		return
 	}
-	returnData(rctx, domain, project, labels, pageNum, pageSize, status, insID)
+	returnData(rctx, domain, project, labels, pageNum, pageSize, status, sessionID)
 }
 
-func returnData(rctx *restful.Context, domain interface{}, project string, labels map[string]string, pageNum, pageSize int64, status, insID string) {
+func returnData(rctx *restful.Context, domain interface{}, project string, labels map[string]string, pageNum, pageSize int64, status, sessionID string) {
 	revStr := rctx.ReadQueryParameter(common.QueryParamRev)
 	wait := rctx.ReadQueryParameter(common.QueryParamWait)
-	if insID != "" {
-		defer RecordPollingDetail(rctx, revStr, wait, domain.(string), project, labels, pageNum, pageSize, insID)
+	if sessionID != "" {
+		defer RecordPollingDetail(rctx, revStr, wait, domain.(string), project, labels, pageNum, pageSize, sessionID)
 	}
 	if revStr == "" {
 		if wait == "" {
@@ -215,10 +215,10 @@ func returnData(rctx *restful.Context, domain interface{}, project string, label
 }
 
 //RecordPollingDetail to record data after get or list
-func RecordPollingDetail(context *restful.Context, revStr, wait, domain, project string, labels map[string]string, limit, offset int64, insID string) {
+func RecordPollingDetail(context *restful.Context, revStr, wait, domain, project string, labels map[string]string, limit, offset int64, sessionID string) {
 	data := &model.PollingDetail{}
 	data.ID = uuid.NewV4().String()
-	data.SessionID = insID
+	data.SessionID = sessionID
 	data.Domain = domain
 	data.IP = iputil.ClientIP(context.Req.Request)
 	dataMap := map[string]interface{}{

@@ -100,7 +100,7 @@ db.createCollection( "view", {
 db.createCollection( "polling_detail", {
     validator: { $jsonSchema: {
             bsonType: "object",
-            required: [ "id","params","ip","user_agent","url_path","response_body","response_header" ],
+            required: [ "id","params","session_id","url_path" ],
             properties: {
                 id: {
                     bsonType: "string",
