@@ -243,6 +243,7 @@ func queryAndResponse(rctx *restful.Context,
 	}
 	rctx.ReadResponseWriter().Header().Set(common.HeaderRevision, strconv.FormatInt(rev, 10))
 	err = writeResponse(rctx, kv)
+	rctx.Ctx = context.WithValue(rctx.Ctx, common.RespBodyContextKey, kv)
 	if err != nil {
 		openlogging.Error(err.Error())
 	}

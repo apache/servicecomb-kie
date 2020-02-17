@@ -52,3 +52,17 @@ type ViewResponse struct {
 	Total int        `json:"total,omitempty"`
 	Data  []*ViewDoc `json:"data,omitempty"`
 }
+
+//PollingDetail record operation history
+type PollingDetail struct {
+	ID             string                 `json:"id,omitempty" yaml:"id,omitempty"`
+	SessionID      string                 `json:"session_id,omitempty" yaml:"session_id,omitempty"`
+	Domain         string                 `json:"domain,omitempty" yaml:"domain,omitempty"`
+	PollingData    map[string]interface{} `json:"params,omitempty" yaml:"params,omitempty"`
+	IP             string                 `json:"ip,omitempty" yaml:"ip,omitempty"`
+	UserAgent      string                 `json:"user_agent,omitempty" yaml:"user_agent,omitempty"`
+	URLPath        string                 `json:"url_path,omitempty" yaml:"url_path,omitempty"`
+	ResponseBody   interface{}            `json:"response_body,omitempty" yaml:"response_body,omitempty"`
+	ResponseHeader map[string][]string    `json:"response_header,omitempty" yaml:"response_header,omitempty"`
+	ResponseCode   int                    `json:"response_code,omitempty" yaml:"response_code,omitempty"`
+}
