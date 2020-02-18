@@ -168,7 +168,10 @@ func eventHappened(rctx *restful.Context, waitStr string, topic *pubsub.Topic) (
 		UserAgent: rctx.ReadHeader("User-Agent"),
 		Event:     make(chan *pubsub.KVChangeEvent, 1),
 	}
-	pubsub.ObserveOnce(o, topic)
+	err = pubsub.ObserveOnce(o, topic)
+	if err != nil {
+		return false, errors.New("observe once failed: " + err.Error())
+	}
 	select {
 	case <-time.After(d):
 		happened = false
