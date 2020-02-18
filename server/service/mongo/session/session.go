@@ -110,9 +110,10 @@ func Init() error {
 				return
 			}
 			pool.AppendCertsFromPEM(caCert)
+			// #nosec
 			tc := &tls.Config{
 				RootCAs:            pool,
-				InsecureSkipVerify: true,
+				InsecureSkipVerify: !config.GetDB().VerifyPeer,
 			}
 			clientOps = append(clientOps, options.Client().SetTLSConfig(tc))
 			openlogging.Info("enabled ssl communication to mongodb")

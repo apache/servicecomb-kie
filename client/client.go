@@ -71,6 +71,7 @@ func New(config Config) (*Client, error) {
 	}
 	httpOpts := &httpclient.Options{}
 	if u.Scheme == "https" {
+		// #nosec
 		httpOpts.TLSConfig = &tls.Config{
 			InsecureSkipVerify: !config.VerifyPeer,
 		}

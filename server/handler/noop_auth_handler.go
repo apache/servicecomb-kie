@@ -20,6 +20,7 @@ package handler
 import (
 	"github.com/go-chassis/go-chassis/core/handler"
 	"github.com/go-chassis/go-chassis/core/invocation"
+	"github.com/go-mesh/openlogging"
 )
 
 //NoopAuthHandler not need implement any logic
@@ -41,5 +42,7 @@ func (bk *NoopAuthHandler) Name() string {
 	return "auth-handler"
 }
 func init() {
-	handler.RegisterHandler("auth-handler", newDomainResolver)
+	if err := handler.RegisterHandler("auth-handler", newDomainResolver); err != nil {
+		openlogging.Fatal("register auth-handler failed: " + err.Error())
+	}
 }
