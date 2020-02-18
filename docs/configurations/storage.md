@@ -14,7 +14,10 @@ you can use mongo db as kie server storage to save configuration
 >*(optional, bool)*  enable TLS communication to mongodb server
 
 **rootCAFile**
->*(optional, bool)*  if sslEnabled is true, you must give a ca file
+>*(optional, string)*  if sslEnabled is true, you must give a ca file
+
+**verifyPeer**
+>*(optional, bool)*  if verifyPeer is true, kie will verify database server's certificate, otherwise not
 
 
 ### Example
@@ -25,6 +28,7 @@ db:
   timeout:  5s
   sslEnabled: true
   rootCAFile: /opt/kie/ca.crt
+  verifyPeer: true
 ```
 
 
