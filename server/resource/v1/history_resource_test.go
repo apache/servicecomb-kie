@@ -21,6 +21,7 @@ import (
 	"encoding/json"
 	"fmt"
 	"github.com/apache/servicecomb-kie/pkg/model"
+	handler2 "github.com/apache/servicecomb-kie/server/handler"
 	v1 "github.com/apache/servicecomb-kie/server/resource/v1"
 	"github.com/apache/servicecomb-kie/server/service"
 	"github.com/go-chassis/go-chassis/core/common"
@@ -80,6 +81,44 @@ func TestHistoryResource_GetRevisions(t *testing.T) {
 		data := make([]*model.KVDoc, 0)
 		err = json.Unmarshal(body, &data)
 		assert.Equal(t, before+1, len(data))
+	})
+
+}
+
+func TestHistoryResource_GetPollingData(t *testing.T) {
+	t.Run("list kv by service label, to create a polling data", func(t *testing.T) {
+		r, _ := http.NewRequest("GET", "/v1/test/kie/kv", nil)
+		noopH := &handler2.NoopAuthHandler{}
+		chain, _ := handler.CreateChain(common.Provider, "testchain1", noopH.Name())
+		r.Header.Set("Content-Type", "application/json")
+		r.Header.Set("sessionID", "test")
+		kvr := &v1.KVResource{}
+		c, err := restfultest.New(kvr, chain)
+		assert.NoError(t, err)
+		resp := httptest.NewRecorder()
+		c.ServeHTTP(resp, r)
+		body, err := ioutil.ReadAll(resp.Body)
+		assert.NoError(t, err)
+		result := &model.KVResponse{}
+		err = json.Unmarshal(body, result)
+		assert.NoError(t, err)
+	})
+	t.Run("get polling data", func(t *testing.T) {
+		r, _ := http.NewRequest("GET", "/v1/test/kie/polling_data?sessionId=test", nil)
+		noopH := &handler2.NoopAuthHandler{}
+		chain, _ := handler.CreateChain(common.Provider, "testchain1", noopH.Name())
+		r.Header.Set("Content-Type", "application/json")
+		revision := &v1.HistoryResource{}
+		c, err := restfultest.New(revision, chain)
+		assert.NoError(t, err)
+		resp := httptest.NewRecorder()
+		c.ServeHTTP(resp, r)
+		body, err := ioutil.ReadAll(resp.Body)
+		assert.NoError(t, err)
+		result := &[]model.PollingDetail{}
+		err = json.Unmarshal(body, result)
+		assert.NoError(t, err)
+		assert.NotEmpty(t, result)
 	})
 
 }

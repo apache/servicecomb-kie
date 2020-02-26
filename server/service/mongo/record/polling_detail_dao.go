@@ -20,7 +20,9 @@ package record
 import (
 	"context"
 	"github.com/apache/servicecomb-kie/pkg/model"
+	"github.com/apache/servicecomb-kie/server/service"
 	"github.com/apache/servicecomb-kie/server/service/mongo/session"
+	"github.com/go-mesh/openlogging"
 	"go.mongodb.org/mongo-driver/bson"
 	"go.mongodb.org/mongo-driver/mongo"
 )
@@ -45,4 +47,43 @@ func CreateOrUpdate(ctx context.Context, detail *model.PollingDetail) (*model.Po
 		return nil, err
 	}
 	return detail, nil
+}
+
+//Get is to get a
+func Get(ctx context.Context, detail *model.PollingDetail) ([]*model.PollingDetail, error) {
+	collection := session.GetDB().Collection(session.CollectionPollingDetail)
+	queryFilter := bson.M{"domain": detail.Domain}
+	if detail.SessionID != "" {
+		queryFilter["session_id"] = detail.SessionID
+	}
+	if detail.IP != "" {
+		queryFilter["ip"] = detail.IP
+	}
+	if detail.UserAgent != "" {
+		queryFilter["user_agent"] = detail.UserAgent
+	}
+	if detail.URLPath != "" {
+		queryFilter["url_path"] = detail.URLPath
+	}
+	cur, err := collection.Find(ctx, queryFilter)
+	if err != nil {
+		return nil, err
+	}
+	defer cur.Close(ctx)
+	if cur.Err() != nil {
+		return nil, err
+	}
+	records := make([]*model.PollingDetail, 0)
+	for cur.Next(ctx) {
+		curRecord := &model.PollingDetail{}
+		if err := cur.Decode(curRecord); err != nil {
+			openlogging.Error("decode to KVs error: " + err.Error())
+			return nil, err
+		}
+		records = append(records, curRecord)
+	}
+	if len(records) == 0 {
+		return nil, service.ErrRecordNotExists
+	}
+	return records, nil
 }

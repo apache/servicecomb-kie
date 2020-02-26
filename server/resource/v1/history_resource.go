@@ -18,6 +18,7 @@
 package v1
 
 import (
+	"github.com/apache/servicecomb-kie/server/service/mongo/record"
 	"net/http"
 
 	"github.com/apache/servicecomb-kie/pkg/common"
@@ -72,6 +73,50 @@ func (r *HistoryResource) GetRevisions(context *restful.Context) {
 	}
 }
 
+//GetPollingData get the record of the get or list history
+func (r *HistoryResource) GetPollingData(context *restful.Context) {
+	query := &model.PollingDetail{}
+	sessionID := context.ReadQueryParameter("sessionId")
+	if sessionID != "" {
+		query.SessionID = sessionID
+	}
+	ip := context.ReadQueryParameter("ip")
+	if ip != "" {
+		query.IP = ip
+	}
+	urlPath := context.ReadQueryParameter("urlPath")
+	if urlPath != "" {
+		query.URLPath = urlPath
+	}
+	userAgent := context.ReadQueryParameter("userAgent")
+	if userAgent != "" {
+		query.UserAgent = userAgent
+	}
+	domain := ReadDomain(context)
+	if domain == nil {
+		WriteErrResponse(context, http.StatusInternalServerError, common.MsgDomainMustNotBeEmpty, common.ContentTypeText)
+		return
+	}
+	query.Domain = domain.(string)
+	records, err := record.Get(context.Ctx, query)
+	if err != nil {
+		if err == service.ErrRecordNotExists {
+			WriteErrResponse(context, http.StatusNotFound, err.Error(), common.ContentTypeText)
+			return
+		}
+		WriteErrResponse(context, http.StatusInternalServerError, err.Error(), common.ContentTypeText)
+		return
+	}
+	if len(records) == 0 {
+		WriteErrResponse(context, http.StatusNotFound, "no polling data found", common.ContentTypeText)
+		return
+	}
+	err = writeResponse(context, records)
+	if err != nil {
+		openlogging.Error(err.Error())
+	}
+}
+
 //URLPatterns defined config operations
 func (r *HistoryResource) URLPatterns() []restful.Route {
 	return []restful.Route{
@@ -88,6 +133,24 @@ func (r *HistoryResource) URLPatterns() []restful.Route {
 					Code:    http.StatusOK,
 					Message: "true",
 					Model:   []model.KVDoc{},
+				},
+			},
+			Consumes: []string{goRestful.MIME_JSON, common.ContentTypeYaml},
+			Produces: []string{goRestful.MIME_JSON, common.ContentTypeYaml},
+		},
+		{
+			Method:       http.MethodGet,
+			Path:         "/v1/{project}/kie/polling_data",
+			ResourceFunc: r.GetPollingData,
+			FuncDesc:     "get all history record of get and list",
+			Parameters: []*restful.Parameters{
+				DocPathProject,
+			},
+			Returns: []*restful.Returns{
+				{
+					Code:    http.StatusOK,
+					Message: "true",
+					Model:   []model.PollingDetail{},
 				},
 			},
 			Consumes: []string{goRestful.MIME_JSON, common.ContentTypeYaml},
