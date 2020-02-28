@@ -118,7 +118,7 @@ func (r *KVResource) GetByKey(rctx *restful.Context) {
 		WriteErrResponse(rctx, http.StatusBadRequest, err.Error(), common.ContentTypeText)
 		return
 	}
-	returnData(rctx, domain, project, labels, pageNum, pageSize, status, insID)
+	returnData(rctx, domain, project, key, labels, pageNum, pageSize, status, insID)
 }
 
 //List response kv list
@@ -149,10 +149,10 @@ func (r *KVResource) List(rctx *restful.Context) {
 		WriteErrResponse(rctx, http.StatusBadRequest, err.Error(), common.ContentTypeText)
 		return
 	}
-	returnData(rctx, domain, project, labels, pageNum, pageSize, status, sessionID)
+	returnData(rctx, domain, project, "", labels, pageNum, pageSize, status, sessionID)
 }
 
-func returnData(rctx *restful.Context, domain interface{}, project string, labels map[string]string, pageNum, pageSize int64, status, sessionID string) {
+func returnData(rctx *restful.Context, domain interface{}, project, key string, labels map[string]string, pageNum, pageSize int64, status, sessionID string) {
 	revStr := rctx.ReadQueryParameter(common.QueryParamRev)
 	wait := rctx.ReadQueryParameter(common.QueryParamWait)
 	if sessionID != "" {
@@ -160,7 +160,7 @@ func returnData(rctx *restful.Context, domain interface{}, project string, label
 	}
 	if revStr == "" {
 		if wait == "" {
-			queryAndResponse(rctx, domain, project, "", labels, pageNum, pageSize, status)
+			queryAndResponse(rctx, domain, project, key, labels, pageNum, pageSize, status)
 			return
 		}
 		changed, err := eventHappened(rctx, wait, &pubsub.Topic{
@@ -174,7 +174,7 @@ func returnData(rctx *restful.Context, domain interface{}, project string, label
 			return
 		}
 		if changed {
-			queryAndResponse(rctx, domain, project, "", labels, pageNum, pageSize, status)
+			queryAndResponse(rctx, domain, project, key, labels, pageNum, pageSize, status)
 			return
 		}
 		rctx.WriteHeader(http.StatusNotModified)
@@ -189,7 +189,7 @@ func returnData(rctx *restful.Context, domain interface{}, project string, label
 			return
 		}
 		if revised {
-			queryAndResponse(rctx, domain, project, "", labels, pageNum, pageSize, status)
+			queryAndResponse(rctx, domain, project, key, labels, pageNum, pageSize, status)
 			return
 		} else if wait != "" {
 			changed, err := eventHappened(rctx, wait, &pubsub.Topic{
@@ -203,7 +203,7 @@ func returnData(rctx *restful.Context, domain interface{}, project string, label
 				return
 			}
 			if changed {
-				queryAndResponse(rctx, domain, project, "", labels, pageNum, pageSize, status)
+				queryAndResponse(rctx, domain, project, key, labels, pageNum, pageSize, status)
 				return
 			}
 			rctx.WriteHeader(http.StatusNotModified)
@@ -363,7 +363,7 @@ func (r *KVResource) URLPatterns() []restful.Route {
 			ResourceFunc: r.GetByKey,
 			FuncDesc:     "get key values by key and labels",
 			Parameters: []*restful.Parameters{
-				DocPathProject, DocPathKey, DocQueryLabelParameters, DocQueryMatch, DocQueryRev,
+				DocPathProject, DocPathKey, DocQueryLabelParameters, DocQueryWait, DocQueryMatch, DocQueryRev,
 			},
 			Returns: []*restful.Returns{
 				{
@@ -399,7 +399,7 @@ func (r *KVResource) URLPatterns() []restful.Route {
 			ResourceFunc: r.List,
 			FuncDesc:     "list key values by labels and key",
 			Parameters: []*restful.Parameters{
-				DocPathProject, DocQueryLabelParameters, DocQueryWait, DocQueryMatch,
+				DocPathProject, DocQueryLabelParameters, DocQueryWait, DocQueryMatch, DocQueryRev,
 			},
 			Returns: []*restful.Returns{
 				{

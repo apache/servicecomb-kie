@@ -18,6 +18,7 @@ set -e
 # Make the Coverage File
 echo "mode: atomic" > coverage.txt
 
+go clean -testcache
 #Start the Test
 for d in $(go list ./... | grep -v vendor |  grep -v third_party | grep -v examples); do
     echo $d
