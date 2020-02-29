@@ -25,6 +25,7 @@ import (
 	"fmt"
 	"net/http"
 	"net/url"
+	"strconv"
 	"strings"
 
 	"github.com/apache/servicecomb-kie/pkg/common"
@@ -57,7 +58,7 @@ type Client struct {
 	opts            Config
 	cipher          security.Cipher
 	c               *httpclient.Requests
-	CurrentRevision string
+	currentRevision int
 }
 
 //Config is the config of client
@@ -127,7 +128,7 @@ func (c *Client) Put(ctx context.Context, kv model.KVRequest, opts ...OpOption) 
 }
 
 //Get get value of a key
-func (c *Client) Get(ctx context.Context, opts ...GetOption) (*model.KVResponse, error) {
+func (c *Client) Get(ctx context.Context, opts ...GetOption) (*model.KVResponse, int, error) {
 	options := GetOptions{}
 	for _, o := range opts {
 		o(&options)
@@ -135,12 +136,14 @@ func (c *Client) Get(ctx context.Context, opts ...GetOption) (*model.KVResponse,
 	if options.Project == "" {
 		options.Project = defaultProject
 	}
-
+	if options.Revision == "" {
+		options.Revision = strconv.Itoa(c.currentRevision)
+	}
 	var url string
 	if options.Key != "" {
-		url = fmt.Sprintf("%s/%s/%s/%s/%s?revision=%s", c.opts.Endpoint, version, options.Project, APIPathKV, options.Key, c.CurrentRevision)
+		url = fmt.Sprintf("%s/%s/%s/%s/%s?revision=%s", c.opts.Endpoint, version, options.Project, APIPathKV, options.Key, options.Revision)
 	} else {
-		url = fmt.Sprintf("%s/%s/%s/%s?revision=%s", c.opts.Endpoint, version, options.Project, APIPathKV, c.CurrentRevision)
+		url = fmt.Sprintf("%s/%s/%s/%s?revision=%s", c.opts.Endpoint, version, options.Project, APIPathKV, options.Revision)
 	}
 	if options.Wait != "" {
 		url = url + "&wait=" + options.Wait
@@ -158,31 +161,39 @@ func (c *Client) Get(ctx context.Context, opts ...GetOption) (*model.KVResponse,
 	h := http.Header{}
 	resp, err := c.c.Do(ctx, http.MethodGet, url, h, nil)
 	if err != nil {
-		return nil, err
+		return nil, -1, err
+	}
+	responseRevision, err := strconv.Atoi(resp.Header.Get(common.HeaderRevision))
+	if err != nil {
+		responseRevision = -1
 	}
 	b := httputil.ReadBody(resp)
 	if resp.StatusCode != http.StatusOK {
 		if resp.StatusCode == http.StatusNotFound {
-			return nil, ErrKeyNotExist
+			return nil, responseRevision, ErrKeyNotExist
 		}
 		if resp.StatusCode == http.StatusNotModified {
-			return nil, ErrNoChanges
+			return nil, responseRevision, ErrNoChanges
 		}
 		openlogging.Error(MsgGetFailed, openlogging.WithTags(openlogging.Tags{
 			"k":      options.Key,
 			"status": resp.Status,
 			"body":   b,
 		}))
-		return nil, fmt.Errorf(FmtGetFailed, options.Key, resp.Status, b)
+		return nil, responseRevision, fmt.Errorf(FmtGetFailed, options.Key, resp.Status, b)
+	} else if err != nil {
+		msg := fmt.Sprintf("get revision from response header failed when the request status is OK: %v", err)
+		openlogging.Error(msg)
+		return nil, responseRevision, fmt.Errorf(msg)
 	}
 	var kvs *model.KVResponse
 	err = json.Unmarshal(b, &kvs)
 	if err != nil {
 		openlogging.Error("unmarshal kv failed:" + err.Error())
-		return nil, err
+		return nil, responseRevision, err
 	}
-	c.CurrentRevision = resp.Header.Get(common.HeaderRevision)
-	return kvs, nil
+	c.currentRevision = responseRevision
+	return kvs, responseRevision, nil
 }
 
 //Summary get value by labels
@@ -260,4 +271,9 @@ func (c *Client) Delete(ctx context.Context, kvID, labelID string, opts ...OpOpt
 		return fmt.Errorf("delete %s failed,http status [%s], body [%s]", kvID, resp.Status, b)
 	}
 	return nil
+}
+
+//CurrentRevision return the current revision of kie, which is updated on the last get request
+func (c *Client) CurrentRevision() int {
+	return c.currentRevision
 }
