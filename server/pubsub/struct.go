@@ -20,10 +20,11 @@ package pubsub
 import (
 	"encoding/json"
 	"errors"
-	"reflect"
 	"strings"
 
 	"github.com/apache/servicecomb-kie/pkg/common"
+	"github.com/apache/servicecomb-kie/pkg/stringutil"
+	"github.com/apache/servicecomb-kie/pkg/util"
 )
 
 // const
@@ -67,6 +68,9 @@ func ParseTopicString(s string) (*Topic, error) {
 	if err != nil {
 		return nil, err
 	}
+	if t.LabelsFormat == stringutil.LabelNone {
+		return t, nil
+	}
 	ls := strings.Split(t.LabelsFormat, "::")
 	if len(ls) != 0 {
 		for _, l := range ls {
@@ -81,6 +85,11 @@ func ParseTopicString(s string) (*Topic, error) {
 }
 
 //Match compare event with topic
+//If the match type is set to exact in long pulling request, only update request with exactly
+//the same label of pulling request will match the request and will trigger an immediate return.
+//
+//If the match type is not set, it will be matched when pulling request labels is equal to
+//update request labels or a subset of it.
 func (t *Topic) Match(event *KVChangeEvent) bool {
 	match := false
 	if t.Key != "" {
@@ -89,9 +98,12 @@ func (t *Topic) Match(event *KVChangeEvent) bool {
 		}
 	}
 	if t.MatchType == common.PatternExact {
-		if !reflect.DeepEqual(t.Labels, event.Labels) {
+		if !util.IsEquivalentLabel(t.Labels, event.Labels) {
 			return false
 		}
+	}
+	if len(t.Labels) == 0 {
+		return true
 	}
 	for k, v := range t.Labels {
 		if event.Labels[k] != v {

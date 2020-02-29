@@ -15,36 +15,15 @@
  * limitations under the License.
  */
 
-package stringutil
+package util
 
-import (
-	"sort"
-	"strings"
-)
+import "reflect"
 
-const (
-	// LabelNone is the format string when the map is none
-	LabelNone = "none"
-)
-
-//FormatMap format map to string
-func FormatMap(m map[string]string) string {
-	if len(m) == 0 {
-		return LabelNone
+//IsEquivalentLabel compares whether two labels are equal.
+//In particular, if one is nil and another is an empty map, it return true
+func IsEquivalentLabel(x, y map[string]string) bool {
+	if len(x) == 0 && len(y) == 0 {
+		return true
 	}
-	sb := strings.Builder{}
-	s := make([]string, 0, len(m))
-	for k := range m {
-		s = append(s, k)
-	}
-	sort.Strings(s)
-	for i, k := range s {
-		sb.WriteString(k)
-		sb.WriteString("=")
-		sb.WriteString(m[k])
-		if i != (len(s) - 1) {
-			sb.WriteString("::")
-		}
-	}
-	return sb.String()
+	return reflect.DeepEqual(x, y)
 }

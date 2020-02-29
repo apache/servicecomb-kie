@@ -20,10 +20,10 @@ package kv
 import (
 	"context"
 	"errors"
-	"reflect"
 	"time"
 
 	"github.com/apache/servicecomb-kie/pkg/model"
+	"github.com/apache/servicecomb-kie/pkg/util"
 	"github.com/apache/servicecomb-kie/server/service"
 	"github.com/apache/servicecomb-kie/server/service/mongo/label"
 	"github.com/apache/servicecomb-kie/server/service/mongo/session"
@@ -180,7 +180,7 @@ func (s *Service) List(ctx context.Context, domain, project string, options ...s
 			return nil, err
 		}
 		if opts.ExactLabels {
-			if !reflect.DeepEqual(opts.Labels, curKV.Labels) {
+			if !util.IsEquivalentLabel(opts.Labels, curKV.Labels) {
 				continue
 			}
 		}
