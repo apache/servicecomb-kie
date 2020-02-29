@@ -230,17 +230,18 @@ func queryAndResponse(rctx *restful.Context,
 	if status != "" {
 		opts = append(opts, service.WithStatus(status))
 	}
-	kv, err := service.KVService.List(rctx.Ctx, domain.(string), project, opts...)
+	rev, err := service.RevisionService.GetRevision(rctx.Ctx, domain.(string))
 	if err != nil {
-		if err == service.ErrKeyNotExists {
-			WriteErrResponse(rctx, http.StatusNotFound, err.Error(), common.ContentTypeText)
-			return
-		}
 		WriteErrResponse(rctx, http.StatusInternalServerError, err.Error(), common.ContentTypeText)
 		return
 	}
-	rev, err := service.RevisionService.GetRevision(rctx.Ctx, domain.(string))
+	kv, err := service.KVService.List(rctx.Ctx, domain.(string), project, opts...)
 	if err != nil {
+		if err == service.ErrKeyNotExists {
+			rctx.ReadResponseWriter().Header().Set(common.HeaderRevision, strconv.FormatInt(rev, 10))
+			WriteErrResponse(rctx, http.StatusNotFound, err.Error(), common.ContentTypeText)
+			return
+		}
 		WriteErrResponse(rctx, http.StatusInternalServerError, err.Error(), common.ContentTypeText)
 		return
 	}
