@@ -20,7 +20,6 @@ package kv
 import (
 	"context"
 	"errors"
-	"fmt"
 	"reflect"
 	"time"
 
@@ -35,6 +34,8 @@ import (
 const (
 	MsgFindKvFailed    = "find kv failed, deadline exceeded"
 	MsgFindOneKey      = "find one key"
+	MsgFindOneKeyByID  = "find one key by id"
+	MsgFindMoreKey     = "find more"
 	MsgHitExactLabels  = "hit exact labels"
 	FmtErrFindKvFailed = "can not find kv in %s"
 )
@@ -211,13 +212,21 @@ func (s *Service) FindKV(ctx context.Context, domain string, project string, opt
 		return nil, session.ErrMissingProject
 	}
 
+	if opts.ID != "" {
+		openlogging.Debug(MsgFindOneKeyByID, openlogging.WithTags(openlogging.Tags{
+			"id":     opts.ID,
+			"key":    opts.Key,
+			"labels": opts.Labels,
+		}))
+		return findKVByID(ctx, domain, project, opts.ID)
+	}
+
 	cur, _, err := findKV(ctx, domain, project, opts)
 	if err != nil {
 		return nil, err
 	}
 	defer cur.Close(ctx)
 
-	kvResp := make([]*model.KVResponse, 0)
 	if opts.Depth == 0 && opts.Key != "" {
 		openlogging.Debug(MsgFindOneKey, openlogging.WithTags(
 			map[string]interface{}{
@@ -228,53 +237,10 @@ func (s *Service) FindKV(ctx context.Context, domain string, project string, opt
 		))
 		return cursorToOneKV(ctx, cur, opts.Labels)
 	}
-	openlogging.Debug("find more", openlogging.WithTags(openlogging.Tags{
+	openlogging.Debug(MsgFindMoreKey, openlogging.WithTags(openlogging.Tags{
 		"depth":  opts.Depth,
-		"k":      opts.Key,
+		"key":    opts.Key,
 		"labels": opts.Labels,
 	}))
-	for cur.Next(ctx) {
-		curKV := &model.KVDoc{}
-
-		if err := cur.Decode(curKV); err != nil {
-			openlogging.Error("decode to KVs error: " + err.Error())
-			return nil, err
-		}
-		if (len(curKV.Labels) - len(opts.Labels)) > opts.Depth {
-			//because it is query by labels, so result can not be minus
-			//so many labels,then continue
-			openlogging.Debug("so deep, skip this key")
-			continue
-		}
-		openlogging.Debug(fmt.Sprintf("%v", curKV))
-		var groupExist bool
-		var labelGroup *model.KVResponse
-		for _, labelGroup = range kvResp {
-			if reflect.DeepEqual(labelGroup.LabelDoc.Labels, curKV.Labels) {
-				groupExist = true
-				clearAll(curKV)
-				labelGroup.Data = append(labelGroup.Data, curKV)
-				break
-			}
-
-		}
-		if !groupExist {
-			labelGroup = &model.KVResponse{
-				LabelDoc: &model.LabelDocResponse{
-					Labels:  curKV.Labels,
-					LabelID: curKV.LabelID,
-				},
-				Data: []*model.KVDoc{curKV},
-			}
-			clearAll(curKV)
-			openlogging.Debug("add new label group")
-			kvResp = append(kvResp, labelGroup)
-		}
-
-	}
-	if len(kvResp) == 0 {
-		return nil, service.ErrKeyNotExists
-	}
-	return kvResp, nil
-
+	return findMoreKV(ctx, cur, &opts)
 }
