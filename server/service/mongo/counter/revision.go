@@ -20,6 +20,7 @@ package counter
 import (
 	"context"
 	"errors"
+
 	"github.com/apache/servicecomb-kie/server/service/mongo/session"
 	"github.com/go-mesh/openlogging"
 	"go.mongodb.org/mongo-driver/bson"
@@ -39,8 +40,9 @@ func (s *Service) GetRevision(ctx context.Context, domain string) (int64, error)
 	cur, err := collection.Find(ctx, filter)
 	if err != nil {
 		if err.Error() == context.DeadlineExceeded.Error() {
-			openlogging.Error("operation timeout")
-			return 0, errors.New("operation timeout")
+			msg := "operation timeout"
+			openlogging.Error(msg)
+			return 0, errors.New(msg)
 		}
 		return 0, err
 	}

@@ -19,10 +19,10 @@ package kv
 
 import (
 	"context"
-	"github.com/apache/servicecomb-kie/server/service"
 	"reflect"
 
 	"github.com/apache/servicecomb-kie/pkg/model"
+	"github.com/apache/servicecomb-kie/server/service"
 	"github.com/go-mesh/openlogging"
 	"go.mongodb.org/mongo-driver/mongo"
 )
@@ -51,7 +51,7 @@ func cursorToOneKV(ctx context.Context, cur *mongo.Cursor, labels map[string]str
 			return nil, err
 		}
 		if reflect.DeepEqual(curKV.Labels, labels) {
-			openlogging.Debug("hit exact labels")
+			openlogging.Debug(MsgHitExactLabels)
 			labelGroup := &model.KVResponse{
 				LabelDoc: &model.LabelDocResponse{
 					Labels:  labels,

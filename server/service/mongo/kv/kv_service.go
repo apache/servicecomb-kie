@@ -31,6 +31,14 @@ import (
 	"github.com/go-mesh/openlogging"
 )
 
+//const of kv service
+const (
+	MsgFindKvFailed    = "find kv failed, deadline exceeded"
+	MsgFindOneKey      = "find one key"
+	MsgHitExactLabels  = "hit exact labels"
+	FmtErrFindKvFailed = "can not find kv in %s"
+)
+
 //Service operate data in mongodb
 type Service struct {
 	timeout time.Duration
@@ -211,7 +219,7 @@ func (s *Service) FindKV(ctx context.Context, domain string, project string, opt
 
 	kvResp := make([]*model.KVResponse, 0)
 	if opts.Depth == 0 && opts.Key != "" {
-		openlogging.Debug("find one key", openlogging.WithTags(
+		openlogging.Debug(MsgFindOneKey, openlogging.WithTags(
 			map[string]interface{}{
 				"key":    opts.Key,
 				"label":  opts.Labels,

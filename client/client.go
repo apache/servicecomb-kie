@@ -39,6 +39,10 @@ import (
 const (
 	version   = "v1"
 	APIPathKV = "kie/kv"
+
+	HeaderContentType = "Content-Type"
+	MsgGetFailed      = "get failed"
+	FmtGetFailed      = "get %s failed,http status [%s], body [%s]"
 )
 
 //client errors
@@ -97,20 +101,20 @@ func (c *Client) Put(ctx context.Context, kv model.KVRequest, opts ...OpOption) 
 	}
 	url := fmt.Sprintf("%s/%s/%s/%s/%s", c.opts.Endpoint, version, options.Project, APIPathKV, kv.Key)
 	h := http.Header{}
-	h.Set("Content-Type", "application/json")
+	h.Set(HeaderContentType, common.ContentTypeJSON)
 	body, _ := json.Marshal(kv)
-	resp, err := c.c.Do(ctx, "PUT", url, h, body)
+	resp, err := c.c.Do(ctx, http.MethodPut, url, h, body)
 	if err != nil {
 		return nil, err
 	}
 	b := httputil.ReadBody(resp)
 	if resp.StatusCode != http.StatusOK {
-		openlogging.Error("get failed", openlogging.WithTags(openlogging.Tags{
+		openlogging.Error(MsgGetFailed, openlogging.WithTags(openlogging.Tags{
 			"k":      kv.Key,
 			"status": resp.Status,
 			"body":   b,
 		}))
-		return nil, fmt.Errorf("get %s failed,http status [%s], body [%s]", kv.Key, resp.Status, b)
+		return nil, fmt.Errorf(FmtGetFailed, kv.Key, resp.Status, b)
 	}
 
 	kvs := &model.KVDoc{}
@@ -152,7 +156,7 @@ func (c *Client) Get(ctx context.Context, opts ...GetOption) (*model.KVResponse,
 		url = url + labels
 	}
 	h := http.Header{}
-	resp, err := c.c.Do(ctx, "GET", url, h, nil)
+	resp, err := c.c.Do(ctx, http.MethodGet, url, h, nil)
 	if err != nil {
 		return nil, err
 	}
@@ -164,12 +168,12 @@ func (c *Client) Get(ctx context.Context, opts ...GetOption) (*model.KVResponse,
 		if resp.StatusCode == http.StatusNotModified {
 			return nil, ErrNoChanges
 		}
-		openlogging.Error("get failed", openlogging.WithTags(openlogging.Tags{
+		openlogging.Error(MsgGetFailed, openlogging.WithTags(openlogging.Tags{
 			"k":      options.Key,
 			"status": resp.Status,
 			"body":   b,
 		}))
-		return nil, fmt.Errorf("get %s failed,http status [%s], body [%s]", options.Key, resp.Status, b)
+		return nil, fmt.Errorf(FmtGetFailed, options.Key, resp.Status, b)
 	}
 	var kvs *model.KVResponse
 	err = json.Unmarshal(b, &kvs)
@@ -206,7 +210,7 @@ func (c *Client) Summary(ctx context.Context, opts ...GetOption) ([]*model.KVRes
 	}
 	url := fmt.Sprintf("%s/%s/%s/%s?%s", c.opts.Endpoint, version, options.Project, "kie/summary", labelParams)
 	h := http.Header{}
-	resp, err := c.c.Do(ctx, "GET", url, h, nil)
+	resp, err := c.c.Do(ctx, http.MethodGet, url, h, nil)
 	if err != nil {
 		return nil, err
 	}
@@ -215,7 +219,7 @@ func (c *Client) Summary(ctx context.Context, opts ...GetOption) ([]*model.KVRes
 		if resp.StatusCode == http.StatusNotFound {
 			return nil, ErrKeyNotExist
 		}
-		openlogging.Error("get failed", openlogging.WithTags(openlogging.Tags{
+		openlogging.Error(MsgGetFailed, openlogging.WithTags(openlogging.Tags{
 			"p":      options.Project,
 			"status": resp.Status,
 			"body":   b,
@@ -246,8 +250,8 @@ func (c *Client) Delete(ctx context.Context, kvID, labelID string, opts ...OpOpt
 		url = fmt.Sprintf("%s?labelID=%s", url, labelID)
 	}
 	h := http.Header{}
-	h.Set("Content-Type", "application/json")
-	resp, err := c.c.Do(ctx, "DELETE", url, h, nil)
+	h.Set(HeaderContentType, common.ContentTypeJSON)
+	resp, err := c.c.Do(ctx, http.MethodDelete, url, h, nil)
 	if err != nil {
 		return err
 	}

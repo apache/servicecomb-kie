@@ -18,15 +18,16 @@
 package main
 
 import (
-	"github.com/apache/servicecomb-kie/server/pubsub"
-	"github.com/apache/servicecomb-kie/server/service"
 	"os"
 
 	"github.com/apache/servicecomb-kie/server/config"
 	_ "github.com/apache/servicecomb-kie/server/handler"
+	"github.com/apache/servicecomb-kie/server/pubsub"
 	v1 "github.com/apache/servicecomb-kie/server/resource/v1"
+	"github.com/apache/servicecomb-kie/server/service"
 	_ "github.com/apache/servicecomb-kie/server/service/mongo"
 	"github.com/go-chassis/go-chassis"
+	"github.com/go-chassis/go-chassis/core/common"
 	"github.com/go-mesh/openlogging"
 	"github.com/urfave/cli"
 )
@@ -77,8 +78,8 @@ func main() {
 	if err := parseConfigFromCmd(os.Args); err != nil {
 		openlogging.Fatal(err.Error())
 	}
-	chassis.RegisterSchema("rest", &v1.KVResource{})
-	chassis.RegisterSchema("rest", &v1.HistoryResource{})
+	chassis.RegisterSchema(common.ProtocolRest, &v1.KVResource{})
+	chassis.RegisterSchema(common.ProtocolRest, &v1.HistoryResource{})
 	if err := chassis.Init(); err != nil {
 		openlogging.Fatal(err.Error())
 	}
