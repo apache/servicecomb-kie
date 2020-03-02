@@ -17,6 +17,8 @@
 
 package client
 
+import "strconv"
+
 const (
 	defaultProject = "default"
 )
@@ -29,11 +31,12 @@ type OpOption func(*OpOptions)
 
 //GetOptions is the options of client func
 type GetOptions struct {
-	Labels  []map[string]string
-	Project string
-	Key     string
-	Wait    string
-	Exact   bool
+	Labels   []map[string]string
+	Project  string
+	Key      string
+	Wait     string
+	Exact    bool
+	Revision string
 }
 
 //OpOptions is the options of client func
@@ -75,6 +78,13 @@ func WithWait(duration string) GetOption {
 func WithKey(k string) GetOption {
 	return func(options *GetOptions) {
 		options.Key = k
+	}
+}
+
+//WithRevision query keys with certain revision
+func WithRevision(revision int) GetOption {
+	return func(options *GetOptions) {
+		options.Revision = strconv.Itoa(revision)
 	}
 }
 
