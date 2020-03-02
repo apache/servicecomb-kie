@@ -72,7 +72,7 @@ func (r *KVResource) Put(context *restful.Context) {
 		Labels:   kv.Labels,
 		Project:  project,
 		DomainID: kv.Domain,
-		Action:   "put",
+		Action:   pubsub.ActionPut,
 	})
 	if err != nil {
 		openlogging.Warn("lost kv change event:" + err.Error())
@@ -326,7 +326,17 @@ func (r *KVResource) Delete(context *restful.Context) {
 		WriteErrResponse(context, http.StatusBadRequest, common.ErrKvIDMustNotEmpty, common.ContentTypeText)
 		return
 	}
-	err := service.KVService.Delete(context.Ctx, kvID, domain.(string), project)
+	result, err := service.KVService.FindKV(context.Ctx, domain.(string), project,
+		service.WithID(kvID))
+	if err != nil && err != service.ErrKeyNotExists {
+		WriteErrResponse(context, http.StatusInternalServerError, err.Error(), common.ContentTypeText)
+		return
+	} else if err == service.ErrKeyNotExists {
+		context.WriteHeader(http.StatusNoContent)
+		return
+	}
+	kv := result[0].Data[0]
+	err = service.KVService.Delete(context.Ctx, kvID, domain.(string), project)
 	if err != nil {
 		openlogging.Error("delete failed ,", openlogging.WithTags(openlogging.Tags{
 			"kvID":  kvID,
@@ -334,6 +344,16 @@ func (r *KVResource) Delete(context *restful.Context) {
 		}))
 		WriteErrResponse(context, http.StatusInternalServerError, err.Error(), common.ContentTypeText)
 		return
+	}
+	err = pubsub.Publish(&pubsub.KVChangeEvent{
+		Key:      kv.Key,
+		Labels:   kv.Labels,
+		Project:  project,
+		DomainID: domain.(string),
+		Action:   pubsub.ActionDelete,
+	})
+	if err != nil {
+		openlogging.Warn("lost kv change event:" + err.Error())
 	}
 	context.WriteHeader(http.StatusNoContent)
 }

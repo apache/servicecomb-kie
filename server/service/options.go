@@ -34,6 +34,7 @@ type FindOptions struct {
 	ExactLabels bool
 	Status      string
 	Depth       int
+	ID          string
 	Key         string
 	Labels      map[string]string
 	LabelID     string
@@ -50,6 +51,13 @@ type FindOption func(*FindOptions)
 func WithExactLabels() FindOption {
 	return func(o *FindOptions) {
 		o.ExactLabels = true
+	}
+}
+
+//WithID find by kvID
+func WithID(id string) FindOption {
+	return func(o *FindOptions) {
+		o.ID = id
 	}
 }
 

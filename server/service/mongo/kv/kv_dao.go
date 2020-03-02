@@ -167,6 +167,10 @@ func findOneKey(ctx context.Context, filter bson.M) ([]*model.KVDoc, error) {
 
 //deleteKV by kvID
 func deleteKV(ctx context.Context, kvID, project, domain string) error {
+	if _, err := counter.ApplyRevision(ctx, domain); err != nil {
+		openlogging.Error(fmt.Sprintf("increase revision failed, the kv [%s] not deleted: [%s]", kvID, err))
+		return err
+	}
 	collection := session.GetDB().Collection(session.CollectionKV)
 	dr, err := collection.DeleteOne(ctx, bson.M{"id": kvID, "project": project, "domain": domain})
 	//check error and delete number
@@ -228,4 +232,15 @@ func findKVByLabelID(ctx context.Context, domain, labelID, key string, project s
 	}
 	return findKeys(ctx, filter, true)
 
+}
+
+//findKVByID get kvs by kv id
+func findKVDocByID(ctx context.Context, domain, project, kvID string) (*model.KVDoc, error) {
+	filter := bson.M{"id": kvID, "domain": domain, "project": project}
+	kvs, err := findOneKey(ctx, filter)
+	if err != nil {
+		openlogging.Error(err.Error())
+		return nil, err
+	}
+	return kvs[0], nil
 }

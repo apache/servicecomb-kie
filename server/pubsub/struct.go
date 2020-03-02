@@ -20,9 +20,16 @@ package pubsub
 import (
 	"encoding/json"
 	"errors"
-	"github.com/apache/servicecomb-kie/pkg/common"
 	"reflect"
 	"strings"
+
+	"github.com/apache/servicecomb-kie/pkg/common"
+)
+
+// const
+const (
+	ActionPut    = "put"
+	ActionDelete = "delete"
 )
 
 //KVChangeEvent is event between kie nodes, and broadcast by serf
