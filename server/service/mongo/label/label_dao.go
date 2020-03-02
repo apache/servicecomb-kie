@@ -20,6 +20,7 @@ package label
 import (
 	"context"
 	"fmt"
+
 	"github.com/apache/servicecomb-kie/pkg/model"
 	"github.com/apache/servicecomb-kie/pkg/stringutil"
 	"github.com/apache/servicecomb-kie/server/service"
@@ -30,8 +31,10 @@ import (
 	"go.mongodb.org/mongo-driver/bson/primitive"
 )
 
+//const of label dao
 const (
-	defaultLabels = "default"
+	defaultLabels     = "default"
+	MsgHitExactLabels = "hit exact labels"
 )
 
 //FindLabels find label doc by labels and project, check if the project has certain labels
@@ -59,7 +62,7 @@ func FindLabels(ctx context.Context, domain, project string, labels map[string]s
 			return nil, err
 		}
 		if len(curLabel.Labels) == len(labels) {
-			openlogging.Debug("hit exact labels")
+			openlogging.Debug(MsgHitExactLabels)
 			curLabel.Labels = nil //exact match don't need to return labels
 			return curLabel, nil
 		}

@@ -20,6 +20,8 @@ package v1
 
 import (
 	"fmt"
+	"net/http"
+
 	"github.com/apache/servicecomb-kie/pkg/common"
 	"github.com/apache/servicecomb-kie/pkg/iputil"
 	"github.com/apache/servicecomb-kie/pkg/model"
@@ -30,7 +32,6 @@ import (
 	"github.com/go-chassis/go-chassis/server/restful"
 	"github.com/go-mesh/openlogging"
 	uuid "github.com/satori/go.uuid"
-	"net/http"
 )
 
 //KVResource has API about kv operations
@@ -40,8 +41,8 @@ type KVResource struct {
 //Put create or update kv
 func (r *KVResource) Put(context *restful.Context) {
 	var err error
-	key := context.ReadPathParameter("key")
-	project := context.ReadPathParameter("project")
+	key := context.ReadPathParameter(PathParameterKey)
+	project := context.ReadPathParameter(PathParameterProject)
 	kv := new(model.KVDoc)
 	if err = readRequest(context, kv); err != nil {
 		WriteErrResponse(context, http.StatusBadRequest, err.Error(), common.ContentTypeText)
@@ -88,12 +89,12 @@ func (r *KVResource) Put(context *restful.Context) {
 //GetByKey search key by label and key
 func (r *KVResource) GetByKey(rctx *restful.Context) {
 	var err error
-	key := rctx.ReadPathParameter("key")
+	key := rctx.ReadPathParameter(PathParameterKey)
 	if key == "" {
 		WriteErrResponse(rctx, http.StatusBadRequest, "key must not be empty", common.ContentTypeText)
 		return
 	}
-	project := rctx.ReadPathParameter("project")
+	project := rctx.ReadPathParameter(PathParameterProject)
 	labels, err := getLabels(rctx)
 	if err != nil {
 		WriteErrResponse(rctx, http.StatusBadRequest, common.MsgIllegalLabels, common.ContentTypeText)
@@ -104,15 +105,15 @@ func (r *KVResource) GetByKey(rctx *restful.Context) {
 		WriteErrResponse(rctx, http.StatusInternalServerError, common.MsgDomainMustNotBeEmpty, common.ContentTypeText)
 		return
 	}
-	pageNumStr := rctx.ReadQueryParameter("pageNum")
-	pageSizeStr := rctx.ReadQueryParameter("pageSize")
+	pageNumStr := rctx.ReadQueryParameter(QueryParameterPageNum)
+	pageSizeStr := rctx.ReadQueryParameter(QueryParameterPageSize)
 	pageNum, pageSize, err := checkPagination(pageNumStr, pageSizeStr)
 	if err != nil {
 		WriteErrResponse(rctx, http.StatusBadRequest, err.Error(), common.ContentTypeText)
 		return
 	}
-	insID := rctx.ReadHeader("sessionID")
-	statusStr := rctx.ReadQueryParameter("status")
+	insID := rctx.ReadHeader(HeaderSessionID)
+	statusStr := rctx.ReadQueryParameter(QueryParameterStatus)
 	status, err := checkStatus(statusStr)
 	if err != nil {
 		WriteErrResponse(rctx, http.StatusBadRequest, err.Error(), common.ContentTypeText)
@@ -124,7 +125,7 @@ func (r *KVResource) GetByKey(rctx *restful.Context) {
 //List response kv list
 func (r *KVResource) List(rctx *restful.Context) {
 	var err error
-	project := rctx.ReadPathParameter("project")
+	project := rctx.ReadPathParameter(PathParameterProject)
 	domain := ReadDomain(rctx)
 	if domain == nil {
 		WriteErrResponse(rctx, http.StatusInternalServerError, common.MsgDomainMustNotBeEmpty, common.ContentTypeText)
@@ -135,15 +136,15 @@ func (r *KVResource) List(rctx *restful.Context) {
 		WriteErrResponse(rctx, http.StatusBadRequest, err.Error(), common.ContentTypeText)
 		return
 	}
-	pageNumStr := rctx.ReadQueryParameter("pageNum")
-	pageSizeStr := rctx.ReadQueryParameter("pageSize")
+	pageNumStr := rctx.ReadQueryParameter(QueryParameterPageNum)
+	pageSizeStr := rctx.ReadQueryParameter(QueryParameterPageSize)
 	pageNum, pageSize, err := checkPagination(pageNumStr, pageSizeStr)
 	if err != nil {
 		WriteErrResponse(rctx, http.StatusBadRequest, err.Error(), common.ContentTypeText)
 		return
 	}
-	sessionID := rctx.ReadHeader("sessionID")
-	statusStr := rctx.ReadQueryParameter("status")
+	sessionID := rctx.ReadHeader(HeaderSessionID)
+	statusStr := rctx.ReadQueryParameter(QueryParameterStatus)
 	status, err := checkStatus(statusStr)
 	if err != nil {
 		WriteErrResponse(rctx, http.StatusBadRequest, err.Error(), common.ContentTypeText)
@@ -231,7 +232,7 @@ func RecordPollingDetail(context *restful.Context, revStr, wait, domain, project
 		"offset":  offset,
 	}
 	data.PollingData = dataMap
-	data.UserAgent = context.Req.HeaderParameter("User-Agent")
+	data.UserAgent = context.Req.HeaderParameter(HeaderUserAgent)
 	data.URLPath = context.ReadRequest().Method + " " + context.ReadRequest().URL.Path
 	data.ResponseHeader = context.Resp.Header()
 	data.ResponseCode = context.Resp.StatusCode()
@@ -251,15 +252,15 @@ func (r *KVResource) Search(context *restful.Context) {
 		WriteErrResponse(context, http.StatusBadRequest, err.Error(), common.ContentTypeText)
 		return
 	}
-	project := context.ReadPathParameter("project")
+	project := context.ReadPathParameter(PathParameterProject)
 	domain := ReadDomain(context)
 	if domain == nil {
 		WriteErrResponse(context, http.StatusInternalServerError, common.MsgDomainMustNotBeEmpty, common.ContentTypeText)
 		return
 	}
 	var kvs []*model.KVResponse
-	pageNumStr := context.ReadQueryParameter("pageNum")
-	pageSizeStr := context.ReadQueryParameter("pageSize")
+	pageNumStr := context.ReadQueryParameter(QueryParameterPageNum)
+	pageSizeStr := context.ReadQueryParameter(QueryParameterPageSize)
 	pageNum, pageSize, err := checkPagination(pageNumStr, pageSizeStr)
 	if err != nil {
 		WriteErrResponse(context, http.StatusBadRequest, err.Error(), common.ContentTypeText)
@@ -270,7 +271,7 @@ func (r *KVResource) Search(context *restful.Context) {
 			service.WithPageNum(pageNum),
 			service.WithPageSize(pageSize))
 		if err != nil {
-			openlogging.Error("can not find by labels", openlogging.WithTags(openlogging.Tags{
+			openlogging.Error(MsgLabelsNotFound, openlogging.WithTags(openlogging.Tags{
 				"err": err.Error(),
 			}))
 			WriteErrResponse(context, http.StatusInternalServerError, err.Error(), common.ContentTypeText)
@@ -290,7 +291,7 @@ func (r *KVResource) Search(context *restful.Context) {
 			if err == service.ErrKeyNotExists {
 				continue
 			} else {
-				openlogging.Error("can not find by labels", openlogging.WithTags(openlogging.Tags{
+				openlogging.Error(MsgLabelsNotFound, openlogging.WithTags(openlogging.Tags{
 					"err": err.Error(),
 				}))
 				WriteErrResponse(context, http.StatusInternalServerError, err.Error(), common.ContentTypeText)
@@ -314,7 +315,7 @@ func (r *KVResource) Search(context *restful.Context) {
 
 //Delete deletes key by ids
 func (r *KVResource) Delete(context *restful.Context) {
-	project := context.ReadPathParameter("project")
+	project := context.ReadPathParameter(PathParameterProject)
 	domain := ReadDomain(context)
 	if domain == nil {
 		WriteErrResponse(context, http.StatusInternalServerError, common.MsgDomainMustNotBeEmpty, common.ContentTypeText)

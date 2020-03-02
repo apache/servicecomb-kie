@@ -20,6 +20,8 @@ package kv
 import (
 	"context"
 	"fmt"
+	"time"
+
 	"github.com/apache/servicecomb-kie/pkg/model"
 	"github.com/apache/servicecomb-kie/server/service"
 	"github.com/apache/servicecomb-kie/server/service/mongo/counter"
@@ -30,7 +32,6 @@ import (
 	"go.mongodb.org/mongo-driver/bson"
 	"go.mongodb.org/mongo-driver/mongo"
 	"go.mongodb.org/mongo-driver/mongo/options"
-	"time"
 )
 
 //createKey get latest revision from history
@@ -124,10 +125,10 @@ func findKV(ctx context.Context, domain string, project string, opts service.Fin
 	curTotal, err := collection.CountDocuments(ctx, filter)
 	if err != nil {
 		if err.Error() == context.DeadlineExceeded.Error() {
-			openlogging.Error("find kv failed, deadline exceeded", openlogging.WithTags(openlogging.Tags{
+			openlogging.Error(MsgFindKvFailed, openlogging.WithTags(openlogging.Tags{
 				"timeout": opts.Timeout,
 			}))
-			return nil, 0, fmt.Errorf("can not find kv in %s", opts.Timeout)
+			return nil, 0, fmt.Errorf(FmtErrFindKvFailed, opts.Timeout)
 		}
 		return nil, 0, err
 	}
@@ -137,10 +138,10 @@ func findKV(ctx context.Context, domain string, project string, opts service.Fin
 	cur, err := collection.Find(ctx, filter, opt)
 	if err != nil {
 		if err.Error() == context.DeadlineExceeded.Error() {
-			openlogging.Error("find kv failed, deadline exceeded", openlogging.WithTags(openlogging.Tags{
+			openlogging.Error(MsgFindKvFailed, openlogging.WithTags(openlogging.Tags{
 				"timeout": opts.Timeout,
 			}))
-			return nil, 0, fmt.Errorf("can not find kv in %s", opts.Timeout)
+			return nil, 0, fmt.Errorf(FmtErrFindKvFailed, opts.Timeout)
 		}
 		return nil, 0, err
 	}
@@ -222,7 +223,7 @@ func findKVByLabelID(ctx context.Context, domain, labelID, key string, project s
 	filter := bson.M{"label_id": labelID, "domain": domain, "project": project}
 	if key != "" {
 		filter["key"] = key
-		openlogging.Debug("find one key")
+		openlogging.Debug(MsgFindOneKey)
 		return findOneKey(ctx, filter)
 	}
 	return findKeys(ctx, filter, true)

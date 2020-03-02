@@ -21,22 +21,33 @@ import (
 	"context"
 	"encoding/json"
 	"errors"
-	"github.com/apache/servicecomb-kie/server/pubsub"
-	"github.com/apache/servicecomb-kie/server/service"
-	uuid "github.com/satori/go.uuid"
 	"net/http"
 	"strconv"
 	"strings"
 	"time"
 
 	"github.com/apache/servicecomb-kie/pkg/common"
+	"github.com/apache/servicecomb-kie/server/pubsub"
+	"github.com/apache/servicecomb-kie/server/service"
 	goRestful "github.com/emicklei/go-restful"
 	"github.com/go-chassis/go-chassis/server/restful"
 	"github.com/go-mesh/openlogging"
+	uuid "github.com/satori/go.uuid"
 	"gopkg.in/yaml.v2"
 )
 
 //const of server
+const (
+	HeaderUserAgent        = "User-Agent"
+	HeaderSessionID        = "sessionID"
+	QueryParameterStatus   = "status"
+	QueryParameterPageNum  = "pageNum"
+	QueryParameterPageSize = "pageSize"
+	PathParameterProject   = "project"
+	PathParameterKey       = "key"
+	AttributeDomainKey     = "domain"
+	MsgLabelsNotFound      = "can not find by labels"
+)
 
 //err
 var (
@@ -45,7 +56,7 @@ var (
 
 //ReadDomain get domain info from attribute
 func ReadDomain(context *restful.Context) interface{} {
-	return context.ReadRestfulRequest().Attribute("domain")
+	return context.ReadRestfulRequest().Attribute(AttributeDomainKey)
 }
 
 //ReadFindDepth get find depth
@@ -165,7 +176,7 @@ func eventHappened(rctx *restful.Context, waitStr string, topic *pubsub.Topic) (
 	o := &pubsub.Observer{
 		UUID:      uuid.NewV4().String(),
 		RemoteIP:  rctx.ReadRequest().RemoteAddr, //TODO x forward ip
-		UserAgent: rctx.ReadHeader("User-Agent"),
+		UserAgent: rctx.ReadHeader(HeaderUserAgent),
 		Event:     make(chan *pubsub.KVChangeEvent, 1),
 	}
 	err = pubsub.ObserveOnce(o, topic)
@@ -196,10 +207,7 @@ func checkPagination(pageNum, pageSize string) (int64, int64, error) {
 
 	if pageSize != "" {
 		size, err = strconv.ParseInt(pageSize, 10, 64)
-		if err != nil {
-			return 0, 0, errors.New("invalid pageSize number")
-		}
-		if size < 1 || size > 100 {
+		if err != nil || (size < 1 || size > 100) {
 			return 0, 0, errors.New("invalid pageSize number")
 		}
 	}

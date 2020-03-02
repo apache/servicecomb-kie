@@ -18,9 +18,16 @@
 package handler
 
 import (
+	"github.com/apache/servicecomb-kie/server/resource/v1"
 	"github.com/go-chassis/go-chassis/core/handler"
 	"github.com/go-chassis/go-chassis/core/invocation"
 	"github.com/go-mesh/openlogging"
+)
+
+//const of noop auth handler
+const (
+	NoopAuthHandlerName = "auth-handler"
+	DefaultDomain       = "default"
 )
 
 //NoopAuthHandler not need implement any logic
@@ -29,7 +36,7 @@ type NoopAuthHandler struct{}
 
 //Handle set local attribute to http request
 func (bk *NoopAuthHandler) Handle(chain *handler.Chain, inv *invocation.Invocation, cb invocation.ResponseCallBack) {
-	inv.SetMetadata("domain", "default")
+	inv.SetMetadata(v1.AttributeDomainKey, DefaultDomain)
 	chain.Next(inv, cb)
 }
 
@@ -39,10 +46,10 @@ func newDomainResolver() handler.Handler {
 
 //Name is handler name
 func (bk *NoopAuthHandler) Name() string {
-	return "auth-handler"
+	return NoopAuthHandlerName
 }
 func init() {
-	if err := handler.RegisterHandler("auth-handler", newDomainResolver); err != nil {
+	if err := handler.RegisterHandler(NoopAuthHandlerName, newDomainResolver); err != nil {
 		openlogging.Fatal("register auth-handler failed: " + err.Error())
 	}
 }
