@@ -40,24 +40,32 @@ func TestClient_Put(t *testing.T) {
 	_, err := c.Put(context.TODO(), kv, WithProject("client_test"))
 	assert.NoError(t, err)
 
-	kvs, _ := c.Get(context.TODO(),
+	kvs, responseRevision, _ := c.Get(context.TODO(),
 		WithKey("app.properties"),
 		WithGetProject("client_test"),
 		WithLabels(map[string]string{"service": "client"}))
 	assert.GreaterOrEqual(t, len(kvs.Data), 1)
 
-	_, err = c.Get(context.TODO(),
+	_, _, err = c.Get(context.TODO(),
 		WithGetProject("client_test"),
-		WithLabels(map[string]string{"service": "client"}))
+		WithLabels(map[string]string{"service": "client"}),
+		WithRevision(responseRevision))
 	assert.Equal(t, ErrNoChanges, err)
 
-	_, err = c.Get(context.TODO(),
+	_, _, err = c.Get(context.TODO(),
+		WithGetProject("client_test"),
 		WithLabels(map[string]string{"service": "client"}))
 	assert.Error(t, err)
 
+	_, _, err = c.Get(context.TODO(),
+		WithGetProject("client_test"),
+		WithLabels(map[string]string{"service": "client"}),
+		WithRevision(c.CurrentRevision()-1))
+	assert.NoError(t, err)
+
 	t.Run("long polling,wait 10s,change value,should return result", func(t *testing.T) {
 		go func() {
-			kvs, err = c.Get(context.TODO(),
+			kvs, _, err = c.Get(context.TODO(),
 				WithLabels(map[string]string{"service": "client"}),
 				WithGetProject("client_test"),
 				WithWait("10s"))
@@ -80,8 +88,8 @@ func TestClient_Put(t *testing.T) {
 		}
 		_, err := c.Put(context.TODO(), kv, WithProject("client_test"))
 		assert.NoError(t, err)
-		t.Log(c.CurrentRevision)
-		kvs, err = c.Get(context.TODO(),
+		t.Log(c.CurrentRevision())
+		kvs, _, err = c.Get(context.TODO(),
 			WithGetProject("client_test"),
 			WithLabels(map[string]string{"service": "client"}),
 			WithExact())
@@ -103,7 +111,7 @@ func TestClient_Delete(t *testing.T) {
 	kvBody.Labels["env"] = "client_test"
 	kv, err := c.Put(context.TODO(), kvBody, WithProject("client_test"))
 	assert.NoError(t, err)
-	kvs, err := c.Get(context.TODO(),
+	kvs, _, err := c.Get(context.TODO(),
 		WithKey("time"),
 		WithGetProject("client_test"),
 		WithLabels(map[string]string{"env": "client_test"}))
