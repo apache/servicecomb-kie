@@ -105,15 +105,15 @@ func (r *KVResource) GetByKey(rctx *restful.Context) {
 		WriteErrResponse(rctx, http.StatusInternalServerError, common.MsgDomainMustNotBeEmpty, common.ContentTypeText)
 		return
 	}
-	pageNumStr := rctx.ReadQueryParameter(QueryParameterPageNum)
-	pageSizeStr := rctx.ReadQueryParameter(QueryParameterPageSize)
+	pageNumStr := rctx.ReadQueryParameter(common.QueryParamPageNum)
+	pageSizeStr := rctx.ReadQueryParameter(common.QueryParamPageSize)
 	pageNum, pageSize, err := checkPagination(pageNumStr, pageSizeStr)
 	if err != nil {
 		WriteErrResponse(rctx, http.StatusBadRequest, err.Error(), common.ContentTypeText)
 		return
 	}
 	insID := rctx.ReadHeader(HeaderSessionID)
-	statusStr := rctx.ReadQueryParameter(QueryParameterStatus)
+	statusStr := rctx.ReadQueryParameter(common.QueryParamStatus)
 	status, err := checkStatus(statusStr)
 	if err != nil {
 		WriteErrResponse(rctx, http.StatusBadRequest, err.Error(), common.ContentTypeText)
@@ -136,15 +136,15 @@ func (r *KVResource) List(rctx *restful.Context) {
 		WriteErrResponse(rctx, http.StatusBadRequest, err.Error(), common.ContentTypeText)
 		return
 	}
-	pageNumStr := rctx.ReadQueryParameter(QueryParameterPageNum)
-	pageSizeStr := rctx.ReadQueryParameter(QueryParameterPageSize)
+	pageNumStr := rctx.ReadQueryParameter(common.QueryParamPageNum)
+	pageSizeStr := rctx.ReadQueryParameter(common.QueryParamPageSize)
 	pageNum, pageSize, err := checkPagination(pageNumStr, pageSizeStr)
 	if err != nil {
 		WriteErrResponse(rctx, http.StatusBadRequest, err.Error(), common.ContentTypeText)
 		return
 	}
 	sessionID := rctx.ReadHeader(HeaderSessionID)
-	statusStr := rctx.ReadQueryParameter(QueryParameterStatus)
+	statusStr := rctx.ReadQueryParameter(common.QueryParamStatus)
 	status, err := checkStatus(statusStr)
 	if err != nil {
 		WriteErrResponse(rctx, http.StatusBadRequest, err.Error(), common.ContentTypeText)
@@ -304,7 +304,7 @@ func (r *KVResource) URLPatterns() []restful.Route {
 			Returns: []*restful.Returns{
 				{
 					Code:  http.StatusOK,
-					Model: KVBody{},
+					Model: model.DocResponseSingleKey{},
 				},
 			},
 			Consumes: []string{goRestful.MIME_JSON, common.ContentTypeYaml},
@@ -316,12 +316,22 @@ func (r *KVResource) URLPatterns() []restful.Route {
 			FuncDesc:     "get key values by key and labels",
 			Parameters: []*restful.Parameters{
 				DocPathProject, DocPathKey, DocQueryLabelParameters, DocQueryWait, DocQueryMatch, DocQueryRev,
+				DocQueryLimitParameters, DocQueryOffsetParameters,
 			},
 			Returns: []*restful.Returns{
 				{
 					Code:    http.StatusOK,
 					Message: "get key value success",
-					Model:   []model.KVResponse{},
+					Model:   model.DocResponseGetKey{},
+					Headers: map[string]goRestful.Header{
+						common.HeaderRevision: DocHeaderRevision,
+					},
+				},
+				{
+					Code: http.StatusNotFound,
+					Headers: map[string]goRestful.Header{
+						common.HeaderRevision: DocHeaderRevision,
+					},
 				},
 				{
 					Code:    http.StatusNotModified,
@@ -336,11 +346,20 @@ func (r *KVResource) URLPatterns() []restful.Route {
 			FuncDesc:     "list key values by labels and key",
 			Parameters: []*restful.Parameters{
 				DocPathProject, DocQueryLabelParameters, DocQueryWait, DocQueryMatch, DocQueryRev,
+				DocQueryLimitParameters, DocQueryOffsetParameters,
 			},
 			Returns: []*restful.Returns{
 				{
 					Code:  http.StatusOK,
-					Model: model.KVResponse{},
+					Model: model.DocResponseGetKey{},
+					Headers: map[string]goRestful.Header{
+						common.HeaderRevision: DocHeaderRevision,
+					},
+				}, {
+					Code: http.StatusNotFound,
+					Headers: map[string]goRestful.Header{
+						common.HeaderRevision: DocHeaderRevision,
+					},
 				}, {
 					Code:    http.StatusNotModified,
 					Message: "empty body",
@@ -360,10 +379,6 @@ func (r *KVResource) URLPatterns() []restful.Route {
 				{
 					Code:    http.StatusNoContent,
 					Message: "Delete success",
-				},
-				{
-					Code:    http.StatusBadRequest,
-					Message: "Failed,check url",
 				},
 				{
 					Code:    http.StatusInternalServerError,

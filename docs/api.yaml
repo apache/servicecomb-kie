@@ -25,6 +25,18 @@ paths:
           in: query
           description: 'match works with label query param, it specifies label match pattern. if it is empty, server will return kv which''s labels partial match the label query param. uf it is exact, server will return kv which''s labels exact match the label query param'
           type: string
+        - name: revision
+          in: query
+          description: 'each time you query,server will return a number in header X-Kie-Revision. you can record it in client side, use this number as param value. if current revision is greater than it, server will return data'
+          type: string
+        - name: pageSize
+          in: query
+          description: pagination
+          type: string
+        - name: pageNum
+          in: query
+          description: pagination
+          type: string
       consumes:
         - '*/*'
       produces:
@@ -34,13 +46,19 @@ paths:
         '200':
           description: ''
           schema:
-            $ref: '#/definitions/KVResponse'
+            $ref: '#/definitions/v1.DocResponseGetKey'
           headers:
             X-Kie-Revision:
+              description: 'cluster latest revision number, if key value is changed, it will increase.'
               type: integer
-              description: cluster latest revision number.
         '304':
           description: empty body
+        '404':
+          description: ''
+          headers:
+            X-Kie-Revision:
+              description: 'cluster latest revision number, if key value is changed, it will increase.'
+              type: integer
     delete:
       summary: delete key by kv ID.
       operationId: Delete
@@ -60,8 +78,6 @@ paths:
       responses:
         '204':
           description: Delete success
-        '400':
-          description: 'Failed,check url'
         '500':
           description: Server error
   '/v1/{project}/kie/kv/{key}':
@@ -81,6 +97,10 @@ paths:
           in: query
           description: 'label pairs,for example &label=service:order&label=version:1.0.0'
           type: string
+        - name: wait
+          in: query
+          description: 'wait until any kv changed. for example wait=5s, server will not response until 5 seconds during that time window, if any kv changed, server will return 200 and kv list, otherwise return 304 and empty body'
+          type: string
         - name: match
           in: query
           description: 'match works with label query param, it specifies label match pattern. if it is empty, server will return kv which''s labels partial match the label query param. uf it is exact, server will return kv which''s labels exact match the label query param'
@@ -88,6 +108,14 @@ paths:
         - name: revision
           in: query
           description: 'each time you query,server will return a number in header X-Kie-Revision. you can record it in client side, use this number as param value. if current revision is greater than it, server will return data'
+          type: string
+        - name: pageSize
+          in: query
+          description: pagination
+          type: string
+        - name: pageNum
+          in: query
+          description: pagination
           type: string
       consumes:
         - '*/*'
@@ -98,15 +126,19 @@ paths:
         '200':
           description: get key value success
           schema:
-            type: array
-            items:
-              $ref: '#/definitions/KVResponse'
+            $ref: '#/definitions/v1.DocResponseGetKey'
           headers:
             X-Kie-Revision:
+              description: 'cluster latest revision number, if key value is changed, it will increase.'
               type: integer
-              description: cluster latest revision number.
         '304':
           description: empty body
+        '404':
+          description: ''
+          headers:
+            X-Kie-Revision:
+              description: 'cluster latest revision number, if key value is changed, it will increase.'
+              type: integer
     put:
       summary: create or update key value
       operationId: Put
@@ -134,7 +166,7 @@ paths:
         '200':
           description: ''
           schema:
-            $ref: '#/definitions/v1.KVBody'
+            $ref: '#/definitions/v1.DocResponseSingleKey'
   '/v1/{project}/kie/revision/{key_id}':
     get:
       summary: get all revisions by key id
@@ -156,23 +188,29 @@ paths:
         - text/yaml
       responses:
         '200':
-          description: 'true'
+          description: ''
           schema:
             type: array
             items:
-              $ref: '#/definitions/KVDoc'
+              $ref: '#/definitions/v1.DocResponseSingleKey'
 definitions:
-  KVDoc:
+  v1.DocResponseGetKey:
     type: object
     properties:
-      check:
-        type: string
+      data:
+        type: array
+        items:
+          $ref: '#/definitions/v1.DocResponseSingleKey'
+      total:
+        type: integer
+        format: int64
+  v1.DocResponseSingleKey:
+    type: object
+    properties:
       create_revision:
         type: integer
         format: int64
       create_time:
-        type: string
-      domain:
         type: string
       id:
         type: string
@@ -184,10 +222,6 @@ definitions:
         type: object
         additionalProperties:
           type: string
-      project:
-        type: string
-      status:
-        type: string
       update_revision:
         type: integer
         format: int64
@@ -197,27 +231,6 @@ definitions:
         type: string
       value_type:
         type: string
-  KVResponse:
-    type: object
-    properties:
-      data:
-        type: array
-        items:
-          $ref: '#/definitions/KVDoc'
-      label:
-        $ref: '#/definitions/LabelDocResponse'
-      total:
-        type: integer
-        format: int32
-  LabelDocResponse:
-    type: object
-    properties:
-      label_id:
-        type: string
-      labels:
-        type: object
-        additionalProperties:
-          type: string
   v1.KVBody:
     type: object
     properties:

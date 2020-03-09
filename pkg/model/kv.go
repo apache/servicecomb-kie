@@ -66,3 +66,23 @@ type PollingDetail struct {
 	ResponseHeader map[string][]string    `json:"response_header,omitempty" yaml:"response_header,omitempty"`
 	ResponseCode   int                    `json:"response_code,omitempty" yaml:"response_code,omitempty"`
 }
+
+//DocResponseSingleKey is response doc
+type DocResponseSingleKey struct {
+	CreateRevision int64             `json:"create_revision"`
+	CreateTime     string            `json:"create_time"`
+	ID             string            `json:"id"`
+	Key            string            `json:"key"`
+	LabelID        string            `json:"label_id"`
+	Labels         map[string]string `json:"labels"`
+	UpdateRevision int64             `json:"update_revision"`
+	UpdateTime     string            `json:"update_time"`
+	Value          string            `json:"value"`
+	ValueType      string            `json:"value_type"`
+}
+
+//DocResponseGetKey is response doc
+type DocResponseGetKey struct {
+	Data  []*DocResponseSingleKey `json:"data"`
+	Total int64                   `json:"total"`
+}

@@ -32,11 +32,11 @@ var (
 		ParamType: goRestful.HeaderParameterKind,
 		Desc:      "integer, default is 1, if you set match policy, you can set,depth to decide label number",
 	}
-	DocHeaderRevision = &restful.Parameters{
-		DataType:  "string",
-		Name:      common.HeaderRevision,
-		ParamType: goRestful.HeaderParameterKind,
-		Desc:      "integer, current revision of kie",
+	DocHeaderRevision = goRestful.Header{
+		Items: &goRestful.Items{
+			Type: "integer",
+		},
+		Description: "cluster latest revision number, if key value is changed, it will increase.",
 	}
 )
 
@@ -91,15 +91,15 @@ var (
 	}
 	DocQueryLimitParameters = &restful.Parameters{
 		DataType:  "string",
-		Name:      common.QueryLimit,
+		Name:      common.QueryParamPageSize,
 		ParamType: goRestful.QueryParameterKind,
-		Desc:      "limit,for example &limit=10",
+		Desc:      "pagination",
 	}
 	DocQueryOffsetParameters = &restful.Parameters{
 		DataType:  "string",
-		Name:      common.QueryOffset,
+		Name:      common.QueryParamPageNum,
 		ParamType: goRestful.QueryParameterKind,
-		Desc:      "offset,for example &offset=10",
+		Desc:      "pagination",
 	}
 )
 

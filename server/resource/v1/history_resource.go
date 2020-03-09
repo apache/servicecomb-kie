@@ -18,10 +18,10 @@
 package v1
 
 import (
+	"github.com/apache/servicecomb-kie/pkg/model"
 	"net/http"
 
 	"github.com/apache/servicecomb-kie/pkg/common"
-	"github.com/apache/servicecomb-kie/pkg/model"
 	"github.com/apache/servicecomb-kie/server/service"
 
 	goRestful "github.com/emicklei/go-restful"
@@ -37,8 +37,8 @@ type HistoryResource struct {
 func (r *HistoryResource) GetRevisions(context *restful.Context) {
 	var err error
 	keyID := context.ReadPathParameter("key_id")
-	pageNumStr := context.ReadQueryParameter("pageNum")
-	pageSizeStr := context.ReadQueryParameter("pageSize")
+	pageNumStr := context.ReadQueryParameter(common.QueryParamPageNum)
+	pageSizeStr := context.ReadQueryParameter(common.QueryParamPageSize)
 	pageNum, pageSize, err := checkPagination(pageNumStr, pageSizeStr)
 	if err != nil {
 		WriteErrResponse(context, http.StatusBadRequest, err.Error(), common.ContentTypeText)
@@ -85,9 +85,8 @@ func (r *HistoryResource) URLPatterns() []restful.Route {
 			},
 			Returns: []*restful.Returns{
 				{
-					Code:    http.StatusOK,
-					Message: "true",
-					Model:   []model.KVDoc{},
+					Code:  http.StatusOK,
+					Model: []model.DocResponseSingleKey{},
 				},
 			},
 			Consumes: []string{goRestful.MIME_JSON, common.ContentTypeYaml},
