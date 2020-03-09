@@ -29,7 +29,7 @@ by setting different labels to a key.
 it includes 5 components
 
 - server: rest api service to manage kv
-- client: restful client for go
+- kieclient: restful go clients for talking to a kie server (see [kieclient](https://github.com/go-chassis/go-archaius/tree/master/pkg/kieclient))
 - kie-template: agent can be deployed in your k8s pod 
 or VM, it connects to server and writes kv into config file 
 based on template language
