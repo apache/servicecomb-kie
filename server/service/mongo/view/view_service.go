@@ -120,9 +120,9 @@ func (s *Service) List(ctx context.Context, domain, project string, opts ...serv
 	collection := session.GetDB().Collection(session.CollectionView)
 	filter := bson.M{"domain": domain, "project": project}
 	mOpt := options.Find()
-	if option.PageNum != 0 && option.PageSize != 0 {
-		mOpt = mOpt.SetLimit(option.PageSize)
-		mOpt = mOpt.SetSkip(option.PageSize * (option.PageNum - 1))
+	if option.Offset != 0 && option.Limit != 0 {
+		mOpt = mOpt.SetLimit(option.Limit)
+		mOpt = mOpt.SetSkip(option.Offset)
 	}
 	cur, err := collection.Find(ctx, filter, mOpt)
 	if err != nil {
@@ -148,9 +148,9 @@ func (s *Service) GetContent(ctx context.Context, id, domain, project string, op
 		o(&option)
 	}
 	mOpt := options.Find()
-	if option.PageNum != 0 && option.PageSize != 0 {
-		mOpt = mOpt.SetLimit(option.PageSize)
-		mOpt = mOpt.SetSkip(option.PageSize * (option.PageNum - 1))
+	if option.Offset != 0 && option.Limit != 0 {
+		mOpt = mOpt.SetLimit(option.Limit)
+		mOpt = mOpt.SetSkip(option.Offset)
 	}
 	collection := session.GetDB().Collection(generateViewName(id, domain, project))
 	cur, err := collection.Find(ctx, bson.D{}, mOpt)

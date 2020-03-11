@@ -57,7 +57,7 @@ func init() {
 		ListenPeerAddr: "127.0.0.1:4000",
 		AdvertiseAddr:  "127.0.0.1:4000",
 	}
-	config.Configurations.DB.URI = "mongodb://kie:123@127.0.0.1:27017/kie"
+	config.Configurations.DB.URI = "mongodb://kie:123@192.168.0.5:27017/kie"
 	err := service.DBInit()
 	if err != nil {
 		panic(err)
@@ -249,7 +249,7 @@ func TestKVResource_List(t *testing.T) {
 		t.Log(duration)
 	})
 	t.Run("list kv by service label offset, should return 1kv", func(t *testing.T) {
-		r, _ := http.NewRequest("GET", "/v1/test/kie/kv?label=service:utService&pageNum=1&pageSize=1", nil)
+		r, _ := http.NewRequest("GET", "/v1/test/kie/kv?label=service:utService&offset=1&limit=1", nil)
 		noopH := &handler2.NoopAuthHandler{}
 		chain, _ := handler.CreateChain(common.Provider, "testchain1", noopH.Name())
 		r.Header.Set("Content-Type", "application/json")

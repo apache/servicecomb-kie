@@ -189,26 +189,26 @@ func eventHappened(rctx *restful.Context, waitStr string, topic *pubsub.Topic) (
 }
 
 // size from 1 to start
-func checkPagination(pageNum, pageSize string) (int64, int64, error) {
+func checkPagination(offsetStr, limitStr string) (int64, int64, error) {
 	var err error
-	var num, size int64
-	if pageNum != "" {
-		num, err = strconv.ParseInt(pageNum, 10, 64)
+	var offset, limit int64
+	if offsetStr != "" {
+		offset, err = strconv.ParseInt(offsetStr, 10, 64)
 		if err != nil {
 			return 0, 0, err
 		}
-		if num < 1 {
-			return 0, 0, errors.New("invalid pageNum number")
+		if offset < 0 {
+			return 0, 0, errors.New("invalid offset number")
 		}
 	}
 
-	if pageSize != "" {
-		size, err = strconv.ParseInt(pageSize, 10, 64)
-		if err != nil || (size < 1 || size > 100) {
-			return 0, 0, errors.New("invalid pageSize number")
+	if limitStr != "" {
+		limit, err = strconv.ParseInt(limitStr, 10, 64)
+		if err != nil || (limit < 1 || limit > 100) {
+			return 0, 0, errors.New("invalid limit number")
 		}
 	}
-	return num, size, err
+	return offset, limit, err
 }
 
 func checkStatus(status string) (string, error) {
@@ -221,13 +221,13 @@ func checkStatus(status string) (string, error) {
 }
 
 func queryAndResponse(rctx *restful.Context,
-	domain interface{}, project string, key string, labels map[string]string, pageNum, pageSize int64, status string) {
+	domain interface{}, project string, key string, labels map[string]string, offset, limit int64, status string) {
 	m := getMatchPattern(rctx)
 	opts := []service.FindOption{
 		service.WithKey(key),
 		service.WithLabels(labels),
-		service.WithPageNum(pageNum),
-		service.WithPageSize(pageSize),
+		service.WithOffset(offset),
+		service.WithLimit(limit),
 	}
 	if m == common.PatternExact {
 		opts = append(opts, service.WithExactLabels())
