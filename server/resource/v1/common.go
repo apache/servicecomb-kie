@@ -38,15 +38,12 @@ import (
 
 //const of server
 const (
-	HeaderUserAgent        = "User-Agent"
-	HeaderSessionID        = "X-Session-Id"
-	QueryParameterStatus   = "status"
-	QueryParameterPageNum  = "pageNum"
-	QueryParameterPageSize = "pageSize"
-	PathParameterProject   = "project"
-	PathParameterKey       = "key"
-	AttributeDomainKey     = "domain"
-	MsgLabelsNotFound      = "can not find by labels"
+	HeaderUserAgent      = "User-Agent"
+	HeaderSessionID      = "X-Session-Id"
+	PathParameterProject = "project"
+	PathParameterKey     = "key"
+	AttributeDomainKey   = "domain"
+	MsgLabelsNotFound    = "can not find by labels"
 )
 
 //err

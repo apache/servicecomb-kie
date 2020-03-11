@@ -21,6 +21,22 @@ paths:
           in: query
           description: 'wait until any kv changed. for example wait=5s, server will not response until 5 seconds during that time window, if any kv changed, server will return 200 and kv list, otherwise return 304 and empty body'
           type: string
+        - name: match
+          in: query
+          description: 'match works with label query param, it specifies label match pattern. if it is empty, server will return kv which''s labels partial match the label query param. uf it is exact, server will return kv which''s labels exact match the label query param'
+          type: string
+        - name: revision
+          in: query
+          description: 'each time you query,server will return a number in header X-Kie-Revision. you can record it in client side, use this number as param value. if current revision is greater than it, server will return data'
+          type: string
+        - name: pageSize
+          in: query
+          description: pagination
+          type: string
+        - name: pageNum
+          in: query
+          description: pagination
+          type: string
       consumes:
         - '*/*'
       produces:
@@ -30,27 +46,30 @@ paths:
         '200':
           description: ''
           schema:
-            $ref: '#/definitions/KVResponse'
+            $ref: '#/definitions/v1.DocResponseGetKey'
           headers:
-            X-RateLimit-Limit:
+            X-Kie-Revision:
+              description: 'cluster latest revision number, if key value is changed, it will increase.'
               type: integer
-              description: Request limit per hour.
         '304':
           description: empty body
+        '404':
+          description: ''
+          headers:
+            X-Kie-Revision:
+              description: 'cluster latest revision number, if key value is changed, it will increase.'
+              type: integer
     delete:
-      summary: 'delete key by kvID and labelID. Want better performance, give labelID'
+      summary: delete key by kv ID.
       operationId: Delete
       parameters:
         - name: project
           in: path
           required: true
           type: string
-        - name: kvID
+        - name: kv_id
           in: query
           required: true
-          type: string
-        - name: labelID
-          in: query
           type: string
       consumes:
         - '*/*'
@@ -59,8 +78,6 @@ paths:
       responses:
         '204':
           description: Delete success
-        '400':
-          description: 'Failed,check url'
         '500':
           description: Server error
   '/v1/{project}/kie/kv/{key}':
@@ -80,6 +97,26 @@ paths:
           in: query
           description: 'label pairs,for example &label=service:order&label=version:1.0.0'
           type: string
+        - name: wait
+          in: query
+          description: 'wait until any kv changed. for example wait=5s, server will not response until 5 seconds during that time window, if any kv changed, server will return 200 and kv list, otherwise return 304 and empty body'
+          type: string
+        - name: match
+          in: query
+          description: 'match works with label query param, it specifies label match pattern. if it is empty, server will return kv which''s labels partial match the label query param. uf it is exact, server will return kv which''s labels exact match the label query param'
+          type: string
+        - name: revision
+          in: query
+          description: 'each time you query,server will return a number in header X-Kie-Revision. you can record it in client side, use this number as param value. if current revision is greater than it, server will return data'
+          type: string
+        - name: pageSize
+          in: query
+          description: pagination
+          type: string
+        - name: pageNum
+          in: query
+          description: pagination
+          type: string
       consumes:
         - '*/*'
       produces:
@@ -89,11 +126,19 @@ paths:
         '200':
           description: get key value success
           schema:
-            type: array
-            items:
-              $ref: '#/definitions/KVResponse'
+            $ref: '#/definitions/v1.DocResponseGetKey'
+          headers:
+            X-Kie-Revision:
+              description: 'cluster latest revision number, if key value is changed, it will increase.'
+              type: integer
         '304':
           description: empty body
+        '404':
+          description: ''
+          headers:
+            X-Kie-Revision:
+              description: 'cluster latest revision number, if key value is changed, it will increase.'
+              type: integer
     put:
       summary: create or update key value
       operationId: Put
@@ -121,23 +166,19 @@ paths:
         '200':
           description: ''
           schema:
-            $ref: '#/definitions/v1.KVBody'
-  '/v1/{project}/kie/revision/{label_id}':
+            $ref: '#/definitions/v1.DocResponseSingleKey'
+  '/v1/{project}/kie/revision/{key_id}':
     get:
-      summary: get all revisions by label id
+      summary: get all revisions by key id
       operationId: GetRevisions
       parameters:
         - name: project
           in: path
           required: true
           type: string
-        - name: label_id
+        - name: key_id
           in: path
           required: true
-          type: string
-        - name: key
-          in: query
-          description: only return history about a specific key
           type: string
       consumes:
         - application/json
@@ -147,45 +188,31 @@ paths:
         - text/yaml
       responses:
         '200':
-          description: 'true'
+          description: ''
           schema:
             type: array
             items:
-              $ref: '#/definitions/LabelHistoryResponse'
-  '/v1/{project}/kie/summary':
-    get:
-      summary: 'search key values by labels combination, it returns multiple labels group'
-      operationId: Search
-      parameters:
-        - name: project
-          in: path
-          required: true
-          type: string
-        - name: q
-          in: query
-          description: 'the combination format is {label_key}:{label_value}+{label_key}:{label_value} for example: /v1/test/kie/kv?q=app:mall&q=app:mall+service:cart, that will query key values from 2 kinds of labels'
-          type: string
-      consumes:
-        - '*/*'
-      produces:
-        - application/json
-        - text/yaml
-      responses:
-        '200':
-          description: get key value success
-          schema:
-            type: array
-            items:
-              $ref: '#/definitions/KVResponse'
+              $ref: '#/definitions/v1.DocResponseSingleKey'
 definitions:
-  KVDoc:
+  v1.DocResponseGetKey:
     type: object
     properties:
-      _id:
+      data:
+        type: array
+        items:
+          $ref: '#/definitions/v1.DocResponseSingleKey'
+      total:
+        type: integer
+        format: int64
+  v1.DocResponseSingleKey:
+    type: object
+    properties:
+      create_revision:
+        type: integer
+        format: int64
+      create_time:
         type: string
-      check:
-        type: string
-      domain:
+      id:
         type: string
       key:
         type: string
@@ -195,58 +222,15 @@ definitions:
         type: object
         additionalProperties:
           type: string
-      project:
-        type: string
-      revision:
+      update_revision:
         type: integer
-        format: int32
+        format: int64
+      update_time:
+        type: string
       value:
         type: string
       value_type:
         type: string
-  KVResponse:
-    type: object
-    properties:
-      data:
-        type: array
-        items:
-          $ref: '#/definitions/KVDoc'
-      label:
-        $ref: '#/definitions/LabelDocResponse'
-      num:
-        type: integer
-        format: int32
-      size:
-        type: integer
-        format: int32
-      total:
-        type: integer
-        format: int32
-  LabelDocResponse:
-    type: object
-    properties:
-      label_id:
-        type: string
-      labels:
-        type: object
-        additionalProperties:
-          type: string
-  LabelHistoryResponse:
-    type: object
-    properties:
-      data:
-        type: array
-        items:
-          $ref: '#/definitions/KVDoc'
-      label_id:
-        type: string
-      labels:
-        type: object
-        additionalProperties:
-          type: string
-      revision:
-        type: integer
-        format: int32
   v1.KVBody:
     type: object
     properties:
@@ -256,5 +240,5 @@ definitions:
           type: string
       value:
         type: string
-      valueType:
+      value_type:
         type: string

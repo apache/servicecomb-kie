@@ -52,3 +52,23 @@ type ViewResponse struct {
 	Total int        `json:"total,omitempty"`
 	Data  []*ViewDoc `json:"data,omitempty"`
 }
+
+//DocResponseSingleKey is response doc
+type DocResponseSingleKey struct {
+	CreateRevision int64             `json:"create_revision"`
+	CreateTime     string            `json:"create_time"`
+	ID             string            `json:"id"`
+	Key            string            `json:"key"`
+	LabelID        string            `json:"label_id"`
+	Labels         map[string]string `json:"labels"`
+	UpdateRevision int64             `json:"update_revision"`
+	UpdateTime     string            `json:"update_time"`
+	Value          string            `json:"value"`
+	ValueType      string            `json:"value_type"`
+}
+
+//DocResponseGetKey is response doc
+type DocResponseGetKey struct {
+	Data  []*DocResponseSingleKey `json:"data"`
+	Total int64                   `json:"total"`
+}

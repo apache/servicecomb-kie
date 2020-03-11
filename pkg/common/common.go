@@ -21,14 +21,15 @@ import "time"
 
 //match mode
 const (
-	QueryParamQ      = "q"
-	QueryByLabelsCon = "&"
-	QueryParamWait   = "wait"
-	QueryParamRev    = "revision"
-	QueryParamMatch  = "match"
-	QueryParamKeyID  = "kv_id"
-	QueryLimit       = "limit"
-	QueryOffset      = "offset"
+	QueryParamQ        = "q"
+	QueryByLabelsCon   = "&"
+	QueryParamWait     = "wait"
+	QueryParamRev      = "revision"
+	QueryParamMatch    = "match"
+	QueryParamKeyID    = "kv_id"
+	QueryParamStatus   = "status"
+	QueryParamPageNum  = "pageNum"
+	QueryParamPageSize = "pageSize"
 )
 
 //http headers

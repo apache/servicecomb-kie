@@ -15,36 +15,30 @@
  * limitations under the License.
  */
 
-package stringutil
+package util_test
 
 import (
-	"sort"
-	"strings"
+	"testing"
+
+	"github.com/apache/servicecomb-kie/pkg/util"
+	"github.com/stretchr/testify/assert"
 )
 
-const (
-	// LabelNone is the format string when the map is none
-	LabelNone = "none"
-)
-
-//FormatMap format map to string
-func FormatMap(m map[string]string) string {
-	if len(m) == 0 {
-		return LabelNone
+func TestIsEquivalentLabel(t *testing.T) {
+	var m1 map[string]string
+	m2 := make(map[string]string)
+	m3 := map[string]string{
+		"foo": "bar",
 	}
-	sb := strings.Builder{}
-	s := make([]string, 0, len(m))
-	for k := range m {
-		s = append(s, k)
+	m4 := map[string]string{
+		"foo": "bar",
 	}
-	sort.Strings(s)
-	for i, k := range s {
-		sb.WriteString(k)
-		sb.WriteString("=")
-		sb.WriteString(m[k])
-		if i != (len(s) - 1) {
-			sb.WriteString("::")
-		}
+	m5 := map[string]string{
+		"bar": "foo",
 	}
-	return sb.String()
+	assert.Equal(t, util.IsEquivalentLabel(m1, m1), true)
+	assert.Equal(t, util.IsEquivalentLabel(m1, m2), true)
+	assert.Equal(t, util.IsEquivalentLabel(m2, m3), false)
+	assert.Equal(t, util.IsEquivalentLabel(m3, m4), true)
+	assert.Equal(t, util.IsEquivalentLabel(m3, m5), false)
 }

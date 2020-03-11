@@ -105,15 +105,15 @@ func (r *KVResource) GetByKey(rctx *restful.Context) {
 		WriteErrResponse(rctx, http.StatusInternalServerError, common.MsgDomainMustNotBeEmpty, common.ContentTypeText)
 		return
 	}
-	pageNumStr := rctx.ReadQueryParameter(QueryParameterPageNum)
-	pageSizeStr := rctx.ReadQueryParameter(QueryParameterPageSize)
+	pageNumStr := rctx.ReadQueryParameter(common.QueryParamPageNum)
+	pageSizeStr := rctx.ReadQueryParameter(common.QueryParamPageSize)
 	pageNum, pageSize, err := checkPagination(pageNumStr, pageSizeStr)
 	if err != nil {
 		WriteErrResponse(rctx, http.StatusBadRequest, err.Error(), common.ContentTypeText)
 		return
 	}
 	insID := rctx.ReadHeader(HeaderSessionID)
-	statusStr := rctx.ReadQueryParameter(QueryParameterStatus)
+	statusStr := rctx.ReadQueryParameter(common.QueryParamStatus)
 	status, err := checkStatus(statusStr)
 	if err != nil {
 		WriteErrResponse(rctx, http.StatusBadRequest, err.Error(), common.ContentTypeText)
@@ -136,15 +136,15 @@ func (r *KVResource) List(rctx *restful.Context) {
 		WriteErrResponse(rctx, http.StatusBadRequest, err.Error(), common.ContentTypeText)
 		return
 	}
-	pageNumStr := rctx.ReadQueryParameter(QueryParameterPageNum)
-	pageSizeStr := rctx.ReadQueryParameter(QueryParameterPageSize)
+	pageNumStr := rctx.ReadQueryParameter(common.QueryParamPageNum)
+	pageSizeStr := rctx.ReadQueryParameter(common.QueryParamPageSize)
 	pageNum, pageSize, err := checkPagination(pageNumStr, pageSizeStr)
 	if err != nil {
 		WriteErrResponse(rctx, http.StatusBadRequest, err.Error(), common.ContentTypeText)
 		return
 	}
 	sessionID := rctx.ReadHeader(HeaderSessionID)
-	statusStr := rctx.ReadQueryParameter(QueryParameterStatus)
+	statusStr := rctx.ReadQueryParameter(common.QueryParamStatus)
 	status, err := checkStatus(statusStr)
 	if err != nil {
 		WriteErrResponse(rctx, http.StatusBadRequest, err.Error(), common.ContentTypeText)
@@ -244,75 +244,6 @@ func RecordPollingDetail(context *restful.Context, revStr, wait, domain, project
 	}
 }
 
-//Search search key only by label
-func (r *KVResource) Search(context *restful.Context) {
-	var err error
-	labelCombinations, err := ReadLabelCombinations(context.ReadRestfulRequest())
-	if err != nil {
-		WriteErrResponse(context, http.StatusBadRequest, err.Error(), common.ContentTypeText)
-		return
-	}
-	project := context.ReadPathParameter(PathParameterProject)
-	domain := ReadDomain(context)
-	if domain == nil {
-		WriteErrResponse(context, http.StatusInternalServerError, common.MsgDomainMustNotBeEmpty, common.ContentTypeText)
-		return
-	}
-	var kvs []*model.KVResponse
-	pageNumStr := context.ReadQueryParameter(QueryParameterPageNum)
-	pageSizeStr := context.ReadQueryParameter(QueryParameterPageSize)
-	pageNum, pageSize, err := checkPagination(pageNumStr, pageSizeStr)
-	if err != nil {
-		WriteErrResponse(context, http.StatusBadRequest, err.Error(), common.ContentTypeText)
-		return
-	}
-	if labelCombinations == nil {
-		result, err := service.KVService.FindKV(context.Ctx, domain.(string), project,
-			service.WithPageNum(pageNum),
-			service.WithPageSize(pageSize))
-		if err != nil {
-			openlogging.Error(MsgLabelsNotFound, openlogging.WithTags(openlogging.Tags{
-				"err": err.Error(),
-			}))
-			WriteErrResponse(context, http.StatusInternalServerError, err.Error(), common.ContentTypeText)
-			return
-		}
-		kvs = append(kvs, result...)
-	}
-	for _, labels := range labelCombinations {
-		openlogging.Debug("find by combination", openlogging.WithTags(openlogging.Tags{
-			"q": labels,
-		}))
-		result, err := service.KVService.FindKV(context.Ctx, domain.(string), project,
-			service.WithLabels(labels),
-			service.WithPageNum(pageNum),
-			service.WithPageSize(pageSize))
-		if err != nil {
-			if err == service.ErrKeyNotExists {
-				continue
-			} else {
-				openlogging.Error(MsgLabelsNotFound, openlogging.WithTags(openlogging.Tags{
-					"err": err.Error(),
-				}))
-				WriteErrResponse(context, http.StatusInternalServerError, err.Error(), common.ContentTypeText)
-				return
-			}
-		}
-		kvs = append(kvs, result...)
-
-	}
-	if len(kvs) == 0 {
-		WriteErrResponse(context, http.StatusNotFound, "no kv found", common.ContentTypeText)
-		return
-	}
-
-	err = writeResponse(context, kvs)
-	if err != nil {
-		openlogging.Error(err.Error())
-	}
-
-}
-
 //Delete deletes key by ids
 func (r *KVResource) Delete(context *restful.Context) {
 	project := context.ReadPathParameter(PathParameterProject)
@@ -373,7 +304,7 @@ func (r *KVResource) URLPatterns() []restful.Route {
 			Returns: []*restful.Returns{
 				{
 					Code:  http.StatusOK,
-					Model: KVBody{},
+					Model: model.DocResponseSingleKey{},
 				},
 			},
 			Consumes: []string{goRestful.MIME_JSON, common.ContentTypeYaml},
@@ -385,32 +316,26 @@ func (r *KVResource) URLPatterns() []restful.Route {
 			FuncDesc:     "get key values by key and labels",
 			Parameters: []*restful.Parameters{
 				DocPathProject, DocPathKey, DocQueryLabelParameters, DocQueryWait, DocQueryMatch, DocQueryRev,
+				DocQueryLimitParameters, DocQueryOffsetParameters,
 			},
 			Returns: []*restful.Returns{
 				{
 					Code:    http.StatusOK,
 					Message: "get key value success",
-					Model:   []model.KVResponse{},
+					Model:   model.DocResponseGetKey{},
+					Headers: map[string]goRestful.Header{
+						common.HeaderRevision: DocHeaderRevision,
+					},
+				},
+				{
+					Code: http.StatusNotFound,
+					Headers: map[string]goRestful.Header{
+						common.HeaderRevision: DocHeaderRevision,
+					},
 				},
 				{
 					Code:    http.StatusNotModified,
 					Message: "empty body",
-				},
-			},
-			Produces: []string{goRestful.MIME_JSON, common.ContentTypeYaml},
-		}, {
-			Method:       http.MethodGet,
-			Path:         "/v1/{project}/kie/summary",
-			ResourceFunc: r.Search,
-			FuncDesc:     "search key values by labels combination, it returns multiple labels group",
-			Parameters: []*restful.Parameters{
-				DocPathProject, DocQueryCombination,
-			},
-			Returns: []*restful.Returns{
-				{
-					Code:    http.StatusOK,
-					Message: "get key value success",
-					Model:   []model.KVResponse{},
 				},
 			},
 			Produces: []string{goRestful.MIME_JSON, common.ContentTypeYaml},
@@ -421,11 +346,20 @@ func (r *KVResource) URLPatterns() []restful.Route {
 			FuncDesc:     "list key values by labels and key",
 			Parameters: []*restful.Parameters{
 				DocPathProject, DocQueryLabelParameters, DocQueryWait, DocQueryMatch, DocQueryRev,
+				DocQueryLimitParameters, DocQueryOffsetParameters,
 			},
 			Returns: []*restful.Returns{
 				{
 					Code:  http.StatusOK,
-					Model: model.KVResponse{},
+					Model: model.DocResponseGetKey{},
+					Headers: map[string]goRestful.Header{
+						common.HeaderRevision: DocHeaderRevision,
+					},
+				}, {
+					Code: http.StatusNotFound,
+					Headers: map[string]goRestful.Header{
+						common.HeaderRevision: DocHeaderRevision,
+					},
 				}, {
 					Code:    http.StatusNotModified,
 					Message: "empty body",
@@ -445,10 +379,6 @@ func (r *KVResource) URLPatterns() []restful.Route {
 				{
 					Code:    http.StatusNoContent,
 					Message: "Delete success",
-				},
-				{
-					Code:    http.StatusBadRequest,
-					Message: "Failed,check url",
 				},
 				{
 					Code:    http.StatusInternalServerError,
