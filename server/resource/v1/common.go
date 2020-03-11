@@ -39,7 +39,7 @@ import (
 //const of server
 const (
 	HeaderUserAgent        = "User-Agent"
-	HeaderSessionID        = "sessionID"
+	HeaderSessionID        = "X-Session-Id"
 	QueryParameterStatus   = "status"
 	QueryParameterPageNum  = "pageNum"
 	QueryParameterPageSize = "pageSize"

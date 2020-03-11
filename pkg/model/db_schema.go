@@ -55,3 +55,17 @@ type ViewDoc struct {
 	Domain   string `json:"domain,omitempty" yaml:"domain,omitempty"`
 	Criteria string `json:"criteria,omitempty" yaml:"criteria,omitempty"`
 }
+
+//PollingDetail is db struct, it record operation history
+type PollingDetail struct {
+	ID             string                 `json:"id,omitempty" yaml:"id,omitempty"`
+	SessionID      string                 `json:"session_id,omitempty" bson:"session_id," yaml:"session_id,omitempty"`
+	Domain         string                 `json:"domain,omitempty" yaml:"domain,omitempty"`
+	PollingData    map[string]interface{} `json:"params,omitempty" yaml:"params,omitempty"`
+	IP             string                 `json:"ip,omitempty" yaml:"ip,omitempty"`
+	UserAgent      string                 `json:"user_agent,omitempty" bson:"user_agent," yaml:"user_agent,omitempty"`
+	URLPath        string                 `json:"url_path,omitempty"  bson:"url_path,"  yaml:"url_path,omitempty"`
+	ResponseBody   interface{}            `json:"response_body,omitempty"  bson:"response_body,"  yaml:"response_body,omitempty"`
+	ResponseHeader map[string][]string    `json:"response_header,omitempty"  bson:"response_header,"  yaml:"response_header,omitempty"`
+	ResponseCode   int                    `json:"response_code,omitempty"  bson:"response_code,"  yaml:"response_code,omitempty"`
+}

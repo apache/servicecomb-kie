@@ -91,7 +91,7 @@ func TestHistoryResource_GetPollingData(t *testing.T) {
 		noopH := &handler2.NoopAuthHandler{}
 		chain, _ := handler.CreateChain(common.Provider, "testchain1", noopH.Name())
 		r.Header.Set("Content-Type", "application/json")
-		r.Header.Set("sessionID", "test")
+		r.Header.Set("X-Session-Id", "test")
 		kvr := &v1.KVResource{}
 		c, err := restfultest.New(kvr, chain)
 		assert.NoError(t, err)

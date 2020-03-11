@@ -105,6 +105,9 @@ db.createCollection( "polling_detail", {
                 id: {
                     bsonType: "string",
                 },
+                session_id: {
+                    bsonType: "string",
+                },
                 domain: {
                     bsonType: "string",
                 },
@@ -115,6 +118,9 @@ db.createCollection( "polling_detail", {
                     bsonType: "string"
                 },
                 user_agent: {
+                    bsonType: "string"
+                },
+                url_path: {
                     bsonType: "string"
                 },
                 response_body: {
