@@ -91,13 +91,13 @@ var (
 	}
 	DocQueryLimitParameters = &restful.Parameters{
 		DataType:  "string",
-		Name:      common.QueryParamPageSize,
+		Name:      common.QueryParamLimit,
 		ParamType: goRestful.QueryParameterKind,
 		Desc:      "pagination",
 	}
 	DocQueryOffsetParameters = &restful.Parameters{
 		DataType:  "string",
-		Name:      common.QueryParamPageNum,
+		Name:      common.QueryParamOffset,
 		ParamType: goRestful.QueryParameterKind,
 		Desc:      "pagination",
 	}

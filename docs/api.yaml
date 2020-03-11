@@ -29,11 +29,11 @@ paths:
           in: query
           description: 'each time you query,server will return a number in header X-Kie-Revision. you can record it in client side, use this number as param value. if current revision is greater than it, server will return data'
           type: string
-        - name: pageSize
+        - name: offset
           in: query
           description: pagination
           type: string
-        - name: pageNum
+        - name: limit
           in: query
           description: pagination
           type: string
@@ -109,11 +109,11 @@ paths:
           in: query
           description: 'each time you query,server will return a number in header X-Kie-Revision. you can record it in client side, use this number as param value. if current revision is greater than it, server will return data'
           type: string
-        - name: pageSize
+        - name: offset
           in: query
           description: pagination
           type: string
-        - name: pageNum
+        - name: limit
           in: query
           description: pagination
           type: string

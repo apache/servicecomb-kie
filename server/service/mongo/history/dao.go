@@ -27,14 +27,14 @@ import (
 	"go.mongodb.org/mongo-driver/mongo/options"
 )
 
-func getHistoryByKeyID(ctx context.Context, filter bson.M, pageNum, pageSize int64) ([]*model.KVDoc, int, error) {
+func getHistoryByKeyID(ctx context.Context, filter bson.M, offset, limit int64) ([]*model.KVDoc, int, error) {
 	collection := session.GetDB().Collection(session.CollectionKVRevision)
 	opt := options.Find().SetSort(map[string]interface{}{
 		"revision": -1,
 	})
-	if pageNum != 0 && pageSize != 0 {
-		opt = opt.SetLimit(pageSize)
-		opt = opt.SetSkip(pageSize * (pageNum - 1))
+	if offset != 0 && limit != 0 {
+		opt = opt.SetLimit(limit)
+		opt = opt.SetSkip(offset)
 	}
 	curTotal, err := collection.CountDocuments(ctx, filter)
 	if err != nil {

@@ -40,8 +40,8 @@ type FindOptions struct {
 	LabelID     string
 	ClearLabel  bool
 	Timeout     time.Duration
-	PageNum     int64
-	PageSize    int64
+	Offset      int64
+	Limit       int64
 }
 
 //FindOption is functional option to find key value
@@ -110,16 +110,16 @@ func WithOutLabelField() FindOption {
 	}
 }
 
-//WithPageNum tells service paging limit
-func WithPageNum(l int64) FindOption {
+//WithLimit tells service paging limit
+func WithLimit(l int64) FindOption {
 	return func(o *FindOptions) {
-		o.PageNum = l
+		o.Limit = l
 	}
 }
 
-//WithPageSize tells service paging offset
-func WithPageSize(os int64) FindOption {
+//WithOffset tells service paging offset
+func WithOffset(os int64) FindOption {
 	return func(o *FindOptions) {
-		o.PageSize = os
+		o.Offset = os
 	}
 }

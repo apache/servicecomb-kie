@@ -105,9 +105,9 @@ func (r *KVResource) GetByKey(rctx *restful.Context) {
 		WriteErrResponse(rctx, http.StatusInternalServerError, common.MsgDomainMustNotBeEmpty, common.ContentTypeText)
 		return
 	}
-	pageNumStr := rctx.ReadQueryParameter(common.QueryParamPageNum)
-	pageSizeStr := rctx.ReadQueryParameter(common.QueryParamPageSize)
-	pageNum, pageSize, err := checkPagination(pageNumStr, pageSizeStr)
+	offsetStr := rctx.ReadQueryParameter(common.QueryParamOffset)
+	limitStr := rctx.ReadQueryParameter(common.QueryParamLimit)
+	offset, limit, err := checkPagination(offsetStr, limitStr)
 	if err != nil {
 		WriteErrResponse(rctx, http.StatusBadRequest, err.Error(), common.ContentTypeText)
 		return
@@ -119,7 +119,7 @@ func (r *KVResource) GetByKey(rctx *restful.Context) {
 		WriteErrResponse(rctx, http.StatusBadRequest, err.Error(), common.ContentTypeText)
 		return
 	}
-	returnData(rctx, domain, project, key, labels, pageNum, pageSize, status, insID)
+	returnData(rctx, domain, project, key, labels, offset, limit, status, insID)
 }
 
 //List response kv list
@@ -136,9 +136,9 @@ func (r *KVResource) List(rctx *restful.Context) {
 		WriteErrResponse(rctx, http.StatusBadRequest, err.Error(), common.ContentTypeText)
 		return
 	}
-	pageNumStr := rctx.ReadQueryParameter(common.QueryParamPageNum)
-	pageSizeStr := rctx.ReadQueryParameter(common.QueryParamPageSize)
-	pageNum, pageSize, err := checkPagination(pageNumStr, pageSizeStr)
+	offsetStr := rctx.ReadQueryParameter(common.QueryParamOffset)
+	limitStr := rctx.ReadQueryParameter(common.QueryParamLimit)
+	offset, limit, err := checkPagination(offsetStr, limitStr)
 	if err != nil {
 		WriteErrResponse(rctx, http.StatusBadRequest, err.Error(), common.ContentTypeText)
 		return
@@ -150,18 +150,18 @@ func (r *KVResource) List(rctx *restful.Context) {
 		WriteErrResponse(rctx, http.StatusBadRequest, err.Error(), common.ContentTypeText)
 		return
 	}
-	returnData(rctx, domain, project, "", labels, pageNum, pageSize, status, sessionID)
+	returnData(rctx, domain, project, "", labels, offset, limit, status, sessionID)
 }
 
-func returnData(rctx *restful.Context, domain interface{}, project, key string, labels map[string]string, pageNum, pageSize int64, status, sessionID string) {
+func returnData(rctx *restful.Context, domain interface{}, project, key string, labels map[string]string, offset, limit int64, status, sessionID string) {
 	revStr := rctx.ReadQueryParameter(common.QueryParamRev)
 	wait := rctx.ReadQueryParameter(common.QueryParamWait)
 	if sessionID != "" {
-		defer RecordPollingDetail(rctx, revStr, wait, domain.(string), project, labels, pageNum, pageSize, sessionID)
+		defer RecordPollingDetail(rctx, revStr, wait, domain.(string), project, labels, offset, limit, sessionID)
 	}
 	if revStr == "" {
 		if wait == "" {
-			queryAndResponse(rctx, domain, project, key, labels, pageNum, pageSize, status)
+			queryAndResponse(rctx, domain, project, key, labels, offset, limit, status)
 			return
 		}
 		changed, err := eventHappened(rctx, wait, &pubsub.Topic{
@@ -175,7 +175,7 @@ func returnData(rctx *restful.Context, domain interface{}, project, key string, 
 			return
 		}
 		if changed {
-			queryAndResponse(rctx, domain, project, key, labels, pageNum, pageSize, status)
+			queryAndResponse(rctx, domain, project, key, labels, offset, limit, status)
 			return
 		}
 		rctx.WriteHeader(http.StatusNotModified)
@@ -190,7 +190,7 @@ func returnData(rctx *restful.Context, domain interface{}, project, key string, 
 			return
 		}
 		if revised {
-			queryAndResponse(rctx, domain, project, key, labels, pageNum, pageSize, status)
+			queryAndResponse(rctx, domain, project, key, labels, offset, limit, status)
 			return
 		} else if wait != "" {
 			changed, err := eventHappened(rctx, wait, &pubsub.Topic{
@@ -204,7 +204,7 @@ func returnData(rctx *restful.Context, domain interface{}, project, key string, 
 				return
 			}
 			if changed {
-				queryAndResponse(rctx, domain, project, key, labels, pageNum, pageSize, status)
+				queryAndResponse(rctx, domain, project, key, labels, offset, limit, status)
 				return
 			}
 			rctx.WriteHeader(http.StatusNotModified)
