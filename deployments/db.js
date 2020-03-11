@@ -98,14 +98,13 @@ db.createCollection( "view", {
 } );
 
 db.createCollection( "polling_detail", {
+    capped: true,
+    max: 100,
     validator: { $jsonSchema: {
             bsonType: "object",
-            required: [ "id","params","session_id","domain","url_path" ],
+            required: [ "id","session_id","domain","url_path" ],
             properties: {
                 id: {
-                    bsonType: "string",
-                },
-                session_id: {
                     bsonType: "string",
                 },
                 domain: {
@@ -118,9 +117,6 @@ db.createCollection( "polling_detail", {
                     bsonType: "string"
                 },
                 user_agent: {
-                    bsonType: "string"
-                },
-                url_path: {
                     bsonType: "string"
                 },
                 response_body: {
