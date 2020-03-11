@@ -27,4 +27,6 @@ response is
 }
 ```
 
-the api docs is http://127.0.0.1:30110/apidocs.json
+Check open API doc
+- the api doc mounted to http://127.0.0.1:30110/apidocs.json 
+- or see https://github.com/apache/servicecomb-kie/blob/master/docs/api.yaml
