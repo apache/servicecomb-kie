@@ -19,7 +19,7 @@ package v1
 
 import (
 	"github.com/apache/servicecomb-kie/pkg/model"
-	"github.com/apache/servicecomb-kie/server/service/mongo/record"
+	"github.com/apache/servicecomb-kie/server/service/mongo/track"
 	"net/http"
 
 	"github.com/apache/servicecomb-kie/pkg/common"
@@ -76,19 +76,19 @@ func (r *HistoryResource) GetRevisions(context *restful.Context) {
 //GetPollingData get the record of the get or list history
 func (r *HistoryResource) GetPollingData(context *restful.Context) {
 	query := &model.PollingDetail{}
-	sessionID := context.ReadQueryParameter("sessionId")
+	sessionID := context.ReadQueryParameter(common.QueryParamSessionID)
 	if sessionID != "" {
 		query.SessionID = sessionID
 	}
-	ip := context.ReadQueryParameter("ip")
+	ip := context.ReadQueryParameter(common.QueryParamIp)
 	if ip != "" {
 		query.IP = ip
 	}
-	urlPath := context.ReadQueryParameter("urlPath")
+	urlPath := context.ReadQueryParameter(common.QueryParamUrlPath)
 	if urlPath != "" {
 		query.URLPath = urlPath
 	}
-	userAgent := context.ReadQueryParameter("userAgent")
+	userAgent := context.ReadQueryParameter(common.QueryParamUserAgent)
 	if userAgent != "" {
 		query.UserAgent = userAgent
 	}
@@ -98,7 +98,7 @@ func (r *HistoryResource) GetPollingData(context *restful.Context) {
 		return
 	}
 	query.Domain = domain.(string)
-	records, err := record.Get(context.Ctx, query)
+	records, err := track.Get(context.Ctx, query)
 	if err != nil {
 		if err == service.ErrRecordNotExists {
 			WriteErrResponse(context, http.StatusNotFound, err.Error(), common.ContentTypeText)
@@ -142,7 +142,7 @@ func (r *HistoryResource) URLPatterns() []restful.Route {
 			ResourceFunc: r.GetPollingData,
 			FuncDesc:     "get the request/response data by latest getKV or list",
 			Parameters: []*restful.Parameters{
-				DocPathProject,
+				DocPathProject, DocQuerySessionIDParameters, DocQueryIpParameters, DocQueryUrlPathParameters, DocQueryUserAgentParameters,
 			},
 			Returns: []*restful.Returns{
 				{

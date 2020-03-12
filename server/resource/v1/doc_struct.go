@@ -101,6 +101,31 @@ var (
 		ParamType: goRestful.QueryParameterKind,
 		Desc:      "pagination",
 	}
+	//polling data
+	DocQuerySessionIDParameters = &restful.Parameters{
+		DataType:  "string",
+		Name:      common.QueryParamSessionID,
+		ParamType: goRestful.QueryParameterKind,
+		Desc:      "sessionId is the Unique identification of the client",
+	}
+	DocQueryIpParameters = &restful.Parameters{
+		DataType:  "string",
+		Name:      common.QueryParamIp,
+		ParamType: goRestful.QueryParameterKind,
+		Desc:      "client ip",
+	}
+	DocQueryUrlPathParameters = &restful.Parameters{
+		DataType:  "string",
+		Name:      common.QueryParamUrlPath,
+		ParamType: goRestful.QueryParameterKind,
+		Desc:      "address of the call",
+	}
+	DocQueryUserAgentParameters = &restful.Parameters{
+		DataType:  "string",
+		Name:      common.QueryParamUserAgent,
+		ParamType: goRestful.QueryParameterKind,
+		Desc:      "user agent of the call",
+	}
 )
 
 //swagger doc path params

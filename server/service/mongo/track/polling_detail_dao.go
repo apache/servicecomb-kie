@@ -15,7 +15,7 @@
  * limitations under the License.
  */
 
-package record
+package track
 
 import (
 	"context"
@@ -80,6 +80,7 @@ func Get(ctx context.Context, detail *model.PollingDetail) ([]*model.PollingDeta
 			openlogging.Error("decode to KVs error: " + err.Error())
 			return nil, err
 		}
+		curRecord.Domain = ""
 		records = append(records, curRecord)
 	}
 	if len(records) == 0 {

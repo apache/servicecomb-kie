@@ -20,6 +20,7 @@ package v1
 
 import (
 	"fmt"
+	"github.com/apache/servicecomb-kie/server/service/mongo/track"
 	"net/http"
 
 	"github.com/apache/servicecomb-kie/pkg/common"
@@ -27,7 +28,6 @@ import (
 	"github.com/apache/servicecomb-kie/pkg/model"
 	"github.com/apache/servicecomb-kie/server/pubsub"
 	"github.com/apache/servicecomb-kie/server/service"
-	"github.com/apache/servicecomb-kie/server/service/mongo/record"
 	goRestful "github.com/emicklei/go-restful"
 	"github.com/go-chassis/go-chassis/server/restful"
 	"github.com/go-mesh/openlogging"
@@ -237,7 +237,7 @@ func RecordPollingDetail(context *restful.Context, revStr, wait, domain, project
 	data.ResponseHeader = context.Resp.Header()
 	data.ResponseCode = context.Resp.StatusCode()
 	data.ResponseBody = context.Ctx.Value(common.RespBodyContextKey)
-	_, err := record.CreateOrUpdate(context.Ctx, data)
+	_, err := track.CreateOrUpdate(context.Ctx, data)
 	if err != nil {
 		openlogging.Warn("record polling detail failed" + err.Error())
 		return

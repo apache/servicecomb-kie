@@ -30,6 +30,11 @@ const (
 	QueryParamStatus = "status"
 	QueryParamOffset = "offset"
 	QueryParamLimit  = "limit"
+	//polling data
+	QueryParamSessionID = "sessionId"
+	QueryParamIp        = "ip"
+	QueryParamUrlPath   = "urlPath"
+	QueryParamUserAgent = "userAgent"
 )
 
 //http headers
