@@ -38,9 +38,9 @@ type HistoryResource struct {
 func (r *HistoryResource) GetRevisions(context *restful.Context) {
 	var err error
 	keyID := context.ReadPathParameter("key_id")
-	pageNumStr := context.ReadQueryParameter(common.QueryParamPageNum)
-	pageSizeStr := context.ReadQueryParameter(common.QueryParamPageSize)
-	pageNum, pageSize, err := checkPagination(pageNumStr, pageSizeStr)
+	offsetStr := context.ReadQueryParameter(common.QueryParamOffset)
+	limitStr := context.ReadQueryParameter(common.QueryParamLimit)
+	offset, limit, err := checkPagination(offsetStr, limitStr)
 	if err != nil {
 		WriteErrResponse(context, http.StatusBadRequest, err.Error(), common.ContentTypeText)
 		return
@@ -53,8 +53,8 @@ func (r *HistoryResource) GetRevisions(context *restful.Context) {
 	key := context.ReadQueryParameter("key")
 	revisions, _, err := service.HistoryService.GetHistory(context.Ctx, keyID,
 		service.WithKey(key),
-		service.WithPageSize(pageSize),
-		service.WithPageNum(pageNum))
+		service.WithOffset(offset),
+		service.WithLimit(limit))
 	if err != nil {
 		if err == service.ErrRevisionNotExist {
 			WriteErrResponse(context, http.StatusNotFound, err.Error(), common.ContentTypeText)

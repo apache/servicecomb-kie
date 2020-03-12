@@ -246,7 +246,7 @@ func TestKVResource_List(t *testing.T) {
 		t.Log(duration)
 	})
 	t.Run("list kv by service label offset, should return 1kv", func(t *testing.T) {
-		r, _ := http.NewRequest("GET", "/v1/test/kie/kv?label=service:utService&pageNum=1&pageSize=1", nil)
+		r, _ := http.NewRequest("GET", "/v1/test/kie/kv?label=service:utService&offset=1&limit=1", nil)
 		noopH := &handler2.NoopAuthHandler{}
 		chain, _ := handler.CreateChain(common.Provider, "testchain1", noopH.Name())
 		r.Header.Set("Content-Type", "application/json")
