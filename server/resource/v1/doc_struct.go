@@ -108,15 +108,15 @@ var (
 		ParamType: goRestful.QueryParameterKind,
 		Desc:      "sessionId is the Unique identification of the client",
 	}
-	DocQueryIpParameters = &restful.Parameters{
+	DocQueryIPParameters = &restful.Parameters{
 		DataType:  "string",
-		Name:      common.QueryParamIp,
+		Name:      common.QueryParamIP,
 		ParamType: goRestful.QueryParameterKind,
 		Desc:      "client ip",
 	}
-	DocQueryUrlPathParameters = &restful.Parameters{
+	DocQueryURLPathParameters = &restful.Parameters{
 		DataType:  "string",
-		Name:      common.QueryParamUrlPath,
+		Name:      common.QueryParamURLPath,
 		ParamType: goRestful.QueryParameterKind,
 		Desc:      "address of the call",
 	}

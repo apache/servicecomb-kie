@@ -73,7 +73,7 @@ type DocResponseGetKey struct {
 	Total int64                   `json:"total"`
 }
 
-//DocResponseGetKey is response doc
+//DocPollingData  is response doc
 type DocPollingData struct {
 	Data  []*PollingDetail `json:"data"`
 	Total int              `json:"total"`

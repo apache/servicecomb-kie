@@ -80,11 +80,11 @@ func (r *HistoryResource) GetPollingData(context *restful.Context) {
 	if sessionID != "" {
 		query.SessionID = sessionID
 	}
-	ip := context.ReadQueryParameter(common.QueryParamIp)
+	ip := context.ReadQueryParameter(common.QueryParamIP)
 	if ip != "" {
 		query.IP = ip
 	}
-	urlPath := context.ReadQueryParameter(common.QueryParamUrlPath)
+	urlPath := context.ReadQueryParameter(common.QueryParamURLPath)
 	if urlPath != "" {
 		query.URLPath = urlPath
 	}
@@ -142,7 +142,7 @@ func (r *HistoryResource) URLPatterns() []restful.Route {
 			ResourceFunc: r.GetPollingData,
 			FuncDesc:     "get the request/response data by latest getKV or list",
 			Parameters: []*restful.Parameters{
-				DocPathProject, DocQuerySessionIDParameters, DocQueryIpParameters, DocQueryUrlPathParameters, DocQueryUserAgentParameters,
+				DocPathProject, DocQuerySessionIDParameters, DocQueryIPParameters, DocQueryURLPathParameters, DocQueryUserAgentParameters,
 			},
 			Returns: []*restful.Returns{
 				{

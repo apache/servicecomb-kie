@@ -32,8 +32,8 @@ const (
 	QueryParamLimit  = "limit"
 	//polling data
 	QueryParamSessionID = "sessionId"
-	QueryParamIp        = "ip"
-	QueryParamUrlPath   = "urlPath"
+	QueryParamIP        = "ip"
+	QueryParamURLPath   = "urlPath"
 	QueryParamUserAgent = "userAgent"
 )
 

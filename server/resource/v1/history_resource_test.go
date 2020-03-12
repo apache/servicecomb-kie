@@ -104,7 +104,7 @@ func TestHistoryResource_GetPollingData(t *testing.T) {
 		assert.NoError(t, err)
 	})
 	t.Run("get polling data", func(t *testing.T) {
-		r, _ := http.NewRequest("GET", "/v1/test/kie/polling_data?sessionId=test", nil)
+		r, _ := http.NewRequest("GET", "/v1/test/kie/track?sessionId=test", nil)
 		noopH := &handler2.NoopAuthHandler{}
 		chain, _ := handler.CreateChain(common.Provider, "testchain1", noopH.Name())
 		r.Header.Set("Content-Type", "application/json")
@@ -115,10 +115,10 @@ func TestHistoryResource_GetPollingData(t *testing.T) {
 		c.ServeHTTP(resp, r)
 		body, err := ioutil.ReadAll(resp.Body)
 		assert.NoError(t, err)
-		result := &[]model.PollingDetail{}
+		result := &model.DocPollingData{}
 		err = json.Unmarshal(body, result)
 		assert.NoError(t, err)
-		assert.NotEmpty(t, result)
+		assert.NotEmpty(t, result.Data)
 	})
 
 }
