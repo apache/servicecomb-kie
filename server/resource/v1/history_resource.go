@@ -107,11 +107,10 @@ func (r *HistoryResource) GetPollingData(context *restful.Context) {
 		WriteErrResponse(context, http.StatusInternalServerError, err.Error(), common.ContentTypeText)
 		return
 	}
-	if len(records) == 0 {
-		WriteErrResponse(context, http.StatusNotFound, "no polling data found", common.ContentTypeText)
-		return
-	}
-	err = writeResponse(context, records)
+	resp := &model.DocPollingData{}
+	resp.Data = records
+	resp.Total = len(records)
+	err = writeResponse(context, resp)
 	if err != nil {
 		openlogging.Error(err.Error())
 	}
@@ -139,9 +138,9 @@ func (r *HistoryResource) URLPatterns() []restful.Route {
 		},
 		{
 			Method:       http.MethodGet,
-			Path:         "/v1/{project}/kie/polling_data",
+			Path:         "/v1/{project}/kie/track",
 			ResourceFunc: r.GetPollingData,
-			FuncDesc:     "get all history record of get and list",
+			FuncDesc:     "get the request/response data by latest getKV or list",
 			Parameters: []*restful.Parameters{
 				DocPathProject,
 			},
@@ -149,7 +148,7 @@ func (r *HistoryResource) URLPatterns() []restful.Route {
 				{
 					Code:    http.StatusOK,
 					Message: "true",
-					Model:   []model.PollingDetail{},
+					Model:   []model.DocPollingData{},
 				},
 			},
 			Consumes: []string{goRestful.MIME_JSON, common.ContentTypeYaml},
