@@ -19,9 +19,10 @@ package v1
 
 import (
 	"github.com/apache/servicecomb-kie/pkg/model"
-	"github.com/go-chassis/go-chassis/core/config"
+	"github.com/go-chassis/go-chassis/pkg/runtime"
 	"net/http"
 	"strconv"
+	"time"
 
 	"github.com/apache/servicecomb-kie/pkg/common"
 	"github.com/apache/servicecomb-kie/server/service"
@@ -74,15 +75,9 @@ func (r *HistoryResource) GetRevisions(context *restful.Context) {
 	}
 }
 
-//HealthCheck provider
-// 1. version
-// 2. reversion
+//HealthCheck provider version info and time info
 func (r *HistoryResource) HealthCheck(context *restful.Context) {
 	domain := ReadDomain(context)
-	if domain == nil {
-		WriteErrResponse(context, http.StatusInternalServerError, common.MsgDomainMustNotBeEmpty, common.ContentTypeText)
-		return
-	}
 	resp := &model.DocHealthCheck{}
 	latest, err := service.RevisionService.GetRevision(context.Ctx, domain.(string))
 	if err != nil {
@@ -90,7 +85,8 @@ func (r *HistoryResource) HealthCheck(context *restful.Context) {
 		return
 	}
 	resp.Revision = strconv.FormatInt(latest, 10)
-	resp.Version = config.MicroserviceDefinition.ServiceDescription.Version
+	resp.Version = runtime.Version
+	resp.TimeStamp = time.Now().Unix()
 	err = writeResponse(context, resp)
 	if err != nil {
 		openlogging.Error(err.Error())
@@ -120,7 +116,7 @@ func (r *HistoryResource) URLPatterns() []restful.Route {
 		{
 			Method:       http.MethodGet,
 			Path:         "/v1/health",
-			ResourceFunc: r.GetRevisions,
+			ResourceFunc: r.HealthCheck,
 			FuncDesc:     "health check return version and reversion",
 			Parameters:   []*restful.Parameters{},
 			Returns: []*restful.Returns{

@@ -89,6 +89,7 @@ type DocResponseGetKey struct {
 
 //DocHealthCheck is response doc
 type DocHealthCheck struct {
-	Version  string `json:"version"`
-	Revision string `json:"reversion"`
+	Version   string `json:"version"`
+	Revision  string `json:"reversion"`
+	TimeStamp int64  `json:"timeStamp"`
 }
