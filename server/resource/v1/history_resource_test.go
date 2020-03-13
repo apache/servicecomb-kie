@@ -21,6 +21,7 @@ import (
 	"encoding/json"
 	"fmt"
 	"github.com/apache/servicecomb-kie/pkg/model"
+	handler2 "github.com/apache/servicecomb-kie/server/handler"
 	v1 "github.com/apache/servicecomb-kie/server/resource/v1"
 	"github.com/apache/servicecomb-kie/server/service"
 	"github.com/go-chassis/go-chassis/core/common"
@@ -87,8 +88,9 @@ func TestHistoryResource_GetRevisions(t *testing.T) {
 func Test_HeathCheck(t *testing.T) {
 	path := fmt.Sprintf("/v1/health")
 	r, _ := http.NewRequest("GET", path, nil)
+	noopH := &handler2.NoopAuthHandler{}
 	revision := &v1.HistoryResource{}
-	chain, _ := handler.GetChain(common.Provider, "")
+	chain, _ := handler.CreateChain(common.Provider, "", noopH.Name())
 	c, err := restfultest.New(revision, chain)
 	assert.NoError(t, err)
 	resp := httptest.NewRecorder()

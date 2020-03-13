@@ -122,7 +122,7 @@ func (r *HistoryResource) URLPatterns() []restful.Route {
 			Returns: []*restful.Returns{
 				{
 					Code:  http.StatusOK,
-					Model: []model.DocHealthCheck{},
+					Model: model.DocHealthCheck{},
 				},
 			},
 			Consumes: []string{goRestful.MIME_JSON, common.ContentTypeYaml},
