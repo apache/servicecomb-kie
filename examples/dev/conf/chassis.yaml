@@ -10,7 +10,7 @@ cse:
   handler:
     chain:
       Provider:
-        default: auth-handler,ratelimiter-provider
+        default: auth-handler,track-handler,ratelimiter-provider
 # ssl:
 #   Provider.cipherPlugin: default
 #   Provider.verifyPeer: false

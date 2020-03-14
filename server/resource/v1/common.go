@@ -21,6 +21,7 @@ import (
 	"context"
 	"encoding/json"
 	"errors"
+	"github.com/apache/servicecomb-kie/pkg/model"
 	"net/http"
 	"strconv"
 	"strings"
@@ -129,7 +130,7 @@ func writeResponse(ctx *restful.Context, v interface{}) error {
 	return ctx.WriteJSON(v, goRestful.MIME_JSON) // json is default
 }
 func getLabels(rctx *restful.Context) (map[string]string, error) {
-	labelSlice := rctx.Req.QueryParameters("label")
+	labelSlice := rctx.Req.QueryParameters(common.QueryParamLabel)
 	if len(labelSlice) == 0 {
 		return nil, nil
 	}
@@ -220,27 +221,26 @@ func checkStatus(status string) (string, error) {
 	return status, nil
 }
 
-func queryAndResponse(rctx *restful.Context,
-	domain interface{}, project string, key string, labels map[string]string, offset, limit int64, status string) {
+func queryAndResponse(rctx *restful.Context, doc *model.KVDoc, offset, limit int64) {
 	m := getMatchPattern(rctx)
 	opts := []service.FindOption{
-		service.WithKey(key),
-		service.WithLabels(labels),
+		service.WithKey(doc.Key),
+		service.WithLabels(doc.Labels),
 		service.WithOffset(offset),
 		service.WithLimit(limit),
 	}
 	if m == common.PatternExact {
 		opts = append(opts, service.WithExactLabels())
 	}
-	if status != "" {
-		opts = append(opts, service.WithStatus(status))
+	if doc.Status != "" {
+		opts = append(opts, service.WithStatus(doc.Status))
 	}
-	rev, err := service.RevisionService.GetRevision(rctx.Ctx, domain.(string))
+	rev, err := service.RevisionService.GetRevision(rctx.Ctx, doc.Domain)
 	if err != nil {
 		WriteErrResponse(rctx, http.StatusInternalServerError, err.Error(), common.ContentTypeText)
 		return
 	}
-	kv, err := service.KVService.List(rctx.Ctx, domain.(string), project, opts...)
+	kv, err := service.KVService.List(rctx.Ctx, doc.Domain, doc.Project, opts...)
 	if err != nil {
 		if err == service.ErrKeyNotExists {
 			rctx.ReadResponseWriter().Header().Set(common.HeaderRevision, strconv.FormatInt(rev, 10))

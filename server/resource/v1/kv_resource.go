@@ -23,15 +23,12 @@ import (
 	"net/http"
 
 	"github.com/apache/servicecomb-kie/pkg/common"
-	"github.com/apache/servicecomb-kie/pkg/iputil"
 	"github.com/apache/servicecomb-kie/pkg/model"
 	"github.com/apache/servicecomb-kie/server/pubsub"
 	"github.com/apache/servicecomb-kie/server/service"
-	"github.com/apache/servicecomb-kie/server/service/mongo/record"
 	goRestful "github.com/emicklei/go-restful"
 	"github.com/go-chassis/go-chassis/server/restful"
 	"github.com/go-mesh/openlogging"
-	uuid "github.com/satori/go.uuid"
 )
 
 //KVResource has API about kv operations
@@ -49,10 +46,6 @@ func (r *KVResource) Put(context *restful.Context) {
 		return
 	}
 	domain := ReadDomain(context)
-	if domain == nil {
-		WriteErrResponse(context, http.StatusInternalServerError, common.MsgDomainMustNotBeEmpty, common.ContentTypeText)
-		return
-	}
 	kv.Key = key
 	kv.Domain = domain.(string)
 	kv.Project = project
@@ -101,10 +94,6 @@ func (r *KVResource) GetByKey(rctx *restful.Context) {
 		return
 	}
 	domain := ReadDomain(rctx)
-	if domain == nil {
-		WriteErrResponse(rctx, http.StatusInternalServerError, common.MsgDomainMustNotBeEmpty, common.ContentTypeText)
-		return
-	}
 	offsetStr := rctx.ReadQueryParameter(common.QueryParamOffset)
 	limitStr := rctx.ReadQueryParameter(common.QueryParamLimit)
 	offset, limit, err := checkPagination(offsetStr, limitStr)
@@ -112,14 +101,20 @@ func (r *KVResource) GetByKey(rctx *restful.Context) {
 		WriteErrResponse(rctx, http.StatusBadRequest, err.Error(), common.ContentTypeText)
 		return
 	}
-	insID := rctx.ReadHeader(HeaderSessionID)
+	sessionID := rctx.ReadHeader(HeaderSessionID)
 	statusStr := rctx.ReadQueryParameter(common.QueryParamStatus)
 	status, err := checkStatus(statusStr)
 	if err != nil {
 		WriteErrResponse(rctx, http.StatusBadRequest, err.Error(), common.ContentTypeText)
 		return
 	}
-	returnData(rctx, domain, project, key, labels, offset, limit, status, insID)
+	returnData(rctx, &model.KVDoc{
+		Domain:  domain.(string),
+		Project: project,
+		Key:     key,
+		Labels:  labels,
+		Status:  status,
+	}, offset, limit, sessionID)
 }
 
 //List response kv list
@@ -127,10 +122,6 @@ func (r *KVResource) List(rctx *restful.Context) {
 	var err error
 	project := rctx.ReadPathParameter(PathParameterProject)
 	domain := ReadDomain(rctx)
-	if domain == nil {
-		WriteErrResponse(rctx, http.StatusInternalServerError, common.MsgDomainMustNotBeEmpty, common.ContentTypeText)
-		return
-	}
 	labels, err := getLabels(rctx)
 	if err != nil {
 		WriteErrResponse(rctx, http.StatusBadRequest, err.Error(), common.ContentTypeText)
@@ -150,37 +141,39 @@ func (r *KVResource) List(rctx *restful.Context) {
 		WriteErrResponse(rctx, http.StatusBadRequest, err.Error(), common.ContentTypeText)
 		return
 	}
-	returnData(rctx, domain, project, "", labels, offset, limit, status, sessionID)
+	returnData(rctx, &model.KVDoc{
+		Domain:  domain.(string),
+		Project: project,
+		Labels:  labels,
+		Status:  status,
+	}, offset, limit, sessionID)
 }
 
-func returnData(rctx *restful.Context, domain interface{}, project, key string, labels map[string]string, offset, limit int64, status, sessionID string) {
+func returnData(rctx *restful.Context, doc *model.KVDoc, offset, limit int64, sessionID string) {
 	revStr := rctx.ReadQueryParameter(common.QueryParamRev)
 	wait := rctx.ReadQueryParameter(common.QueryParamWait)
-	if sessionID != "" {
-		defer RecordPollingDetail(rctx, revStr, wait, domain.(string), project, labels, offset, limit, sessionID)
-	}
 	if revStr == "" {
 		if wait == "" {
-			queryAndResponse(rctx, domain, project, key, labels, offset, limit, status)
+			queryAndResponse(rctx, doc, offset, limit)
 			return
 		}
 		changed, err := eventHappened(rctx, wait, &pubsub.Topic{
-			Labels:    labels,
-			Project:   project,
+			Labels:    doc.Labels,
+			Project:   doc.Project,
 			MatchType: getMatchPattern(rctx),
-			DomainID:  domain.(string),
+			DomainID:  doc.Domain,
 		})
 		if err != nil {
 			WriteErrResponse(rctx, http.StatusBadRequest, err.Error(), common.ContentTypeText)
 			return
 		}
 		if changed {
-			queryAndResponse(rctx, domain, project, key, labels, offset, limit, status)
+			queryAndResponse(rctx, doc, offset, limit)
 			return
 		}
 		rctx.WriteHeader(http.StatusNotModified)
 	} else {
-		revised, err := isRevised(rctx.Ctx, revStr, domain.(string))
+		revised, err := isRevised(rctx.Ctx, revStr, doc.Domain)
 		if err != nil {
 			if err == ErrInvalidRev {
 				WriteErrResponse(rctx, http.StatusBadRequest, err.Error(), common.ContentTypeText)
@@ -190,21 +183,21 @@ func returnData(rctx *restful.Context, domain interface{}, project, key string, 
 			return
 		}
 		if revised {
-			queryAndResponse(rctx, domain, project, key, labels, offset, limit, status)
+			queryAndResponse(rctx, doc, offset, limit)
 			return
 		} else if wait != "" {
 			changed, err := eventHappened(rctx, wait, &pubsub.Topic{
-				Labels:    labels,
-				Project:   project,
+				Labels:    doc.Labels,
+				Project:   doc.Project,
 				MatchType: getMatchPattern(rctx),
-				DomainID:  domain.(string),
+				DomainID:  doc.Domain,
 			})
 			if err != nil {
 				WriteErrResponse(rctx, http.StatusBadRequest, err.Error(), common.ContentTypeText)
 				return
 			}
 			if changed {
-				queryAndResponse(rctx, domain, project, key, labels, offset, limit, status)
+				queryAndResponse(rctx, doc, offset, limit)
 				return
 			}
 			rctx.WriteHeader(http.StatusNotModified)
@@ -215,43 +208,10 @@ func returnData(rctx *restful.Context, domain interface{}, project, key string, 
 	}
 }
 
-//RecordPollingDetail to record data after get or list
-func RecordPollingDetail(context *restful.Context, revStr, wait, domain, project string, labels map[string]string, limit, offset int64, sessionID string) {
-	data := &model.PollingDetail{}
-	data.ID = uuid.NewV4().String()
-	data.SessionID = sessionID
-	data.Domain = domain
-	data.IP = iputil.ClientIP(context.Req.Request)
-	dataMap := map[string]interface{}{
-		"revStr":  revStr,
-		"wait":    wait,
-		"domain":  domain,
-		"project": project,
-		"labels":  labels,
-		"limit":   limit,
-		"offset":  offset,
-	}
-	data.PollingData = dataMap
-	data.UserAgent = context.Req.HeaderParameter(HeaderUserAgent)
-	data.URLPath = context.ReadRequest().Method + " " + context.ReadRequest().URL.Path
-	data.ResponseHeader = context.Resp.Header()
-	data.ResponseCode = context.Resp.StatusCode()
-	data.ResponseBody = context.Ctx.Value(common.RespBodyContextKey)
-	_, err := record.CreateOrUpdate(context.Ctx, data)
-	if err != nil {
-		openlogging.Warn("record polling detail failed" + err.Error())
-		return
-	}
-}
-
 //Delete deletes key by ids
 func (r *KVResource) Delete(context *restful.Context) {
 	project := context.ReadPathParameter(PathParameterProject)
 	domain := ReadDomain(context)
-	if domain == nil {
-		WriteErrResponse(context, http.StatusInternalServerError, common.MsgDomainMustNotBeEmpty, common.ContentTypeText)
-		return
-	}
 	kvID := context.ReadQueryParameter(common.QueryParamKeyID)
 	if kvID == "" {
 		WriteErrResponse(context, http.StatusBadRequest, common.ErrKvIDMustNotEmpty, common.ContentTypeText)
