@@ -86,7 +86,7 @@ func (r *HistoryResource) HealthCheck(context *restful.Context) {
 	}
 	resp.Revision = strconv.FormatInt(latest, 10)
 	resp.Version = runtime.Version
-	resp.TimeStamp = time.Now().Unix()
+	resp.Timestamp = time.Now().Unix()
 	err = writeResponse(context, resp)
 	if err != nil {
 		openlogging.Error(err.Error())
@@ -117,7 +117,7 @@ func (r *HistoryResource) URLPatterns() []restful.Route {
 			Method:       http.MethodGet,
 			Path:         "/v1/health",
 			ResourceFunc: r.HealthCheck,
-			FuncDesc:     "health check return version and reversion",
+			FuncDesc:     "health check return version and revision",
 			Parameters:   []*restful.Parameters{},
 			Returns: []*restful.Returns{
 				{
