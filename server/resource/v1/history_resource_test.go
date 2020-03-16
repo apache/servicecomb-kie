@@ -116,7 +116,7 @@ func TestHistoryResource_GetPollingData(t *testing.T) {
 		c.ServeHTTP(resp, r)
 		body, err := ioutil.ReadAll(resp.Body)
 		assert.NoError(t, err)
-		result := &model.DocPollingData{}
+		result := &model.PollingDataResponse{}
 		err = json.Unmarshal(body, result)
 		assert.NoError(t, err)
 		assert.NotEmpty(t, result.Data)

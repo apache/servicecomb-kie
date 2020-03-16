@@ -107,7 +107,7 @@ func (r *HistoryResource) GetPollingData(context *restful.Context) {
 		WriteErrResponse(context, http.StatusInternalServerError, err.Error(), common.ContentTypeText)
 		return
 	}
-	resp := &model.DocPollingData{}
+	resp := &model.PollingDataResponse{}
 	resp.Data = records
 	resp.Total = len(records)
 	err = writeResponse(context, resp)
@@ -140,7 +140,7 @@ func (r *HistoryResource) URLPatterns() []restful.Route {
 			Method:       http.MethodGet,
 			Path:         "/v1/{project}/kie/track",
 			ResourceFunc: r.GetPollingData,
-			FuncDesc:     "get the request/response data by latest getKV or list",
+			FuncDesc:     "get polling tracks of clients of kie server",
 			Parameters: []*restful.Parameters{
 				DocPathProject, DocQuerySessionIDParameters, DocQueryIPParameters, DocQueryURLPathParameters, DocQueryUserAgentParameters,
 			},
@@ -148,7 +148,7 @@ func (r *HistoryResource) URLPatterns() []restful.Route {
 				{
 					Code:    http.StatusOK,
 					Message: "true",
-					Model:   []model.DocPollingData{},
+					Model:   []model.PollingDataResponse{},
 				},
 			},
 			Consumes: []string{goRestful.MIME_JSON, common.ContentTypeYaml},
