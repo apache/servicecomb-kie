@@ -20,7 +20,10 @@ package v1
 import (
 	"github.com/apache/servicecomb-kie/pkg/model"
 	"github.com/apache/servicecomb-kie/server/service/mongo/track"
+	"github.com/go-chassis/go-chassis/pkg/runtime"
 	"net/http"
+	"strconv"
+	"time"
 
 	"github.com/apache/servicecomb-kie/pkg/common"
 	"github.com/apache/servicecomb-kie/server/service"
@@ -116,6 +119,24 @@ func (r *HistoryResource) GetPollingData(context *restful.Context) {
 	}
 }
 
+//HealthCheck provider version info and time info
+func (r *HistoryResource) HealthCheck(context *restful.Context) {
+	domain := ReadDomain(context)
+	resp := &model.DocHealthCheck{}
+	latest, err := service.RevisionService.GetRevision(context.Ctx, domain.(string))
+	if err != nil {
+		WriteErrResponse(context, http.StatusInternalServerError, err.Error(), common.ContentTypeText)
+		return
+	}
+	resp.Revision = strconv.FormatInt(latest, 10)
+	resp.Version = runtime.Version
+	resp.Timestamp = time.Now().Unix()
+	err = writeResponse(context, resp)
+	if err != nil {
+		openlogging.Error(err.Error())
+	}
+}
+
 //URLPatterns defined config operations
 func (r *HistoryResource) URLPatterns() []restful.Route {
 	return []restful.Route{
@@ -131,6 +152,21 @@ func (r *HistoryResource) URLPatterns() []restful.Route {
 				{
 					Code:  http.StatusOK,
 					Model: []model.DocResponseSingleKey{},
+				},
+			},
+			Consumes: []string{goRestful.MIME_JSON, common.ContentTypeYaml},
+			Produces: []string{goRestful.MIME_JSON, common.ContentTypeYaml},
+		},
+		{
+			Method:       http.MethodGet,
+			Path:         "/v1/health",
+			ResourceFunc: r.HealthCheck,
+			FuncDesc:     "health check return version and revision",
+			Parameters:   []*restful.Parameters{},
+			Returns: []*restful.Returns{
+				{
+					Code:  http.StatusOK,
+					Model: model.DocHealthCheck{},
 				},
 			},
 			Consumes: []string{goRestful.MIME_JSON, common.ContentTypeYaml},

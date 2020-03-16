@@ -123,3 +123,21 @@ func TestHistoryResource_GetPollingData(t *testing.T) {
 	})
 
 }
+
+func Test_HeathCheck(t *testing.T) {
+	path := fmt.Sprintf("/v1/health")
+	r, _ := http.NewRequest("GET", path, nil)
+	noopH := &handler2.NoopAuthHandler{}
+	revision := &v1.HistoryResource{}
+	chain, _ := handler.CreateChain(common.Provider, "", noopH.Name())
+	c, err := restfultest.New(revision, chain)
+	assert.NoError(t, err)
+	resp := httptest.NewRecorder()
+	c.ServeHTTP(resp, r)
+	body, err := ioutil.ReadAll(resp.Body)
+	assert.NoError(t, err)
+	data := &model.DocHealthCheck{}
+	err = json.Unmarshal(body, &data)
+	assert.NoError(t, err)
+	assert.NotEmpty(t, data)
+}

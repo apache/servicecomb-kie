@@ -78,3 +78,10 @@ type PollingDataResponse struct {
 	Data  []*PollingDetail `json:"data"`
 	Total int              `json:"total"`
 }
+
+//DocHealthCheck is response doc
+type DocHealthCheck struct {
+	Version   string `json:"version"`
+	Revision  string `json:"revision"`
+	Timestamp int64  `json:"timestamp"`
+}
