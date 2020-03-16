@@ -27,6 +27,7 @@ const (
 	QueryParamRev    = "revision"
 	QueryParamMatch  = "match"
 	QueryParamKeyID  = "kv_id"
+	QueryParamLabel  = "label"
 	QueryParamStatus = "status"
 	QueryParamOffset = "offset"
 	QueryParamLimit  = "limit"
