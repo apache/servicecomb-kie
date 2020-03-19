@@ -29,7 +29,7 @@ import (
 	"go.mongodb.org/mongo-driver/bson"
 	"go.mongodb.org/mongo-driver/bson/bsoncodec"
 	"go.mongodb.org/mongo-driver/mongo/options"
-	mgo "gopkg.in/mgo.v2"
+	"gopkg.in/mgo.v2"
 	"io/ioutil"
 	"reflect"
 	"sync"
@@ -191,8 +191,8 @@ func GetColInfo(ctx context.Context, name string) (*CollectionInfo, error) {
 }
 
 //InitMongodb get collection info
-func InitMongodb(url string) {
-	session, err := mgo.Dial(url)
+func InitMongodb() {
+	session, err := mgo.Dial(config.GetDB().URI)
 	if err != nil {
 		panic(err)
 	}
@@ -273,7 +273,7 @@ func InitMongodb(url string) {
 	if err != nil {
 		panic(err)
 	}
-	//view
+	//long polling
 	c = session.DB(DBName).C(CollectionPollingDetail)
 	err = c.Create(&mgo.CollectionInfo{Validator: bson.M{
 		"id":         bson.M{"$exists": true},
