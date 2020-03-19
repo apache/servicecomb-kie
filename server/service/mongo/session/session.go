@@ -29,6 +29,7 @@ import (
 	"go.mongodb.org/mongo-driver/bson"
 	"go.mongodb.org/mongo-driver/bson/bsoncodec"
 	"go.mongodb.org/mongo-driver/mongo/options"
+	"gopkg.in/mgo.v2"
 	"io/ioutil"
 	"reflect"
 	"sync"
@@ -187,4 +188,111 @@ func GetColInfo(ctx context.Context, name string) (*CollectionInfo, error) {
 		break
 	}
 	return nil, ErrGetPipeline
+}
+
+//InitMongodb get collection info
+func InitMongodb() {
+	session, err := mgo.Dial(config.GetDB().URI)
+	if err != nil {
+		panic(err)
+	}
+	defer session.Close()
+	session.SetMode(mgo.Monotonic, true)
+	//counter
+	c := session.DB(DBName).C(CollectionCounter)
+	docs := map[string]interface{}{"name": "revision_counter", "count": 1, "domain": "default"}
+	err = c.Insert(docs)
+	if err != nil {
+		panic(err)
+	}
+	//kv
+	c = session.DB("kie").C("kv")
+	err = c.Create(&mgo.CollectionInfo{Validator: bson.M{
+		"key":     bson.M{"$exists": true},
+		"domain":  bson.M{"$exists": true},
+		"project": bson.M{"$exists": true},
+		"id":      bson.M{"$exists": true},
+	}})
+	err = c.EnsureIndex(mgo.Index{
+		Key:    []string{"id"},
+		Unique: true,
+	})
+	if err != nil {
+		panic(err)
+	}
+	err = c.EnsureIndex(mgo.Index{
+		Key:    []string{"key", "label_id", "domain", "project"},
+		Unique: true,
+	})
+	if err != nil {
+		panic(err)
+	}
+
+	//label
+	c = session.DB(DBName).C(CollectionLabel)
+	err = c.Create(&mgo.CollectionInfo{Validator: bson.M{
+		"id":      bson.M{"$exists": true},
+		"domain":  bson.M{"$exists": true},
+		"project": bson.M{"$exists": true},
+		"format":  bson.M{"$exists": true},
+	}})
+	err = c.EnsureIndex(mgo.Index{
+		Key:    []string{"id"},
+		Unique: true,
+	})
+	if err != nil {
+		panic(err)
+	}
+	err = c.EnsureIndex(mgo.Index{
+		Key:    []string{"format", "domain", "project"},
+		Unique: true,
+	})
+	if err != nil {
+		panic(err)
+	}
+	//view
+	c = session.DB(DBName).C(CollectionLabel)
+	err = c.Create(&mgo.CollectionInfo{Validator: bson.M{
+		"id":      bson.M{"$exists": true},
+		"domain":  bson.M{"$exists": true},
+		"project": bson.M{"$exists": true},
+		"display": bson.M{"$exists": true},
+		"label":   bson.M{"$exists": true},
+	}})
+	err = c.EnsureIndex(mgo.Index{
+		Key:    []string{"id"},
+		Unique: true,
+	})
+	if err != nil {
+		panic(err)
+	}
+	err = c.EnsureIndex(mgo.Index{
+		Key:    []string{"display", "domain", "project"},
+		Unique: true,
+	})
+	if err != nil {
+		panic(err)
+	}
+	//long polling
+	c = session.DB(DBName).C(CollectionPollingDetail)
+	err = c.Create(&mgo.CollectionInfo{Validator: bson.M{
+		"id":         bson.M{"$exists": true},
+		"params":     bson.M{"$exists": true},
+		"session_id": bson.M{"$exists": true},
+		"url_path":   bson.M{"$exists": true},
+	}})
+	err = c.EnsureIndex(mgo.Index{
+		Key:    []string{"id"},
+		Unique: true,
+	})
+	if err != nil {
+		panic(err)
+	}
+	err = c.EnsureIndex(mgo.Index{
+		Key:    []string{"session_id", "domain"},
+		Unique: true,
+	})
+	if err != nil {
+		panic(err)
+	}
 }
