@@ -60,14 +60,7 @@ func (h *TrackHandler) Handle(chain *handler.Chain, inv *invocation.Invocation, 
 		return
 	}
 	chain.Next(inv, func(ir *invocation.Response) error {
-		resp, ok := ir.Result.(*restful.Response)
-		if !ok {
-			err := cb(ir)
-			if err != nil {
-				return err
-			}
-			return nil
-		}
+		resp, _ := ir.Result.(*restful.Response)
 		revStr := req.QueryParameter(common.QueryParamRev)
 		wait := req.QueryParameter(common.QueryParamWait)
 		data := &model.PollingDetail{}
@@ -78,7 +71,9 @@ func (h *TrackHandler) Handle(chain *handler.Chain, inv *invocation.Invocation, 
 		data.IP = iputil.ClientIP(req.Request)
 		data.ResponseBody = inv.Ctx.Value(common.RespBodyContextKey)
 		data.ResponseCode = ir.Status
-		data.ResponseHeader = resp.Header()
+		if resp != nil {
+			data.ResponseHeader = resp.Header()
+		}
 		data.PollingData = map[string]interface{}{
 			"revStr":  revStr,
 			"wait":    wait,
