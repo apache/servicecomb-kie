@@ -69,3 +69,8 @@ const (
 
 	MaxWait = 5 * time.Minute
 )
+
+// all msg server returns
+const (
+	MsgDBError = "database operation error"
+)
