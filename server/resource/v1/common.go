@@ -40,7 +40,7 @@ import (
 //const of server
 const (
 	HeaderUserAgent      = "User-Agent"
-	HeaderSessionID      = "sessionID"
+	HeaderSessionID      = "X-Session-Id"
 	PathParameterProject = "project"
 	PathParameterKey     = "key"
 	AttributeDomainKey   = "domain"

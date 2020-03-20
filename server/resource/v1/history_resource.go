@@ -19,6 +19,7 @@ package v1
 
 import (
 	"github.com/apache/servicecomb-kie/pkg/model"
+	"github.com/apache/servicecomb-kie/server/service/mongo/track"
 	"github.com/go-chassis/go-chassis/pkg/runtime"
 	"net/http"
 	"strconv"
@@ -75,6 +76,49 @@ func (r *HistoryResource) GetRevisions(context *restful.Context) {
 	}
 }
 
+//GetPollingData get the record of the get or list history
+func (r *HistoryResource) GetPollingData(context *restful.Context) {
+	query := &model.PollingDetail{}
+	sessionID := context.ReadQueryParameter(common.QueryParamSessionID)
+	if sessionID != "" {
+		query.SessionID = sessionID
+	}
+	ip := context.ReadQueryParameter(common.QueryParamIP)
+	if ip != "" {
+		query.IP = ip
+	}
+	urlPath := context.ReadQueryParameter(common.QueryParamURLPath)
+	if urlPath != "" {
+		query.URLPath = urlPath
+	}
+	userAgent := context.ReadQueryParameter(common.QueryParamUserAgent)
+	if userAgent != "" {
+		query.UserAgent = userAgent
+	}
+	domain := ReadDomain(context)
+	if domain == nil {
+		WriteErrResponse(context, http.StatusInternalServerError, common.MsgDomainMustNotBeEmpty, common.ContentTypeText)
+		return
+	}
+	query.Domain = domain.(string)
+	records, err := track.Get(context.Ctx, query)
+	if err != nil {
+		if err == service.ErrRecordNotExists {
+			WriteErrResponse(context, http.StatusNotFound, err.Error(), common.ContentTypeText)
+			return
+		}
+		WriteErrResponse(context, http.StatusInternalServerError, err.Error(), common.ContentTypeText)
+		return
+	}
+	resp := &model.PollingDataResponse{}
+	resp.Data = records
+	resp.Total = len(records)
+	err = writeResponse(context, resp)
+	if err != nil {
+		openlogging.Error(err.Error())
+	}
+}
+
 //HealthCheck provider version info and time info
 func (r *HistoryResource) HealthCheck(context *restful.Context) {
 	domain := ReadDomain(context)
@@ -123,6 +167,24 @@ func (r *HistoryResource) URLPatterns() []restful.Route {
 				{
 					Code:  http.StatusOK,
 					Model: model.DocHealthCheck{},
+				},
+			},
+			Consumes: []string{goRestful.MIME_JSON, common.ContentTypeYaml},
+			Produces: []string{goRestful.MIME_JSON, common.ContentTypeYaml},
+		},
+		{
+			Method:       http.MethodGet,
+			Path:         "/v1/{project}/kie/track",
+			ResourceFunc: r.GetPollingData,
+			FuncDesc:     "get polling tracks of clients of kie server",
+			Parameters: []*restful.Parameters{
+				DocPathProject, DocQuerySessionIDParameters, DocQueryIPParameters, DocQueryURLPathParameters, DocQueryUserAgentParameters,
+			},
+			Returns: []*restful.Returns{
+				{
+					Code:    http.StatusOK,
+					Message: "true",
+					Model:   []model.PollingDataResponse{},
 				},
 			},
 			Consumes: []string{goRestful.MIME_JSON, common.ContentTypeYaml},

@@ -35,6 +35,7 @@ var (
 //db errors
 var (
 	ErrKeyNotExists     = errors.New("can not find any key value")
+	ErrRecordNotExists  = errors.New("can not find any polling data")
 	ErrRevisionNotExist = errors.New("revision does not exist")
 	ErrAliasNotGiven    = errors.New("label alias not given")
 )

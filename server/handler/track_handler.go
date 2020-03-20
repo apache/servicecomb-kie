@@ -22,7 +22,7 @@ import (
 	"github.com/apache/servicecomb-kie/pkg/iputil"
 	"github.com/apache/servicecomb-kie/pkg/model"
 	"github.com/apache/servicecomb-kie/server/resource/v1"
-	"github.com/apache/servicecomb-kie/server/service/mongo/record"
+	"github.com/apache/servicecomb-kie/server/service/mongo/track"
 	"github.com/emicklei/go-restful"
 	"github.com/go-chassis/go-chassis/core/handler"
 	"github.com/go-chassis/go-chassis/core/invocation"
@@ -60,14 +60,7 @@ func (h *TrackHandler) Handle(chain *handler.Chain, inv *invocation.Invocation, 
 		return
 	}
 	chain.Next(inv, func(ir *invocation.Response) error {
-		resp, ok := ir.Result.(*restful.Response)
-		if !ok {
-			err := cb(ir)
-			if err != nil {
-				return err
-			}
-			return nil
-		}
+		resp, _ := ir.Result.(*restful.Response)
 		revStr := req.QueryParameter(common.QueryParamRev)
 		wait := req.QueryParameter(common.QueryParamWait)
 		data := &model.PollingDetail{}
@@ -78,14 +71,16 @@ func (h *TrackHandler) Handle(chain *handler.Chain, inv *invocation.Invocation, 
 		data.IP = iputil.ClientIP(req.Request)
 		data.ResponseBody = inv.Ctx.Value(common.RespBodyContextKey)
 		data.ResponseCode = ir.Status
-		data.ResponseHeader = resp.Header()
+		if resp != nil {
+			data.ResponseHeader = resp.Header()
+		}
 		data.PollingData = map[string]interface{}{
 			"revStr":  revStr,
 			"wait":    wait,
 			"project": req.HeaderParameter(v1.PathParameterProject),
 			"labels":  req.QueryParameter("label"),
 		}
-		_, err := record.CreateOrUpdate(inv.Ctx, data)
+		_, err := track.CreateOrUpdate(inv.Ctx, data)
 		if err != nil {
 			openlogging.Warn("record polling detail failed" + err.Error())
 			err := cb(ir)
