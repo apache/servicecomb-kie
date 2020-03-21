@@ -24,7 +24,7 @@ import (
 	"github.com/go-chassis/go-chassis/server/restful"
 )
 
-//swagger doc header params
+//swagger doc request header params
 var (
 	DocHeaderDepth = &restful.Parameters{
 		DataType:  "string",
@@ -32,6 +32,17 @@ var (
 		ParamType: goRestful.HeaderParameterKind,
 		Desc:      "integer, default is 1, if you set match policy, you can set,depth to decide label number",
 	}
+	DocHeaderContentType = &restful.Parameters{
+		DataType:  "string",
+		Name:      common.HeaderContentType,
+		ParamType: goRestful.HeaderParameterKind,
+		Required:  true,
+		Desc:      "used to indicate the media type of the resource, the value can be application/json or text/yaml",
+	}
+)
+
+//swagger doc response header params
+var (
 	DocHeaderRevision = goRestful.Header{
 		Items: &goRestful.Items{
 			Type: "integer",
