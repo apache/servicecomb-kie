@@ -48,7 +48,7 @@ func createKey(ctx context.Context, kv *model.KVDoc) (*model.KVDoc, error) {
 	}
 	kv.UpdateRevision = revision
 	kv.CreateRevision = revision
-	kv.CreatTime = time.Now().String()
+	kv.CreateTime = time.Now().String()
 	kv.UpdateTime = time.Now().String()
 	_, err = collection.InsertOne(ctx, kv)
 	if err != nil {
@@ -182,6 +182,10 @@ func deleteKV(ctx context.Context, kvID, project, domain string) error {
 		openlogging.Warn(fmt.Sprintf("failed, may have been deleted,kvID=%s", kvID))
 	} else {
 		openlogging.Info(fmt.Sprintf("delete success,kvID=%s", kvID))
+	}
+	err = history.AddDeleteTime(ctx, kvID, project, domain)
+	if err != nil {
+		openlogging.Error(fmt.Sprintf("add delete time to [%s] failed : [%s]", kvID, err))
 	}
 	return err
 }

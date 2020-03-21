@@ -206,7 +206,7 @@ func InitMongodb() {
 		panic(err)
 	}
 	//kv
-	c = session.DB("kie").C("kv")
+	c = session.DB(DBName).C("kv")
 	err = c.Create(&mgo.CollectionInfo{Validator: bson.M{
 		"key":     bson.M{"$exists": true},
 		"domain":  bson.M{"$exists": true},
@@ -227,7 +227,15 @@ func InitMongodb() {
 	if err != nil {
 		panic(err)
 	}
-
+	//kv_revision
+	c = session.DB(DBName).C(CollectionKVRevision)
+	err = c.EnsureIndex(mgo.Index{
+		Key:         []string{"delete_time"},
+		ExpireAfter: 7 * 24 * time.Hour,
+	})
+	if err != nil {
+		panic(err)
+	}
 	//label
 	c = session.DB(DBName).C(CollectionLabel)
 	err = c.Create(&mgo.CollectionInfo{Validator: bson.M{
