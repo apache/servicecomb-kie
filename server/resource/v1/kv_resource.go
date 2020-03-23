@@ -258,7 +258,7 @@ func (r *KVResource) URLPatterns() []restful.Route {
 			ResourceFunc: r.Put,
 			FuncDesc:     "create or update key value",
 			Parameters: []*restful.Parameters{
-				DocPathProject, DocPathKey,
+				DocPathProject, DocPathKey, DocHeaderContentType,
 			},
 			Read: KVBody{},
 			Returns: []*restful.Returns{
