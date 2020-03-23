@@ -251,7 +251,7 @@ func InitMongodb() {
 		panic(err)
 	}
 	//view
-	c = session.DB(DBName).C(CollectionLabel)
+	c = session.DB(DBName).C(CollectionView)
 	err = c.Create(&mgo.CollectionInfo{Validator: bson.M{
 		"id":      bson.M{"$exists": true},
 		"domain":  bson.M{"$exists": true},
