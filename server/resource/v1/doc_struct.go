@@ -170,5 +170,5 @@ type KVBody struct {
 
 //ErrorMsg is open api doc
 type ErrorMsg struct {
-	Msg string `json:"msg"`
+	Msg string `json:"error_msg"`
 }

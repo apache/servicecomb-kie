@@ -53,8 +53,15 @@ github.com/go-chassis/foundation v0.1.1-0.20191113114104-2b05871e9ec4 h1:wx8JXvg
 github.com/go-chassis/foundation v0.1.1-0.20191113114104-2b05871e9ec4/go.mod h1:21/ajGtgJlWTCeM0TxGJdRhO8bJkKirWyV8Stlh6g6c=
 github.com/go-chassis/go-archaius v1.2.1-0.20200309104817-8c3d4e87d33c h1:pimEM4Oy/Uf4xG4G7TrRUQbIRFAfHiarxDQQS2gmKaM=
 github.com/go-chassis/go-archaius v1.2.1-0.20200309104817-8c3d4e87d33c/go.mod h1:gVP52u/jCU0fgUjXdUW1VLp5YLLJ+Yl2zoOPrLM/WOM=
+github.com/go-chassis/go-chassis v0.0.0-20200318142212-4ca7f5fb7745 h1:BDHDeJBW+0/iC/1otn4XQ7ndfqzeGrFFi6SLSBuhRvs=
+github.com/go-chassis/go-chassis v0.0.0-20200318142212-4ca7f5fb7745/go.mod h1:UsROzOZPD9YgTpVUE/jFclVxDwHWESLNdwwbfKQ8aMs=
+github.com/go-chassis/go-chassis v0.0.0-20200320074343-30f669c0c47b h1:ZH88vLcGL4bNc+Vbm1g3jrhtTxBSnGvyZCpbbkVa5a0=
+github.com/go-chassis/go-chassis v0.0.0-20200320074343-30f669c0c47b/go.mod h1:UsROzOZPD9YgTpVUE/jFclVxDwHWESLNdwwbfKQ8aMs=
+github.com/go-chassis/go-chassis v0.0.0-20200322084331-36849ab2cb10 h1:l3bUZf0Hjh1+7b2Ed5Fqb/cCOjMGBe8WmPd/ucyoGgQ=
+github.com/go-chassis/go-chassis v0.0.0-20200322084331-36849ab2cb10/go.mod h1:UsROzOZPD9YgTpVUE/jFclVxDwHWESLNdwwbfKQ8aMs=
 github.com/go-chassis/go-chassis v1.8.2-0.20200310060113-4b383ba3d3f0 h1:YD9MtuYIpQb+EKxIzV/swdXUhnV5PtXtSW696JiwW1c=
 github.com/go-chassis/go-chassis v1.8.2-0.20200310060113-4b383ba3d3f0/go.mod h1:sFnVxSvprpy6umPFK4uSdfCDdfqdgbp3FdW/CG0VNnE=
+github.com/go-chassis/go-chassis v1.8.2 h1:lX+XJbIGSkC4c+1h8IcoBQFEX9vaZ0+KNugE24Q/I/Y=
 github.com/go-chassis/go-restful-swagger20 v1.0.3-0.20200310030431-17d80f34264f h1:5QmmNpVcGqIc6tuKNe5EAI4PA8Yn2EL9Oee7YdcJ4PE=
 github.com/go-chassis/go-restful-swagger20 v1.0.3-0.20200310030431-17d80f34264f/go.mod h1:eW62fYuzlNFDvIacB6AV8bhUDCTy4myfTCv0bT9Gbb0=
 github.com/go-chassis/paas-lager v1.1.1 h1:/6wqawUGjPCpd57A/tzJzgC4MnEhNuigbayQS+2VWPQ=

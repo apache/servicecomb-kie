@@ -242,7 +242,8 @@ func queryAndResponse(rctx *restful.Context, doc *model.KVDoc, offset, limit int
 	}
 	kv, err := service.KVService.List(rctx.Ctx, doc.Domain, doc.Project, opts...)
 	if err != nil {
-		WriteErrResponse(rctx, http.StatusInternalServerError, err.Error(), common.ContentTypeText)
+		openlogging.Error("common: " + err.Error())
+		WriteErrResponse(rctx, http.StatusInternalServerError, common.MsgDBError, common.ContentTypeText)
 		return
 	}
 	rctx.ReadResponseWriter().Header().Set(common.HeaderRevision, strconv.FormatInt(rev, 10))

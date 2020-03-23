@@ -82,7 +82,7 @@ func (h *TrackHandler) Handle(chain *handler.Chain, inv *invocation.Invocation, 
 		}
 		_, err := track.CreateOrUpdate(inv.Ctx, data)
 		if err != nil {
-			openlogging.Warn("record polling detail failed" + err.Error())
+			openlogging.Warn("record polling detail failed:" + err.Error())
 			err := cb(ir)
 			if err != nil {
 				return err

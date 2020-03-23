@@ -38,7 +38,7 @@ cse:
   handler:
     chain:
       Provider:
-        default: auth-handler,track-handler,ratelimiter-provider
+        default: ratelimiter-provider,monitoring,auth-handler,track-handler
 EOM
 cat <<EOM > ${root_dir}/conf/lager.yaml
 logger_level: ${LOG_LEVEL}
