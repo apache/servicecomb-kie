@@ -172,7 +172,9 @@ func (s *Service) List(ctx context.Context, domain, project string, options ...s
 		return nil, err
 	}
 	defer cur.Close(ctx)
-	result := &model.KVResponse{}
+	result := &model.KVResponse{
+		Data: []*model.KVDoc{},
+	}
 	for cur.Next(ctx) {
 		curKV := &model.KVDoc{}
 		if err := cur.Decode(curKV); err != nil {
@@ -188,9 +190,6 @@ func (s *Service) List(ctx context.Context, domain, project string, options ...s
 		result.Data = append(result.Data, curKV)
 	}
 	result.Total = total
-	if len(result.Data) == 0 {
-		return nil, service.ErrKeyNotExists
-	}
 	return result, nil
 }
 
