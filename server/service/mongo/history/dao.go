@@ -19,12 +19,20 @@ package history
 
 import (
 	"context"
+	"fmt"
+	"time"
+
 	"github.com/apache/servicecomb-kie/pkg/model"
 	"github.com/apache/servicecomb-kie/server/service"
 	"github.com/apache/servicecomb-kie/server/service/mongo/session"
 	"github.com/go-mesh/openlogging"
 	"go.mongodb.org/mongo-driver/bson"
 	"go.mongodb.org/mongo-driver/mongo/options"
+)
+
+//const of history
+const (
+	maxHistoryNum = 100
 )
 
 func getHistoryByKeyID(ctx context.Context, filter bson.M, offset, limit int64) ([]*model.KVDoc, int, error) {
@@ -72,5 +80,77 @@ func AddHistory(ctx context.Context, kv *model.KVDoc) error {
 		openlogging.Error(err.Error())
 		return err
 	}
+	err = historyRotate(ctx, kv.ID, kv.Project, kv.Domain)
+	if err != nil {
+		openlogging.Error("history rotate err: " + err.Error())
+		return err
+	}
+	return nil
+}
+
+//AddDeleteTime add delete time to all revisions of the kv,
+//thus these revisions will be automatically deleted by TTL index.
+func AddDeleteTime(ctx context.Context, kvID, project, domain string) error {
+	collection := session.GetDB().Collection(session.CollectionKVRevision)
+	now := time.Now()
+	_, err := collection.UpdateMany(ctx, bson.M{"id": kvID, "project": project, "domain": domain}, bson.D{
+		{"$set", bson.D{
+			{"delete_time", now},
+		}},
+	})
+	if err != nil {
+		return err
+	}
+	openlogging.Debug(fmt.Sprintf("added delete time [%s] to key [%s]", now.String(), kvID))
+	return nil
+}
+
+//historyRotate delete historical versions for a key that exceeds the limited number
+func historyRotate(ctx context.Context, kvID, project, domain string) error {
+	ctx, cancel := context.WithTimeout(ctx, session.Timeout)
+	defer cancel()
+	filter := bson.M{"id": kvID, "domain": domain, "project": project}
+	collection := session.GetDB().Collection(session.CollectionKVRevision)
+	curTotal, err := collection.CountDocuments(ctx, filter)
+	if err != nil {
+		return err
+	}
+	if curTotal <= maxHistoryNum {
+		return nil
+	}
+	opt := options.Find().SetSort(map[string]interface{}{
+		"update_revision": 1,
+	})
+	opt = opt.SetLimit(curTotal - maxHistoryNum)
+	cur, err := collection.Find(ctx, filter, opt)
+	if err != nil {
+		return err
+	}
+	defer cur.Close(ctx)
+	if cur.Err() != nil {
+		return err
+	}
+	for cur.Next(ctx) {
+		curKV := &model.KVDoc{}
+		if err := cur.Decode(curKV); err != nil {
+			openlogging.Error("decode to KVs error: " + err.Error())
+			return err
+		}
+		_, err := collection.DeleteOne(ctx, bson.M{
+			"id":              kvID,
+			"domain":          domain,
+			"project":         project,
+			"update_revision": curKV.UpdateRevision,
+		})
+		if err != nil {
+			return err
+		}
+		openlogging.Debug("delete overflowed revision", openlogging.WithTags(openlogging.Tags{
+			"id":       curKV.ID,
+			"key":      curKV.Key,
+			"revision": curKV.UpdateRevision,
+		}))
+	}
+
 	return nil
 }
