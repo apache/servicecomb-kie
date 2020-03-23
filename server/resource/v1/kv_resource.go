@@ -288,12 +288,6 @@ func (r *KVResource) URLPatterns() []restful.Route {
 					},
 				},
 				{
-					Code: http.StatusNotFound,
-					Headers: map[string]goRestful.Header{
-						common.HeaderRevision: DocHeaderRevision,
-					},
-				},
-				{
 					Code:    http.StatusNotModified,
 					Message: "empty body",
 				},
@@ -312,11 +306,6 @@ func (r *KVResource) URLPatterns() []restful.Route {
 				{
 					Code:  http.StatusOK,
 					Model: model.DocResponseGetKey{},
-					Headers: map[string]goRestful.Header{
-						common.HeaderRevision: DocHeaderRevision,
-					},
-				}, {
-					Code: http.StatusNotFound,
 					Headers: map[string]goRestful.Header{
 						common.HeaderRevision: DocHeaderRevision,
 					},

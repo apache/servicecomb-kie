@@ -242,11 +242,6 @@ func queryAndResponse(rctx *restful.Context, doc *model.KVDoc, offset, limit int
 	}
 	kv, err := service.KVService.List(rctx.Ctx, doc.Domain, doc.Project, opts...)
 	if err != nil {
-		if err == service.ErrKeyNotExists {
-			rctx.ReadResponseWriter().Header().Set(common.HeaderRevision, strconv.FormatInt(rev, 10))
-			WriteErrResponse(rctx, http.StatusNotFound, err.Error(), common.ContentTypeText)
-			return
-		}
 		WriteErrResponse(rctx, http.StatusInternalServerError, err.Error(), common.ContentTypeText)
 		return
 	}
