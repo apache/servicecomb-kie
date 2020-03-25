@@ -67,7 +67,7 @@ var (
 		ParamType: goRestful.QueryParameterKind,
 		Required:  false,
 		Desc: "wait until any kv changed. " +
-			"for example wait=5s, server will not response until 5 seconds during that time window, " +
+			"for example wait=5s, server will not response until 5 seconds, during that time window, " +
 			"if any kv changed, server will return 200 and kv list, otherwise return 304 and empty body",
 	}
 	DocQueryRev = &restful.Parameters{
