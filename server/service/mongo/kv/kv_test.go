@@ -72,7 +72,7 @@ func TestService_CreateOrUpdate(t *testing.T) {
 		assert.NotEmpty(t, oid)
 	})
 	t.Run("put kv timeout,with labels app,and update value", func(t *testing.T) {
-		beforeKV, err := kvsvc.CreateOrUpdate(context.Background(), &model.KVDoc{
+		_, err := kvsvc.CreateOrUpdate(context.Background(), &model.KVDoc{
 			Key:   "timeout",
 			Value: "1s",
 			Labels: map[string]string{
@@ -82,13 +82,6 @@ func TestService_CreateOrUpdate(t *testing.T) {
 			Project: "kv-test",
 		})
 		assert.NoError(t, err)
-		kvs1, err := kvsvc.FindKV(context.Background(), "default", "kv-test",
-			service.WithKey("timeout"),
-			service.WithLabels(map[string]string{
-				"app": "mall",
-			}),
-			service.WithExactLabels())
-		assert.Equal(t, beforeKV.Value, kvs1[0].Data[0].Value)
 		afterKV, err := kvsvc.CreateOrUpdate(context.Background(), &model.KVDoc{
 			Key:   "timeout",
 			Value: "3s",
@@ -104,39 +97,10 @@ func TestService_CreateOrUpdate(t *testing.T) {
 		}))
 		assert.NoError(t, err)
 		assert.Equal(t, afterKV.Value, savedKV.Value)
-		kvs, err := kvsvc.FindKV(context.Background(), "default", "kv-test",
-			service.WithKey("timeout"),
-			service.WithLabels(map[string]string{
-				"app": "mall",
-			}),
-			service.WithExactLabels())
-		assert.Equal(t, afterKV.Value, kvs[0].Data[0].Value)
 	})
 
 }
 
-func TestService_FindKV(t *testing.T) {
-	kvsvc := &kv.Service{}
-	t.Run("exact find by kv and labels with label app", func(t *testing.T) {
-		kvs, err := kvsvc.FindKV(context.Background(), "default", "kv-test",
-			service.WithKey("timeout"),
-			service.WithLabels(map[string]string{
-				"app": "mall",
-			}),
-			service.WithExactLabels())
-		assert.NoError(t, err)
-		assert.Equal(t, 1, len(kvs))
-	})
-	t.Run("greedy find by labels,with labels app ans service ", func(t *testing.T) {
-		kvs, err := kvsvc.FindKV(context.Background(), "default", "kv-test",
-			service.WithLabels(map[string]string{
-				"app":     "mall",
-				"service": "cart",
-			}))
-		assert.NoError(t, err)
-		assert.Equal(t, 1, len(kvs))
-	})
-}
 func TestService_Delete(t *testing.T) {
 	kvsvc := &kv.Service{}
 	t.Run("delete key by kvID", func(t *testing.T) {

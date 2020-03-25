@@ -19,7 +19,6 @@ package kv
 
 import (
 	"context"
-	"fmt"
 	"reflect"
 
 	"github.com/apache/servicecomb-kie/pkg/model"
@@ -70,62 +69,13 @@ func cursorToOneKV(ctx context.Context, cur *mongo.Cursor, labels map[string]str
 	return nil, service.ErrKeyNotExists
 }
 
-func findKVByID(ctx context.Context, domain, project, kvID string) ([]*model.KVResponse, error) {
-	kvResp := make([]*model.KVResponse, 0)
+func findKVByID(ctx context.Context, domain, project, kvID string) (*model.KVResponse, error) {
 	kv, err := findKVDocByID(ctx, domain, project, kvID)
 	if err != nil {
 		return nil, err
 	}
-	kvResp = append(kvResp, &model.KVResponse{
+	return &model.KVResponse{
 		Total: 1,
 		Data:  []*model.KVDoc{kv},
-	})
-	return kvResp, nil
-}
-
-func findMoreKV(ctx context.Context, cur *mongo.Cursor, opts *service.FindOptions) ([]*model.KVResponse, error) {
-	kvResp := make([]*model.KVResponse, 0)
-	for cur.Next(ctx) {
-		curKV := &model.KVDoc{}
-
-		if err := cur.Decode(curKV); err != nil {
-			openlogging.Error("decode to KVs error: " + err.Error())
-			return nil, err
-		}
-		if (len(curKV.Labels) - len(opts.Labels)) > opts.Depth {
-			//because it is query by labels, so result can not be minus
-			//so many labels,then continue
-			openlogging.Debug("so deep, skip this key")
-			continue
-		}
-		openlogging.Debug(fmt.Sprintf("%v", curKV))
-		var groupExist bool
-		var labelGroup *model.KVResponse
-		for _, labelGroup = range kvResp {
-			if reflect.DeepEqual(labelGroup.LabelDoc.Labels, curKV.Labels) {
-				groupExist = true
-				clearAll(curKV)
-				labelGroup.Data = append(labelGroup.Data, curKV)
-				break
-			}
-
-		}
-		if !groupExist {
-			labelGroup = &model.KVResponse{
-				LabelDoc: &model.LabelDocResponse{
-					Labels:  curKV.Labels,
-					LabelID: curKV.LabelID,
-				},
-				Data: []*model.KVDoc{curKV},
-			}
-			clearAll(curKV)
-			openlogging.Debug("add new label group")
-			kvResp = append(kvResp, labelGroup)
-		}
-
-	}
-	if len(kvResp) == 0 {
-		return nil, service.ErrKeyNotExists
-	}
-	return kvResp, nil
+	}, nil
 }
