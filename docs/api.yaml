@@ -61,13 +61,36 @@ paths:
               type: integer
         "304":
           description: empty body
-        "404":
+    post:
+      summary: create a key value
+      operationId: Post
+      parameters:
+        - name: project
+          in: path
+          required: true
+          type: string
+        - name: Content-Type
+          in: header
+          description: used to indicate the media type of the resource, the value can
+            be application/json or text/yaml
+          required: true
+          type: string
+        - name: body
+          in: body
+          required: true
+          schema:
+            $ref: '#/definitions/v1.KVCreateBody'
+      consumes:
+        - application/json
+        - text/yaml
+      produces:
+        - application/json
+        - text/yaml
+      responses:
+        "200":
           description: ""
-          headers:
-            X-Kie-Revision:
-              description: cluster latest revision number, if key value is changed,
-                it will increase.
-              type: integer
+          schema:
+            $ref: '#/definitions/DocResponseSingleKey'
     delete:
       summary: delete key by kv ID.
       operationId: Delete
@@ -150,35 +173,30 @@ paths:
               type: integer
         "304":
           description: empty body
-        "404":
-          description: ""
-          headers:
-            X-Kie-Revision:
-              description: cluster latest revision number, if key value is changed,
-                it will increase.
-              type: integer
+  /v1/{project}/kie/kv/{kv_id}:
     put:
-      summary: create or update key value
+      summary: update a key value
       operationId: Put
       parameters:
         - name: project
           in: path
           required: true
           type: string
-        - name: key
+        - name: kv_id
           in: path
           required: true
           type: string
         - name: Content-Type
           in: header
+          description: used to indicate the media type of the resource, the value can
+            be application/json or text/yaml
           required: true
-          description: used to indicate the media type of the resource, the value can be application/json or text/yaml
           type: string
         - name: body
           in: body
           required: true
           schema:
-            $ref: '#/definitions/v1.KVBody'
+            $ref: '#/definitions/v1.KVUpdateBody'
       consumes:
         - application/json
         - text/yaml
@@ -190,7 +208,7 @@ paths:
           description: ""
           schema:
             $ref: '#/definitions/DocResponseSingleKey'
-  /v1/{project}/kie/revision/{key_id}:
+  /v1/{project}/kie/revision/{kv_id}:
     get:
       summary: get all revisions by key id
       operationId: GetRevisions
@@ -199,7 +217,7 @@ paths:
           in: path
           required: true
           type: string
-        - name: key_id
+        - name: kv_id
           in: path
           required: true
           type: string
@@ -339,9 +357,9 @@ definitions:
       params:
         type: object
         additionalProperties:
-          type: string
+          type: interface {}
       response_body:
-        type: string
+        type: interface {}
       response_code:
         type: integer
         format: int32
@@ -355,14 +373,25 @@ definitions:
         type: string
       user_agent:
         type: string
-  v1.KVBody:
+  v1.KVCreateBody:
     type: object
     properties:
+      key:
+        type: string
       labels:
         type: object
         additionalProperties:
           type: string
+      status:
+        type: string
       value:
         type: string
       value_type:
+        type: string
+  v1.KVUpdateBody:
+    type: object
+    properties:
+      status:
+        type: string
+      value:
         type: string

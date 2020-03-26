@@ -26,7 +26,7 @@ const (
 	QueryParamWait   = "wait"
 	QueryParamRev    = "revision"
 	QueryParamMatch  = "match"
-	QueryParamKeyID  = "kv_id"
+	QueryParamKVID   = "kv_id"
 	QueryParamLabel  = "label"
 	QueryParamStatus = "status"
 	QueryParamOffset = "offset"
@@ -59,6 +59,7 @@ const (
 	StatusEnabled           = "enabled"
 	StatusDisabled          = "disabled"
 	MsgDomainMustNotBeEmpty = "domain must not be empty"
+	MsgKeyMustNotBeEmpty    = "key must not be empty"
 	MsgIllegalLabels        = "label value can not be empty, " +
 		"label can not be duplicated, please check query parameters"
 	MsgIllegalDepth     = "X-Depth must be number"

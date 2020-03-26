@@ -43,11 +43,13 @@ var (
 //KV provide api of KV entity
 type KV interface {
 	//below 3 methods is usually for admin console
+	Create(ctx context.Context, kv *model.KVDoc) (*model.KVDoc, error)
+	Update(ctx context.Context, kv *model.KVDoc) (*model.KVDoc, error)
 	CreateOrUpdate(ctx context.Context, kv *model.KVDoc) (*model.KVDoc, error)
 	List(ctx context.Context, domain, project string, options ...FindOption) (*model.KVResponse, error)
 	Delete(ctx context.Context, kvID string, domain, project string) error
 	//Get return kv by id
-	Get(ctx context.Context, domain, project, id string, options ...FindOption) (*model.KVResponse, error)
+	Get(ctx context.Context, domain, project, id string, options ...FindOption) (*model.KVDoc, error)
 }
 
 //History provide api of History entity

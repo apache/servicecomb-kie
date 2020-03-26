@@ -64,6 +64,7 @@ var (
 	ErrIDIsNil                = errors.New("id is empty")
 	ErrKvIDAndLabelIDNotMatch = errors.New("kvID and labelID do not match")
 	ErrRootCAMissing          = errors.New("rootCAFile is empty in config file")
+	ErrKVAlreadyExists        = errors.New("kv already exists")
 
 	ErrViewCreation = errors.New("can not create view")
 	ErrViewUpdate   = errors.New("can not update view")

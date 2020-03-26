@@ -26,6 +26,7 @@ import (
 	"github.com/apache/servicecomb-kie/pkg/model"
 	"github.com/apache/servicecomb-kie/server/pubsub"
 	"github.com/apache/servicecomb-kie/server/service"
+	"github.com/apache/servicecomb-kie/server/service/mongo/session"
 	goRestful "github.com/emicklei/go-restful"
 	"github.com/go-chassis/go-chassis/server/restful"
 	"github.com/go-mesh/openlogging"
@@ -35,10 +36,60 @@ import (
 type KVResource struct {
 }
 
-//Put create or update kv
+//Post create a kv
+func (r *KVResource) Post(context *restful.Context) {
+	var err error
+	project := context.ReadPathParameter(PathParameterProject)
+	kvDoc := new(model.KVDoc)
+	if err = readRequest(context, kvDoc); err != nil {
+		WriteErrResponse(context, http.StatusBadRequest, err.Error(), common.ContentTypeText)
+		return
+	}
+	if kvDoc.Key == "" {
+		WriteErrResponse(context, http.StatusBadRequest, common.MsgKeyMustNotBeEmpty, common.ContentTypeText)
+		return
+	}
+	domain := ReadDomain(context)
+	kvDoc.Domain = domain.(string)
+	kvDoc.Project = project
+	_, err = checkStatus(kvDoc.Status)
+	if err != nil {
+		WriteErrResponse(context, http.StatusInternalServerError, err.Error(), common.ContentTypeText)
+		return
+	}
+	kv, err := service.KVService.Create(context.Ctx, kvDoc)
+	if err != nil {
+		openlogging.Error(fmt.Sprintf("post [%v] err:%s", kvDoc, err.Error()))
+		if err == session.ErrKVAlreadyExists {
+			WriteErrResponse(context, http.StatusConflict, err.Error(), common.ContentTypeText)
+			return
+		}
+		WriteErrResponse(context, http.StatusInternalServerError, err.Error(), common.ContentTypeText)
+		return
+	}
+	err = pubsub.Publish(&pubsub.KVChangeEvent{
+		Key:      kvDoc.Key,
+		Labels:   kvDoc.Labels,
+		Project:  project,
+		DomainID: kvDoc.Domain,
+		Action:   pubsub.ActionPut,
+	})
+	if err != nil {
+		openlogging.Warn("lost kv change event when post:" + err.Error())
+	}
+	openlogging.Info(
+		fmt.Sprintf("post [%s] success", kvDoc.Key))
+	err = writeResponse(context, kv)
+	if err != nil {
+		openlogging.Error(err.Error())
+	}
+
+}
+
+//Put update a kv
 func (r *KVResource) Put(context *restful.Context) {
 	var err error
-	key := context.ReadPathParameter(PathParameterKey)
+	kvID := context.ReadPathParameter(common.QueryParamKVID)
 	project := context.ReadPathParameter(PathParameterProject)
 	kv := new(model.KVDoc)
 	if err = readRequest(context, kv); err != nil {
@@ -46,7 +97,7 @@ func (r *KVResource) Put(context *restful.Context) {
 		return
 	}
 	domain := ReadDomain(context)
-	kv.Key = key
+	kv.ID = kvID
 	kv.Domain = domain.(string)
 	kv.Project = project
 	_, err = checkStatus(kv.Status)
@@ -54,7 +105,7 @@ func (r *KVResource) Put(context *restful.Context) {
 		WriteErrResponse(context, http.StatusInternalServerError, err.Error(), common.ContentTypeText)
 		return
 	}
-	kv, err = service.KVService.CreateOrUpdate(context.Ctx, kv)
+	kv, err = service.KVService.Update(context.Ctx, kv)
 	if err != nil {
 		openlogging.Error(fmt.Sprintf("put [%v] err:%s", kv, err.Error()))
 		WriteErrResponse(context, http.StatusInternalServerError, err.Error(), common.ContentTypeText)
@@ -68,7 +119,7 @@ func (r *KVResource) Put(context *restful.Context) {
 		Action:   pubsub.ActionPut,
 	})
 	if err != nil {
-		openlogging.Warn("lost kv change event:" + err.Error())
+		openlogging.Warn("lost kv change event when put:" + err.Error())
 	}
 	openlogging.Info(
 		fmt.Sprintf("put [%s] success", kv.Key))
@@ -84,7 +135,7 @@ func (r *KVResource) GetByKey(rctx *restful.Context) {
 	var err error
 	key := rctx.ReadPathParameter(PathParameterKey)
 	if key == "" {
-		WriteErrResponse(rctx, http.StatusBadRequest, "key must not be empty", common.ContentTypeText)
+		WriteErrResponse(rctx, http.StatusBadRequest, common.MsgKeyMustNotBeEmpty, common.ContentTypeText)
 		return
 	}
 	project := rctx.ReadPathParameter(PathParameterProject)
@@ -213,12 +264,12 @@ func returnData(rctx *restful.Context, doc *model.KVDoc, offset, limit int64, se
 func (r *KVResource) Delete(context *restful.Context) {
 	project := context.ReadPathParameter(PathParameterProject)
 	domain := ReadDomain(context)
-	kvID := context.ReadQueryParameter(common.QueryParamKeyID)
+	kvID := context.ReadQueryParameter(common.QueryParamKVID)
 	if kvID == "" {
 		WriteErrResponse(context, http.StatusBadRequest, common.ErrKvIDMustNotEmpty, common.ContentTypeText)
 		return
 	}
-	result, err := service.KVService.Get(context.Ctx, domain.(string), project, kvID)
+	kv, err := service.KVService.Get(context.Ctx, domain.(string), project, kvID)
 	if err != nil && err != service.ErrKeyNotExists {
 		WriteErrResponse(context, http.StatusInternalServerError, err.Error(), common.ContentTypeText)
 		return
@@ -226,7 +277,6 @@ func (r *KVResource) Delete(context *restful.Context) {
 		context.WriteHeader(http.StatusNoContent)
 		return
 	}
-	kv := result.Data[0]
 	err = service.KVService.Delete(context.Ctx, kvID, domain.(string), project)
 	if err != nil {
 		openlogging.Error("delete failed ,", openlogging.WithTags(openlogging.Tags{
@@ -253,14 +303,31 @@ func (r *KVResource) Delete(context *restful.Context) {
 func (r *KVResource) URLPatterns() []restful.Route {
 	return []restful.Route{
 		{
-			Method:       http.MethodPut,
-			Path:         "/v1/{project}/kie/kv/{key}",
-			ResourceFunc: r.Put,
-			FuncDesc:     "create or update key value",
+			Method:       http.MethodPost,
+			Path:         "/v1/{project}/kie/kv",
+			ResourceFunc: r.Post,
+			FuncDesc:     "create a key value",
 			Parameters: []*restful.Parameters{
-				DocPathProject, DocPathKey, DocHeaderContentType,
+				DocPathProject, DocHeaderContentType,
 			},
-			Read: KVBody{},
+			Read: KVCreateBody{},
+			Returns: []*restful.Returns{
+				{
+					Code:  http.StatusOK,
+					Model: model.DocResponseSingleKey{},
+				},
+			},
+			Consumes: []string{goRestful.MIME_JSON, common.ContentTypeYaml},
+			Produces: []string{goRestful.MIME_JSON, common.ContentTypeYaml},
+		}, {
+			Method:       http.MethodPut,
+			Path:         "/v1/{project}/kie/kv/{kv_id}",
+			ResourceFunc: r.Put,
+			FuncDesc:     "update a key value",
+			Parameters: []*restful.Parameters{
+				DocPathProject, DocPathKeyID, DocHeaderContentType,
+			},
+			Read: KVUpdateBody{},
 			Returns: []*restful.Returns{
 				{
 					Code:  http.StatusOK,

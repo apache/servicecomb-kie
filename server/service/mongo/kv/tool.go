@@ -18,28 +18,10 @@
 package kv
 
 import (
-	"context"
 	"github.com/apache/servicecomb-kie/pkg/model"
 )
 
-//clearAll clean attr which don't need to return to client side
-func clearAll(kv *model.KVDoc) {
-	clearPart(kv)
-	kv.Labels = nil
-	kv.LabelID = ""
-}
 func clearPart(kv *model.KVDoc) {
 	kv.Domain = ""
 	kv.Project = ""
-}
-
-func findKVByID(ctx context.Context, domain, project, kvID string) (*model.KVResponse, error) {
-	kv, err := findKVDocByID(ctx, domain, project, kvID)
-	if err != nil {
-		return nil, err
-	}
-	return &model.KVResponse{
-		Total: 1,
-		Data:  []*model.KVDoc{kv},
-	}, nil
 }

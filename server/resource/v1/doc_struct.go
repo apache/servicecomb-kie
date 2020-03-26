@@ -90,7 +90,7 @@ var (
 	}
 	DocQueryKeyIDParameters = &restful.Parameters{
 		DataType:  "string",
-		Name:      common.QueryParamKeyID,
+		Name:      common.QueryParamKVID,
 		ParamType: goRestful.QueryParameterKind,
 		Required:  true,
 	}
@@ -155,17 +155,25 @@ var (
 	}
 	DocPathKeyID = &restful.Parameters{
 		DataType:  "string",
-		Name:      "key_id",
+		Name:      "kv_id",
 		ParamType: goRestful.PathParameterKind,
 		Required:  true,
 	}
 )
 
-//KVBody is open api doc
-type KVBody struct {
+//KVCreateBody is open api doc
+type KVCreateBody struct {
+	Key       string            `json:"key"`
 	Labels    map[string]string `json:"labels"`
-	ValueType string            `json:"value_type"`
+	Status    string            `json:"status"`
 	Value     string            `json:"value"`
+	ValueType string            `json:"value_type"`
+}
+
+//KVUpdateBody is open api doc
+type KVUpdateBody struct {
+	Status    string `json:"status"`
+	Value     string `json:"value"`
 }
 
 //ErrorMsg is open api doc
