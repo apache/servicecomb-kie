@@ -82,6 +82,7 @@ func updateKeyValue(ctx context.Context, kv *model.KVDoc) error {
 	ur, err := collection.UpdateOne(ctx, bson.M{"key": kv.Key, "label_id": kv.LabelID}, bson.D{
 		{"$set", bson.D{
 			{"value", kv.Value},
+			{"status", kv.Status},
 			{"checker", kv.Checker},
 			{"update_revision", kv.UpdateRevision},
 		}},
