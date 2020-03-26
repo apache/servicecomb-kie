@@ -108,8 +108,7 @@ func TestHistoryResource_GetPollingData(t *testing.T) {
 	t.Run("get polling data", func(t *testing.T) {
 		r, _ := http.NewRequest("GET", "/v1/test/kie/track?sessionId=test", nil)
 		noopH := &handler2.NoopAuthHandler{}
-		track := handler2.TrackHandler{}
-		chain, _ := handler.CreateChain(common.Provider, "testchain3", noopH.Name(), track.Name())
+		chain, _ := handler.CreateChain(common.Provider, "testchain3", noopH.Name())
 		r.Header.Set("Content-Type", "application/json")
 		revision := &v1.HistoryResource{}
 		c, err := restfultest.New(revision, chain)
