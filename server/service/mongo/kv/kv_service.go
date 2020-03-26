@@ -123,19 +123,19 @@ func (s *Service) Exist(ctx context.Context, domain, key string, project string,
 		}
 		return kvs[0], nil
 	}
-	kvs, err := s.FindKV(ctx, domain, project,
+	kvs, err := s.List(ctx, domain, project,
 		service.WithExactLabels(),
 		service.WithLabels(opts.Labels),
 		service.WithKey(key))
 	if err != nil {
-		openlogging.Error(err.Error())
+		openlogging.Error("check kv exist: " + err.Error())
 		return nil, err
 	}
-	if len(kvs) != 1 {
+	if len(kvs.Data) != 1 {
 		return nil, session.ErrTooMany
 	}
 
-	return kvs[0].Data[0], nil
+	return kvs.Data[0], nil
 
 }
 
@@ -193,10 +193,8 @@ func (s *Service) List(ctx context.Context, domain, project string, options ...s
 	return result, nil
 }
 
-//FindKV get kvs by key, labels
-//because labels has a a lot of combination,
-//you can use WithDepth(0) to return only one kv which's labels exactly match the criteria
-func (s *Service) FindKV(ctx context.Context, domain string, project string, options ...service.FindOption) ([]*model.KVResponse, error) {
+//Get get kvs by id
+func (s *Service) Get(ctx context.Context, domain, project, id string, options ...service.FindOption) (*model.KVResponse, error) {
 	opts := service.FindOptions{}
 	for _, o := range options {
 		o(&opts)
@@ -210,36 +208,8 @@ func (s *Service) FindKV(ctx context.Context, domain string, project string, opt
 	if project == "" {
 		return nil, session.ErrMissingProject
 	}
-
-	if opts.ID != "" {
-		openlogging.Debug(MsgFindOneKeyByID, openlogging.WithTags(openlogging.Tags{
-			"id":     opts.ID,
-			"key":    opts.Key,
-			"labels": opts.Labels,
-		}))
-		return findKVByID(ctx, domain, project, opts.ID)
+	if id == "" {
+		return nil, session.ErrIDIsNil
 	}
-
-	cur, _, err := findKV(ctx, domain, project, opts)
-	if err != nil {
-		return nil, err
-	}
-	defer cur.Close(ctx)
-
-	if opts.Depth == 0 && opts.Key != "" {
-		openlogging.Debug(MsgFindOneKey, openlogging.WithTags(
-			map[string]interface{}{
-				"key":    opts.Key,
-				"label":  opts.Labels,
-				"domain": domain,
-			},
-		))
-		return cursorToOneKV(ctx, cur, opts.Labels)
-	}
-	openlogging.Debug(MsgFindMoreKey, openlogging.WithTags(openlogging.Tags{
-		"depth":  opts.Depth,
-		"key":    opts.Key,
-		"labels": opts.Labels,
-	}))
-	return findMoreKV(ctx, cur, &opts)
+	return findKVByID(ctx, domain, project, id)
 }

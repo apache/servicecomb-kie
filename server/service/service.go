@@ -46,8 +46,8 @@ type KV interface {
 	CreateOrUpdate(ctx context.Context, kv *model.KVDoc) (*model.KVDoc, error)
 	List(ctx context.Context, domain, project string, options ...FindOption) (*model.KVResponse, error)
 	Delete(ctx context.Context, kvID string, domain, project string) error
-	//FindKV is usually for service to pull configs
-	FindKV(ctx context.Context, domain, project string, options ...FindOption) ([]*model.KVResponse, error)
+	//Get return kv by id
+	Get(ctx context.Context, domain, project, id string, options ...FindOption) (*model.KVResponse, error)
 }
 
 //History provide api of History entity

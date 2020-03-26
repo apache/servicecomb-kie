@@ -117,7 +117,8 @@ func TestKVResource_Put(t *testing.T) {
 	t.Run("put kv,label is service and version", func(t *testing.T) {
 		kv := &model.KVDoc{
 			Value: "1s",
-			Labels: map[string]string{"service": "utService",
+			Labels: map[string]string{
+				"service": "utService",
 				"version": "1.0.0"},
 		}
 		j, _ := json.Marshal(kv)
@@ -155,6 +156,7 @@ func TestKVResource_List(t *testing.T) {
 		err = json.Unmarshal(body, result)
 		assert.NoError(t, err)
 		assert.Equal(t, 3, len(result.Data))
+
 	})
 	var rev string
 	t.Run("list kv by service label, exact match,should return 2 kv", func(t *testing.T) {
