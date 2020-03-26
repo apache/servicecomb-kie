@@ -20,7 +20,7 @@ paths:
         - name: wait
           in: query
           description: wait until any kv changed. for example wait=5s, server will not
-            response until 5 seconds during that time window, if any kv changed, server
+            response until 5 seconds, during that time window, if any kv changed, server
             will return 200 and kv list, otherwise return 304 and empty body
           type: string
         - name: match
@@ -109,7 +109,7 @@ paths:
         - name: wait
           in: query
           description: wait until any kv changed. for example wait=5s, server will not
-            response until 5 seconds during that time window, if any kv changed, server
+            response until 5 seconds, during that time window, if any kv changed, server
             will return 200 and kv list, otherwise return 304 and empty body
           type: string
         - name: match

@@ -58,10 +58,10 @@ func TestHistoryResource_GetRevisions(t *testing.T) {
 	c.ServeHTTP(resp, r)
 	body, err := ioutil.ReadAll(resp.Body)
 	assert.NoError(t, err)
-	data := make([]*model.KVDoc, 0)
+	var data model.KVResponse
 	err = json.Unmarshal(body, &data)
 	assert.NoError(t, err)
-	before := len(data)
+	before := len(data.Data)
 	assert.GreaterOrEqual(t, before, 1)
 
 	t.Run("put again, should has 2 revision", func(t *testing.T) {
@@ -79,9 +79,9 @@ func TestHistoryResource_GetRevisions(t *testing.T) {
 		c.ServeHTTP(resp, r)
 		body, err := ioutil.ReadAll(resp.Body)
 		assert.NoError(t, err)
-		data := make([]*model.KVDoc, 0)
+		var data model.KVResponse
 		err = json.Unmarshal(body, &data)
-		assert.Equal(t, before+1, len(data))
+		assert.Equal(t, before+1, len(data.Data))
 	})
 
 }
