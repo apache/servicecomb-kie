@@ -54,7 +54,7 @@ func (r *HistoryResource) GetRevisions(context *restful.Context) {
 		return
 	}
 	key := context.ReadQueryParameter("key")
-	revisions, _, err := service.HistoryService.GetHistory(context.Ctx, keyID,
+	revisions, err := service.HistoryService.GetHistory(context.Ctx, keyID,
 		service.WithKey(key),
 		service.WithOffset(offset),
 		service.WithLimit(limit))
@@ -64,10 +64,6 @@ func (r *HistoryResource) GetRevisions(context *restful.Context) {
 			return
 		}
 		WriteErrResponse(context, http.StatusInternalServerError, err.Error(), common.ContentTypeText)
-		return
-	}
-	if len(revisions) == 0 {
-		WriteErrResponse(context, http.StatusNotFound, "no revisions found", common.ContentTypeText)
 		return
 	}
 	err = writeResponse(context, revisions)

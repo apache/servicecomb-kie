@@ -35,7 +35,7 @@ const (
 	maxHistoryNum = 100
 )
 
-func getHistoryByKeyID(ctx context.Context, filter bson.M, offset, limit int64) ([]*model.KVDoc, int, error) {
+func getHistoryByKeyID(ctx context.Context, filter bson.M, offset, limit int64) (*model.KVResponse, error) {
 	collection := session.GetDB().Collection(session.CollectionKVRevision)
 	opt := options.Find().SetSort(map[string]interface{}{
 		"revision": -1,
@@ -46,11 +46,11 @@ func getHistoryByKeyID(ctx context.Context, filter bson.M, offset, limit int64) 
 	}
 	curTotal, err := collection.CountDocuments(ctx, filter)
 	if err != nil {
-		return nil, 0, err
+		return nil, err
 	}
 	cur, err := collection.Find(ctx, filter, opt)
 	if err != nil {
-		return nil, 0, err
+		return nil, err
 	}
 	kvs := make([]*model.KVDoc, 0)
 	var exist bool
@@ -59,15 +59,21 @@ func getHistoryByKeyID(ctx context.Context, filter bson.M, offset, limit int64) 
 		err := cur.Decode(&elem)
 		if err != nil {
 			openlogging.Error("decode error: " + err.Error())
-			return nil, 0, err
+			return nil, err
 		}
 		exist = true
+		elem.Domain = ""
+		elem.Project = ""
 		kvs = append(kvs, &elem)
 	}
 	if !exist {
-		return nil, 0, service.ErrRevisionNotExist
+		return nil, service.ErrRevisionNotExist
 	}
-	return kvs, int(curTotal), nil
+	result := &model.KVResponse{
+		Data:  kvs,
+		Total: int(curTotal),
+	}
+	return result, nil
 }
 
 //AddHistory add kv history

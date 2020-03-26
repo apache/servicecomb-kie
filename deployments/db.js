@@ -44,10 +44,10 @@ db.createCollection( "kv", {
                     bsonType: "object"
                 },
                 create_time: {
-                    bsonType: "string",
+                    bsonType: "long",
                 },
                 update_time: {
-                    bsonType: "string",
+                    bsonType: "long",
                 },
                 status: {
                     bsonType: "string",

@@ -48,8 +48,9 @@ func createKey(ctx context.Context, kv *model.KVDoc) (*model.KVDoc, error) {
 	}
 	kv.UpdateRevision = revision
 	kv.CreateRevision = revision
-	kv.CreateTime = time.Now().String()
-	kv.UpdateTime = time.Now().String()
+	now := time.Now().Unix()
+	kv.CreateTime = now
+	kv.UpdateTime = now
 	_, err = collection.InsertOne(ctx, kv)
 	if err != nil {
 		openlogging.Error("create error", openlogging.WithTags(openlogging.Tags{
@@ -73,7 +74,7 @@ func createKey(ctx context.Context, kv *model.KVDoc) (*model.KVDoc, error) {
 //updateKeyValue update key value and add new revision
 func updateKeyValue(ctx context.Context, kv *model.KVDoc) error {
 	var err error
-	kv.UpdateTime = time.Now().String()
+	kv.UpdateTime = time.Now().Unix()
 	kv.UpdateRevision, err = counter.ApplyRevision(ctx, kv.Domain)
 	if err != nil {
 		return err
@@ -239,7 +240,7 @@ func findKVByLabelID(ctx context.Context, domain, labelID, key string, project s
 
 }
 
-//findKVByID get kvs by kv id
+//findKVDocByID get kvs by kv id
 func findKVDocByID(ctx context.Context, domain, project, kvID string) (*model.KVDoc, error) {
 	filter := bson.M{"id": kvID, "domain": domain, "project": project}
 	kvs, err := findOneKey(ctx, filter)
