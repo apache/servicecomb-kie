@@ -62,6 +62,7 @@ var (
 	ErrKeyMustNotEmpty = errors.New("must supply key if you want to get exact one result")
 
 	ErrIDIsNil                = errors.New("id is empty")
+	ErrKeyIsNil               = errors.New("key must not be empty")
 	ErrKvIDAndLabelIDNotMatch = errors.New("kvID and labelID do not match")
 	ErrRootCAMissing          = errors.New("rootCAFile is empty in config file")
 	ErrKVAlreadyExists        = errors.New("kv already exists")

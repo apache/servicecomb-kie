@@ -13,6 +13,9 @@ paths:
           in: path
           required: true
           type: string
+        - name: key
+          in: query
+          type: string
         - name: label
           in: query
           description: label pairs,for example &label=service:order&label=version:1.0.0
@@ -91,70 +94,18 @@ paths:
           description: ""
           schema:
             $ref: '#/definitions/DocResponseSingleKey'
-    delete:
-      summary: delete key by kv ID.
-      operationId: Delete
+  /v1/{project}/kie/kv/{kv_id}:
+    get:
+      summary: get key values by kv_id
+      operationId: Get
       parameters:
         - name: project
           in: path
           required: true
           type: string
         - name: kv_id
-          in: query
-          required: true
-          type: string
-      consumes:
-        - '*/*'
-      produces:
-        - '*/*'
-      responses:
-        "204":
-          description: Delete success
-        "500":
-          description: Server error
-  /v1/{project}/kie/kv/{key}:
-    get:
-      summary: get key values by key and labels
-      operationId: GetByKey
-      parameters:
-        - name: project
           in: path
           required: true
-          type: string
-        - name: key
-          in: path
-          required: true
-          type: string
-        - name: label
-          in: query
-          description: label pairs,for example &label=service:order&label=version:1.0.0
-          type: string
-        - name: wait
-          in: query
-          description: wait until any kv changed. for example wait=5s, server will not
-            response until 5 seconds, during that time window, if any kv changed, server
-            will return 200 and kv list, otherwise return 304 and empty body
-          type: string
-        - name: match
-          in: query
-          description: match works with label query param, it specifies label match
-            pattern. if it is empty, server will return kv which's labels partial match
-            the label query param. uf it is exact, server will return kv which's labels
-            exact match the label query param
-          type: string
-        - name: revision
-          in: query
-          description: each time you query,server will return a number in header X-Kie-Revision.
-            you can record it in client side, use this number as param value. if current
-            revision is greater than it, server will return data
-          type: string
-        - name: limit
-          in: query
-          description: pagination
-          type: string
-        - name: offset
-          in: query
-          description: pagination
           type: string
       consumes:
         - '*/*'
@@ -165,15 +116,14 @@ paths:
         "200":
           description: get key value success
           schema:
-            $ref: '#/definitions/DocResponseGetKey'
+            $ref: '#/definitions/DocResponseSingleKey'
           headers:
             X-Kie-Revision:
               description: cluster latest revision number, if key value is changed,
                 it will increase.
               type: integer
-        "304":
-          description: empty body
-  /v1/{project}/kie/kv/{kv_id}:
+        "404":
+          description: key value not found
     put:
       summary: update a key value
       operationId: Put
@@ -208,6 +158,29 @@ paths:
           description: ""
           schema:
             $ref: '#/definitions/DocResponseSingleKey'
+    delete:
+      summary: delete key by kv ID.
+      operationId: Delete
+      parameters:
+        - name: project
+          in: path
+          required: true
+          type: string
+        - name: kv_id
+          in: path
+          required: true
+          type: string
+      consumes:
+        - '*/*'
+      produces:
+        - '*/*'
+      responses:
+        "204":
+          description: delete success
+        "404":
+          description: no key value found for deletion
+        "500":
+          description: server error
   /v1/{project}/kie/revision/{kv_id}:
     get:
       summary: get all revisions by key id
@@ -231,9 +204,7 @@ paths:
         "200":
           description: ""
           schema:
-            type: array
-            items:
-              $ref: '#/definitions/DocResponseSingleKey'
+            $ref: '#/definitions/DocResponseGetKey'
   /v1/{project}/kie/track:
     get:
       summary: get polling tracks of clients of kie server
@@ -357,9 +328,9 @@ definitions:
       params:
         type: object
         additionalProperties:
-          type: interface {}
+          type: string
       response_body:
-        type: interface {}
+        type: string
       response_code:
         type: integer
         format: int32

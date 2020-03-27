@@ -22,6 +22,7 @@ import (
 	"encoding/json"
 	"errors"
 	"github.com/apache/servicecomb-kie/pkg/model"
+	"github.com/apache/servicecomb-kie/server/service/mongo/session"
 	"net/http"
 	"strconv"
 	"strings"
@@ -39,12 +40,9 @@ import (
 
 //const of server
 const (
-	HeaderUserAgent      = "User-Agent"
-	HeaderSessionID      = "X-Session-Id"
-	PathParameterProject = "project"
-	PathParameterKey     = "key"
-	AttributeDomainKey   = "domain"
-	MsgLabelsNotFound    = "can not find by labels"
+	HeaderUserAgent    = "User-Agent"
+	HeaderSessionID    = "X-Session-Id"
+	AttributeDomainKey = "domain"
 )
 
 //err
@@ -210,6 +208,52 @@ func checkPagination(offsetStr, limitStr string) (int64, int64, error) {
 		}
 	}
 	return offset, limit, err
+}
+
+func validatePost(kv *model.KVDoc) error {
+	err := checkDomainAndProject(kv.Domain, kv.Project)
+	if err != nil {
+		return err
+	}
+	if kv.Key == "" {
+		return session.ErrKeyIsNil
+	}
+	_, err = checkStatus(kv.Status)
+	return err
+}
+
+func validatePut(kv *model.KVDoc) error {
+	err := validateGet(kv.Domain, kv.Project, kv.ID)
+	if err != nil {
+		return err
+	}
+	_, err = checkStatus(kv.Status)
+	return err
+}
+
+func validateGet(domain, project, kvID string) error {
+	if kvID == "" {
+		return session.ErrIDIsNil
+	}
+	return checkDomainAndProject(domain, project)
+}
+
+func validateList(domain, project string) error {
+	return checkDomainAndProject(domain, project)
+}
+
+func validateDelete(domain, project, kvID string) error {
+	return validateGet(domain, project, kvID)
+}
+
+func checkDomainAndProject(domain, project string) error {
+	if domain == "" {
+		return session.ErrMissingDomain
+	}
+	if project == "" {
+		return session.ErrMissingProject
+	}
+	return nil
 }
 
 func checkStatus(status string) (string, error) {

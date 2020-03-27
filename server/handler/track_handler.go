@@ -77,7 +77,7 @@ func (h *TrackHandler) Handle(chain *handler.Chain, inv *invocation.Invocation, 
 		data.PollingData = map[string]interface{}{
 			"revStr":  revStr,
 			"wait":    wait,
-			"project": req.HeaderParameter(v1.PathParameterProject),
+			"project": req.HeaderParameter(common.PathParameterProject),
 			"labels":  req.QueryParameter("label"),
 		}
 		_, err := track.CreateOrUpdate(inv.Ctx, data)

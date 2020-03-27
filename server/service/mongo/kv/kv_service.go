@@ -32,9 +32,10 @@ import (
 
 //const of kv service
 const (
-	MsgFindKvFailed    = "find kv failed, deadline exceeded"
-	MsgFindOneKey      = "find one key"
-	FmtErrFindKvFailed = "can not find kv in %s"
+	MsgFindKvFailed      = "find kv failed, deadline exceeded"
+	MsgFindOneKey        = "find one key"
+	MsgCreateLabelFailed = "create label failed"
+	FmtErrFindKvFailed   = "can not find kv in %s"
 )
 
 //Service operate data in mongodb
@@ -45,9 +46,6 @@ type Service struct {
 //Create will create a key value record
 func (s *Service) Create(ctx context.Context, kv *model.KVDoc) (*model.KVDoc, error) {
 	ctx, _ = context.WithTimeout(ctx, session.Timeout)
-	if kv.Domain == "" {
-		return nil, session.ErrMissingDomain
-	}
 	//check whether the project has certain labels or not
 	labelID, err := label.Exist(ctx, kv.Domain, kv.Project, kv.Labels)
 	if err != nil {
@@ -59,7 +57,7 @@ func (s *Service) Create(ctx context.Context, kv *model.KVDoc) (*model.KVDoc, er
 			}
 			l, err = label.CreateLabel(ctx, l)
 			if err != nil {
-				openlogging.Error("create label failed", openlogging.WithTags(openlogging.Tags{
+				openlogging.Error(MsgCreateLabelFailed, openlogging.WithTags(openlogging.Tags{
 					"k":      kv.Key,
 					"domain": kv.Domain,
 				}))
@@ -94,9 +92,6 @@ func (s *Service) Create(ctx context.Context, kv *model.KVDoc) (*model.KVDoc, er
 //Update will update a key value record
 func (s *Service) Update(ctx context.Context, kv *model.KVDoc) (*model.KVDoc, error) {
 	ctx, _ = context.WithTimeout(ctx, session.Timeout)
-	if kv.Domain == "" {
-		return nil, session.ErrMissingDomain
-	}
 	oldKV, err := s.Get(ctx, kv.Domain, kv.Project, kv.ID)
 	if err != nil {
 		return nil, err
@@ -133,7 +128,7 @@ func (s *Service) CreateOrUpdate(ctx context.Context, kv *model.KVDoc) (*model.K
 			}
 			l, err = label.CreateLabel(ctx, l)
 			if err != nil {
-				openlogging.Error("create label failed", openlogging.WithTags(openlogging.Tags{
+				openlogging.Error(MsgCreateLabelFailed, openlogging.WithTags(openlogging.Tags{
 					"k":      kv.Key,
 					"domain": kv.Domain,
 				}))
@@ -210,15 +205,6 @@ func (s *Service) Exist(ctx context.Context, domain, key string, project string,
 //domain=tenant
 func (s *Service) Delete(ctx context.Context, kvID string, domain string, project string) error {
 	ctx, _ = context.WithTimeout(context.Background(), session.Timeout)
-	if domain == "" {
-		return session.ErrMissingDomain
-	}
-	if project == "" {
-		return session.ErrMissingProject
-	}
-	if kvID == "" {
-		return errors.New("key id is empty")
-	}
 	//delete kv
 	err := deleteKV(ctx, kvID, project, domain)
 	if err != nil {
@@ -268,15 +254,6 @@ func (s *Service) Get(ctx context.Context, domain, project, id string, options .
 	}
 	if opts.Timeout == 0 {
 		opts.Timeout = session.DefaultTimeout
-	}
-	if domain == "" {
-		return nil, session.ErrMissingDomain
-	}
-	if project == "" {
-		return nil, session.ErrMissingProject
-	}
-	if id == "" {
-		return nil, session.ErrIDIsNil
 	}
 	return findKVDocByID(ctx, domain, project, id)
 }

@@ -21,6 +21,7 @@ import (
 	"github.com/apache/servicecomb-kie/pkg/model"
 )
 
+//clearPart remove domain and project of kv
 func clearPart(kv *model.KVDoc) {
 	kv.Domain = ""
 	kv.Project = ""
