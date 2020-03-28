@@ -28,7 +28,8 @@ import (
 	"testing"
 )
 
-//
+var id string
+
 func TestService_CreateOrUpdate(t *testing.T) {
 	var err error
 	config.Configurations = &config.Config{DB: config.DB{URI: "mongodb://kie:123@127.0.0.1:27017/kie"}}
@@ -101,30 +102,57 @@ func TestService_CreateOrUpdate(t *testing.T) {
 
 }
 
-func TestService_Delete(t *testing.T) {
+func TestService_Create(t *testing.T) {
 	kvsvc := &kv.Service{}
-	t.Run("delete key by kvID", func(t *testing.T) {
-		kv1, err := kvsvc.CreateOrUpdate(context.Background(), &model.KVDoc{
+	t.Run("create kv timeout,with labels app and service", func(t *testing.T) {
+		result, err := kvsvc.Create(context.TODO(), &model.KVDoc{
 			Key:   "timeout",
-			Value: "20s",
+			Value: "2s",
 			Labels: map[string]string{
-				"env": "test",
+				"app":     "mall",
+				"service": "utCart",
 			},
 			Domain:  "default",
 			Project: "kv-test",
 		})
 		assert.NoError(t, err)
+		assert.NotEmpty(t, result.ID)
+		assert.Equal(t, "2s", result.Value)
+		id = result.ID
+	})
+	t.Run("create the same kv", func(t *testing.T) {
+		_, err := kvsvc.Create(context.TODO(), &model.KVDoc{
+			Key:   "timeout",
+			Value: "2s",
+			Labels: map[string]string{
+				"app":     "mall",
+				"service": "utCart",
+			},
+			Domain:  "default",
+			Project: "kv-test",
+		})
+		assert.EqualError(t, err, session.ErrKVAlreadyExists.Error())
+	})
+}
 
-		err = kvsvc.Delete(context.TODO(), kv1.ID, "default", "kv-test")
+func TestService_Update(t *testing.T) {
+	kvsvc := &kv.Service{}
+	t.Run("update kv by kvID", func(t *testing.T) {
+		result, err := kvsvc.Update(context.TODO(), &model.KVDoc{
+			ID:      id,
+			Value:   "3s",
+			Domain:  "default",
+			Project: "kv-test",
+		})
 		assert.NoError(t, err)
+		assert.Equal(t, "3s", result.Value)
+	})
+}
 
-	})
-	t.Run("miss id", func(t *testing.T) {
-		err := kvsvc.Delete(context.TODO(), "", "default", "kv-test")
-		assert.Error(t, err)
-	})
-	t.Run("miss domain", func(t *testing.T) {
-		err := kvsvc.Delete(context.TODO(), "2", "", "kv-test")
-		assert.Equal(t, session.ErrMissingDomain, err)
+func TestService_Delete(t *testing.T) {
+	kvsvc := &kv.Service{}
+	t.Run("delete kv by kvID", func(t *testing.T) {
+		err := kvsvc.Delete(context.TODO(), id, "default", "kv-test")
+		assert.NoError(t, err)
 	})
 }
