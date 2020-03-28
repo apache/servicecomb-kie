@@ -22,6 +22,7 @@ import (
 	"encoding/json"
 	common2 "github.com/apache/servicecomb-kie/pkg/common"
 	"github.com/apache/servicecomb-kie/pkg/model"
+	"github.com/apache/servicecomb-kie/pkg/validate"
 	"github.com/apache/servicecomb-kie/server/config"
 	handler2 "github.com/apache/servicecomb-kie/server/handler"
 	"github.com/apache/servicecomb-kie/server/pubsub"
@@ -44,6 +45,9 @@ import (
 )
 
 func init() {
+	if err := validate.Init(); err != nil {
+		panic(err)
+	}
 	log.Init(log.Config{
 		Writers:       []string{"stdout"},
 		LoggerLevel:   "DEBUG",

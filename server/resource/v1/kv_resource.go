@@ -25,6 +25,7 @@ import (
 
 	"github.com/apache/servicecomb-kie/pkg/common"
 	"github.com/apache/servicecomb-kie/pkg/model"
+	"github.com/apache/servicecomb-kie/pkg/validate"
 	"github.com/apache/servicecomb-kie/server/pubsub"
 	"github.com/apache/servicecomb-kie/server/service"
 	"github.com/apache/servicecomb-kie/server/service/mongo/session"
@@ -49,19 +50,19 @@ func (r *KVResource) Post(rctx *restful.Context) {
 	domain := ReadDomain(rctx)
 	kv.Domain = domain.(string)
 	kv.Project = project
-	err = validatePost(kv)
+	err = validate.Validate(kv)
 	if err != nil {
-		WriteErrResponse(rctx, http.StatusBadRequest, err.Error(), common.ContentTypeText)
+		WriteErrResponse(rctx, http.StatusBadRequest, err.Error(), common.ContentTypeJSON)
 		return
 	}
 	kv, err = service.KVService.Create(rctx.Ctx, kv)
 	if err != nil {
 		openlogging.Error(fmt.Sprintf("post err:%s", err.Error()))
 		if err == session.ErrKVAlreadyExists {
-			WriteErrResponse(rctx, http.StatusConflict, err.Error(), common.ContentTypeText)
+			WriteErrResponse(rctx, http.StatusConflict, err.Error(), common.ContentTypeJSON)
 			return
 		}
-		WriteErrResponse(rctx, http.StatusInternalServerError, "create kv failed", common.ContentTypeText)
+		WriteErrResponse(rctx, http.StatusInternalServerError, "create kv failed", common.ContentTypeJSON)
 		return
 	}
 	err = pubsub.Publish(&pubsub.KVChangeEvent{
@@ -90,7 +91,7 @@ func (r *KVResource) Put(rctx *restful.Context) {
 	project := rctx.ReadPathParameter(common.PathParameterProject)
 	kv := new(model.KVDoc)
 	if err = readRequest(rctx, kv); err != nil {
-		WriteErrResponse(rctx, http.StatusBadRequest, err.Error(), common.ContentTypeText)
+		WriteErrResponse(rctx, http.StatusBadRequest, err.Error(), common.ContentTypeJSON)
 		return
 	}
 	domain := ReadDomain(rctx)
@@ -99,13 +100,13 @@ func (r *KVResource) Put(rctx *restful.Context) {
 	kv.Project = project
 	err = validatePut(kv)
 	if err != nil {
-		WriteErrResponse(rctx, http.StatusBadRequest, err.Error(), common.ContentTypeText)
+		WriteErrResponse(rctx, http.StatusBadRequest, err.Error(), common.ContentTypeJSON)
 		return
 	}
 	kv, err = service.KVService.Update(rctx.Ctx, kv)
 	if err != nil {
 		openlogging.Error(fmt.Sprintf("put [%s] err:%s", kvID, err.Error()))
-		WriteErrResponse(rctx, http.StatusInternalServerError, "update kv failed", common.ContentTypeText)
+		WriteErrResponse(rctx, http.StatusInternalServerError, "update kv failed", common.ContentTypeJSON)
 		return
 	}
 	err = pubsub.Publish(&pubsub.KVChangeEvent{

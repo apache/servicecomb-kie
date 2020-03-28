@@ -31,19 +31,19 @@ type LabelDoc struct {
 type KVDoc struct {
 	ID             string `json:"id,omitempty" bson:"id,omitempty" yaml:"id,omitempty" swag:"string"`
 	LabelID        string `json:"label_id,omitempty" bson:"label_id,omitempty" yaml:"label_id,omitempty"`
-	Key            string `json:"key" yaml:"key"`
-	Value          string `json:"value,omitempty" yaml:"value,omitempty"`
-	ValueType      string `json:"value_type,omitempty" bson:"value_type,omitempty" yaml:"value_type,omitempty"` //ini,json,text,yaml,properties
-	Checker        string `json:"check,omitempty" yaml:"check,omitempty"`                                       //python script
+	Key            string `json:"key" yaml:"key" validate:"key"`
+	Value          string `json:"value,omitempty" yaml:"value,omitempty" validate:"ascii,min=1,max=2097152"`
+	ValueType      string `json:"value_type,omitempty" bson:"value_type,omitempty" yaml:"value_type,omitempty" validate:"valueType"` //ini,json,text,yaml,properties
+	Checker        string `json:"check,omitempty" yaml:"check,omitempty"`                                                            //python script
 	CreateRevision int64  `json:"create_revision,omitempty" bson:"create_revision," yaml:"create_revision,omitempty"`
 	UpdateRevision int64  `json:"update_revision,omitempty" bson:"update_revision," yaml:"update_revision,omitempty"`
-	Project        string `json:"project,omitempty" yaml:"project,omitempty"`
-	Status         string `json:"status,omitempty" yaml:"status,omitempty"`
+	Project        string `json:"project,omitempty" yaml:"project,omitempty" validate:"key"`
+	Status         string `json:"status,omitempty" yaml:"status,omitempty" validate:"kvStatus"`
 	CreateTime     int64  `json:"create_time,omitempty" bson:"create_time," yaml:"create_time,omitempty"`
 	UpdateTime     int64  `json:"update_time,omitempty" bson:"update_time," yaml:"update_time,omitempty"`
 
-	Labels map[string]string `json:"labels,omitempty" yaml:"labels,omitempty"` //redundant
-	Domain string            `json:"domain,omitempty" yaml:"domain,omitempty"` //redundant
+	Labels map[string]string `json:"labels,omitempty" yaml:"labels,omitempty" validate:"max=64,dive,keys,key,endkeys,key"` //redundant
+	Domain string            `json:"domain,omitempty" yaml:"domain,omitempty" validate:"key"`                              //redundant
 
 }
 
