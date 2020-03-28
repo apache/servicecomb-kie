@@ -32,17 +32,79 @@ import (
 
 //const of kv service
 const (
-	MsgFindKvFailed    = "find kv failed, deadline exceeded"
-	MsgFindOneKey      = "find one key"
-	MsgFindOneKeyByID  = "find one key by id"
-	MsgFindMoreKey     = "find more"
-	MsgHitExactLabels  = "hit exact labels"
-	FmtErrFindKvFailed = "can not find kv in %s"
+	MsgFindKvFailed      = "find kv failed, deadline exceeded"
+	MsgFindOneKey        = "find one key"
+	MsgCreateLabelFailed = "create label failed"
+	FmtErrFindKvFailed   = "can not find kv in %s"
 )
 
 //Service operate data in mongodb
 type Service struct {
 	timeout time.Duration
+}
+
+//Create will create a key value record
+func (s *Service) Create(ctx context.Context, kv *model.KVDoc) (*model.KVDoc, error) {
+	ctx, _ = context.WithTimeout(ctx, session.Timeout)
+	//check whether the project has certain labels or not
+	labelID, err := label.Exist(ctx, kv.Domain, kv.Project, kv.Labels)
+	if err != nil {
+		if err == session.ErrLabelNotExists {
+			l := &model.LabelDoc{
+				Domain:  kv.Domain,
+				Labels:  kv.Labels,
+				Project: kv.Project,
+			}
+			l, err = label.CreateLabel(ctx, l)
+			if err != nil {
+				openlogging.Error(MsgCreateLabelFailed, openlogging.WithTags(openlogging.Tags{
+					"k":      kv.Key,
+					"domain": kv.Domain,
+				}))
+				return nil, err
+			}
+			labelID = l.ID
+		} else {
+			return nil, err
+		}
+	}
+	kv.LabelID = labelID
+	if kv.ValueType == "" {
+		kv.ValueType = session.DefaultValueType
+	}
+	_, err = s.Exist(ctx, kv.Domain, kv.Key, kv.Project, service.WithLabelID(kv.LabelID))
+	if err == nil {
+		return nil, session.ErrKVAlreadyExists
+	}
+	if err != service.ErrKeyNotExists {
+		openlogging.Error(err.Error())
+		return nil, err
+	}
+	kv, err = createKey(ctx, kv)
+	if err != nil {
+		openlogging.Error(err.Error())
+		return nil, err
+	}
+	clearPart(kv)
+	return kv, nil
+}
+
+//Update will update a key value record
+func (s *Service) Update(ctx context.Context, kv *model.KVDoc) (*model.KVDoc, error) {
+	ctx, _ = context.WithTimeout(ctx, session.Timeout)
+	oldKV, err := s.Get(ctx, kv.Domain, kv.Project, kv.ID)
+	if err != nil {
+		return nil, err
+	}
+	oldKV.Status = kv.Status
+	oldKV.Value = kv.Value
+	err = updateKeyValue(ctx, oldKV)
+	if err != nil {
+		return nil, err
+	}
+	clearPart(oldKV)
+	return oldKV, nil
+
 }
 
 //CreateOrUpdate will create or update a key value record
@@ -66,7 +128,7 @@ func (s *Service) CreateOrUpdate(ctx context.Context, kv *model.KVDoc) (*model.K
 			}
 			l, err = label.CreateLabel(ctx, l)
 			if err != nil {
-				openlogging.Error("create label failed", openlogging.WithTags(openlogging.Tags{
+				openlogging.Error(MsgCreateLabelFailed, openlogging.WithTags(openlogging.Tags{
 					"k":      kv.Key,
 					"domain": kv.Domain,
 				}))
@@ -143,15 +205,6 @@ func (s *Service) Exist(ctx context.Context, domain, key string, project string,
 //domain=tenant
 func (s *Service) Delete(ctx context.Context, kvID string, domain string, project string) error {
 	ctx, _ = context.WithTimeout(context.Background(), session.Timeout)
-	if domain == "" {
-		return session.ErrMissingDomain
-	}
-	if project == "" {
-		return session.ErrMissingProject
-	}
-	if kvID == "" {
-		return errors.New("key id is empty")
-	}
 	//delete kv
 	err := deleteKV(ctx, kvID, project, domain)
 	if err != nil {
@@ -194,7 +247,7 @@ func (s *Service) List(ctx context.Context, domain, project string, options ...s
 }
 
 //Get get kvs by id
-func (s *Service) Get(ctx context.Context, domain, project, id string, options ...service.FindOption) (*model.KVResponse, error) {
+func (s *Service) Get(ctx context.Context, domain, project, id string, options ...service.FindOption) (*model.KVDoc, error) {
 	opts := service.FindOptions{}
 	for _, o := range options {
 		o(&opts)
@@ -202,14 +255,5 @@ func (s *Service) Get(ctx context.Context, domain, project, id string, options .
 	if opts.Timeout == 0 {
 		opts.Timeout = session.DefaultTimeout
 	}
-	if domain == "" {
-		return nil, session.ErrMissingDomain
-	}
-	if project == "" {
-		return nil, session.ErrMissingProject
-	}
-	if id == "" {
-		return nil, session.ErrIDIsNil
-	}
-	return findKVByID(ctx, domain, project, id)
+	return findKVDocByID(ctx, domain, project, id)
 }

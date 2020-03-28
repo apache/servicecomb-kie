@@ -21,16 +21,18 @@ import "time"
 
 //match mode
 const (
-	QueryParamQ      = "q"
-	QueryByLabelsCon = "&"
-	QueryParamWait   = "wait"
-	QueryParamRev    = "revision"
-	QueryParamMatch  = "match"
-	QueryParamKeyID  = "kv_id"
-	QueryParamLabel  = "label"
-	QueryParamStatus = "status"
-	QueryParamOffset = "offset"
-	QueryParamLimit  = "limit"
+	QueryParamQ          = "q"
+	QueryByLabelsCon     = "&"
+	QueryParamWait       = "wait"
+	QueryParamRev        = "revision"
+	QueryParamMatch      = "match"
+	QueryParamKey        = "key"
+	QueryParamLabel      = "label"
+	QueryParamStatus     = "status"
+	QueryParamOffset     = "offset"
+	QueryParamLimit      = "limit"
+	PathParamKVID        = "kv_id"
+	PathParameterProject = "project"
 	//polling data
 	QueryParamSessionID = "sessionId"
 	QueryParamIP        = "ip"
@@ -59,13 +61,13 @@ const (
 	StatusEnabled           = "enabled"
 	StatusDisabled          = "disabled"
 	MsgDomainMustNotBeEmpty = "domain must not be empty"
+	MsgDeleteKVFailed       = "delete kv failed"
 	MsgIllegalLabels        = "label value can not be empty, " +
 		"label can not be duplicated, please check query parameters"
-	MsgIllegalDepth     = "X-Depth must be number"
-	MsgInvalidWait      = "wait param should be formed with number and time unit like 5s,100ms, and less than 5m"
-	MsgInvalidRev       = "revision param should be formed with number greater than 0"
-	ErrKvIDMustNotEmpty = "must supply kv id if you want to remove key"
-	RespBodyContextKey  = "responseBody"
+	MsgIllegalDepth    = "X-Depth must be number"
+	MsgInvalidWait     = "wait param should be formed with number and time unit like 5s,100ms, and less than 5m"
+	MsgInvalidRev      = "revision param should be formed with number greater than 0"
+	RespBodyContextKey = "responseBody"
 
 	MaxWait = 5 * time.Minute
 )

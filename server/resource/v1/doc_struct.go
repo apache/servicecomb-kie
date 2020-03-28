@@ -88,11 +88,10 @@ var (
 			"if it is empty, server will return kv which's labels partial match the label query param. " +
 			"uf it is exact, server will return kv which's labels exact match the label query param",
 	}
-	DocQueryKeyIDParameters = &restful.Parameters{
+	DocQueryKeyParameters = &restful.Parameters{
 		DataType:  "string",
-		Name:      common.QueryParamKeyID,
+		Name:      common.QueryParamKey,
 		ParamType: goRestful.QueryParameterKind,
-		Required:  true,
 	}
 	DocQueryLabelParameters = &restful.Parameters{
 		DataType:  "string",
@@ -141,31 +140,33 @@ var (
 
 //swagger doc path params
 var (
-	DocPathKey = &restful.Parameters{
-		DataType:  "string",
-		Name:      "key",
-		ParamType: goRestful.PathParameterKind,
-		Required:  true,
-	}
 	DocPathProject = &restful.Parameters{
 		DataType:  "string",
-		Name:      "project",
+		Name:      common.PathParameterProject,
 		ParamType: goRestful.PathParameterKind,
 		Required:  true,
 	}
 	DocPathKeyID = &restful.Parameters{
 		DataType:  "string",
-		Name:      "key_id",
+		Name:      common.PathParamKVID,
 		ParamType: goRestful.PathParameterKind,
 		Required:  true,
 	}
 )
 
-//KVBody is open api doc
-type KVBody struct {
+//KVCreateBody is open api doc
+type KVCreateBody struct {
+	Key       string            `json:"key"`
 	Labels    map[string]string `json:"labels"`
-	ValueType string            `json:"value_type"`
+	Status    string            `json:"status"`
 	Value     string            `json:"value"`
+	ValueType string            `json:"value_type"`
+}
+
+//KVUpdateBody is open api doc
+type KVUpdateBody struct {
+	Status string `json:"status"`
+	Value  string `json:"value"`
 }
 
 //ErrorMsg is open api doc

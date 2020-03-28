@@ -40,7 +40,7 @@ type HistoryResource struct {
 //GetRevisions search key only by label
 func (r *HistoryResource) GetRevisions(context *restful.Context) {
 	var err error
-	keyID := context.ReadPathParameter("key_id")
+	kvID := context.ReadPathParameter(common.PathParamKVID)
 	offsetStr := context.ReadQueryParameter(common.QueryParamOffset)
 	limitStr := context.ReadQueryParameter(common.QueryParamLimit)
 	offset, limit, err := checkPagination(offsetStr, limitStr)
@@ -48,14 +48,12 @@ func (r *HistoryResource) GetRevisions(context *restful.Context) {
 		WriteErrResponse(context, http.StatusBadRequest, err.Error(), common.ContentTypeText)
 		return
 	}
-	if keyID == "" {
-		openlogging.Error("key id is nil")
-		WriteErrResponse(context, http.StatusForbidden, "key_id must not be empty", common.ContentTypeText)
+	if kvID == "" {
+		openlogging.Error("kv id is nil")
+		WriteErrResponse(context, http.StatusForbidden, "kv_id must not be empty", common.ContentTypeText)
 		return
 	}
-	key := context.ReadQueryParameter("key")
-	revisions, err := service.HistoryService.GetHistory(context.Ctx, keyID,
-		service.WithKey(key),
+	revisions, err := service.HistoryService.GetHistory(context.Ctx, kvID,
 		service.WithOffset(offset),
 		service.WithLimit(limit))
 	if err != nil {
@@ -138,7 +136,7 @@ func (r *HistoryResource) URLPatterns() []restful.Route {
 	return []restful.Route{
 		{
 			Method:       http.MethodGet,
-			Path:         "/v1/{project}/kie/revision/{key_id}",
+			Path:         "/v1/{project}/kie/revision/{kv_id}",
 			ResourceFunc: r.GetRevisions,
 			FuncDesc:     "get all revisions by key id",
 			Parameters: []*restful.Parameters{
@@ -147,7 +145,7 @@ func (r *HistoryResource) URLPatterns() []restful.Route {
 			Returns: []*restful.Returns{
 				{
 					Code:  http.StatusOK,
-					Model: []model.DocResponseSingleKey{},
+					Model: model.DocResponseGetKey{},
 				},
 			},
 			Consumes: []string{goRestful.MIME_JSON, common.ContentTypeYaml},
