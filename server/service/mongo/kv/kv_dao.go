@@ -85,6 +85,7 @@ func updateKeyValue(ctx context.Context, kv *model.KVDoc) error {
 			{"value", kv.Value},
 			{"status", kv.Status},
 			{"checker", kv.Checker},
+			{"update_time", kv.UpdateTime},
 			{"update_revision", kv.UpdateRevision},
 		}},
 	})
