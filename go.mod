@@ -6,8 +6,11 @@ require (
 	github.com/go-chassis/go-chassis v0.0.0-20200322084331-36849ab2cb10
 	github.com/go-chassis/paas-lager v1.1.1
 	github.com/go-mesh/openlogging v1.0.1
+	github.com/go-playground/universal-translator v0.17.0
+	github.com/go-playground/validator v9.31.0+incompatible
 	github.com/hashicorp/mdns v1.0.1 // indirect
 	github.com/hashicorp/serf v0.8.5
+	github.com/leodido/go-urn v1.2.0 // indirect
 	github.com/satori/go.uuid v1.2.0
 	github.com/stretchr/testify v1.4.0
 	github.com/urfave/cli v1.20.0

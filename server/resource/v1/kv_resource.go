@@ -25,6 +25,7 @@ import (
 
 	"github.com/apache/servicecomb-kie/pkg/common"
 	"github.com/apache/servicecomb-kie/pkg/model"
+	"github.com/apache/servicecomb-kie/pkg/validate"
 	"github.com/apache/servicecomb-kie/server/pubsub"
 	"github.com/apache/servicecomb-kie/server/service"
 	"github.com/apache/servicecomb-kie/server/service/mongo/session"
@@ -43,25 +44,25 @@ func (r *KVResource) Post(rctx *restful.Context) {
 	project := rctx.ReadPathParameter(common.PathParameterProject)
 	kv := new(model.KVDoc)
 	if err = readRequest(rctx, kv); err != nil {
-		WriteErrResponse(rctx, http.StatusBadRequest, err.Error(), common.ContentTypeText)
+		WriteErrResponse(rctx, http.StatusBadRequest, err.Error())
 		return
 	}
 	domain := ReadDomain(rctx)
 	kv.Domain = domain.(string)
 	kv.Project = project
-	err = validatePost(kv)
+	err = validate.Validate(kv)
 	if err != nil {
-		WriteErrResponse(rctx, http.StatusBadRequest, err.Error(), common.ContentTypeText)
+		WriteErrResponse(rctx, http.StatusBadRequest, err.Error())
 		return
 	}
 	kv, err = service.KVService.Create(rctx.Ctx, kv)
 	if err != nil {
 		openlogging.Error(fmt.Sprintf("post err:%s", err.Error()))
 		if err == session.ErrKVAlreadyExists {
-			WriteErrResponse(rctx, http.StatusConflict, err.Error(), common.ContentTypeText)
+			WriteErrResponse(rctx, http.StatusConflict, err.Error())
 			return
 		}
-		WriteErrResponse(rctx, http.StatusInternalServerError, "create kv failed", common.ContentTypeText)
+		WriteErrResponse(rctx, http.StatusInternalServerError, "create kv failed")
 		return
 	}
 	err = pubsub.Publish(&pubsub.KVChangeEvent{
@@ -90,7 +91,7 @@ func (r *KVResource) Put(rctx *restful.Context) {
 	project := rctx.ReadPathParameter(common.PathParameterProject)
 	kv := new(model.KVDoc)
 	if err = readRequest(rctx, kv); err != nil {
-		WriteErrResponse(rctx, http.StatusBadRequest, err.Error(), common.ContentTypeText)
+		WriteErrResponse(rctx, http.StatusBadRequest, err.Error())
 		return
 	}
 	domain := ReadDomain(rctx)
@@ -99,13 +100,13 @@ func (r *KVResource) Put(rctx *restful.Context) {
 	kv.Project = project
 	err = validatePut(kv)
 	if err != nil {
-		WriteErrResponse(rctx, http.StatusBadRequest, err.Error(), common.ContentTypeText)
+		WriteErrResponse(rctx, http.StatusBadRequest, err.Error())
 		return
 	}
 	kv, err = service.KVService.Update(rctx.Ctx, kv)
 	if err != nil {
 		openlogging.Error(fmt.Sprintf("put [%s] err:%s", kvID, err.Error()))
-		WriteErrResponse(rctx, http.StatusInternalServerError, "update kv failed", common.ContentTypeText)
+		WriteErrResponse(rctx, http.StatusInternalServerError, "update kv failed")
 		return
 	}
 	err = pubsub.Publish(&pubsub.KVChangeEvent{
@@ -134,17 +135,17 @@ func (r *KVResource) Get(rctx *restful.Context) {
 	kvID := rctx.ReadPathParameter(common.PathParamKVID)
 	err := validateGet(domain, project, kvID)
 	if err != nil {
-		WriteErrResponse(rctx, http.StatusBadRequest, err.Error(), common.ContentTypeText)
+		WriteErrResponse(rctx, http.StatusBadRequest, err.Error())
 		return
 	}
 	kv, err := service.KVService.Get(rctx.Ctx, domain, project, kvID)
 	if err != nil {
 		openlogging.Error("kv_resource: " + err.Error())
 		if err == service.ErrKeyNotExists {
-			WriteErrResponse(rctx, http.StatusNotFound, err.Error(), common.ContentTypeText)
+			WriteErrResponse(rctx, http.StatusNotFound, err.Error())
 			return
 		}
-		WriteErrResponse(rctx, http.StatusInternalServerError, "get kv failed", common.ContentTypeText)
+		WriteErrResponse(rctx, http.StatusInternalServerError, "get kv failed")
 		return
 	}
 	kv.Domain = ""
@@ -164,12 +165,12 @@ func (r *KVResource) List(rctx *restful.Context) {
 	domain := ReadDomain(rctx).(string)
 	err = validateList(domain, project)
 	if err != nil {
-		WriteErrResponse(rctx, http.StatusBadRequest, err.Error(), common.ContentTypeText)
+		WriteErrResponse(rctx, http.StatusBadRequest, err.Error())
 		return
 	}
 	labels, err := getLabels(rctx)
 	if err != nil {
-		WriteErrResponse(rctx, http.StatusBadRequest, common.MsgIllegalLabels, common.ContentTypeText)
+		WriteErrResponse(rctx, http.StatusBadRequest, common.MsgIllegalLabels)
 		return
 	}
 
@@ -177,14 +178,14 @@ func (r *KVResource) List(rctx *restful.Context) {
 	limitStr := rctx.ReadQueryParameter(common.QueryParamLimit)
 	offset, limit, err := checkPagination(offsetStr, limitStr)
 	if err != nil {
-		WriteErrResponse(rctx, http.StatusBadRequest, err.Error(), common.ContentTypeText)
+		WriteErrResponse(rctx, http.StatusBadRequest, err.Error())
 		return
 	}
 	sessionID := rctx.ReadHeader(HeaderSessionID)
 	statusStr := rctx.ReadQueryParameter(common.QueryParamStatus)
 	status, err := checkStatus(statusStr)
 	if err != nil {
-		WriteErrResponse(rctx, http.StatusBadRequest, err.Error(), common.ContentTypeText)
+		WriteErrResponse(rctx, http.StatusBadRequest, err.Error())
 		return
 	}
 	returnData(rctx, &model.KVDoc{
@@ -211,7 +212,7 @@ func returnData(rctx *restful.Context, doc *model.KVDoc, offset, limit int64, se
 			DomainID:  doc.Domain,
 		})
 		if err != nil {
-			WriteErrResponse(rctx, http.StatusBadRequest, err.Error(), common.ContentTypeText)
+			WriteErrResponse(rctx, http.StatusBadRequest, err.Error())
 			return
 		}
 		if changed {
@@ -223,10 +224,10 @@ func returnData(rctx *restful.Context, doc *model.KVDoc, offset, limit int64, se
 		revised, err := isRevised(rctx.Ctx, revStr, doc.Domain)
 		if err != nil {
 			if err == ErrInvalidRev {
-				WriteErrResponse(rctx, http.StatusBadRequest, err.Error(), common.ContentTypeText)
+				WriteErrResponse(rctx, http.StatusBadRequest, err.Error())
 				return
 			}
-			WriteErrResponse(rctx, http.StatusInternalServerError, err.Error(), common.ContentTypeText)
+			WriteErrResponse(rctx, http.StatusInternalServerError, err.Error())
 			return
 		}
 		if revised {
@@ -240,7 +241,7 @@ func returnData(rctx *restful.Context, doc *model.KVDoc, offset, limit int64, se
 				DomainID:  doc.Domain,
 			})
 			if err != nil {
-				WriteErrResponse(rctx, http.StatusBadRequest, err.Error(), common.ContentTypeText)
+				WriteErrResponse(rctx, http.StatusBadRequest, err.Error())
 				return
 			}
 			if changed {
@@ -262,17 +263,17 @@ func (r *KVResource) Delete(rctx *restful.Context) {
 	kvID := rctx.ReadPathParameter(common.PathParamKVID)
 	err := validateDelete(domain, project, kvID)
 	if err != nil {
-		WriteErrResponse(rctx, http.StatusBadRequest, err.Error(), common.ContentTypeText)
+		WriteErrResponse(rctx, http.StatusBadRequest, err.Error())
 		return
 	}
 	kv, err := service.KVService.Get(rctx.Ctx, domain, project, kvID)
 	if err != nil {
 		openlogging.Error("kv_resource: " + err.Error())
 		if err == service.ErrKeyNotExists {
-			WriteErrResponse(rctx, http.StatusNotFound, err.Error(), common.ContentTypeText)
+			WriteErrResponse(rctx, http.StatusNotFound, err.Error())
 			return
 		}
-		WriteErrResponse(rctx, http.StatusInternalServerError, common.MsgDeleteKVFailed, common.ContentTypeText)
+		WriteErrResponse(rctx, http.StatusInternalServerError, common.MsgDeleteKVFailed)
 		return
 	}
 	err = service.KVService.Delete(rctx.Ctx, kvID, domain, project)
@@ -281,7 +282,7 @@ func (r *KVResource) Delete(rctx *restful.Context) {
 			"kvID":  kvID,
 			"error": err.Error(),
 		}))
-		WriteErrResponse(rctx, http.StatusInternalServerError, common.MsgDeleteKVFailed, common.ContentTypeText)
+		WriteErrResponse(rctx, http.StatusInternalServerError, common.MsgDeleteKVFailed)
 		return
 	}
 	err = pubsub.Publish(&pubsub.KVChangeEvent{

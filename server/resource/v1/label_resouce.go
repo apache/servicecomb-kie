@@ -20,27 +20,27 @@ func (r *LabelResource) PutLabel(context *restful.Context) {
 	var err error
 	entity := new(model.LabelDoc)
 	if err = readRequest(context, entity); err != nil {
-		WriteErrResponse(context, http.StatusBadRequest, err.Error(), common.ContentTypeText)
+		WriteErrResponse(context, http.StatusBadRequest, err.Error())
 		return
 	}
 	entity.Project = context.ReadPathParameter("project")
 	domain := ReadDomain(context)
 	if domain == nil {
-		WriteErrResponse(context, http.StatusInternalServerError, common.MsgDomainMustNotBeEmpty, common.ContentTypeText)
+		WriteErrResponse(context, http.StatusInternalServerError, common.MsgDomainMustNotBeEmpty)
 		return
 	}
 	entity.Domain = domain.(string)
 	res, err := service.LabelService.CreateOrUpdate(context.Ctx, entity)
 	if err != nil {
 		if err == service.ErrRevisionNotExist {
-			WriteErrResponse(context, http.StatusNotFound, err.Error(), common.ContentTypeText)
+			WriteErrResponse(context, http.StatusNotFound, err.Error())
 			return
 		}
-		WriteErrResponse(context, http.StatusInternalServerError, err.Error(), common.ContentTypeText)
+		WriteErrResponse(context, http.StatusInternalServerError, err.Error())
 		return
 	}
 	if res == nil {
-		WriteErrResponse(context, http.StatusNotFound, "put alias fail", common.ContentTypeText)
+		WriteErrResponse(context, http.StatusNotFound, "put alias fail")
 		return
 	}
 	if entity.ID == "" {

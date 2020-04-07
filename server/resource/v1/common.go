@@ -96,12 +96,11 @@ func ReadLabelCombinations(req *goRestful.Request) ([]map[string]string, error) 
 }
 
 //WriteErrResponse write error message to client
-func WriteErrResponse(context *restful.Context, status int, msg, contentType string) {
+func WriteErrResponse(context *restful.Context, status int, msg string) {
+	context.Resp.Header().Set(goRestful.HEADER_ContentType, goRestful.MIME_JSON)
 	context.WriteHeader(status)
 	b, _ := json.MarshalIndent(&ErrorMsg{Msg: msg}, "", " ")
-	context.ReadRestfulResponse().AddHeader(goRestful.HEADER_ContentType, contentType)
 	context.Write(b)
-
 }
 
 func readRequest(ctx *restful.Context, v interface{}) error {
@@ -210,18 +209,6 @@ func checkPagination(offsetStr, limitStr string) (int64, int64, error) {
 	return offset, limit, err
 }
 
-func validatePost(kv *model.KVDoc) error {
-	err := checkDomainAndProject(kv.Domain, kv.Project)
-	if err != nil {
-		return err
-	}
-	if kv.Key == "" {
-		return session.ErrKeyIsNil
-	}
-	_, err = checkStatus(kv.Status)
-	return err
-}
-
 func validatePut(kv *model.KVDoc) error {
 	err := validateGet(kv.Domain, kv.Project, kv.ID)
 	if err != nil {
@@ -281,13 +268,13 @@ func queryAndResponse(rctx *restful.Context, doc *model.KVDoc, offset, limit int
 	}
 	rev, err := service.RevisionService.GetRevision(rctx.Ctx, doc.Domain)
 	if err != nil {
-		WriteErrResponse(rctx, http.StatusInternalServerError, err.Error(), common.ContentTypeText)
+		WriteErrResponse(rctx, http.StatusInternalServerError, err.Error())
 		return
 	}
 	kv, err := service.KVService.List(rctx.Ctx, doc.Domain, doc.Project, opts...)
 	if err != nil {
 		openlogging.Error("common: " + err.Error())
-		WriteErrResponse(rctx, http.StatusInternalServerError, common.MsgDBError, common.ContentTypeText)
+		WriteErrResponse(rctx, http.StatusInternalServerError, common.MsgDBError)
 		return
 	}
 	rctx.ReadResponseWriter().Header().Set(common.HeaderRevision, strconv.FormatInt(rev, 10))
