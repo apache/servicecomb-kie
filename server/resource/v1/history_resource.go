@@ -45,12 +45,12 @@ func (r *HistoryResource) GetRevisions(context *restful.Context) {
 	limitStr := context.ReadQueryParameter(common.QueryParamLimit)
 	offset, limit, err := checkPagination(offsetStr, limitStr)
 	if err != nil {
-		WriteErrResponse(context, http.StatusBadRequest, err.Error(), common.ContentTypeText)
+		WriteErrResponse(context, http.StatusBadRequest, err.Error())
 		return
 	}
 	if kvID == "" {
 		openlogging.Error("kv id is nil")
-		WriteErrResponse(context, http.StatusForbidden, "kv_id must not be empty", common.ContentTypeText)
+		WriteErrResponse(context, http.StatusForbidden, "kv_id must not be empty")
 		return
 	}
 	revisions, err := service.HistoryService.GetHistory(context.Ctx, kvID,
@@ -58,10 +58,10 @@ func (r *HistoryResource) GetRevisions(context *restful.Context) {
 		service.WithLimit(limit))
 	if err != nil {
 		if err == service.ErrRevisionNotExist {
-			WriteErrResponse(context, http.StatusNotFound, err.Error(), common.ContentTypeText)
+			WriteErrResponse(context, http.StatusNotFound, err.Error())
 			return
 		}
-		WriteErrResponse(context, http.StatusInternalServerError, err.Error(), common.ContentTypeText)
+		WriteErrResponse(context, http.StatusInternalServerError, err.Error())
 		return
 	}
 	err = writeResponse(context, revisions)
@@ -91,17 +91,17 @@ func (r *HistoryResource) GetPollingData(context *restful.Context) {
 	}
 	domain := ReadDomain(context)
 	if domain == nil {
-		WriteErrResponse(context, http.StatusInternalServerError, common.MsgDomainMustNotBeEmpty, common.ContentTypeText)
+		WriteErrResponse(context, http.StatusInternalServerError, common.MsgDomainMustNotBeEmpty)
 		return
 	}
 	query.Domain = domain.(string)
 	records, err := track.Get(context.Ctx, query)
 	if err != nil {
 		if err == service.ErrRecordNotExists {
-			WriteErrResponse(context, http.StatusNotFound, err.Error(), common.ContentTypeText)
+			WriteErrResponse(context, http.StatusNotFound, err.Error())
 			return
 		}
-		WriteErrResponse(context, http.StatusInternalServerError, err.Error(), common.ContentTypeText)
+		WriteErrResponse(context, http.StatusInternalServerError, err.Error())
 		return
 	}
 	resp := &model.PollingDataResponse{}
@@ -119,7 +119,7 @@ func (r *HistoryResource) HealthCheck(context *restful.Context) {
 	resp := &model.DocHealthCheck{}
 	latest, err := service.RevisionService.GetRevision(context.Ctx, domain.(string))
 	if err != nil {
-		WriteErrResponse(context, http.StatusInternalServerError, err.Error(), common.ContentTypeText)
+		WriteErrResponse(context, http.StatusInternalServerError, err.Error())
 		return
 	}
 	resp.Revision = strconv.FormatInt(latest, 10)

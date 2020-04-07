@@ -1,13 +1,11 @@
 package validate
 
-const key = "key"
-
 var defaultValidator = NewValidator()
 
 // custom validate rules
 // please use different tag names from third party tags
 var customRules = []*RegexValidateRule{
-	NewRule(key, `^[a-zA-Z0-9]*$|^[a-zA-Z0-9][a-zA-Z0-9_\-.]*[a-zA-Z0-9]$`, &Option{Min: 1, Max: 256}),
+	NewRule("commonName", `^[a-zA-Z0-9]*$|^[a-zA-Z0-9][a-zA-Z0-9_\-.]*[a-zA-Z0-9]$`, &Option{Min: 1, Max: 256}),
 	NewRule("valueType", `^(ini|json|text|yaml|properties){0,1}$`, nil),
 	NewRule("kvStatus", `^(enabled|disabled){0,1}$`, nil),
 }
