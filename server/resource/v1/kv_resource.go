@@ -20,6 +20,7 @@ package v1
 
 import (
 	"context"
+	"encoding/json"
 	"fmt"
 	"net/http"
 
@@ -44,7 +45,7 @@ func (r *KVResource) Post(rctx *restful.Context) {
 	project := rctx.ReadPathParameter(common.PathParameterProject)
 	kv := new(model.KVDoc)
 	if err = readRequest(rctx, kv); err != nil {
-		WriteErrResponse(rctx, http.StatusBadRequest, err.Error())
+		WriteErrResponse(rctx, http.StatusBadRequest, fmt.Sprintf(FmtReadRequestError, err))
 		return
 	}
 	domain := ReadDomain(rctx)
@@ -91,7 +92,7 @@ func (r *KVResource) Put(rctx *restful.Context) {
 	project := rctx.ReadPathParameter(common.PathParameterProject)
 	kv := new(model.KVDoc)
 	if err = readRequest(rctx, kv); err != nil {
-		WriteErrResponse(rctx, http.StatusBadRequest, err.Error())
+		WriteErrResponse(rctx, http.StatusBadRequest, fmt.Sprintf(FmtReadRequestError, err))
 		return
 	}
 	domain := ReadDomain(rctx)
@@ -256,7 +257,7 @@ func returnData(rctx *restful.Context, doc *model.KVDoc, offset, limit int64, se
 	}
 }
 
-//Delete deletes key by ids
+//Delete deletes one kv by id
 func (r *KVResource) Delete(rctx *restful.Context) {
 	project := rctx.ReadPathParameter(common.PathParameterProject)
 	domain := ReadDomain(rctx).(string)
@@ -266,22 +267,16 @@ func (r *KVResource) Delete(rctx *restful.Context) {
 		WriteErrResponse(rctx, http.StatusBadRequest, err.Error())
 		return
 	}
-	kv, err := service.KVService.Get(rctx.Ctx, domain, project, kvID)
+	kv, err := service.KVService.FindOneAndDelete(rctx.Ctx, kvID, domain, project)
 	if err != nil {
-		openlogging.Error("kv_resource: " + err.Error())
+		openlogging.Error("delete failed, ", openlogging.WithTags(openlogging.Tags{
+			"kvID":  kvID,
+			"error": err.Error(),
+		}))
 		if err == service.ErrKeyNotExists {
 			WriteErrResponse(rctx, http.StatusNotFound, err.Error())
 			return
 		}
-		WriteErrResponse(rctx, http.StatusInternalServerError, common.MsgDeleteKVFailed)
-		return
-	}
-	err = service.KVService.Delete(rctx.Ctx, kvID, domain, project)
-	if err != nil {
-		openlogging.Error("delete failed ,", openlogging.WithTags(openlogging.Tags{
-			"kvID":  kvID,
-			"error": err.Error(),
-		}))
 		WriteErrResponse(rctx, http.StatusInternalServerError, common.MsgDeleteKVFailed)
 		return
 	}
@@ -298,6 +293,48 @@ func (r *KVResource) Delete(rctx *restful.Context) {
 	rctx.WriteHeader(http.StatusNoContent)
 }
 
+//DeleteList deletes multiple kvs by ids
+func (r *KVResource) DeleteList(rctx *restful.Context) {
+	project := rctx.ReadPathParameter(common.PathParameterProject)
+	domain := ReadDomain(rctx).(string)
+	b := new(DeleteBody)
+	if err := json.NewDecoder(rctx.ReadRequest().Body).Decode(b); err != nil {
+		WriteErrResponse(rctx, http.StatusBadRequest, fmt.Sprintf(FmtReadRequestError, err))
+		return
+	}
+	err := validateDeleteList(domain, project)
+	if err != nil {
+		WriteErrResponse(rctx, http.StatusBadRequest, err.Error())
+		return
+	}
+	kvs, err := service.KVService.FindManyAndDelete(rctx.Ctx, b.IDs, domain, project)
+	if err != nil {
+		if err == service.ErrKeyNotExists {
+			rctx.WriteHeader(http.StatusNoContent)
+			return
+		}
+		openlogging.Error("delete list failed, ", openlogging.WithTags(openlogging.Tags{
+			"kvIDs": b.IDs,
+			"error": err.Error(),
+		}))
+		WriteErrResponse(rctx, http.StatusInternalServerError, common.MsgDeleteKVFailed)
+		return
+	}
+	for _, kv := range kvs {
+		err = pubsub.Publish(&pubsub.KVChangeEvent{
+			Key:      kv.Key,
+			Labels:   kv.Labels,
+			Project:  project,
+			DomainID: domain,
+			Action:   pubsub.ActionDelete,
+		})
+		if err != nil {
+			openlogging.Warn("lost kv change event:" + err.Error())
+		}
+	}
+	rctx.WriteHeader(http.StatusNoContent)
+}
+
 //URLPatterns defined config operations
 func (r *KVResource) URLPatterns() []restful.Route {
 	return []restful.Route{
@@ -307,7 +344,7 @@ func (r *KVResource) URLPatterns() []restful.Route {
 			ResourceFunc: r.Post,
 			FuncDesc:     "create a key value",
 			Parameters: []*restful.Parameters{
-				DocPathProject, DocHeaderContentType,
+				DocPathProject, DocHeaderContentTypeJSONAndYaml,
 			},
 			Read: KVCreateBody{},
 			Returns: []*restful.Returns{
@@ -324,7 +361,7 @@ func (r *KVResource) URLPatterns() []restful.Route {
 			ResourceFunc: r.Put,
 			FuncDesc:     "update a key value",
 			Parameters: []*restful.Parameters{
-				DocPathProject, DocPathKeyID, DocHeaderContentType,
+				DocPathProject, DocPathKeyID, DocHeaderContentTypeJSONAndYaml,
 			},
 			Read: KVUpdateBody{},
 			Returns: []*restful.Returns{
@@ -403,6 +440,27 @@ func (r *KVResource) URLPatterns() []restful.Route {
 					Message: "server error",
 				},
 			},
+		}, {
+			Method:       http.MethodDelete,
+			Path:         "/v1/{project}/kie/kv",
+			ResourceFunc: r.DeleteList,
+			FuncDesc:     "delete keys.",
+			Parameters: []*restful.Parameters{
+				DocPathProject, DocHeaderContentTypeJSON,
+			},
+			Read: DeleteBody{},
+			Returns: []*restful.Returns{
+				{
+					Code:    http.StatusNoContent,
+					Message: "delete success",
+				},
+				{
+					Code:    http.StatusInternalServerError,
+					Message: "server error",
+				},
+			},
+			Consumes: []string{goRestful.MIME_JSON},
+			Produces: []string{goRestful.MIME_JSON},
 		},
 	}
 }

@@ -94,6 +94,34 @@ paths:
           description: ""
           schema:
             $ref: '#/definitions/DocResponseSingleKey'
+    delete:
+      summary: delete keys.
+      operationId: DeleteList
+      parameters:
+        - name: project
+          in: path
+          required: true
+          type: string
+        - name: Content-Type
+          in: header
+          description: used to indicate the media type of the resource, the value only
+            can be application/json
+          required: true
+          type: string
+        - name: body
+          in: body
+          required: true
+          schema:
+            $ref: '#/definitions/v1.DeleteBody'
+      consumes:
+        - application/json
+      produces:
+        - application/json
+      responses:
+        "204":
+          description: delete success
+        "500":
+          description: server error
   /v1/{project}/kie/kv/{kv_id}:
     get:
       summary: get key values by kv_id
@@ -344,6 +372,13 @@ definitions:
         type: string
       user_agent:
         type: string
+  v1.DeleteBody:
+    type: object
+    properties:
+      ids:
+        type: array
+        items:
+          type: string
   v1.KVCreateBody:
     type: object
     properties:

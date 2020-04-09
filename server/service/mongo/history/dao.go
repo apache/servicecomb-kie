@@ -96,10 +96,11 @@ func AddHistory(ctx context.Context, kv *model.KVDoc) error {
 
 //AddDeleteTime add delete time to all revisions of the kv,
 //thus these revisions will be automatically deleted by TTL index.
-func AddDeleteTime(ctx context.Context, kvID, project, domain string) error {
+func AddDeleteTime(ctx context.Context, kvIDs []string, project, domain string) error {
 	collection := session.GetDB().Collection(session.CollectionKVRevision)
 	now := time.Now()
-	_, err := collection.UpdateMany(ctx, bson.M{"id": kvID, "project": project, "domain": domain}, bson.D{
+	filter := bson.D{{"id", bson.M{"$in": kvIDs}}, {"project", project}, {"domain", domain}}
+	_, err := collection.UpdateMany(ctx, filter, bson.D{
 		{"$set", bson.D{
 			{"delete_time", now},
 		}},
@@ -107,7 +108,7 @@ func AddDeleteTime(ctx context.Context, kvID, project, domain string) error {
 	if err != nil {
 		return err
 	}
-	openlogging.Debug(fmt.Sprintf("added delete time [%s] to key [%s]", now.String(), kvID))
+	openlogging.Debug(fmt.Sprintf("added delete time [%s] to kvs [%v]", now.String(), kvIDs))
 	return nil
 }
 

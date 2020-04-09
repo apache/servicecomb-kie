@@ -152,7 +152,7 @@ func TestService_Update(t *testing.T) {
 func TestService_Delete(t *testing.T) {
 	kvsvc := &kv.Service{}
 	t.Run("delete kv by kvID", func(t *testing.T) {
-		err := kvsvc.Delete(context.TODO(), id, "default", "kv-test")
+		_, err := kvsvc.FindOneAndDelete(context.TODO(), id, "default", "kv-test")
 		assert.NoError(t, err)
 	})
 }

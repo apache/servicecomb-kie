@@ -32,12 +32,19 @@ var (
 		ParamType: goRestful.HeaderParameterKind,
 		Desc:      "integer, default is 1, if you set match policy, you can set,depth to decide label number",
 	}
-	DocHeaderContentType = &restful.Parameters{
+	DocHeaderContentTypeJSONAndYaml = &restful.Parameters{
 		DataType:  "string",
 		Name:      common.HeaderContentType,
 		ParamType: goRestful.HeaderParameterKind,
 		Required:  true,
 		Desc:      "used to indicate the media type of the resource, the value can be application/json or text/yaml",
+	}
+	DocHeaderContentTypeJSON = &restful.Parameters{
+		DataType:  "string",
+		Name:      common.HeaderContentType,
+		ParamType: goRestful.HeaderParameterKind,
+		Required:  true,
+		Desc:      "used to indicate the media type of the resource, the value only can be application/json",
 	}
 )
 
@@ -167,6 +174,11 @@ type KVCreateBody struct {
 type KVUpdateBody struct {
 	Status string `json:"status"`
 	Value  string `json:"value"`
+}
+
+//DeleteBody is the request body struct of delete multiple kvs interface
+type DeleteBody struct {
+	IDs []string `json:"ids"`
 }
 
 //ErrorMsg is open api doc

@@ -45,10 +45,10 @@ func TestHistoryResource_GetRevisions(t *testing.T) {
 			"test": "revisions",
 		},
 		Domain:  "default",
-		Project: "test",
+		Project: "history_test",
 	}
 	kv, _ = service.KVService.CreateOrUpdate(context.Background(), kv)
-	path := fmt.Sprintf("/v1/test/kie/revision/%s", kv.ID)
+	path := fmt.Sprintf("/v1/history_test/kie/revision/%s", kv.ID)
 	r, _ := http.NewRequest("GET", path, nil)
 	revision := &v1.HistoryResource{}
 	chain, _ := handler.GetChain(common.Provider, "")
@@ -66,10 +66,10 @@ func TestHistoryResource_GetRevisions(t *testing.T) {
 
 	t.Run("put again, should has 2 revision", func(t *testing.T) {
 		kv.Domain = "default"
-		kv.Project = "test"
+		kv.Project = "history_test"
 		kv, err = service.KVService.CreateOrUpdate(context.Background(), kv)
 		assert.NoError(t, err)
-		path := fmt.Sprintf("/v1/test/kie/revision/%s", kv.ID)
+		path := fmt.Sprintf("/v1/history_test/kie/revision/%s", kv.ID)
 		r, _ := http.NewRequest("GET", path, nil)
 		revision := &v1.HistoryResource{}
 		chain, _ := handler.GetChain(common.Provider, "")
@@ -88,7 +88,7 @@ func TestHistoryResource_GetRevisions(t *testing.T) {
 
 func TestHistoryResource_GetPollingData(t *testing.T) {
 	t.Run("list kv by service label, to create a polling data", func(t *testing.T) {
-		r, _ := http.NewRequest("GET", "/v1/test/kie/kv", nil)
+		r, _ := http.NewRequest("GET", "/v1/history_test/kie/kv", nil)
 		noopH := &handler2.NoopAuthHandler{}
 		trackH := &handler2.TrackHandler{}
 		chain, _ := handler.CreateChain(common.Provider, "testchain3", noopH.Name(), trackH.Name())
@@ -106,7 +106,7 @@ func TestHistoryResource_GetPollingData(t *testing.T) {
 		assert.NoError(t, err)
 	})
 	t.Run("get polling data", func(t *testing.T) {
-		r, _ := http.NewRequest("GET", "/v1/test/kie/track?sessionId=test", nil)
+		r, _ := http.NewRequest("GET", "/v1/history_test/kie/track?sessionId=test", nil)
 		noopH := &handler2.NoopAuthHandler{}
 		chain, _ := handler.CreateChain(common.Provider, "testchain3", noopH.Name())
 		r.Header.Set("Content-Type", "application/json")
