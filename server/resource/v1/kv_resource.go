@@ -21,6 +21,7 @@ package v1
 import (
 	"context"
 	"fmt"
+	"github.com/go-chassis/go-chassis/pkg/backends/quota"
 	"net/http"
 
 	"github.com/apache/servicecomb-kie/pkg/common"
@@ -53,6 +54,17 @@ func (r *KVResource) Post(rctx *restful.Context) {
 	err = validate.Validate(kv)
 	if err != nil {
 		WriteErrResponse(rctx, http.StatusBadRequest, err.Error())
+		return
+	}
+	err = quota.PreCreate("", kv.Domain, "", 1)
+	if err != nil {
+		if err == quota.ErrReached {
+			openlogging.Info("can not create kv, due to quota violation")
+			WriteErrResponse(rctx, http.StatusUnprocessableEntity, err.Error())
+			return
+		}
+		openlogging.Error(err.Error())
+		WriteErrResponse(rctx, http.StatusInternalServerError, "quota check failed")
 		return
 	}
 	kv, err = service.KVService.Create(rctx.Ctx, kv)

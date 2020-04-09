@@ -39,6 +39,10 @@ cse:
     chain:
       Provider:
         default: ratelimiter-provider,monitoring,auth-handler,track-handler
+servicecomb:
+  service:
+    quota:
+      plugin: build-in
 EOM
 cat <<EOM > ${root_dir}/conf/lager.yaml
 logger_level: ${LOG_LEVEL}

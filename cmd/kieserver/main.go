@@ -37,6 +37,8 @@ import (
 	_ "github.com/go-chassis/go-chassis/middleware/ratelimiter"
 	//storage
 	_ "github.com/apache/servicecomb-kie/server/service/mongo"
+
+	_ "github.com/apache/servicecomb-kie/server/plugin/qms"
 )
 
 const (

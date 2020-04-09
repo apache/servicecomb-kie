@@ -257,3 +257,9 @@ func (s *Service) Get(ctx context.Context, domain, project, id string, options .
 	}
 	return findKVDocByID(ctx, domain, project, id)
 }
+
+//Total return kv record number
+func (s *Service) Total(ctx context.Context, domain string) (int64, error) {
+	ctx, _ = context.WithTimeout(ctx, session.Timeout)
+	return total(ctx, domain)
+}

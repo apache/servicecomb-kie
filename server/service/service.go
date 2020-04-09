@@ -50,6 +50,8 @@ type KV interface {
 	Delete(ctx context.Context, kvID string, domain, project string) error
 	//Get return kv by id
 	Get(ctx context.Context, domain, project, id string, options ...FindOption) (*model.KVDoc, error)
+	//KV is a resource of kie, this api should return kv resource number by domain id
+	Total(ctx context.Context, domain string) (int64, error)
 }
 
 //History provide api of History entity
