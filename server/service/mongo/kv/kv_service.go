@@ -46,6 +46,9 @@ type Service struct {
 //Create will create a key value record
 func (s *Service) Create(ctx context.Context, kv *model.KVDoc) (*model.KVDoc, error) {
 	ctx, _ = context.WithTimeout(ctx, session.Timeout)
+	if kv.Labels == nil {
+		kv.Labels = map[string]string{}
+	}
 	//check whether the project has certain labels or not
 	labelID, err := label.Exist(ctx, kv.Domain, kv.Project, kv.Labels)
 	if err != nil {
