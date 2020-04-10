@@ -25,11 +25,14 @@ import (
 	"github.com/apache/servicecomb-kie/pkg/validate"
 	"github.com/apache/servicecomb-kie/server/config"
 	handler2 "github.com/apache/servicecomb-kie/server/handler"
+	"github.com/apache/servicecomb-kie/server/plugin/qms"
 	"github.com/apache/servicecomb-kie/server/pubsub"
 	v1 "github.com/apache/servicecomb-kie/server/resource/v1"
 	"github.com/apache/servicecomb-kie/server/service"
+	"github.com/go-chassis/go-archaius"
 	"github.com/go-chassis/go-chassis/core/common"
 	"github.com/go-chassis/go-chassis/core/handler"
+	"github.com/go-chassis/go-chassis/pkg/backends/quota"
 	"github.com/go-chassis/go-chassis/server/restful/restfultest"
 	log "github.com/go-chassis/paas-lager"
 	"github.com/go-mesh/openlogging"
@@ -41,6 +44,7 @@ import (
 	"testing"
 	"time"
 
+	_ "github.com/apache/servicecomb-kie/server/plugin/qms"
 	_ "github.com/apache/servicecomb-kie/server/service/mongo"
 )
 
@@ -68,6 +72,17 @@ func init() {
 	}
 	pubsub.Init()
 	pubsub.Start()
+
+	err = quota.Init(quota.Options{
+		Plugin: "build-in",
+	})
+	if err != nil {
+		panic(err)
+	}
+	err = archaius.Init(archaius.WithENVSource(), archaius.WithMemorySource())
+	if err != nil {
+		panic(err)
+	}
 }
 func TestKVResource_Post(t *testing.T) {
 	t.Run("post kv, label is service", func(t *testing.T) {
@@ -437,5 +452,23 @@ func TestKVResource_PutAndGet(t *testing.T) {
 		err = json.Unmarshal(body, result)
 		assert.NoError(t, err)
 		assert.Equal(t, kvUpdate.Value, result.Value)
+	})
+
+	t.Run("quota test, can not create new ", func(t *testing.T) {
+
+		archaius.Set(qms.QuotaConfigKey, 2)
+		j, _ := json.Marshal(&model.KVDoc{
+			Key:   "reached_quota",
+			Value: "1",
+		})
+		r, _ := http.NewRequest("POST", "/v1/test/kie/kv", bytes.NewBuffer(j))
+		noopH := &handler2.NoopAuthHandler{}
+		chain, _ := handler.CreateChain(common.Provider, "testchain1", noopH.Name())
+		r.Header.Set("Content-Type", "application/json")
+		kvr := &v1.KVResource{}
+		c, _ := restfultest.New(kvr, chain)
+		resp := httptest.NewRecorder()
+		c.ServeHTTP(resp, r)
+		assert.Equal(t, http.StatusUnprocessableEntity, resp.Code)
 	})
 }

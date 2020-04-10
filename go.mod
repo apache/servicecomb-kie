@@ -2,8 +2,8 @@ module github.com/apache/servicecomb-kie
 
 require (
 	github.com/emicklei/go-restful v2.12.0+incompatible
-	github.com/go-chassis/go-archaius v1.2.1-0.20200309104817-8c3d4e87d33c
-	github.com/go-chassis/go-chassis v0.0.0-20200322084331-36849ab2cb10
+	github.com/go-chassis/go-archaius v1.2.2-0.20200409030209-a48668e4a025
+	github.com/go-chassis/go-chassis v1.8.2-0.20200331092516-8cf0b374128b
 	github.com/go-chassis/paas-lager v1.1.1
 	github.com/go-mesh/openlogging v1.0.1
 	github.com/go-playground/universal-translator v0.17.0

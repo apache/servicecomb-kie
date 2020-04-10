@@ -11,6 +11,10 @@ cse:
     chain:
       Provider:
         default: ratelimiter-provider,monitoring,auth-handler,track-handler
+servicecomb:
+  service:
+    quota:
+      plugin: build-in
 # ssl:
 #   Provider.cipherPlugin: default
 #   Provider.verifyPeer: false

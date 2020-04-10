@@ -234,7 +234,6 @@ func findKVByLabelID(ctx context.Context, domain, labelID, key string, project s
 	filter := bson.M{"label_id": labelID, "domain": domain, "project": project}
 	if key != "" {
 		filter["key"] = key
-		openlogging.Debug(MsgFindOneKey)
 		return findOneKey(ctx, filter)
 	}
 	return findKeys(ctx, filter, true)
@@ -250,4 +249,15 @@ func findKVDocByID(ctx context.Context, domain, project, kvID string) (*model.KV
 		return nil, err
 	}
 	return kvs[0], nil
+}
+
+func total(ctx context.Context, domain string) (int64, error) {
+	collection := session.GetDB().Collection(session.CollectionKV)
+	filter := bson.M{"domain": domain}
+	total, err := collection.CountDocuments(ctx, filter)
+	if err != nil {
+		openlogging.Error("find total number: " + err.Error())
+		return 0, err
+	}
+	return total, err
 }
