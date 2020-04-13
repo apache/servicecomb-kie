@@ -35,13 +35,11 @@ type KVResponse struct {
 
 //LabelDocResponse is label struct
 type LabelDocResponse struct {
-	LabelID string            `json:"label_id,omitempty"`
-	Labels  map[string]string `json:"labels,omitempty"`
+	Labels map[string]string `json:"labels,omitempty"`
 }
 
 //LabelHistoryResponse is label history revision struct
 type LabelHistoryResponse struct {
-	LabelID  string            `json:"label_id,omitempty"  bson:"label_id,omitempty"`
 	Labels   map[string]string `json:"labels,omitempty"`
 	KVs      []*KVDoc          `json:"data,omitempty"`
 	Revision int               `json:"revision"`
@@ -59,7 +57,7 @@ type DocResponseSingleKey struct {
 	CreateTime     string            `json:"create_time"`
 	ID             string            `json:"id"`
 	Key            string            `json:"key"`
-	LabelID        string            `json:"label_id"`
+	LabelFormat    string            `json:"label_format"`
 	Labels         map[string]string `json:"labels"`
 	UpdateRevision int64             `json:"update_revision"`
 	UpdateTime     string            `json:"update_time"`

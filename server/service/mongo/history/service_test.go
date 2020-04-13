@@ -37,8 +37,8 @@ func TestAddHistory(t *testing.T) {
 	cur, err := coll.Find(
 		context.Background(),
 		bson.M{
-			"label_id": "5dbc079183ff1a09242376e7",
-			"data.key": "lb",
+			"label_format": "5dbc079183ff1a09242376e7",
+			"data.key":     "lb",
 		})
 	assert.NoError(t, err)
 	for cur.Next(ctx) {

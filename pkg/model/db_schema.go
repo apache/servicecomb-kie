@@ -30,7 +30,7 @@ type LabelDoc struct {
 //KVDoc is database struct to store kv
 type KVDoc struct {
 	ID             string `json:"id,omitempty" bson:"id,omitempty" yaml:"id,omitempty" swag:"string"`
-	LabelID        string `json:"label_id,omitempty" bson:"label_id,omitempty" yaml:"label_id,omitempty"`
+	LabelFormat    string `json:"label_format,omitempty" bson:"label_format,omitempty" yaml:"label_format,omitempty"`
 	Key            string `json:"key" yaml:"key" validate:"commonName"`
 	Value          string `json:"value" yaml:"value" validate:"ascii,min=1,max=2097152"`
 	ValueType      string `json:"value_type,omitempty" bson:"value_type,omitempty" yaml:"value_type,omitempty" validate:"valueType"` //ini,json,text,yaml,properties

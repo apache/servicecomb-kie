@@ -80,7 +80,7 @@ func updateKeyValue(ctx context.Context, kv *model.KVDoc) error {
 		return err
 	}
 	collection := session.GetDB().Collection(session.CollectionKV)
-	ur, err := collection.UpdateOne(ctx, bson.M{"key": kv.Key, "label_id": kv.LabelID}, bson.D{
+	ur, err := collection.UpdateOne(ctx, bson.M{"key": kv.Key, "label_format": kv.LabelFormat}, bson.D{
 		{"$set", bson.D{
 			{"value", kv.Value},
 			{"status", kv.Status},
@@ -263,11 +263,11 @@ func findKeys(ctx context.Context, filter interface{}, withoutLabel bool) ([]*mo
 	return kvs, nil
 }
 
-//findKVByLabelID get kvs by key and label id
+//findKVByLabel get kvs by key and label
 //key can be empty, then it will return all key values
 //if key is given, will return 0-1 key value
-func findKVByLabelID(ctx context.Context, domain, labelID, key string, project string) ([]*model.KVDoc, error) {
-	filter := bson.M{"label_id": labelID, "domain": domain, "project": project}
+func findKVByLabel(ctx context.Context, domain, labelFormat, key string, project string) ([]*model.KVDoc, error) {
+	filter := bson.M{"label_format": labelFormat, "domain": domain, "project": project}
 	if key != "" {
 		filter["key"] = key
 		return findOneKey(ctx, filter)
