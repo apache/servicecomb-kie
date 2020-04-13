@@ -27,11 +27,11 @@ func TestLabelResource_PutLabel(t *testing.T) {
 				"test": "revisions",
 			},
 			Domain:  "default",
-			Project: "test",
+			Project: "label_test",
 		}
 		kv, _ = service.KVService.CreateOrUpdate(context.Background(), kv)
 		j := []byte("{\"alias\":\"test\",\"id\":\"" + kv.LabelID + "\"}")
-		r, _ := http.NewRequest("PUT", "/v1/test/kie/label", bytes.NewBuffer(j))
+		r, _ := http.NewRequest("PUT", "/v1/label_test/kie/label", bytes.NewBuffer(j))
 		r.Header.Add("Content-Type", "application/json")
 		revision := &v1.LabelResource{}
 		noopH := &handler2.NoopAuthHandler{}
@@ -53,10 +53,10 @@ func TestLabelResource_PutLabel(t *testing.T) {
 				"test": "revisions",
 			},
 			Domain:  "default",
-			Project: "test",
+			Project: "label_test",
 		}
 		j, _ := json.Marshal(label)
-		r, _ := http.NewRequest("PUT", "/v1/test/kie/label", bytes.NewBuffer(j))
+		r, _ := http.NewRequest("PUT", "/v1/label_test/kie/label", bytes.NewBuffer(j))
 		r.Header.Add("Content-Type", "application/json")
 		revision := &v1.LabelResource{}
 		noopH := &handler2.NoopAuthHandler{}

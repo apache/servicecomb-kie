@@ -43,6 +43,8 @@ const (
 	HeaderUserAgent    = "User-Agent"
 	HeaderSessionID    = "X-Session-Id"
 	AttributeDomainKey = "domain"
+
+	FmtReadRequestError = "decode request body failed: %v"
 )
 
 //err
@@ -231,6 +233,10 @@ func validateList(domain, project string) error {
 
 func validateDelete(domain, project, kvID string) error {
 	return validateGet(domain, project, kvID)
+}
+
+func validateDeleteList(domain, project string) error {
+	return checkDomainAndProject(domain, project)
 }
 
 func checkDomainAndProject(domain, project string) error {

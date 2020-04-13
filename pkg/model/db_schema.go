@@ -32,7 +32,7 @@ type KVDoc struct {
 	ID             string `json:"id,omitempty" bson:"id,omitempty" yaml:"id,omitempty" swag:"string"`
 	LabelID        string `json:"label_id,omitempty" bson:"label_id,omitempty" yaml:"label_id,omitempty"`
 	Key            string `json:"key" yaml:"key" validate:"commonName"`
-	Value          string `json:"value,omitempty" yaml:"value,omitempty" validate:"ascii,min=1,max=2097152"`
+	Value          string `json:"value" yaml:"value" validate:"ascii,min=1,max=2097152"`
 	ValueType      string `json:"value_type,omitempty" bson:"value_type,omitempty" yaml:"value_type,omitempty" validate:"valueType"` //ini,json,text,yaml,properties
 	Checker        string `json:"check,omitempty" yaml:"check,omitempty"`                                                            //python script
 	CreateRevision int64  `json:"create_revision,omitempty" bson:"create_revision," yaml:"create_revision,omitempty"`

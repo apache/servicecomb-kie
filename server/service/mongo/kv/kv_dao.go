@@ -168,31 +168,67 @@ func findOneKey(ctx context.Context, filter bson.M) ([]*model.KVDoc, error) {
 	return []*model.KVDoc{curKV}, nil
 }
 
-//deleteKV by kvID
-func deleteKV(ctx context.Context, kvID, project, domain string) error {
-	if _, err := counter.ApplyRevision(ctx, domain); err != nil {
-		openlogging.Error(fmt.Sprintf("increase revision failed, the kv [%s] not deleted: [%s]", kvID, err))
-		return err
-	}
+//findOneKVAndDelete deletes one kv by id and return the deleted kv as these appeared before deletion
+func findOneKVAndDelete(ctx context.Context, kvID, project, domain string) (*model.KVDoc, error) {
 	collection := session.GetDB().Collection(session.CollectionKV)
-	dr, err := collection.DeleteOne(ctx, bson.M{"id": kvID, "project": project, "domain": domain})
-	//check error and delete number
-	if err != nil {
-		openlogging.Error(fmt.Sprintf("delete [%s] failed : [%s]", kvID, err))
-		return err
+	sr := collection.FindOneAndDelete(ctx, bson.M{"id": kvID, "project": project, "domain": domain})
+	if sr.Err() != nil {
+		if sr.Err() == mongo.ErrNoDocuments {
+			return nil, service.ErrKeyNotExists
+		}
+		return nil, sr.Err()
 	}
-	if dr.DeletedCount != 1 {
-		openlogging.Warn(fmt.Sprintf("failed, may have been deleted,kvID=%s", kvID))
-	} else {
-		openlogging.Info(fmt.Sprintf("delete success,kvID=%s", kvID))
+	openlogging.Info(fmt.Sprintf("delete success,kvID=%s", kvID))
+	if _, err := counter.ApplyRevision(ctx, domain); err != nil {
+		openlogging.Error(fmt.Sprintf("the kv [%s] is deleted, but increase revision failed: [%s]", kvID, err))
+		return nil, err
 	}
-	err = history.AddDeleteTime(ctx, kvID, project, domain)
+	err := history.AddDeleteTime(ctx, []string{kvID}, project, domain)
 	if err != nil {
 		openlogging.Error(fmt.Sprintf("add delete time to [%s] failed : [%s]", kvID, err))
 	}
-	return err
+	curKV := &model.KVDoc{}
+	err = sr.Decode(curKV)
+	if err != nil {
+		openlogging.Error("decode error: " + err.Error())
+		return nil, err
+	}
+	return curKV, nil
 }
-func findKeys(ctx context.Context, filter bson.M, withoutLabel bool) ([]*model.KVDoc, error) {
+
+//findKVsAndDelete deletes multiple kvs and return the deleted kv list as these appeared before deletion
+func findKVsAndDelete(ctx context.Context, kvIDs []string, project, domain string) ([]*model.KVDoc, error) {
+	filter := bson.D{{"id", bson.M{"$in": kvIDs}}, {"project", project}, {"domain", domain}}
+	kvs, err := findKeys(ctx, filter, false)
+	if err != nil {
+		if err != service.ErrKeyNotExists {
+			openlogging.Error("find Keys error: " + err.Error())
+		}
+		return nil, err
+	}
+	collection := session.GetDB().Collection(session.CollectionKV)
+	dr, err := collection.DeleteMany(ctx, filter)
+	if err != nil {
+		openlogging.Error(fmt.Sprintf("delete kvs [%v] failed : [%v]", kvIDs, err))
+		return nil, err
+	}
+	if int64(len(kvs)) != dr.DeletedCount {
+		openlogging.Warn(fmt.Sprintf("The count of found and the count of deleted are not equal, found %d, deleted %d", len(kvs), dr.DeletedCount))
+	} else {
+		openlogging.Info(fmt.Sprintf("deleted %d kvs, their ids are %v", dr.DeletedCount, kvIDs))
+	}
+	if _, err := counter.ApplyRevision(ctx, domain); err != nil {
+		openlogging.Error(fmt.Sprintf("kvs [%v] are deleted, but increase revision failed: [%v]", kvIDs, err))
+		return nil, err
+	}
+	err = history.AddDeleteTime(ctx, kvIDs, project, domain)
+	if err != nil {
+		openlogging.Error(fmt.Sprintf("add delete time to kvs [%s] failed : [%s]", kvIDs, err))
+	}
+	return kvs, nil
+}
+
+func findKeys(ctx context.Context, filter interface{}, withoutLabel bool) ([]*model.KVDoc, error) {
 	collection := session.GetDB().Collection(session.CollectionKV)
 	cur, err := collection.Find(ctx, filter)
 	if err != nil {

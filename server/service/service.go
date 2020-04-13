@@ -47,7 +47,10 @@ type KV interface {
 	Update(ctx context.Context, kv *model.KVDoc) (*model.KVDoc, error)
 	CreateOrUpdate(ctx context.Context, kv *model.KVDoc) (*model.KVDoc, error)
 	List(ctx context.Context, domain, project string, options ...FindOption) (*model.KVResponse, error)
-	Delete(ctx context.Context, kvID string, domain, project string) error
+	//FindOneAndDelete deletes one kv by id and return the deleted kv as these appeared before deletion
+	FindOneAndDelete(ctx context.Context, kvID string, domain, project string) (*model.KVDoc, error)
+	//FindManyAndDelete deletes multiple kvs and return the deleted kv list as these appeared before deletion
+	FindManyAndDelete(ctx context.Context, kvIDs []string, domain, project string) ([]*model.KVDoc, error)
 	//Get return kv by id
 	Get(ctx context.Context, domain, project, id string, options ...FindOption) (*model.KVDoc, error)
 	//KV is a resource of kie, this api should return kv resource number by domain id

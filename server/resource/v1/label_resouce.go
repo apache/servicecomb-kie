@@ -1,13 +1,15 @@
 package v1
 
 import (
+	"fmt"
+	"net/http"
+
 	"github.com/apache/servicecomb-kie/pkg/common"
 	"github.com/apache/servicecomb-kie/pkg/model"
 	"github.com/apache/servicecomb-kie/server/service"
 	goRestful "github.com/emicklei/go-restful"
 	"github.com/go-chassis/go-chassis/server/restful"
 	"github.com/go-mesh/openlogging"
-	"net/http"
 )
 
 //LabelResource is label API
@@ -20,7 +22,7 @@ func (r *LabelResource) PutLabel(context *restful.Context) {
 	var err error
 	entity := new(model.LabelDoc)
 	if err = readRequest(context, entity); err != nil {
-		WriteErrResponse(context, http.StatusBadRequest, err.Error())
+		WriteErrResponse(context, http.StatusBadRequest, fmt.Sprintf(FmtReadRequestError, err))
 		return
 	}
 	entity.Project = context.ReadPathParameter("project")

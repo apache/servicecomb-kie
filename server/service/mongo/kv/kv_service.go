@@ -19,7 +19,6 @@ package kv
 
 import (
 	"context"
-	"errors"
 	"time"
 
 	"github.com/apache/servicecomb-kie/pkg/model"
@@ -46,6 +45,9 @@ type Service struct {
 //Create will create a key value record
 func (s *Service) Create(ctx context.Context, kv *model.KVDoc) (*model.KVDoc, error) {
 	ctx, _ = context.WithTimeout(ctx, session.Timeout)
+	if kv.Labels == nil {
+		kv.Labels = map[string]string{}
+	}
 	//check whether the project has certain labels or not
 	labelID, err := label.Exist(ctx, kv.Domain, kv.Project, kv.Labels)
 	if err != nil {
@@ -180,7 +182,9 @@ func (s *Service) Exist(ctx context.Context, domain, key string, project string,
 	if opts.LabelID != "" {
 		kvs, err := findKVByLabelID(ctx, domain, opts.LabelID, key, project)
 		if err != nil {
-			openlogging.Error(err.Error())
+			if err != service.ErrKeyNotExists {
+				openlogging.Error(err.Error())
+			}
 			return nil, err
 		}
 		return kvs[0], nil
@@ -201,17 +205,17 @@ func (s *Service) Exist(ctx context.Context, domain, key string, project string,
 
 }
 
-//Delete delete kv,If the labelID is "", query the collection kv to get it
+//FindOneAndDelete deletes one kv by id and return the deleted kv as these appeared before deletion
 //domain=tenant
-func (s *Service) Delete(ctx context.Context, kvID string, domain string, project string) error {
+func (s *Service) FindOneAndDelete(ctx context.Context, kvID string, domain string, project string) (*model.KVDoc, error) {
 	ctx, _ = context.WithTimeout(context.Background(), session.Timeout)
-	//delete kv
-	err := deleteKV(ctx, kvID, project, domain)
-	if err != nil {
-		openlogging.Error("can not delete key, err:" + err.Error())
-		return errors.New("can not delete key")
-	}
-	return nil
+	return findOneKVAndDelete(ctx, kvID, project, domain)
+}
+
+//FindManyAndDelete deletes multiple kvs and return the deleted kv list as these appeared before deletion
+func (s *Service) FindManyAndDelete(ctx context.Context, kvIDs []string, domain string, project string) ([]*model.KVDoc, error) {
+	ctx, _ = context.WithTimeout(context.Background(), session.Timeout)
+	return findKVsAndDelete(ctx, kvIDs, project, domain)
 }
 
 //List get kv list by key and criteria
