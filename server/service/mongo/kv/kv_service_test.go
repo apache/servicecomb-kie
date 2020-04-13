@@ -95,13 +95,9 @@ func TestService_CreateOrUpdate(t *testing.T) {
 			Project: "kv-test",
 		})
 		assert.NoError(t, err)
-		afterKV, err := kvsvc.Update(context.Background(), &model.KVDoc{
-			ID:    beforeKV.ID,
-			Key:   "timeout",
-			Value: "3s",
-			Labels: map[string]string{
-				"app": "mall",
-			},
+		afterKV, err := kvsvc.Update(context.Background(), &model.UpdateKVRequest{
+			ID:      beforeKV.ID,
+			Value:   "3s",
 			Domain:  "default",
 			Project: "kv-test",
 		})
@@ -151,7 +147,7 @@ func TestService_Create(t *testing.T) {
 func TestService_Update(t *testing.T) {
 	kvsvc := &kv.Service{}
 	t.Run("update kv by kvID", func(t *testing.T) {
-		result, err := kvsvc.Update(context.TODO(), &model.KVDoc{
+		result, err := kvsvc.Update(context.TODO(), &model.UpdateKVRequest{
 			ID:      id,
 			Value:   "3s",
 			Domain:  "default",

@@ -10,8 +10,11 @@ import (
 )
 
 func TestValidate(t *testing.T) {
-	s := "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa" //64
-	testStr := s + s + s + s                                                //256
+	string32 := "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa" //32
+	string2k := "a"
+	for i := 0; i < 11; i++ { //2k
+		string2k = string2k + string2k
+	}
 	err := validate.Init()
 	assert.NoError(t, err)
 
@@ -34,7 +37,7 @@ func TestValidate(t *testing.T) {
 	assert.Error(t, validate.Validate(kvDoc))
 
 	kvDoc = &model.KVDoc{Project: "a", Domain: "a",
-		Key:   testStr + "a",
+		Key:   string2k + "a",
 		Value: "a",
 	}
 	assert.Error(t, validate.Validate(kvDoc))
@@ -43,7 +46,7 @@ func TestValidate(t *testing.T) {
 		Key:   "a",
 		Value: "",
 	}
-	assert.Error(t, validate.Validate(kvDoc))
+	assert.NoError(t, validate.Validate(kvDoc))
 
 	kvDoc = &model.KVDoc{Project: "a", Domain: "a",
 		Key:       "a",
@@ -104,7 +107,7 @@ func TestValidate(t *testing.T) {
 	kvDoc = &model.KVDoc{Project: "a", Domain: "a",
 		Key:    "a",
 		Value:  "a",
-		Labels: map[string]string{testStr + "a": "a"},
+		Labels: map[string]string{string32 + "a": "a"},
 	}
 	assert.Error(t, validate.Validate(kvDoc))
 }

@@ -102,21 +102,21 @@ func (r *KVResource) Put(rctx *restful.Context) {
 	var err error
 	kvID := rctx.ReadPathParameter(common.PathParamKVID)
 	project := rctx.ReadPathParameter(common.PathParameterProject)
-	kv := new(model.KVDoc)
-	if err = readRequest(rctx, kv); err != nil {
+	kvReq := new(model.UpdateKVRequest)
+	if err = readRequest(rctx, kvReq); err != nil {
 		WriteErrResponse(rctx, http.StatusBadRequest, fmt.Sprintf(FmtReadRequestError, err))
 		return
 	}
 	domain := ReadDomain(rctx)
-	kv.ID = kvID
-	kv.Domain = domain.(string)
-	kv.Project = project
-	err = validatePut(kv)
+	kvReq.ID = kvID
+	kvReq.Domain = domain.(string)
+	kvReq.Project = project
+	err = validate.Validate(kvReq)
 	if err != nil {
 		WriteErrResponse(rctx, http.StatusBadRequest, err.Error())
 		return
 	}
-	kv, err = service.KVService.Update(rctx.Ctx, kv)
+	kv, err := service.KVService.Update(rctx.Ctx, kvReq)
 	if err != nil {
 		openlogging.Error(fmt.Sprintf("put [%s] err:%s", kvID, err.Error()))
 		WriteErrResponse(rctx, http.StatusInternalServerError, "update kv failed")

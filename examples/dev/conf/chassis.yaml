@@ -11,6 +11,13 @@ cse:
     chain:
       Provider:
         default: ratelimiter-provider,monitoring,auth-handler,track-handler
+  transport:
+    maxBodyBytes:
+      rest: 2621440 #2.5M
+    maxHeaderBytes:
+      rest: 32768 #32K
+    timeout:
+      rest: 60s
 servicecomb:
   service:
     quota:

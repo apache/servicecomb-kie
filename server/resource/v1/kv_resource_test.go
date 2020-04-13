@@ -415,7 +415,7 @@ func TestKVResource_PutAndGet(t *testing.T) {
 		assert.NoError(t, err)
 		assert.Equal(t, kv.Value, result.Value)
 	})
-	kvUpdate := &model.KVDoc{
+	kvUpdate := &model.UpdateKVRequest{
 		Value: "admin",
 	}
 	t.Run("update the kv, set the value of user to admin", func(t *testing.T) {
