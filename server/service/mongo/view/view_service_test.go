@@ -20,6 +20,7 @@ package view_test
 import (
 	"context"
 	"encoding/json"
+	common2 "github.com/apache/servicecomb-kie/pkg/common"
 	"github.com/apache/servicecomb-kie/pkg/model"
 	"github.com/apache/servicecomb-kie/server/config"
 	"github.com/apache/servicecomb-kie/server/service"
@@ -40,8 +41,9 @@ func TestGet(t *testing.T) {
 	kvsvc := &kv.Service{}
 	t.Run("put view data", func(t *testing.T) {
 		kv, err := kvsvc.Create(context.TODO(), &model.KVDoc{
-			Key:   "timeout",
-			Value: "2s",
+			Key:    "timeout",
+			Value:  "2s",
+			Status: common2.StatusEnabled,
 			Labels: map[string]string{
 				"app":     "mall",
 				"service": "cart",
@@ -54,8 +56,9 @@ func TestGet(t *testing.T) {
 		assert.NotEmpty(t, kv.ID)
 
 		kv, err = kvsvc.Create(context.TODO(), &model.KVDoc{
-			Key:   "timeout",
-			Value: "2s",
+			Key:    "timeout",
+			Value:  "2s",
+			Status: common2.StatusEnabled,
 			Labels: map[string]string{
 				"app": "mall",
 			},
@@ -66,8 +69,9 @@ func TestGet(t *testing.T) {
 		assert.NotEmpty(t, kv.ID)
 
 		kv, err = kvsvc.Create(context.TODO(), &model.KVDoc{
-			Key:   "retry",
-			Value: "2",
+			Key:    "retry",
+			Value:  "2",
+			Status: common2.StatusEnabled,
 			Labels: map[string]string{
 				"app": "mall",
 			},

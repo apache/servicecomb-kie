@@ -20,6 +20,7 @@ import (
 	"context"
 	"encoding/json"
 	"fmt"
+	common2 "github.com/apache/servicecomb-kie/pkg/common"
 	"io/ioutil"
 	"net/http"
 	"net/http/httptest"
@@ -39,15 +40,17 @@ import (
 
 func TestHistoryResource_GetRevisions(t *testing.T) {
 	kv := &model.KVDoc{
-		Key:   "test",
-		Value: "revisions",
+		Key:    "test",
+		Value:  "revisions",
+		Status: common2.StatusEnabled,
 		Labels: map[string]string{
 			"test": "revisions",
 		},
 		Domain:  "default",
 		Project: "history_test",
 	}
-	kv, _ = service.KVService.Create(context.Background(), kv)
+	kv, err := service.KVService.Create(context.Background(), kv)
+	assert.NoError(t, err)
 	path := fmt.Sprintf("/v1/history_test/kie/revision/%s", kv.ID)
 	r, _ := http.NewRequest("GET", path, nil)
 	revision := &v1.HistoryResource{}
