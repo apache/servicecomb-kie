@@ -39,7 +39,7 @@ func TestGet(t *testing.T) {
 	assert.NoError(t, err)
 	kvsvc := &kv.Service{}
 	t.Run("put view data", func(t *testing.T) {
-		kv, err := kvsvc.CreateOrUpdate(context.TODO(), &model.KVDoc{
+		kv, err := kvsvc.Create(context.TODO(), &model.KVDoc{
 			Key:   "timeout",
 			Value: "2s",
 			Labels: map[string]string{
@@ -53,7 +53,7 @@ func TestGet(t *testing.T) {
 		assert.NoError(t, err)
 		assert.NotEmpty(t, kv.ID)
 
-		kv, err = kvsvc.CreateOrUpdate(context.TODO(), &model.KVDoc{
+		kv, err = kvsvc.Create(context.TODO(), &model.KVDoc{
 			Key:   "timeout",
 			Value: "2s",
 			Labels: map[string]string{
@@ -65,7 +65,7 @@ func TestGet(t *testing.T) {
 		assert.NoError(t, err)
 		assert.NotEmpty(t, kv.ID)
 
-		kv, err = kvsvc.CreateOrUpdate(context.TODO(), &model.KVDoc{
+		kv, err = kvsvc.Create(context.TODO(), &model.KVDoc{
 			Key:   "retry",
 			Value: "2",
 			Labels: map[string]string{

@@ -25,4 +25,5 @@ import (
 func clearPart(kv *model.KVDoc) {
 	kv.Domain = ""
 	kv.Project = ""
+	kv.LabelFormat = ""
 }

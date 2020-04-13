@@ -32,7 +32,7 @@ db.counter.insertOne( { name:"revision_counter",count: 1,domain:"default" } );
 db.createCollection( "kv", {
     validator: { $jsonSchema: {
             bsonType: "object",
-            required: [ "key","domain","project","id","value","create_revision","update_revision","value_type","label_id" ],
+            required: [ "key","domain","project","id","value","create_revision","update_revision","value_type","label_format" ],
             properties: {
                 key: {
                     bsonType: "string",
@@ -56,26 +56,6 @@ db.createCollection( "kv", {
         } }
 } );
 db.createCollection("kv_revision");
-db.createCollection( "label", {
-    validator: { $jsonSchema: {
-            bsonType: "object",
-            required: [ "id","domain","project","format" ],
-            properties: {
-                label_id: {
-                    bsonType: "string",
-                },
-                domain: {
-                    bsonType: "string"
-                },
-                project: {
-                    bsonType: "string"
-                },
-                alias: {
-                    bsonType: "string"
-                }
-            }
-        } }
-} );
 db.createCollection( "view", {
     validator: { $jsonSchema: {
             bsonType: "object",
@@ -134,7 +114,7 @@ db.createCollection( "polling_detail", {
 
 //index
 db.kv.createIndex({"id": 1}, { unique: true } );
-db.kv.createIndex({key: 1, label_id: 1,domain:1,project:1},{ unique: true });
+db.kv.createIndex({key: 1, label_format: 1,domain:1,project:1},{ unique: true });
 db.kv_revision.createIndex( { "delete_time": 1 }, { expireAfterSeconds: 7 * 24 * 3600 } );
 db.label.createIndex({"id": 1}, { unique: true } );
 db.label.createIndex({format: 1,domain:1,project:1},{ unique: true });

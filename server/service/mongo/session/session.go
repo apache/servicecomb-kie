@@ -61,11 +61,10 @@ var (
 	ErrTooMany         = errors.New("key with labels should be only one")
 	ErrKeyMustNotEmpty = errors.New("must supply key if you want to get exact one result")
 
-	ErrIDIsNil                = errors.New("id is empty")
-	ErrKeyIsNil               = errors.New("key must not be empty")
-	ErrKvIDAndLabelIDNotMatch = errors.New("kvID and labelID do not match")
-	ErrRootCAMissing          = errors.New("rootCAFile is empty in config file")
-	ErrKVAlreadyExists        = errors.New("kv already exists")
+	ErrIDIsNil         = errors.New("id is empty")
+	ErrKeyIsNil        = errors.New("key must not be empty")
+	ErrRootCAMissing   = errors.New("rootCAFile is empty in config file")
+	ErrKVAlreadyExists = errors.New("kv already exists")
 
 	ErrViewCreation = errors.New("can not create view")
 	ErrViewUpdate   = errors.New("can not update view")
@@ -223,7 +222,7 @@ func InitMongodb() {
 		panic(err)
 	}
 	err = c.EnsureIndex(mgo.Index{
-		Key:    []string{"key", "label_id", "domain", "project"},
+		Key:    []string{"key", "label_format", "domain", "project"},
 		Unique: true,
 	})
 	if err != nil {
@@ -234,28 +233,6 @@ func InitMongodb() {
 	err = c.EnsureIndex(mgo.Index{
 		Key:         []string{"delete_time"},
 		ExpireAfter: 7 * 24 * time.Hour,
-	})
-	if err != nil {
-		panic(err)
-	}
-	//label
-	c = session.DB(DBName).C(CollectionLabel)
-	err = c.Create(&mgo.CollectionInfo{Validator: bson.M{
-		"id":      bson.M{"$exists": true},
-		"domain":  bson.M{"$exists": true},
-		"project": bson.M{"$exists": true},
-		"format":  bson.M{"$exists": true},
-	}})
-	err = c.EnsureIndex(mgo.Index{
-		Key:    []string{"id"},
-		Unique: true,
-	})
-	if err != nil {
-		panic(err)
-	}
-	err = c.EnsureIndex(mgo.Index{
-		Key:    []string{"format", "domain", "project"},
-		Unique: true,
 	})
 	if err != nil {
 		panic(err)

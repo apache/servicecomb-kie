@@ -19,12 +19,12 @@ package kv
 
 import (
 	"context"
+	"github.com/apache/servicecomb-kie/pkg/stringutil"
 	"time"
 
 	"github.com/apache/servicecomb-kie/pkg/model"
 	"github.com/apache/servicecomb-kie/pkg/util"
 	"github.com/apache/servicecomb-kie/server/service"
-	"github.com/apache/servicecomb-kie/server/service/mongo/label"
 	"github.com/apache/servicecomb-kie/server/service/mongo/session"
 	"github.com/go-mesh/openlogging"
 )
@@ -49,32 +49,11 @@ func (s *Service) Create(ctx context.Context, kv *model.KVDoc) (*model.KVDoc, er
 		kv.Labels = map[string]string{}
 	}
 	//check whether the project has certain labels or not
-	labelID, err := label.Exist(ctx, kv.Domain, kv.Project, kv.Labels)
-	if err != nil {
-		if err == session.ErrLabelNotExists {
-			l := &model.LabelDoc{
-				Domain:  kv.Domain,
-				Labels:  kv.Labels,
-				Project: kv.Project,
-			}
-			l, err = label.CreateLabel(ctx, l)
-			if err != nil {
-				openlogging.Error(MsgCreateLabelFailed, openlogging.WithTags(openlogging.Tags{
-					"k":      kv.Key,
-					"domain": kv.Domain,
-				}))
-				return nil, err
-			}
-			labelID = l.ID
-		} else {
-			return nil, err
-		}
-	}
-	kv.LabelID = labelID
+	kv.LabelFormat = stringutil.FormatMap(kv.Labels)
 	if kv.ValueType == "" {
 		kv.ValueType = session.DefaultValueType
 	}
-	_, err = s.Exist(ctx, kv.Domain, kv.Key, kv.Project, service.WithLabelID(kv.LabelID))
+	_, err := s.Exist(ctx, kv.Domain, kv.Key, kv.Project, service.WithLabelFormat(kv.LabelFormat))
 	if err == nil {
 		return nil, session.ErrKVAlreadyExists
 	}
@@ -109,69 +88,6 @@ func (s *Service) Update(ctx context.Context, kv *model.KVDoc) (*model.KVDoc, er
 
 }
 
-//CreateOrUpdate will create or update a key value record
-//it first check label exists or not, and create labels if labels is first posted.
-//if label exists, then get its latest revision, and update current revision,
-//save the current label and its all key values to history collection
-//then check key exists or not, then create or update it
-func (s *Service) CreateOrUpdate(ctx context.Context, kv *model.KVDoc) (*model.KVDoc, error) {
-	ctx, _ = context.WithTimeout(ctx, session.Timeout)
-	if kv.Domain == "" {
-		return nil, session.ErrMissingDomain
-	}
-	//check whether the project has certain labels or not
-	labelID, err := label.Exist(ctx, kv.Domain, kv.Project, kv.Labels)
-	if err != nil {
-		if err == session.ErrLabelNotExists {
-			l := &model.LabelDoc{
-				Domain:  kv.Domain,
-				Labels:  kv.Labels,
-				Project: kv.Project,
-			}
-			l, err = label.CreateLabel(ctx, l)
-			if err != nil {
-				openlogging.Error(MsgCreateLabelFailed, openlogging.WithTags(openlogging.Tags{
-					"k":      kv.Key,
-					"domain": kv.Domain,
-				}))
-				return nil, err
-			}
-			labelID = l.ID
-		} else {
-			return nil, err
-		}
-	}
-	kv.LabelID = labelID
-	if kv.ValueType == "" {
-		kv.ValueType = session.DefaultValueType
-	}
-	oldKV, err := s.Exist(ctx, kv.Domain, kv.Key, kv.Project, service.WithLabelID(kv.LabelID))
-	if err != nil {
-		if err != service.ErrKeyNotExists {
-			openlogging.Error(err.Error())
-			return nil, err
-		}
-		kv, err := createKey(ctx, kv)
-		if err != nil {
-			openlogging.Error(err.Error())
-			return nil, err
-		}
-		kv.Domain = ""
-		kv.Project = ""
-		return kv, nil
-	}
-	kv.ID = oldKV.ID
-	kv.CreateRevision = oldKV.CreateRevision
-	err = updateKeyValue(ctx, kv)
-	if err != nil {
-		return nil, err
-	}
-	kv.Domain = ""
-	kv.Project = ""
-	return kv, nil
-
-}
-
 //Exist supports you query a key value by label map or labels id
 func (s *Service) Exist(ctx context.Context, domain, key string, project string, options ...service.FindOption) (*model.KVDoc, error) {
 	ctx, _ = context.WithTimeout(context.Background(), session.Timeout)
@@ -179,8 +95,8 @@ func (s *Service) Exist(ctx context.Context, domain, key string, project string,
 	for _, o := range options {
 		o(&opts)
 	}
-	if opts.LabelID != "" {
-		kvs, err := findKVByLabelID(ctx, domain, opts.LabelID, key, project)
+	if opts.LabelFormat != "" {
+		kvs, err := findKVByLabel(ctx, domain, opts.LabelFormat, key, project)
 		if err != nil {
 			if err != service.ErrKeyNotExists {
 				openlogging.Error(err.Error())

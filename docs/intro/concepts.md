@@ -20,7 +20,6 @@ below the labels indicates it is located in production environment,the version i
 ```json
 {
  "id": "05529229-efc3-49ca-a765-05759b23ab28",
- "label_id": "e7faac8e-053e-4906-99ab-989f61febe74",
  "key": "enable_a_function",
  "value": "true",
  "value_type": "text",

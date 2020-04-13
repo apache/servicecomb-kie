@@ -37,7 +37,7 @@ type FindOptions struct {
 	ID          string
 	Key         string
 	Labels      map[string]string
-	LabelID     string
+	LabelFormat string
 	ClearLabel  bool
 	Timeout     time.Duration
 	Offset      int64
@@ -89,10 +89,10 @@ func WithLabels(labels map[string]string) FindOption {
 	}
 }
 
-//WithLabelID find kv by labelID
-func WithLabelID(label string) FindOption {
+//WithLabelFormat find kv by label string
+func WithLabelFormat(label string) FindOption {
 	return func(o *FindOptions) {
-		o.LabelID = label
+		o.LabelFormat = label
 	}
 }
 

@@ -24,11 +24,23 @@ import (
 	"github.com/apache/servicecomb-kie/server/service"
 	"github.com/apache/servicecomb-kie/server/service/mongo/kv"
 	"github.com/apache/servicecomb-kie/server/service/mongo/session"
+	log "github.com/go-chassis/paas-lager"
+	"github.com/go-mesh/openlogging"
 	"github.com/stretchr/testify/assert"
 	"testing"
 )
 
 var id string
+
+func init() {
+	log.Init(log.Config{
+		Writers:     []string{"stdout"},
+		LoggerLevel: "DEBUG",
+	})
+
+	logger := log.NewLogger("ut")
+	openlogging.SetLogger(logger)
+}
 
 func TestService_CreateOrUpdate(t *testing.T) {
 	var err error
@@ -37,7 +49,7 @@ func TestService_CreateOrUpdate(t *testing.T) {
 	assert.NoError(t, err)
 	kvsvc := &kv.Service{}
 	t.Run("put kv timeout,with labels app and service", func(t *testing.T) {
-		kv, err := kvsvc.CreateOrUpdate(context.TODO(), &model.KVDoc{
+		kv, err := kvsvc.Create(context.TODO(), &model.KVDoc{
 			Key:   "timeout",
 			Value: "2s",
 			Labels: map[string]string{
@@ -51,7 +63,7 @@ func TestService_CreateOrUpdate(t *testing.T) {
 		assert.NotEmpty(t, kv.ID)
 	})
 	t.Run("put kv timeout,with labels app, service and version", func(t *testing.T) {
-		kv, err := kvsvc.CreateOrUpdate(context.TODO(), &model.KVDoc{
+		kv, err := kvsvc.Create(context.TODO(), &model.KVDoc{
 			Key:   "timeout",
 			Value: "2s",
 			Labels: map[string]string{
@@ -73,7 +85,7 @@ func TestService_CreateOrUpdate(t *testing.T) {
 		assert.NotEmpty(t, oid)
 	})
 	t.Run("put kv timeout,with labels app,and update value", func(t *testing.T) {
-		_, err := kvsvc.CreateOrUpdate(context.Background(), &model.KVDoc{
+		beforeKV, err := kvsvc.Create(context.Background(), &model.KVDoc{
 			Key:   "timeout",
 			Value: "1s",
 			Labels: map[string]string{
@@ -83,7 +95,8 @@ func TestService_CreateOrUpdate(t *testing.T) {
 			Project: "kv-test",
 		})
 		assert.NoError(t, err)
-		afterKV, err := kvsvc.CreateOrUpdate(context.Background(), &model.KVDoc{
+		afterKV, err := kvsvc.Update(context.Background(), &model.KVDoc{
+			ID:    beforeKV.ID,
 			Key:   "timeout",
 			Value: "3s",
 			Labels: map[string]string{
