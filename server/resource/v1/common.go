@@ -211,15 +211,6 @@ func checkPagination(offsetStr, limitStr string) (int64, int64, error) {
 	return offset, limit, err
 }
 
-func validatePut(kv *model.KVDoc) error {
-	err := validateGet(kv.Domain, kv.Project, kv.ID)
-	if err != nil {
-		return err
-	}
-	_, err = checkStatus(kv.Status)
-	return err
-}
-
 func validateGet(domain, project, kvID string) error {
 	if kvID == "" {
 		return session.ErrIDIsNil

@@ -65,9 +65,14 @@ func TestHistoryResource_GetRevisions(t *testing.T) {
 	assert.GreaterOrEqual(t, before, 1)
 
 	t.Run("put again, should has 2 revision", func(t *testing.T) {
-		kv.Domain = "default"
-		kv.Project = "history_test"
-		kv, err = service.KVService.Update(context.Background(), kv)
+		updateKv := &model.UpdateKVRequest{
+			ID:      kv.ID,
+			Value:   kv.Value,
+			Domain:  "default",
+			Project: "history_test",
+			Status:  kv.Status,
+		}
+		kv, err = service.KVService.Update(context.Background(), updateKv)
 		assert.NoError(t, err)
 		path := fmt.Sprintf("/v1/history_test/kie/revision/%s", kv.ID)
 		r, _ := http.NewRequest("GET", path, nil)

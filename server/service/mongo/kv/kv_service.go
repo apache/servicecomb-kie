@@ -71,7 +71,7 @@ func (s *Service) Create(ctx context.Context, kv *model.KVDoc) (*model.KVDoc, er
 }
 
 //Update will update a key value record
-func (s *Service) Update(ctx context.Context, kv *model.KVDoc) (*model.KVDoc, error) {
+func (s *Service) Update(ctx context.Context, kv *model.UpdateKVRequest) (*model.KVDoc, error) {
 	ctx, _ = context.WithTimeout(ctx, session.Timeout)
 	oldKV, err := s.Get(ctx, kv.Domain, kv.Project, kv.ID)
 	if err != nil {

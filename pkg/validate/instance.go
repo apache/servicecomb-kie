@@ -2,17 +2,27 @@ package validate
 
 var defaultValidator = NewValidator()
 
+const (
+	key                   = "key"
+	commonNameRegexString = `^[a-zA-Z0-9]*$|^[a-zA-Z0-9][a-zA-Z0-9_\-.]*[a-zA-Z0-9]$`
+	asciiRegexString      = `^[\x00-\x7F]*$`
+)
+
 // custom validate rules
 // please use different tag names from third party tags
 var customRules = []*RegexValidateRule{
-	NewRule("commonName", `^[a-zA-Z0-9]*$|^[a-zA-Z0-9][a-zA-Z0-9_\-.]*[a-zA-Z0-9]$`, &Option{Min: 1, Max: 256}),
+	NewRule(key, commonNameRegexString, &Option{Min: 1, Max: 2048}), //2K
+	NewRule("commonName", commonNameRegexString, &Option{Min: 1, Max: 256}),
 	NewRule("valueType", `^(ini|json|text|yaml|properties){0,1}$`, nil),
 	NewRule("kvStatus", `^(enabled|disabled){0,1}$`, nil),
+	NewRule("value", asciiRegexString, &Option{Max: 2097152}), //ASCII, 2M
+	NewRule("lableKV", commonNameRegexString, &Option{Min: 1, Max: 32}),
+	NewRule("check", asciiRegexString, &Option{Max: 1048576}), //ASCII, 1M
 }
 
 // tags of third party validate rules we used, for error translation
 var thirdPartyTags = []string{
-	"min", "max", "length",
+	"min", "max", "length", "uuid",
 }
 
 // Init initializes validate

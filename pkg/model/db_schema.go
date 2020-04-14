@@ -31,10 +31,10 @@ type LabelDoc struct {
 type KVDoc struct {
 	ID             string `json:"id,omitempty" bson:"id,omitempty" yaml:"id,omitempty" swag:"string"`
 	LabelFormat    string `json:"label_format,omitempty" bson:"label_format,omitempty" yaml:"label_format,omitempty"`
-	Key            string `json:"key" yaml:"key" validate:"commonName"`
-	Value          string `json:"value" yaml:"value" validate:"ascii,min=1,max=2097152"`
+	Key            string `json:"key" yaml:"key" validate:"key"`
+	Value          string `json:"value" yaml:"value" validate:"value"`
 	ValueType      string `json:"value_type,omitempty" bson:"value_type,omitempty" yaml:"value_type,omitempty" validate:"valueType"` //ini,json,text,yaml,properties
-	Checker        string `json:"check,omitempty" yaml:"check,omitempty"`                                                            //python script
+	Checker        string `json:"check,omitempty" yaml:"check,omitempty" validate:"check"`                                           //python script
 	CreateRevision int64  `json:"create_revision,omitempty" bson:"create_revision," yaml:"create_revision,omitempty"`
 	UpdateRevision int64  `json:"update_revision,omitempty" bson:"update_revision," yaml:"update_revision,omitempty"`
 	Project        string `json:"project,omitempty" yaml:"project,omitempty" validate:"commonName"`
@@ -42,9 +42,8 @@ type KVDoc struct {
 	CreateTime     int64  `json:"create_time,omitempty" bson:"create_time," yaml:"create_time,omitempty"`
 	UpdateTime     int64  `json:"update_time,omitempty" bson:"update_time," yaml:"update_time,omitempty"`
 
-	Labels map[string]string `json:"labels,omitempty" yaml:"labels,omitempty" validate:"max=64,dive,keys,commonName,endkeys,commonName"` //redundant
-	Domain string            `json:"domain,omitempty" yaml:"domain,omitempty" validate:"commonName"`                                     //redundant
-
+	Labels map[string]string `json:"labels,omitempty" yaml:"labels,omitempty" validate:"max=8,dive,keys,lableKV,endkeys,lableKV"` //redundant
+	Domain string            `json:"domain,omitempty" yaml:"domain,omitempty" validate:"commonName"`                              //redundant
 }
 
 //ViewDoc is db struct, it saves user's custom view name and criteria
@@ -68,4 +67,13 @@ type PollingDetail struct {
 	ResponseBody   interface{}            `json:"response_body,omitempty"  bson:"response_body,"  yaml:"response_body,omitempty"`
 	ResponseHeader map[string][]string    `json:"response_header,omitempty"  bson:"response_header,"  yaml:"response_header,omitempty"`
 	ResponseCode   int                    `json:"response_code,omitempty"  bson:"response_code,"  yaml:"response_code,omitempty"`
+}
+
+// UpdateKVRequest is db struct, it contains kv update request params
+type UpdateKVRequest struct {
+	ID      string `json:"id,omitempty" bson:"id,omitempty" yaml:"id,omitempty" swag:"string" validate:"uuid"`
+	Value   string `json:"value,omitempty" yaml:"value,omitempty" validate:"value"`
+	Project string `json:"project,omitempty" yaml:"project,omitempty" validate:"commonName"`
+	Domain  string `json:"domain,omitempty" yaml:"domain,omitempty" validate:"commonName"` //redundant
+	Status  string `json:"status,omitempty" yaml:"status,omitempty" validate:"kvStatus"`
 }
