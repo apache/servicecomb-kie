@@ -77,8 +77,12 @@ func (s *Service) Update(ctx context.Context, kv *model.UpdateKVRequest) (*model
 	if err != nil {
 		return nil, err
 	}
-	oldKV.Status = kv.Status
-	oldKV.Value = kv.Value
+	if kv.Status != "" {
+		oldKV.Status = kv.Status
+	}
+	if kv.Value != "" {
+		oldKV.Value = kv.Value
+	}
 	err = updateKeyValue(ctx, oldKV)
 	if err != nil {
 		return nil, err

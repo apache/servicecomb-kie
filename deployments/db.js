@@ -50,6 +50,7 @@ db.createCollection( "kv", {
                     bsonType: "long",
                 },
                 status: {
+                    enum: [ "enabled","disabled" ],
                     bsonType: "string",
                 },
             }

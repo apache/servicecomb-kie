@@ -52,6 +52,9 @@ func (r *KVResource) Post(rctx *restful.Context) {
 	domain := ReadDomain(rctx)
 	kv.Domain = domain.(string)
 	kv.Project = project
+	if kv.Status == "" {
+		kv.Status = common.StatusDisabled
+	}
 	err = validate.Validate(kv)
 	if err != nil {
 		WriteErrResponse(rctx, http.StatusBadRequest, err.Error())
@@ -60,7 +63,7 @@ func (r *KVResource) Post(rctx *restful.Context) {
 	err = quota.PreCreate("", kv.Domain, "", 1)
 	if err != nil {
 		if err == quota.ErrReached {
-			openlogging.Info("can not create kv, due to quota violation")
+			openlogging.Info(fmt.Sprintf("can not create kv %s@%s, due to quota violation", kv.Key, kv.Project))
 			WriteErrResponse(rctx, http.StatusUnprocessableEntity, err.Error())
 			return
 		}

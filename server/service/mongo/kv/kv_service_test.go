@@ -19,6 +19,7 @@ package kv_test
 
 import (
 	"context"
+	common2 "github.com/apache/servicecomb-kie/pkg/common"
 	"github.com/apache/servicecomb-kie/pkg/model"
 	"github.com/apache/servicecomb-kie/server/config"
 	"github.com/apache/servicecomb-kie/server/service"
@@ -50,8 +51,9 @@ func TestService_CreateOrUpdate(t *testing.T) {
 	kvsvc := &kv.Service{}
 	t.Run("put kv timeout,with labels app and service", func(t *testing.T) {
 		kv, err := kvsvc.Create(context.TODO(), &model.KVDoc{
-			Key:   "timeout",
-			Value: "2s",
+			Key:    "timeout",
+			Value:  "2s",
+			Status: common2.StatusEnabled,
 			Labels: map[string]string{
 				"app":     "mall",
 				"service": "cart",
@@ -64,8 +66,9 @@ func TestService_CreateOrUpdate(t *testing.T) {
 	})
 	t.Run("put kv timeout,with labels app, service and version", func(t *testing.T) {
 		kv, err := kvsvc.Create(context.TODO(), &model.KVDoc{
-			Key:   "timeout",
-			Value: "2s",
+			Key:    "timeout",
+			Value:  "2s",
+			Status: common2.StatusEnabled,
 			Labels: map[string]string{
 				"app":     "mall",
 				"service": "cart",
@@ -86,8 +89,9 @@ func TestService_CreateOrUpdate(t *testing.T) {
 	})
 	t.Run("put kv timeout,with labels app,and update value", func(t *testing.T) {
 		beforeKV, err := kvsvc.Create(context.Background(), &model.KVDoc{
-			Key:   "timeout",
-			Value: "1s",
+			Key:    "timeout",
+			Value:  "1s",
+			Status: common2.StatusEnabled,
 			Labels: map[string]string{
 				"app": "mall",
 			},
@@ -115,8 +119,9 @@ func TestService_Create(t *testing.T) {
 	kvsvc := &kv.Service{}
 	t.Run("create kv timeout,with labels app and service", func(t *testing.T) {
 		result, err := kvsvc.Create(context.TODO(), &model.KVDoc{
-			Key:   "timeout",
-			Value: "2s",
+			Key:    "timeout",
+			Value:  "2s",
+			Status: common2.StatusEnabled,
 			Labels: map[string]string{
 				"app":     "mall",
 				"service": "utCart",
@@ -131,8 +136,9 @@ func TestService_Create(t *testing.T) {
 	})
 	t.Run("create the same kv", func(t *testing.T) {
 		_, err := kvsvc.Create(context.TODO(), &model.KVDoc{
-			Key:   "timeout",
-			Value: "2s",
+			Key:    "timeout",
+			Value:  "2s",
+			Status: common2.StatusEnabled,
 			Labels: map[string]string{
 				"app":     "mall",
 				"service": "utCart",
