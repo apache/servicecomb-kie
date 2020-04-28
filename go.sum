@@ -66,6 +66,8 @@ github.com/go-chassis/go-chassis v1.8.2-0.20200310060113-4b383ba3d3f0 h1:YD9MtuY
 github.com/go-chassis/go-chassis v1.8.2-0.20200310060113-4b383ba3d3f0/go.mod h1:sFnVxSvprpy6umPFK4uSdfCDdfqdgbp3FdW/CG0VNnE=
 github.com/go-chassis/go-chassis v1.8.2-0.20200331092516-8cf0b374128b h1:AvZjvPQdla1KoLrxbU8bohR3Y9FYnScZFY5KnK2HnSU=
 github.com/go-chassis/go-chassis v1.8.2-0.20200331092516-8cf0b374128b/go.mod h1:ooQ3peVePtKic3ci/vIGEmGHTC5/BxUeYLN+eKu+EUU=
+github.com/go-chassis/go-chassis v1.8.2-0.20200426111522-0f37ad3d79e5 h1:QpSTAsKX2S/H0lc7bPOrFGDlPLQGr86y+q4nt0r0lCg=
+github.com/go-chassis/go-chassis v1.8.2-0.20200426111522-0f37ad3d79e5/go.mod h1:ooQ3peVePtKic3ci/vIGEmGHTC5/BxUeYLN+eKu+EUU=
 github.com/go-chassis/go-chassis v1.8.2 h1:lX+XJbIGSkC4c+1h8IcoBQFEX9vaZ0+KNugE24Q/I/Y=
 github.com/go-chassis/go-restful-swagger20 v1.0.3-0.20200310030431-17d80f34264f h1:5QmmNpVcGqIc6tuKNe5EAI4PA8Yn2EL9Oee7YdcJ4PE=
 github.com/go-chassis/go-restful-swagger20 v1.0.3-0.20200310030431-17d80f34264f/go.mod h1:eW62fYuzlNFDvIacB6AV8bhUDCTy4myfTCv0bT9Gbb0=

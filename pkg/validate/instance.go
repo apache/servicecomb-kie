@@ -11,12 +11,12 @@ const (
 // custom validate rules
 // please use different tag names from third party tags
 var customRules = []*RegexValidateRule{
-	NewRule(key, commonNameRegexString, &Option{Min: 1, Max: 2048}), //2K
+	NewRule(key, commonNameRegexString, &Option{Min: 1, Max: 1024}), //2K
 	NewRule("commonName", commonNameRegexString, &Option{Min: 1, Max: 256}),
 	NewRule("valueType", `^(ini|json|text|yaml|properties){0,1}$`, nil),
 	NewRule("kvStatus", `^(enabled|disabled){0,1}$`, nil),
 	NewRule("value", asciiRegexString, &Option{Max: 2097152}), //ASCII, 2M
-	NewRule("lableKV", commonNameRegexString, &Option{Min: 1, Max: 32}),
+	NewRule("lableKV", commonNameRegexString, &Option{Max: 32}),
 	NewRule("check", asciiRegexString, &Option{Max: 1048576}), //ASCII, 1M
 }
 
