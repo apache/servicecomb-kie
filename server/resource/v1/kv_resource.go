@@ -22,7 +22,6 @@ import (
 	"context"
 	"encoding/json"
 	"fmt"
-	"github.com/go-chassis/go-chassis/pkg/backends/quota"
 	"net/http"
 
 	"github.com/apache/servicecomb-kie/pkg/common"
@@ -31,7 +30,9 @@ import (
 	"github.com/apache/servicecomb-kie/server/pubsub"
 	"github.com/apache/servicecomb-kie/server/service"
 	"github.com/apache/servicecomb-kie/server/service/mongo/session"
+
 	goRestful "github.com/emicklei/go-restful"
+	"github.com/go-chassis/go-chassis/pkg/backends/quota"
 	"github.com/go-chassis/go-chassis/server/restful"
 	"github.com/go-mesh/openlogging"
 )
@@ -146,15 +147,17 @@ func (r *KVResource) Put(rctx *restful.Context) {
 
 //Get search key by kv id
 func (r *KVResource) Get(rctx *restful.Context) {
-	project := rctx.ReadPathParameter(common.PathParameterProject)
-	domain := ReadDomain(rctx).(string)
-	kvID := rctx.ReadPathParameter(common.PathParamKVID)
-	err := validateGet(domain, project, kvID)
+	request := &model.GetKVRequest{
+		Project: rctx.ReadPathParameter(common.PathParameterProject),
+		Domain:  ReadDomain(rctx).(string),
+		ID:      rctx.ReadPathParameter(common.PathParamKVID),
+	}
+	err := validate.Validate(request)
 	if err != nil {
 		WriteErrResponse(rctx, http.StatusBadRequest, err.Error())
 		return
 	}
-	kv, err := service.KVService.Get(rctx.Ctx, domain, project, kvID)
+	kv, err := service.KVService.Get(rctx.Ctx, request)
 	if err != nil {
 		openlogging.Error("kv_resource: " + err.Error())
 		if err == service.ErrKeyNotExists {
@@ -176,20 +179,18 @@ func (r *KVResource) Get(rctx *restful.Context) {
 //List response kv list
 func (r *KVResource) List(rctx *restful.Context) {
 	var err error
-	key := rctx.ReadQueryParameter(common.QueryParamKey)
-	project := rctx.ReadPathParameter(common.PathParameterProject)
-	domain := ReadDomain(rctx).(string)
-	err = validateList(domain, project)
-	if err != nil {
-		WriteErrResponse(rctx, http.StatusBadRequest, err.Error())
-		return
+	request := &model.ListKVRequest{
+		Project: rctx.ReadPathParameter(common.PathParameterProject),
+		Domain:  ReadDomain(rctx).(string),
+		Key:     rctx.ReadQueryParameter(common.QueryParamKey),
+		Status:  rctx.ReadQueryParameter(common.QueryParamStatus),
 	}
 	labels, err := getLabels(rctx)
 	if err != nil {
 		WriteErrResponse(rctx, http.StatusBadRequest, common.MsgIllegalLabels)
 		return
 	}
-
+	request.Labels = labels
 	offsetStr := rctx.ReadQueryParameter(common.QueryParamOffset)
 	limitStr := rctx.ReadQueryParameter(common.QueryParamLimit)
 	offset, limit, err := checkPagination(offsetStr, limitStr)
@@ -197,47 +198,41 @@ func (r *KVResource) List(rctx *restful.Context) {
 		WriteErrResponse(rctx, http.StatusBadRequest, err.Error())
 		return
 	}
-	sessionID := rctx.ReadHeader(HeaderSessionID)
-	statusStr := rctx.ReadQueryParameter(common.QueryParamStatus)
-	status, err := checkStatus(statusStr)
+	request.Offset = offset
+	request.Limit = limit
+	err = validate.Validate(request)
 	if err != nil {
 		WriteErrResponse(rctx, http.StatusBadRequest, err.Error())
 		return
 	}
-	returnData(rctx, &model.KVDoc{
-		Domain:  domain,
-		Project: project,
-		Key:     key,
-		Labels:  labels,
-		Status:  status,
-	}, offset, limit, sessionID)
+	returnData(rctx, request)
 }
 
-func returnData(rctx *restful.Context, doc *model.KVDoc, offset, limit int64, sessionID string) {
+func returnData(rctx *restful.Context, request *model.ListKVRequest) {
 	revStr := rctx.ReadQueryParameter(common.QueryParamRev)
 	wait := rctx.ReadQueryParameter(common.QueryParamWait)
 	if revStr == "" {
 		if wait == "" {
-			queryAndResponse(rctx, doc, offset, limit)
+			queryAndResponse(rctx, request)
 			return
 		}
 		changed, err := eventHappened(rctx, wait, &pubsub.Topic{
-			Labels:    doc.Labels,
-			Project:   doc.Project,
+			Labels:    request.Labels,
+			Project:   request.Project,
 			MatchType: getMatchPattern(rctx),
-			DomainID:  doc.Domain,
+			DomainID:  request.Domain,
 		})
 		if err != nil {
 			WriteErrResponse(rctx, http.StatusBadRequest, err.Error())
 			return
 		}
 		if changed {
-			queryAndResponse(rctx, doc, offset, limit)
+			queryAndResponse(rctx, request)
 			return
 		}
 		rctx.WriteHeader(http.StatusNotModified)
 	} else {
-		revised, err := isRevised(rctx.Ctx, revStr, doc.Domain)
+		revised, err := isRevised(rctx.Ctx, revStr, request.Domain)
 		if err != nil {
 			if err == ErrInvalidRev {
 				WriteErrResponse(rctx, http.StatusBadRequest, err.Error())
@@ -247,21 +242,21 @@ func returnData(rctx *restful.Context, doc *model.KVDoc, offset, limit int64, se
 			return
 		}
 		if revised {
-			queryAndResponse(rctx, doc, offset, limit)
+			queryAndResponse(rctx, request)
 			return
 		} else if wait != "" {
 			changed, err := eventHappened(rctx, wait, &pubsub.Topic{
-				Labels:    doc.Labels,
-				Project:   doc.Project,
+				Labels:    request.Labels,
+				Project:   request.Project,
 				MatchType: getMatchPattern(rctx),
-				DomainID:  doc.Domain,
+				DomainID:  request.Domain,
 			})
 			if err != nil {
 				WriteErrResponse(rctx, http.StatusBadRequest, err.Error())
 				return
 			}
 			if changed {
-				queryAndResponse(rctx, doc, offset, limit)
+				queryAndResponse(rctx, request)
 				return
 			}
 			rctx.WriteHeader(http.StatusNotModified)

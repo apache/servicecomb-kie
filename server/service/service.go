@@ -50,7 +50,7 @@ type KV interface {
 	//FindManyAndDelete deletes multiple kvs and return the deleted kv list as these appeared before deletion
 	FindManyAndDelete(ctx context.Context, kvIDs []string, domain, project string) ([]*model.KVDoc, error)
 	//Get return kv by id
-	Get(ctx context.Context, domain, project, id string, options ...FindOption) (*model.KVDoc, error)
+	Get(ctx context.Context, request *model.GetKVRequest) (*model.KVDoc, error)
 	//KV is a resource of kie, this api should return kv resource number by domain id
 	Total(ctx context.Context, domain string) (int64, error)
 }

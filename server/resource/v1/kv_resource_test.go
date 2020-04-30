@@ -174,6 +174,7 @@ func TestKVResource_List(t *testing.T) {
 		c.ServeHTTP(resp, r)
 		body, err := ioutil.ReadAll(resp.Body)
 		assert.NoError(t, err)
+		assert.Equal(t, http.StatusOK, resp.Code, string(body))
 		result := &model.KVResponse{}
 		err = json.Unmarshal(body, result)
 		assert.NoError(t, err)
