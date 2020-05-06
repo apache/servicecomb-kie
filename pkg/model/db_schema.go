@@ -77,3 +77,21 @@ type UpdateKVRequest struct {
 	Domain  string `json:"domain,omitempty" yaml:"domain,omitempty" validate:"commonName"` //redundant
 	Status  string `json:"status,omitempty" yaml:"status,omitempty" validate:"kvStatus"`
 }
+
+// GetKVRequest contains kv get request params
+type GetKVRequest struct {
+	Project string `json:"project,omitempty" yaml:"project,omitempty" validate:"commonName"`
+	Domain  string `json:"domain,omitempty" yaml:"domain,omitempty" validate:"commonName"` //redundant
+	ID      string `json:"id,omitempty" bson:"id,omitempty" yaml:"id,omitempty" swag:"string" validate:"uuid"`
+}
+
+// ListKVRequest contains kv list request params
+type ListKVRequest struct {
+	Project string            `json:"project,omitempty" yaml:"project,omitempty" validate:"commonName"`
+	Domain  string            `json:"domain,omitempty" yaml:"domain,omitempty" validate:"commonName"` //redundant
+	Key     string            `json:"key" yaml:"key" validate:"getKey"`
+	Labels  map[string]string `json:"labels,omitempty" yaml:"labels,omitempty" validate:"max=8,dive,keys,lableKV,endkeys,lableKV"` //redundant
+	Offset  int64             `validate:"min=0"`
+	Limit   int64             `validate:"min=0,max=100"`
+	Status  string            `json:"status,omitempty" yaml:"status,omitempty" validate:"kvStatus"`
+}

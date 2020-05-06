@@ -52,10 +52,7 @@ func (v *Validator) RegisterRule(r *RegexValidateRule) error {
 	if err := v.valid.RegisterValidation(r.tag, r.validateFL); err != nil {
 		return err
 	}
-	if err := v.AddErrorTranslation4Tag(r.tag); err != nil {
-		return err
-	}
-	return nil
+	return v.AddErrorTranslation4Tag(r.tag)
 }
 
 // translates raw errors to easy-to-understand messages

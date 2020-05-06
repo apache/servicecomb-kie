@@ -218,10 +218,6 @@ func validateGet(domain, project, kvID string) error {
 	return checkDomainAndProject(domain, project)
 }
 
-func validateList(domain, project string) error {
-	return checkDomainAndProject(domain, project)
-}
-
 func validateDelete(domain, project, kvID string) error {
 	return validateGet(domain, project, kvID)
 }
@@ -240,35 +236,26 @@ func checkDomainAndProject(domain, project string) error {
 	return nil
 }
 
-func checkStatus(status string) (string, error) {
-	if status != "" {
-		if status != common.StatusEnabled && status != common.StatusDisabled {
-			return "", errors.New("invalid status string")
-		}
-	}
-	return status, nil
-}
-
-func queryAndResponse(rctx *restful.Context, doc *model.KVDoc, offset, limit int64) {
+func queryAndResponse(rctx *restful.Context, request *model.ListKVRequest) {
 	m := getMatchPattern(rctx)
 	opts := []service.FindOption{
-		service.WithKey(doc.Key),
-		service.WithLabels(doc.Labels),
-		service.WithOffset(offset),
-		service.WithLimit(limit),
+		service.WithKey(request.Key),
+		service.WithLabels(request.Labels),
+		service.WithOffset(request.Offset),
+		service.WithLimit(request.Limit),
 	}
 	if m == common.PatternExact {
 		opts = append(opts, service.WithExactLabels())
 	}
-	if doc.Status != "" {
-		opts = append(opts, service.WithStatus(doc.Status))
+	if request.Status != "" {
+		opts = append(opts, service.WithStatus(request.Status))
 	}
-	rev, err := service.RevisionService.GetRevision(rctx.Ctx, doc.Domain)
+	rev, err := service.RevisionService.GetRevision(rctx.Ctx, request.Domain)
 	if err != nil {
 		WriteErrResponse(rctx, http.StatusInternalServerError, err.Error())
 		return
 	}
-	kv, err := service.KVService.List(rctx.Ctx, doc.Domain, doc.Project, opts...)
+	kv, err := service.KVService.List(rctx.Ctx, request.Domain, request.Project, opts...)
 	if err != nil {
 		openlogging.Error("common: " + err.Error())
 		WriteErrResponse(rctx, http.StatusInternalServerError, common.MsgDBError)

@@ -73,7 +73,12 @@ func (s *Service) Create(ctx context.Context, kv *model.KVDoc) (*model.KVDoc, er
 //Update will update a key value record
 func (s *Service) Update(ctx context.Context, kv *model.UpdateKVRequest) (*model.KVDoc, error) {
 	ctx, _ = context.WithTimeout(ctx, session.Timeout)
-	oldKV, err := s.Get(ctx, kv.Domain, kv.Project, kv.ID)
+	getRequest := &model.GetKVRequest{
+		Domain:  kv.Domain,
+		Project: kv.Project,
+		ID:      kv.ID,
+	}
+	oldKV, err := s.Get(ctx, getRequest)
 	if err != nil {
 		return nil, err
 	}
@@ -171,15 +176,8 @@ func (s *Service) List(ctx context.Context, domain, project string, options ...s
 }
 
 //Get get kvs by id
-func (s *Service) Get(ctx context.Context, domain, project, id string, options ...service.FindOption) (*model.KVDoc, error) {
-	opts := service.FindOptions{}
-	for _, o := range options {
-		o(&opts)
-	}
-	if opts.Timeout == 0 {
-		opts.Timeout = session.DefaultTimeout
-	}
-	return findKVDocByID(ctx, domain, project, id)
+func (s *Service) Get(ctx context.Context, request *model.GetKVRequest) (*model.KVDoc, error) {
+	return findKVDocByID(ctx, request.Domain, request.Project, request.ID)
 }
 
 //Total return kv record number
