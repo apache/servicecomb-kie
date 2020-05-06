@@ -125,6 +125,12 @@ func (r *HistoryResource) HealthCheck(context *restful.Context) {
 	resp.Revision = strconv.FormatInt(latest, 10)
 	resp.Version = runtime.Version
 	resp.Timestamp = time.Now().Unix()
+	total, err := service.KVService.Total(context.Ctx, domain.(string))
+	if err != nil {
+		WriteErrResponse(context, http.StatusInternalServerError, err.Error())
+		return
+	}
+	resp.Total = total
 	err = writeResponse(context, resp)
 	if err != nil {
 		openlogging.Error(err.Error())
