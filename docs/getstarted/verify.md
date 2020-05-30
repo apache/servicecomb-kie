@@ -1,30 +1,63 @@
 # After running
 Put a key 
 ```shell script
-curl -X PUT \
-  http://127.0.0.1:30110/v1/default/kie/kv/ingressRule \
+curl -X POST \
+  http://127.0.0.1:30110/v1/default/kie/kv/ \
   -H 'Content-Type: application/json' \
   -d '{
-	"value":"some rule",
-	"type": "yaml",
-	"labels":{"app":"default"}
+    "key": "timeout",
+    "value": "2s",
+    "labels": {
+        "service": "order"
+    }
 }'
 ```
 
 response is 
 ```json
 {
- "id": "05529229-efc3-49ca-a765-05759b23ab28",
- "key": "ingressRule",
- "value": "some rule",
- "value_type": "text",
- "create_revision": 13,
- "update_revision": 13,
- "labels": {
-  "app": "default"
- }
+    "id": "b01ad993-2bad-4468-8a3c-5aa7ad54afea",
+    "key": "timeout",
+    "value": "2s",
+    "value_type": "text",
+    "create_revision": 2,
+    "update_revision": 2,
+    "status": "disabled",
+    "create_time": 1590802244,
+    "update_time": 1590802244,
+    "labels": {
+        "service": "order"
+    }
 }
 ```
+
+then get config list
+```shell script
+curl -X GET http://127.0.0.1:30110/v1/default/kie/kv 
+```
+response is 
+```json
+{
+ "total": 1,
+ "data": [
+  {
+   "id": "b01ad993-2bad-4468-8a3c-5aa7ad54afea",
+   "key": "timeout",
+   "value": "2s",
+   "value_type": "text",
+   "create_revision": 2,
+   "update_revision": 2,
+   "status": "disabled",
+   "create_time": 1590802244,
+   "update_time": 1590802244,
+   "labels": {
+    "service": "order"
+   }
+  }
+ ]
+}
+```
+
 
 Check open API doc
 - the api doc mounted to http://127.0.0.1:30110/apidocs.json 
