@@ -23,9 +23,8 @@ import (
 	"github.com/apache/servicecomb-kie/pkg/validate"
 	"github.com/apache/servicecomb-kie/server/config"
 	"github.com/apache/servicecomb-kie/server/pubsub"
-	v1 "github.com/apache/servicecomb-kie/server/resource/v1"
+	"github.com/apache/servicecomb-kie/server/resource/v1"
 	"github.com/apache/servicecomb-kie/server/service"
-
 	"github.com/go-chassis/go-chassis"
 	"github.com/go-chassis/go-chassis/core/common"
 	"github.com/go-mesh/openlogging"

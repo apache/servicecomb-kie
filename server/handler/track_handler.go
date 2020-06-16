@@ -69,16 +69,15 @@ func (h *TrackHandler) Handle(chain *handler.Chain, inv *invocation.Invocation, 
 		data.UserAgent = req.HeaderParameter(v1.HeaderUserAgent)
 		data.Domain = inv.Metadata[v1.AttributeDomainKey].(string)
 		data.IP = iputil.ClientIP(req.Request)
-		data.ResponseBody = inv.Ctx.Value(common.RespBodyContextKey)
+		data.ResponseBody = req.Attribute(common.RespBodyContextKey).([]*model.KVDoc)
 		data.ResponseCode = ir.Status
 		if resp != nil {
 			data.ResponseHeader = resp.Header()
 		}
 		data.PollingData = map[string]interface{}{
-			"revStr":  revStr,
-			"wait":    wait,
-			"project": req.HeaderParameter(common.PathParameterProject),
-			"labels":  req.QueryParameter("label"),
+			"revision": revStr,
+			"wait":     wait,
+			"labels":   req.QueryParameter("label"),
 		}
 		_, err := track.CreateOrUpdate(inv.Ctx, data)
 		if err != nil {
