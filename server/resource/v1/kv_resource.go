@@ -19,7 +19,6 @@
 package v1
 
 import (
-	"context"
 	"encoding/json"
 	"fmt"
 	"net/http"
@@ -170,7 +169,6 @@ func (r *KVResource) Get(rctx *restful.Context) {
 	kv.Domain = ""
 	kv.Project = ""
 	err = writeResponse(rctx, kv)
-	rctx.Ctx = context.WithValue(rctx.Ctx, common.RespBodyContextKey, kv)
 	if err != nil {
 		openlogging.Error(err.Error())
 	}
