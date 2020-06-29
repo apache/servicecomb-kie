@@ -2,10 +2,8 @@ name: Merge check
 on: [push, pull_request]
 jobs:
   build:
-    name: Merge check
     runs-on: ubuntu-latest
     steps:
-
     - name: Set up Go 1.13
       uses: actions/setup-go@v1
       with:
@@ -18,25 +16,37 @@ jobs:
     - name: Build
       run: go build -v github.com/apache/servicecomb-kie/cmd/kieserver
 
-    - name: Fmt
-      run: |
-        bash scripts/ci/formatChecker.sh
-    - name: Misspell
-      run: |
-        go get -u github.com/client9/misspell/cmd/misspell
-        bash scripts/ci/formatChecker.sh
-    - name: Lint
-      run: |
-        go get -u golang.org/x/lint/golint
-        bash scripts/ci/goLintChecker.sh
-    - name: Cyclo
-      run: |
-        go get github.com/fzipp/gocyclo
-        bash scripts/ci/goCycloChecker.sh
-    - name: secure
-      run: |
-        go get github.com/securego/gosec/cmd/gosec
-        bash -x scripts/travis/goSecureChecker.sh
     - name: UT
       run: |
+        cd build
+        bash build_docker.sh
+        cd ../
+        sudo docker-compose -f ./deployments/docker/docker-compose.yaml up -d
+        sleep 30
         go test $(go list ./... |  grep -v third_party | grep -v examples) -cover -covermode atomic -coverprofile coverage.out
+  tests:
+    runs-on: ubuntu-latest
+    env:
+      GO111MODULE: on
+    steps:
+      - name: Checkout Source
+        uses: actions/checkout@v2
+      - name: Run Gosec Security Scanner
+        uses: securego/gosec@master
+        with:
+          args: ./...
+      - name: Fmt
+        run: |
+          bash scripts/ci/formatChecker.sh
+      - name: Misspell
+        run: |
+          go get -u github.com/client9/misspell/cmd/misspell
+          bash scripts/ci/formatChecker.sh
+      - name: Lint
+        run: |
+          go get -u golang.org/x/lint/golint
+          bash scripts/ci/goLintChecker.sh
+      - name: Cyclo
+        run: |
+          go get github.com/fzipp/gocyclo
+          bash scripts/ci/goCycloChecker.sh
