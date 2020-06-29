@@ -42,7 +42,7 @@ type KVDoc struct {
 	CreateTime     int64  `json:"create_time,omitempty" bson:"create_time," yaml:"create_time,omitempty"`
 	UpdateTime     int64  `json:"update_time,omitempty" bson:"update_time," yaml:"update_time,omitempty"`
 
-	Labels map[string]string `json:"labels,omitempty" yaml:"labels,omitempty" validate:"max=8,dive,keys,lableKV,endkeys,lableKV"` //redundant
+	Labels map[string]string `json:"labels,omitempty" yaml:"labels,omitempty" validate:"max=6,dive,keys,labelKV,endkeys,labelKV"` //redundant
 	Domain string            `json:"domain,omitempty" yaml:"domain,omitempty" validate:"commonName"`                              //redundant
 }
 
@@ -90,7 +90,7 @@ type ListKVRequest struct {
 	Project string            `json:"project,omitempty" yaml:"project,omitempty" validate:"commonName"`
 	Domain  string            `json:"domain,omitempty" yaml:"domain,omitempty" validate:"commonName"` //redundant
 	Key     string            `json:"key" yaml:"key" validate:"getKey"`
-	Labels  map[string]string `json:"labels,omitempty" yaml:"labels,omitempty" validate:"max=8,dive,keys,lableKV,endkeys,lableKV"` //redundant
+	Labels  map[string]string `json:"labels,omitempty" yaml:"labels,omitempty" validate:"max=8,dive,keys,labelKV,endkeys,labelKV"` //redundant
 	Offset  int64             `validate:"min=0"`
 	Limit   int64             `validate:"min=0,max=100"`
 	Status  string            `json:"status,omitempty" yaml:"status,omitempty" validate:"kvStatus"`

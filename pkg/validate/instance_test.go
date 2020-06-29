@@ -11,10 +11,7 @@ import (
 
 func TestValidate(t *testing.T) {
 	string32 := "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa" //32
-	string512 := "a"
-	for i := 0; i < 9; i++ { //512
-		string512 = string512 + string512
-	}
+	string128 := string32 + string32 + string32 + string32
 	err := validate.Init()
 	assert.NoError(t, err)
 
@@ -37,7 +34,7 @@ func TestValidate(t *testing.T) {
 	assert.Error(t, validate.Validate(kvDoc))
 
 	kvDoc = &model.KVDoc{Project: "a", Domain: "a",
-		Key:   string512 + "a",
+		Key:   string128 + "a",
 		Value: "a",
 	}
 	assert.Error(t, validate.Validate(kvDoc))

@@ -16,7 +16,7 @@ jobs:
       uses: actions/checkout@v1
 
     - name: Build
-      run: go build -v .
+      run: go build -v github.com/apache/servicecomb-kie/cmd/kieserver
 
     - name: Fmt
       run: |
