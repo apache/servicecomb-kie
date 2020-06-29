@@ -11,8 +11,8 @@ const (
 // custom validate rules
 // please use different tag names from third party tags
 var customRules = []*RegexValidateRule{
-	NewRule(key, commonNameRegexString, &Option{Min: 1, Max: 1024}), //1K
-	NewRule("getKey", commonNameRegexString, &Option{Max: 1024}),    //1K
+	NewRule(key, commonNameRegexString, &Option{Min: 1, Max: 512}), //0.5K
+	NewRule("getKey", commonNameRegexString, &Option{Max: 512}),    //0.5K
 	NewRule("commonName", commonNameRegexString, &Option{Min: 1, Max: 256}),
 	NewRule("valueType", `^$|^(ini|json|text|yaml|properties)$`, nil),
 	NewRule("kvStatus", `^$|^(enabled|disabled)$`, nil),
