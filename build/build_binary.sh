@@ -13,10 +13,6 @@
 # WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 # See the License for the specific language governing permissions and
 # limitations under the License.
-if [ -z "${GOPATH}" ]; then
- echo "missing GOPATH env, can not build"
- exit 1
-fi
 echo "GOPATH is "${GOPATH}
 export BUILD_DIR=$(cd "$(dirname "$0")"; pwd)
 export PROJECT_DIR=$(dirname ${BUILD_DIR})
