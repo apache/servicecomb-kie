@@ -40,3 +40,19 @@ it will launch 3 components
 - mongodb UI:http://127.0.0.1:8081
 - servicecomb-kie: http://127.0.0.1:30110
 
+### Run  with Docker kubernetes
+
+```bash
+kubectl apply -f https://raw.githubusercontent.com/apache/servicecomb-kie/master/deployments/kuberneetes/
+```
+
+it will launch 3 components, you can access them both in kubernetes and out of kubernetes.
+out of kubernetes:
+- mongodb: ${ANY_NODE_HOST}:30112
+- mongodb UI:http://${ANY_NODE_HOST}:30111
+- servicecomb-kie: http://${ANY_NODE_HOST}:30110
+in kubernetes:
+- mongodb: servicecomb-kie-nodeport:27017
+- mongodb UI: servicecomb-kie-nodeport:8081
+- servicecomb-kie: servicecomb-kie-nodeport:30110
+

@@ -1,0 +1,74 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: kie-deployment
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      component: servicecomb-kie
+  template:
+      metadata:
+        labels:
+          component:  servicecomb-kie
+      spec:
+        containers:
+          - name: servicecomb-kie
+            image: servicecomb/kie:latest
+            ports:
+              - containerPort: 30110
+            env:
+              - name: MONGODB_USER
+                value: kie
+              - name: MONGODB_PWD
+                value: '123'
+              - name: MONGODB_ADDR
+                value: localhost
+          - name: mongo-express
+            image: mongo-express
+            ports:
+              - containerPort: 8081
+            env:
+              - name: ME_CONFIG_MONGODB_ADMINUSERNAME
+                value: kie
+              - name: ME_CONFIG_MONGODB_ADMINPASSWORD
+                value: '123'
+              - name: ME_CONFIG_MONGODB_SERVER
+                value: localhost
+          - name: mongo
+            image: mongo:4.0
+            ports:
+              - containerPort: 27017
+            env:
+              - name: MONGO_INITDB_DATABASE
+                value: kie
+              - name: MONGO_INITDB_ROOT_USERNAME
+                value: kie
+              - name: MONGO_INITDB_ROOT_PASSWORD
+                value: '123'
+
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: servicecomb-kie-nodeport
+spec:
+  type: NodePort
+  selector:
+    component: servicecomb-kie
+  ports:
+    - name: servicecomb-kie
+      port: 30110
+      targetPort: 30110
+      nodePort: 30110
+      protocol: TCP
+    - name: mongo-express
+      port: 8081
+      targetPort: 8081
+      nodePort: 30111
+      protocol: TCP
+    - name: mongo
+      port: 27017
+      targetPort: 27017
+      nodePort: 30112
+      protocol: TCP
