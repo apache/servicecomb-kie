@@ -17,5 +17,6 @@
 
 cd build
 bash build_docker.sh
+cd "../$(dirname "$0")"
 sudo docker-compose -f ../../deployments/docker/docker-compose.yaml down
 sudo docker-compose -f ../../deployments/docker/docker-compose.yaml up -d

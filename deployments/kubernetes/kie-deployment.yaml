@@ -12,6 +12,20 @@ spec:
         labels:
           component:  servicecomb-kie
       spec:
+        volumes:
+          - name: mongo-data-pvs
+            persistentVolumeClaim:
+              claimName: mongo-data-pvc
+          - name: mongo-init-pvs
+            persistentVolumeClaim:
+              claimName: mongo-init-pvc
+        initContainers:
+          - name: down-init-db-js
+            image: busybox
+            volumeMounts:
+              - name: mongo-init-pvs
+                mountPath: "/init"
+            command: ['wget', '-nc', 'https://raw.githubusercontent.com/apache/servicecomb-kie/master/deployments/db.js','-O', '/init/db.js']
         containers:
           - name: servicecomb-kie
             image: servicecomb/kie:latest
@@ -39,6 +53,11 @@ spec:
             image: mongo:4.0
             ports:
               - containerPort: 27017
+            volumeMounts:
+              - mountPath: "/data/db"
+                name: mongo-data-pvs
+              - mountPath: "/docker-entrypoint-initdb.d"
+                name: mongo-init-pvs
             env:
               - name: MONGO_INITDB_DATABASE
                 value: kie
@@ -48,6 +67,7 @@ spec:
                 value: '123'
 
 ---
+
 apiVersion: v1
 kind: Service
 metadata:
@@ -72,3 +92,66 @@ spec:
       targetPort: 27017
       nodePort: 30112
       protocol: TCP
+
+---
+
+apiVersion: v1
+kind: PersistentVolume
+metadata:
+  name: mongo-data-pv
+  labels:
+    type: local
+spec:
+  storageClassName: mongo-data
+  capacity:
+    storage: 1Gi
+  accessModes:
+    - ReadWriteOnce
+  hostPath:
+    path: "/mongo_data"
+    type: DirectoryOrCreate
+
+---
+
+apiVersion: v1
+kind: PersistentVolumeClaim
+metadata:
+  name: mongo-data-pvc
+spec:
+  storageClassName: mongo-data
+  accessModes:
+    - ReadWriteOnce
+  resources:
+    requests:
+      storage: 1Gi
+---
+
+apiVersion: v1
+kind: PersistentVolume
+metadata:
+  name: mongo-init-pv
+  labels:
+    type: local
+spec:
+  storageClassName: mongo-init
+  capacity:
+    storage: 1Gi
+  accessModes:
+    - ReadWriteOnce
+  hostPath:
+    path: "/mongo_init"
+    type: DirectoryOrCreate
+
+---
+
+apiVersion: v1
+kind: PersistentVolumeClaim
+metadata:
+  name: mongo-init-pvc
+spec:
+  storageClassName: mongo-init
+  accessModes:
+    - ReadWriteOnce
+  resources:
+    requests:
+      storage: 1Gi
