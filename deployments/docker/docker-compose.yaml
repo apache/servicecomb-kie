@@ -35,6 +35,7 @@ services:
     environment:
       ME_CONFIG_MONGODB_ADMINUSERNAME: kie
       ME_CONFIG_MONGODB_ADMINPASSWORD: 123
+      ME_CONFIG_MONGODB_SERVER: mongo
   servicecomb-kie:
     image: servicecomb/kie:latest
     restart: always
