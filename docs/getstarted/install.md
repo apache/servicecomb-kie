@@ -40,7 +40,7 @@ it will launch 3 components
 - mongodb UI:http://127.0.0.1:8081
 - servicecomb-kie: http://127.0.0.1:30110
 
-### Run  with Docker kubernetes
+### Run on kubernetes
 
 ```bash
 kubectl apply -f https://raw.githubusercontent.com/apache/servicecomb-kie/master/deployments/kuberneetes/
