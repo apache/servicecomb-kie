@@ -57,7 +57,7 @@ var (
 func ReadClaims(ctx context.Context) map[string]interface{} {
 	i := rbacframe.FromContext(ctx)
 	if i != nil {
-		return rbacframe.FromContext(ctx).(map[string]interface{})
+		return i.(map[string]interface{})
 	}
 	return nil
 }
