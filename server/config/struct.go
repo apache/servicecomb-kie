@@ -19,8 +19,8 @@ package config
 
 //Config is yaml file struct
 type Config struct {
-	DB DB `yaml:"db"`
-
+	DB   DB   `yaml:"db"`
+	RBAC RBAC `yaml:"rbac"`
 	//config from cli
 	ConfigFile     string
 	NodeName       string
@@ -37,4 +37,10 @@ type DB struct {
 	RootCA     string `yaml:"rootCAFile"`
 	Timeout    string `yaml:"timeout"`
 	VerifyPeer bool   `yaml:"verifyPeer"`
+}
+
+//RBAC is rbac config
+type RBAC struct {
+	Enabled    bool   `yaml:"enabled"`
+	PubKeyFile string `yaml:"rsaPublicKeyFile"`
 }

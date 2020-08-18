@@ -15,34 +15,33 @@
  * limitations under the License.
  */
 
-package config
+package v1_test
 
 import (
-	"github.com/go-chassis/go-archaius"
-	"github.com/go-chassis/go-archaius/source/util"
-	"gopkg.in/yaml.v2"
-	"path/filepath"
+	"encoding/json"
+	"fmt"
+	"github.com/apache/servicecomb-kie/pkg/model"
+	v1 "github.com/apache/servicecomb-kie/server/resource/v1"
+	"github.com/go-chassis/go-chassis/server/restful/restfultest"
+	"github.com/stretchr/testify/assert"
+	"io/ioutil"
+	"net/http"
+	"net/http/httptest"
+	"testing"
 )
 
-//Configurations is kie config items
-var Configurations = &Config{}
-
-//Init initiate config files
-func Init() error {
-	if err := archaius.AddFile(Configurations.ConfigFile, archaius.WithFileHandler(util.UseFileNameAsKeyContentAsValue)); err != nil {
-		return err
-	}
-	_, filename := filepath.Split(Configurations.ConfigFile)
-	content := archaius.GetString(filename, "")
-	return yaml.Unmarshal([]byte(content), Configurations)
-}
-
-//GetDB return db configs
-func GetDB() DB {
-	return Configurations.DB
-}
-
-//GetRBAC return rbac config
-func GetRBAC() RBAC {
-	return Configurations.RBAC
+func Test_HeathCheck(t *testing.T) {
+	path := fmt.Sprintf("/v1/health")
+	r, _ := http.NewRequest("GET", path, nil)
+	revision := &v1.AdminResource{}
+	c, err := restfultest.New(revision, nil)
+	assert.NoError(t, err)
+	resp := httptest.NewRecorder()
+	c.ServeHTTP(resp, r)
+	body, err := ioutil.ReadAll(resp.Body)
+	assert.NoError(t, err)
+	data := &model.DocHealthCheck{}
+	err = json.Unmarshal(body, &data)
+	assert.NoError(t, err)
+	assert.NotEmpty(t, data)
 }

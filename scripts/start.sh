@@ -38,7 +38,7 @@ cse:
   handler:
     chain:
       Provider:
-        default: ratelimiter-provider,monitoring,auth-handler,track-handler
+        default: ratelimiter-provider,monitoring,jwt,track-handler
 servicecomb:
   service:
     quota:
