@@ -18,15 +18,11 @@
 package v1
 
 import (
-	"github.com/apache/servicecomb-kie/pkg/model"
-	"github.com/apache/servicecomb-kie/server/service/mongo/track"
-	"github.com/go-chassis/go-chassis/pkg/runtime"
-	"net/http"
-	"strconv"
-	"time"
-
 	"github.com/apache/servicecomb-kie/pkg/common"
+	"github.com/apache/servicecomb-kie/pkg/model"
 	"github.com/apache/servicecomb-kie/server/service"
+	"github.com/apache/servicecomb-kie/server/service/mongo/track"
+	"net/http"
 
 	goRestful "github.com/emicklei/go-restful"
 	"github.com/go-chassis/go-chassis/server/restful"
@@ -89,12 +85,12 @@ func (r *HistoryResource) GetPollingData(context *restful.Context) {
 	if userAgent != "" {
 		query.UserAgent = userAgent
 	}
-	domain := ReadDomain(context)
-	if domain == nil {
+	domain := ReadDomain(context.Ctx)
+	if domain == "" {
 		WriteErrResponse(context, http.StatusInternalServerError, common.MsgDomainMustNotBeEmpty)
 		return
 	}
-	query.Domain = domain.(string)
+	query.Domain = domain
 	records, err := track.Get(context.Ctx, query)
 	if err != nil {
 		if err == service.ErrRecordNotExists {
@@ -107,30 +103,6 @@ func (r *HistoryResource) GetPollingData(context *restful.Context) {
 	resp := &model.PollingDataResponse{}
 	resp.Data = records
 	resp.Total = len(records)
-	err = writeResponse(context, resp)
-	if err != nil {
-		openlogging.Error(err.Error())
-	}
-}
-
-//HealthCheck provider version info and time info
-func (r *HistoryResource) HealthCheck(context *restful.Context) {
-	domain := ReadDomain(context)
-	resp := &model.DocHealthCheck{}
-	latest, err := service.RevisionService.GetRevision(context.Ctx, domain.(string))
-	if err != nil {
-		WriteErrResponse(context, http.StatusInternalServerError, err.Error())
-		return
-	}
-	resp.Revision = strconv.FormatInt(latest, 10)
-	resp.Version = runtime.Version
-	resp.Timestamp = time.Now().Unix()
-	total, err := service.KVService.Total(context.Ctx, domain.(string))
-	if err != nil {
-		WriteErrResponse(context, http.StatusInternalServerError, err.Error())
-		return
-	}
-	resp.Total = total
 	err = writeResponse(context, resp)
 	if err != nil {
 		openlogging.Error(err.Error())
@@ -154,24 +126,10 @@ func (r *HistoryResource) URLPatterns() []restful.Route {
 					Model: model.DocResponseGetKey{},
 				},
 			},
-			Consumes: []string{goRestful.MIME_JSON, common.ContentTypeYaml},
-			Produces: []string{goRestful.MIME_JSON, common.ContentTypeYaml},
+			Consumes: []string{goRestful.MIME_JSON},
+			Produces: []string{goRestful.MIME_JSON},
 		},
-		{
-			Method:       http.MethodGet,
-			Path:         "/v1/health",
-			ResourceFunc: r.HealthCheck,
-			FuncDesc:     "health check return version and revision",
-			Parameters:   []*restful.Parameters{},
-			Returns: []*restful.Returns{
-				{
-					Code:  http.StatusOK,
-					Model: model.DocHealthCheck{},
-				},
-			},
-			Consumes: []string{goRestful.MIME_JSON, common.ContentTypeYaml},
-			Produces: []string{goRestful.MIME_JSON, common.ContentTypeYaml},
-		},
+
 		{
 			Method:       http.MethodGet,
 			Path:         "/v1/{project}/kie/track",
@@ -187,8 +145,8 @@ func (r *HistoryResource) URLPatterns() []restful.Route {
 					Model:   []model.PollingDataResponse{},
 				},
 			},
-			Consumes: []string{goRestful.MIME_JSON, common.ContentTypeYaml},
-			Produces: []string{goRestful.MIME_JSON, common.ContentTypeYaml},
+			Consumes: []string{goRestful.MIME_JSON},
+			Produces: []string{goRestful.MIME_JSON},
 		},
 	}
 }

@@ -24,14 +24,11 @@ import (
 	"github.com/apache/servicecomb-kie/pkg/model"
 	"github.com/apache/servicecomb-kie/pkg/validate"
 	"github.com/apache/servicecomb-kie/server/config"
-	handler2 "github.com/apache/servicecomb-kie/server/handler"
 	"github.com/apache/servicecomb-kie/server/plugin/qms"
 	"github.com/apache/servicecomb-kie/server/pubsub"
 	v1 "github.com/apache/servicecomb-kie/server/resource/v1"
 	"github.com/apache/servicecomb-kie/server/service"
 	"github.com/go-chassis/go-archaius"
-	"github.com/go-chassis/go-chassis/core/common"
-	"github.com/go-chassis/go-chassis/core/handler"
 	"github.com/go-chassis/go-chassis/pkg/backends/quota"
 	"github.com/go-chassis/go-chassis/server/restful/restfultest"
 	log "github.com/go-chassis/paas-lager"
@@ -93,11 +90,9 @@ func TestKVResource_Post(t *testing.T) {
 		}
 		j, _ := json.Marshal(kv)
 		r, _ := http.NewRequest("POST", "/v1/kv_test/kie/kv", bytes.NewBuffer(j))
-		noopH := &handler2.NoopAuthHandler{}
-		chain, _ := handler.CreateChain(common.Provider, "testchain1", noopH.Name())
 		r.Header.Set("Content-Type", "application/json")
 		kvr := &v1.KVResource{}
-		c, _ := restfultest.New(kvr, chain)
+		c, _ := restfultest.New(kvr, nil)
 		resp := httptest.NewRecorder()
 		c.ServeHTTP(resp, r)
 
@@ -118,11 +113,9 @@ func TestKVResource_Post(t *testing.T) {
 		}
 		j, _ := json.Marshal(kv)
 		r, _ := http.NewRequest("POST", "/v1/kv_test/kie/kv", bytes.NewBuffer(j))
-		noopH := &handler2.NoopAuthHandler{}
-		chain, _ := handler.CreateChain(common.Provider, "testchain1", noopH.Name())
 		r.Header.Set("Content-Type", "application/json")
 		kvr := &v1.KVResource{}
-		c, _ := restfultest.New(kvr, chain)
+		c, _ := restfultest.New(kvr, nil)
 		resp := httptest.NewRecorder()
 		c.ServeHTTP(resp, r)
 
@@ -145,11 +138,9 @@ func TestKVResource_Post(t *testing.T) {
 		}
 		j, _ := json.Marshal(kv)
 		r, _ := http.NewRequest("POST", "/v1/kv_test/kie/kv", bytes.NewBuffer(j))
-		noopH := &handler2.NoopAuthHandler{}
-		chain, _ := handler.CreateChain(common.Provider, "testchain1", noopH.Name())
 		r.Header.Set("Content-Type", "application/json")
 		kvr := &v1.KVResource{}
-		c, _ := restfultest.New(kvr, chain)
+		c, _ := restfultest.New(kvr, nil)
 		resp := httptest.NewRecorder()
 		c.ServeHTTP(resp, r)
 
@@ -164,11 +155,9 @@ func TestKVResource_Post(t *testing.T) {
 func TestKVResource_List(t *testing.T) {
 	t.Run("list kv by service label, should return 3 kvs", func(t *testing.T) {
 		r, _ := http.NewRequest("GET", "/v1/kv_test/kie/kv?label=service:utService", nil)
-		noopH := &handler2.NoopAuthHandler{}
-		chain, _ := handler.CreateChain(common.Provider, "testchain1", noopH.Name())
 		r.Header.Set("Content-Type", "application/json")
 		kvr := &v1.KVResource{}
-		c, err := restfultest.New(kvr, chain)
+		c, err := restfultest.New(kvr, nil)
 		assert.NoError(t, err)
 		resp := httptest.NewRecorder()
 		c.ServeHTTP(resp, r)
@@ -184,11 +173,9 @@ func TestKVResource_List(t *testing.T) {
 	var rev string
 	t.Run("list kv by service label, exact match,should return 2 kv", func(t *testing.T) {
 		r, _ := http.NewRequest("GET", "/v1/kv_test/kie/kv?label=service:utService&match=exact", nil)
-		noopH := &handler2.NoopAuthHandler{}
-		chain, _ := handler.CreateChain(common.Provider, "testchain1", noopH.Name())
 		r.Header.Set("Content-Type", "application/json")
 		kvr := &v1.KVResource{}
-		c, err := restfultest.New(kvr, chain)
+		c, err := restfultest.New(kvr, nil)
 		assert.NoError(t, err)
 		resp := httptest.NewRecorder()
 		c.ServeHTTP(resp, r)
@@ -202,11 +189,9 @@ func TestKVResource_List(t *testing.T) {
 	})
 	t.Run("list kv by service label, with current rev param,should return 304 ", func(t *testing.T) {
 		r, _ := http.NewRequest("GET", "/v1/kv_test/kie/kv?label=service:utService&"+common2.QueryParamRev+"="+rev, nil)
-		noopH := &handler2.NoopAuthHandler{}
-		chain, _ := handler.CreateChain(common.Provider, "testchain1", noopH.Name())
 		r.Header.Set("Content-Type", "application/json")
 		kvr := &v1.KVResource{}
-		c, err := restfultest.New(kvr, chain)
+		c, err := restfultest.New(kvr, nil)
 		assert.NoError(t, err)
 		resp := httptest.NewRecorder()
 		c.ServeHTTP(resp, r)
@@ -215,11 +200,9 @@ func TestKVResource_List(t *testing.T) {
 	})
 	t.Run("list kv by service label, with old rev param,should return latest revision", func(t *testing.T) {
 		r, _ := http.NewRequest("GET", "/v1/kv_test/kie/kv?label=service:utService&"+common2.QueryParamRev+"=1", nil)
-		noopH := &handler2.NoopAuthHandler{}
-		chain, _ := handler.CreateChain(common.Provider, "testchain1", noopH.Name())
 		r.Header.Set("Content-Type", "application/json")
 		kvr := &v1.KVResource{}
-		c, err := restfultest.New(kvr, chain)
+		c, err := restfultest.New(kvr, nil)
 		assert.NoError(t, err)
 		resp := httptest.NewRecorder()
 		c.ServeHTTP(resp, r)
@@ -228,11 +211,9 @@ func TestKVResource_List(t *testing.T) {
 	})
 	t.Run("list kv by service label, with wait and old rev param,should return latest revision,no wait", func(t *testing.T) {
 		r, _ := http.NewRequest("GET", "/v1/kv_test/kie/kv?label=service:utService&wait=1s&"+common2.QueryParamRev+"=1", nil)
-		noopH := &handler2.NoopAuthHandler{}
-		chain, _ := handler.CreateChain(common.Provider, "testchain1", noopH.Name())
 		r.Header.Set("Content-Type", "application/json")
 		kvr := &v1.KVResource{}
-		c, err := restfultest.New(kvr, chain)
+		c, err := restfultest.New(kvr, nil)
 		assert.NoError(t, err)
 		resp := httptest.NewRecorder()
 		start := time.Now()
@@ -243,11 +224,9 @@ func TestKVResource_List(t *testing.T) {
 	})
 	t.Run("list kv by service label, with wait and current rev param,should wait and return 304 ", func(t *testing.T) {
 		r, _ := http.NewRequest("GET", "/v1/kv_test/kie/kv?label=service:utService&wait=1s&"+common2.QueryParamRev+"="+rev, nil)
-		noopH := &handler2.NoopAuthHandler{}
-		chain, _ := handler.CreateChain(common.Provider, "testchain1", noopH.Name())
 		r.Header.Set("Content-Type", "application/json")
 		kvr := &v1.KVResource{}
-		c, err := restfultest.New(kvr, chain)
+		c, err := restfultest.New(kvr, nil)
 		assert.NoError(t, err)
 		resp := httptest.NewRecorder()
 		start := time.Now()
@@ -258,11 +237,9 @@ func TestKVResource_List(t *testing.T) {
 	})
 	t.Run("list kv by service label, with wait param,will exceed 1s and return 304", func(t *testing.T) {
 		r, _ := http.NewRequest("GET", "/v1/kv_test/kie/kv?label=service:utService&wait=1s", nil)
-		noopH := &handler2.NoopAuthHandler{}
-		chain, _ := handler.CreateChain(common.Provider, "testchain1", noopH.Name())
 		r.Header.Set("Content-Type", "application/json")
 		kvr := &v1.KVResource{}
-		c, err := restfultest.New(kvr, chain)
+		c, err := restfultest.New(kvr, nil)
 		assert.NoError(t, err)
 		resp := httptest.NewRecorder()
 		start := time.Now()
@@ -272,11 +249,9 @@ func TestKVResource_List(t *testing.T) {
 	})
 	t.Run("list kv by service label offset, should return 1kv", func(t *testing.T) {
 		r, _ := http.NewRequest("GET", "/v1/kv_test/kie/kv?label=service:utService&offset=1&limit=1", nil)
-		noopH := &handler2.NoopAuthHandler{}
-		chain, _ := handler.CreateChain(common.Provider, "testchain1", noopH.Name())
 		r.Header.Set("Content-Type", "application/json")
 		kvr := &v1.KVResource{}
-		c, err := restfultest.New(kvr, chain)
+		c, err := restfultest.New(kvr, nil)
 		assert.NoError(t, err)
 		resp := httptest.NewRecorder()
 		c.ServeHTTP(resp, r)
@@ -289,11 +264,9 @@ func TestKVResource_List(t *testing.T) {
 	})
 	t.Run("list kv by service label, with wait and match param,not exact match and return 304", func(t *testing.T) {
 		r, _ := http.NewRequest("GET", "/v1/kv_test/kie/kv?label=match:test&wait=10s&match=exact", nil)
-		noopH := &handler2.NoopAuthHandler{}
-		chain, _ := handler.CreateChain(common.Provider, "testchain-match", noopH.Name())
 		r.Header.Set("Content-Type", "application/json")
 		kvr := &v1.KVResource{}
-		c, err := restfultest.New(kvr, chain)
+		c, err := restfultest.New(kvr, nil)
 		assert.NoError(t, err)
 		resp := httptest.NewRecorder()
 		var wg sync.WaitGroup
@@ -306,11 +279,9 @@ func TestKVResource_List(t *testing.T) {
 			}
 			j, _ := json.Marshal(kv)
 			r2, _ := http.NewRequest("POST", "/v1/kv_test/kie/kv", bytes.NewBuffer(j))
-			noopH2 := &handler2.NoopAuthHandler{}
-			chain2, _ := handler.CreateChain(common.Provider, "testchain-match", noopH2.Name())
 			r2.Header.Set("Content-Type", "application/json")
 			kvr2 := &v1.KVResource{}
-			c2, _ := restfultest.New(kvr2, chain2)
+			c2, _ := restfultest.New(kvr2, nil)
 			resp2 := httptest.NewRecorder()
 			c2.ServeHTTP(resp2, r2)
 			body, _ := ioutil.ReadAll(resp2.Body)
@@ -331,11 +302,9 @@ func TestKVResource_List(t *testing.T) {
 	})
 	t.Run("get one key by label, exact match,should return 1 kv", func(t *testing.T) {
 		r, _ := http.NewRequest("GET", "/v1/kv_test/kie/kv?key=timeout&label=service:utService&match=exact", nil)
-		noopH := &handler2.NoopAuthHandler{}
-		chain, _ := handler.CreateChain(common.Provider, "testchain1", noopH.Name())
 		r.Header.Set("Content-Type", "application/json")
 		kvr := &v1.KVResource{}
-		c, err := restfultest.New(kvr, chain)
+		c, err := restfultest.New(kvr, nil)
 		assert.NoError(t, err)
 		resp := httptest.NewRecorder()
 		c.ServeHTTP(resp, r)
@@ -348,11 +317,9 @@ func TestKVResource_List(t *testing.T) {
 	})
 	t.Run("get one key by service label should return 2 kv,delete one", func(t *testing.T) {
 		r, _ := http.NewRequest("GET", "/v1/kv_test/kie/kv?key=timeout&label=service:utService", nil)
-		noopH := &handler2.NoopAuthHandler{}
-		chain, _ := handler.CreateChain(common.Provider, "testchain1", noopH.Name())
 		r.Header.Set("Content-Type", "application/json")
 		kvr := &v1.KVResource{}
-		c, err := restfultest.New(kvr, chain)
+		c, err := restfultest.New(kvr, nil)
 		assert.NoError(t, err)
 		resp := httptest.NewRecorder()
 		c.ServeHTTP(resp, r)
@@ -364,7 +331,7 @@ func TestKVResource_List(t *testing.T) {
 		assert.Equal(t, 2, len(result.Data))
 
 		r2, _ := http.NewRequest("DELETE", "/v1/kv_test/kie/kv/"+result.Data[0].ID, nil)
-		c2, err := restfultest.New(kvr, chain)
+		c2, err := restfultest.New(kvr, nil)
 		assert.NoError(t, err)
 		resp2 := httptest.NewRecorder()
 		c2.ServeHTTP(resp2, r2)
@@ -382,11 +349,9 @@ func TestKVResource_PutAndGet(t *testing.T) {
 	t.Run("create a kv, the value of user is guest", func(t *testing.T) {
 		j, _ := json.Marshal(kv)
 		r, _ := http.NewRequest("POST", "/v1/kv_test/kie/kv", bytes.NewBuffer(j))
-		noopH := &handler2.NoopAuthHandler{}
-		chain, _ := handler.CreateChain(common.Provider, "testchain1", noopH.Name())
 		r.Header.Set("Content-Type", "application/json")
 		kvr := &v1.KVResource{}
-		c, _ := restfultest.New(kvr, chain)
+		c, _ := restfultest.New(kvr, nil)
 		resp := httptest.NewRecorder()
 		c.ServeHTTP(resp, r)
 
@@ -401,11 +366,9 @@ func TestKVResource_PutAndGet(t *testing.T) {
 	})
 	t.Run("get one key by kv_id", func(t *testing.T) {
 		r, _ := http.NewRequest("GET", "/v1/kv_test/kie/kv/"+id, nil)
-		noopH := &handler2.NoopAuthHandler{}
-		chain, _ := handler.CreateChain(common.Provider, "testchain1", noopH.Name())
 		r.Header.Set("Content-Type", "application/json")
 		kvr := &v1.KVResource{}
-		c, err := restfultest.New(kvr, chain)
+		c, err := restfultest.New(kvr, nil)
 		assert.NoError(t, err)
 		resp := httptest.NewRecorder()
 		c.ServeHTTP(resp, r)
@@ -422,11 +385,9 @@ func TestKVResource_PutAndGet(t *testing.T) {
 	t.Run("update the kv, set the value of user to admin", func(t *testing.T) {
 		j, _ := json.Marshal(kvUpdate)
 		r, _ := http.NewRequest("PUT", "/v1/kv_test/kie/kv/"+id, bytes.NewBuffer(j))
-		noopH := &handler2.NoopAuthHandler{}
-		chain, _ := handler.CreateChain(common.Provider, "testchain1", noopH.Name())
 		r.Header.Set("Content-Type", "application/json")
 		kvr := &v1.KVResource{}
-		c, _ := restfultest.New(kvr, chain)
+		c, _ := restfultest.New(kvr, nil)
 		resp := httptest.NewRecorder()
 		c.ServeHTTP(resp, r)
 
@@ -439,11 +400,10 @@ func TestKVResource_PutAndGet(t *testing.T) {
 	})
 	t.Run("get one key by kv_id again", func(t *testing.T) {
 		r, _ := http.NewRequest("GET", "/v1/kv_test/kie/kv/"+id, nil)
-		noopH := &handler2.NoopAuthHandler{}
-		chain, _ := handler.CreateChain(common.Provider, "testchain1", noopH.Name())
+
 		r.Header.Set("Content-Type", "application/json")
 		kvr := &v1.KVResource{}
-		c, err := restfultest.New(kvr, chain)
+		c, err := restfultest.New(kvr, nil)
 		assert.NoError(t, err)
 		resp := httptest.NewRecorder()
 		c.ServeHTTP(resp, r)
@@ -463,11 +423,9 @@ func TestKVResource_PutAndGet(t *testing.T) {
 			Value: "1",
 		})
 		r, _ := http.NewRequest("POST", "/v1/test/kie/kv", bytes.NewBuffer(j))
-		noopH := &handler2.NoopAuthHandler{}
-		chain, _ := handler.CreateChain(common.Provider, "testchain1", noopH.Name())
 		r.Header.Set("Content-Type", "application/json")
 		kvr := &v1.KVResource{}
-		c, _ := restfultest.New(kvr, chain)
+		c, _ := restfultest.New(kvr, nil)
 		resp := httptest.NewRecorder()
 		c.ServeHTTP(resp, r)
 		assert.Equal(t, http.StatusUnprocessableEntity, resp.Code)
@@ -477,11 +435,9 @@ func TestKVResource_DeleteList(t *testing.T) {
 	var ids []string
 	t.Run("get ids of all kvs", func(t *testing.T) {
 		r, _ := http.NewRequest("GET", "/v1/kv_test/kie/kv", nil)
-		noopH := &handler2.NoopAuthHandler{}
-		chain, _ := handler.CreateChain(common.Provider, "testchain1", noopH.Name())
 		r.Header.Set("Content-Type", "application/json")
 		kvr := &v1.KVResource{}
-		c, err := restfultest.New(kvr, chain)
+		c, err := restfultest.New(kvr, nil)
 		assert.NoError(t, err)
 		resp := httptest.NewRecorder()
 		c.ServeHTTP(resp, r)
@@ -498,11 +454,10 @@ func TestKVResource_DeleteList(t *testing.T) {
 	t.Run("delete all kvs by ids", func(t *testing.T) {
 		j, _ := json.Marshal(v1.DeleteBody{IDs: ids})
 		r, _ := http.NewRequest("DELETE", "/v1/kv_test/kie/kv", bytes.NewBuffer(j))
-		noopH := &handler2.NoopAuthHandler{}
-		chain, _ := handler.CreateChain(common.Provider, "testchain1", noopH.Name())
+
 		r.Header.Set("Content-Type", "application/json")
 		kvr := &v1.KVResource{}
-		c, err := restfultest.New(kvr, chain)
+		c, err := restfultest.New(kvr, nil)
 		assert.NoError(t, err)
 		resp := httptest.NewRecorder()
 		c.ServeHTTP(resp, r)
@@ -511,11 +466,9 @@ func TestKVResource_DeleteList(t *testing.T) {
 	})
 	t.Run("get all kvs again, should return 0 kv", func(t *testing.T) {
 		r, _ := http.NewRequest("GET", "/v1/kv_test/kie/kv", nil)
-		noopH := &handler2.NoopAuthHandler{}
-		chain, _ := handler.CreateChain(common.Provider, "testchain1", noopH.Name())
 		r.Header.Set("Content-Type", "application/json")
 		kvr := &v1.KVResource{}
-		c, err := restfultest.New(kvr, chain)
+		c, err := restfultest.New(kvr, nil)
 		assert.NoError(t, err)
 		resp := httptest.NewRecorder()
 		c.ServeHTTP(resp, r)

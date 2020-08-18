@@ -59,7 +59,7 @@ func (h *TrackHandler) Handle(chain *handler.Chain, inv *invocation.Invocation, 
 		chain.Next(inv, cb)
 		return
 	}
-	chain.Next(inv, func(ir *invocation.Response) error {
+	chain.Next(inv, func(ir *invocation.Response) {
 		resp, _ := ir.Result.(*restful.Response)
 		revStr := req.QueryParameter(common.QueryParamRev)
 		wait := req.QueryParameter(common.QueryParamWait)
@@ -67,7 +67,7 @@ func (h *TrackHandler) Handle(chain *handler.Chain, inv *invocation.Invocation, 
 		data.URLPath = req.Request.Method + " " + req.Request.URL.Path
 		data.SessionID = sessionID
 		data.UserAgent = req.HeaderParameter(v1.HeaderUserAgent)
-		data.Domain = inv.Metadata[v1.AttributeDomainKey].(string)
+		data.Domain = v1.ReadDomain(req.Request.Context())
 		data.IP = iputil.ClientIP(req.Request)
 		data.ResponseBody = req.Attribute(common.RespBodyContextKey).([]*model.KVDoc)
 		data.ResponseCode = ir.Status
@@ -82,17 +82,11 @@ func (h *TrackHandler) Handle(chain *handler.Chain, inv *invocation.Invocation, 
 		_, err := track.CreateOrUpdate(inv.Ctx, data)
 		if err != nil {
 			openlogging.Warn("record polling detail failed:" + err.Error())
-			err := cb(ir)
-			if err != nil {
-				return err
-			}
-			return nil
+			cb(ir)
+			return
 		}
-		err = cb(ir)
-		if err != nil {
-			return err
-		}
-		return nil
+		cb(ir)
+
 	})
 
 }

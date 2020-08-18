@@ -10,7 +10,7 @@ cse:
   handler:
     chain:
       Provider:
-        default: ratelimiter-provider,monitoring,auth-handler,track-handler
+        default: ratelimiter-provider,monitoring,jwt,track-handler
   transport:
     maxBodyBytes:
       rest: 2621440 #2.5M

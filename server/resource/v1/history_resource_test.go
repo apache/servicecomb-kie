@@ -97,11 +97,10 @@ func TestHistoryResource_GetRevisions(t *testing.T) {
 func TestHistoryResource_GetPollingData(t *testing.T) {
 	t.Run("list kv by service label, to create a polling data", func(t *testing.T) {
 		r, _ := http.NewRequest("GET", "/v1/history_test/kie/kv", nil)
-		noopH := &handler2.NoopAuthHandler{}
 		trackH := &handler2.TrackHandler{}
-		chain, _ := handler.CreateChain(common.Provider, "testchain3", noopH.Name(), trackH.Name())
+		chain, _ := handler.CreateChain(common.Provider, "testchain3", trackH.Name())
 		r.Header.Set("Content-Type", "application/json")
-		r.Header.Set("X-Session-Id", "test")
+		r.Header.Set(v1.HeaderSessionID, "test")
 		kvr := &v1.KVResource{}
 		c, err := restfultest.New(kvr, chain)
 		assert.NoError(t, err)
@@ -115,8 +114,7 @@ func TestHistoryResource_GetPollingData(t *testing.T) {
 	})
 	t.Run("get polling data", func(t *testing.T) {
 		r, _ := http.NewRequest("GET", "/v1/history_test/kie/track?sessionId=test", nil)
-		noopH := &handler2.NoopAuthHandler{}
-		chain, _ := handler.CreateChain(common.Provider, "testchain3", noopH.Name())
+		chain, _ := handler.CreateChain(common.Provider, "testchain3", "")
 		r.Header.Set("Content-Type", "application/json")
 		revision := &v1.HistoryResource{}
 		c, err := restfultest.New(revision, chain)
@@ -131,23 +129,4 @@ func TestHistoryResource_GetPollingData(t *testing.T) {
 		assert.NotEmpty(t, result.Data)
 	})
 
-}
-
-func Test_HeathCheck(t *testing.T) {
-	path := fmt.Sprintf("/v1/health")
-	r, _ := http.NewRequest("GET", path, nil)
-	noopH := &handler2.NoopAuthHandler{}
-	revision := &v1.HistoryResource{}
-	chain, err := handler.CreateChain(common.Provider, "default", noopH.Name())
-	assert.NoError(t, err)
-	c, err := restfultest.New(revision, chain)
-	assert.NoError(t, err)
-	resp := httptest.NewRecorder()
-	c.ServeHTTP(resp, r)
-	body, err := ioutil.ReadAll(resp.Body)
-	assert.NoError(t, err)
-	data := &model.DocHealthCheck{}
-	err = json.Unmarshal(body, &data)
-	assert.NoError(t, err)
-	assert.NotEmpty(t, data)
 }

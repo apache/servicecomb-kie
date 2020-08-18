@@ -49,8 +49,8 @@ func (r *KVResource) Post(rctx *restful.Context) {
 		WriteErrResponse(rctx, http.StatusBadRequest, fmt.Sprintf(FmtReadRequestError, err))
 		return
 	}
-	domain := ReadDomain(rctx)
-	kv.Domain = domain.(string)
+	domain := ReadDomain(rctx.Ctx)
+	kv.Domain = domain
 	kv.Project = project
 	if kv.Status == "" {
 		kv.Status = common.StatusDisabled
@@ -110,9 +110,9 @@ func (r *KVResource) Put(rctx *restful.Context) {
 		WriteErrResponse(rctx, http.StatusBadRequest, fmt.Sprintf(FmtReadRequestError, err))
 		return
 	}
-	domain := ReadDomain(rctx)
+	domain := ReadDomain(rctx.Ctx)
 	kvReq.ID = kvID
-	kvReq.Domain = domain.(string)
+	kvReq.Domain = domain
 	kvReq.Project = project
 	err = validate.Validate(kvReq)
 	if err != nil {
@@ -148,7 +148,7 @@ func (r *KVResource) Put(rctx *restful.Context) {
 func (r *KVResource) Get(rctx *restful.Context) {
 	request := &model.GetKVRequest{
 		Project: rctx.ReadPathParameter(common.PathParameterProject),
-		Domain:  ReadDomain(rctx).(string),
+		Domain:  ReadDomain(rctx.Ctx),
 		ID:      rctx.ReadPathParameter(common.PathParamKVID),
 	}
 	err := validate.Validate(request)
@@ -179,7 +179,7 @@ func (r *KVResource) List(rctx *restful.Context) {
 	var err error
 	request := &model.ListKVRequest{
 		Project: rctx.ReadPathParameter(common.PathParameterProject),
-		Domain:  ReadDomain(rctx).(string),
+		Domain:  ReadDomain(rctx.Ctx),
 		Key:     rctx.ReadQueryParameter(common.QueryParamKey),
 		Status:  rctx.ReadQueryParameter(common.QueryParamStatus),
 	}
@@ -268,7 +268,7 @@ func returnData(rctx *restful.Context, request *model.ListKVRequest) {
 //Delete deletes one kv by id
 func (r *KVResource) Delete(rctx *restful.Context) {
 	project := rctx.ReadPathParameter(common.PathParameterProject)
-	domain := ReadDomain(rctx).(string)
+	domain := ReadDomain(rctx.Ctx)
 	kvID := rctx.ReadPathParameter(common.PathParamKVID)
 	err := validateDelete(domain, project, kvID)
 	if err != nil {
@@ -304,7 +304,7 @@ func (r *KVResource) Delete(rctx *restful.Context) {
 //DeleteList deletes multiple kvs by ids
 func (r *KVResource) DeleteList(rctx *restful.Context) {
 	project := rctx.ReadPathParameter(common.PathParameterProject)
-	domain := ReadDomain(rctx).(string)
+	domain := ReadDomain(rctx.Ctx)
 	b := new(DeleteBody)
 	if err := json.NewDecoder(rctx.ReadRequest().Body).Decode(b); err != nil {
 		WriteErrResponse(rctx, http.StatusBadRequest, fmt.Sprintf(FmtReadRequestError, err))
@@ -402,7 +402,7 @@ func (r *KVResource) URLPatterns() []restful.Route {
 					Message: "key value not found",
 				},
 			},
-			Produces: []string{goRestful.MIME_JSON, common.ContentTypeYaml},
+			Produces: []string{goRestful.MIME_JSON},
 		}, {
 			Method:       http.MethodGet,
 			Path:         "/v1/{project}/kie/kv",
@@ -424,7 +424,7 @@ func (r *KVResource) URLPatterns() []restful.Route {
 					Message: "empty body",
 				},
 			},
-			Produces: []string{goRestful.MIME_JSON, common.ContentTypeYaml},
+			Produces: []string{goRestful.MIME_JSON},
 		}, {
 			Method:       http.MethodDelete,
 			Path:         "/v1/{project}/kie/kv/{kv_id}",

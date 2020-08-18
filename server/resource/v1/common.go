@@ -23,6 +23,7 @@ import (
 	"errors"
 	"github.com/apache/servicecomb-kie/pkg/model"
 	"github.com/apache/servicecomb-kie/server/service/mongo/session"
+	"github.com/apache/servicecomb-service-center/pkg/rbacframe"
 	"net/http"
 	"strconv"
 	"strings"
@@ -52,22 +53,22 @@ var (
 	ErrInvalidRev = errors.New(common.MsgInvalidRev)
 )
 
-//ReadDomain get domain info from attribute
-func ReadDomain(context *restful.Context) interface{} {
-	return context.ReadRestfulRequest().Attribute(AttributeDomainKey)
+//ReadClaims get auth info
+func ReadClaims(ctx context.Context) map[string]interface{} {
+	i := rbacframe.FromContext(ctx)
+	if i != nil {
+		return rbacframe.FromContext(ctx).(map[string]interface{})
+	}
+	return nil
 }
 
-//ReadFindDepth get find depth
-func ReadFindDepth(context *restful.Context) (int, error) {
-	d := context.ReadRestfulRequest().HeaderParameter(common.HeaderDepth)
-	if d == "" {
-		return 1, nil
+//ReadDomain get domain info
+func ReadDomain(ctx context.Context) string {
+	c := ReadClaims(ctx)
+	if c != nil {
+		return c["domain"].(string)
 	}
-	depth, err := strconv.Atoi(d)
-	if err != nil {
-		return 0, err
-	}
-	return depth, nil
+	return "default"
 }
 
 //ReadLabelCombinations get query combination from url
@@ -101,8 +102,15 @@ func ReadLabelCombinations(req *goRestful.Request) ([]map[string]string, error) 
 func WriteErrResponse(context *restful.Context, status int, msg string) {
 	context.Resp.Header().Set(goRestful.HEADER_ContentType, goRestful.MIME_JSON)
 	context.WriteHeader(status)
-	b, _ := json.MarshalIndent(&ErrorMsg{Msg: msg}, "", " ")
-	context.Write(b)
+	b, err := json.MarshalIndent(&ErrorMsg{Msg: msg}, "", " ")
+	if err != nil {
+		openlogging.Error("can not marshal:" + err.Error())
+		return
+	}
+	err = context.Write(b)
+	if err != nil {
+		openlogging.Error("can not marshal:" + err.Error())
+	}
 }
 
 func readRequest(ctx *restful.Context, v interface{}) error {
