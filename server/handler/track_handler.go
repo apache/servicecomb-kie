@@ -22,7 +22,7 @@ import (
 	"github.com/apache/servicecomb-kie/pkg/iputil"
 	"github.com/apache/servicecomb-kie/pkg/model"
 	"github.com/apache/servicecomb-kie/server/resource/v1"
-	"github.com/apache/servicecomb-kie/server/service/mongo/track"
+	"github.com/apache/servicecomb-kie/server/service"
 	"github.com/emicklei/go-restful"
 	"github.com/go-chassis/go-chassis/core/handler"
 	"github.com/go-chassis/go-chassis/core/invocation"
@@ -79,7 +79,7 @@ func (h *TrackHandler) Handle(chain *handler.Chain, inv *invocation.Invocation, 
 			"wait":     wait,
 			"labels":   req.QueryParameter("label"),
 		}
-		_, err := track.CreateOrUpdate(inv.Ctx, data)
+		_, err := service.TrackService.CreateOrUpdate(inv.Ctx, data)
 		if err != nil {
 			openlogging.Warn("record polling detail failed:" + err.Error())
 			cb(ir)

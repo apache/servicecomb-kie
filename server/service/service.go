@@ -27,6 +27,7 @@ import (
 var (
 	KVService       KV
 	HistoryService  History
+	TrackService    Track
 	RevisionService Revision
 	DBInit          Init
 )
@@ -58,6 +59,12 @@ type KV interface {
 //History provide api of History entity
 type History interface {
 	GetHistory(ctx context.Context, keyID string, options ...FindOption) (*model.KVResponse, error)
+}
+
+//History provide api of History entity
+type Track interface {
+	CreateOrUpdate(ctx context.Context, detail *model.PollingDetail) (*model.PollingDetail, error)
+	GetPollingDetail(ctx context.Context, detail *model.PollingDetail) ([]*model.PollingDetail, error)
 }
 
 //Revision is global revision number management

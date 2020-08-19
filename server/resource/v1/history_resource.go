@@ -21,7 +21,6 @@ import (
 	"github.com/apache/servicecomb-kie/pkg/common"
 	"github.com/apache/servicecomb-kie/pkg/model"
 	"github.com/apache/servicecomb-kie/server/service"
-	"github.com/apache/servicecomb-kie/server/service/mongo/track"
 	"net/http"
 
 	goRestful "github.com/emicklei/go-restful"
@@ -91,7 +90,7 @@ func (r *HistoryResource) GetPollingData(context *restful.Context) {
 		return
 	}
 	query.Domain = domain
-	records, err := track.Get(context.Ctx, query)
+	records, err := service.TrackService.GetPollingDetail(context.Ctx, query)
 	if err != nil {
 		if err == service.ErrRecordNotExists {
 			WriteErrResponse(context, http.StatusNotFound, err.Error())
