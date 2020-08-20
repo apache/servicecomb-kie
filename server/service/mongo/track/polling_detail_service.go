@@ -15,23 +15,23 @@
  * limitations under the License.
  */
 
-package mongo
+package track
 
 import (
-	"github.com/apache/servicecomb-kie/server/service"
-	"github.com/apache/servicecomb-kie/server/service/mongo/counter"
-	"github.com/apache/servicecomb-kie/server/service/mongo/history"
-	"github.com/apache/servicecomb-kie/server/service/mongo/kv"
-	"github.com/apache/servicecomb-kie/server/service/mongo/session"
-	"github.com/apache/servicecomb-kie/server/service/mongo/track"
-	"github.com/go-mesh/openlogging"
+	"context"
+	"github.com/apache/servicecomb-kie/pkg/model"
 )
 
-func init() {
-	openlogging.Info("use mongodb as storage")
-	service.DBInit = session.Init
-	service.KVService = &kv.Service{}
-	service.HistoryService = &history.Service{}
-	service.TrackService = &track.Service{}
-	service.RevisionService = &counter.Service{}
+//Service is the implementation
+type Service struct {
+}
+
+//CreateOrUpdate create or update a track data
+func (s *Service) CreateOrUpdate(ctx context.Context, detail *model.PollingDetail) (*model.PollingDetail, error) {
+	return CreateOrUpdate(ctx, detail)
+}
+
+//GetPollingDetail get a track data
+func (s *Service) GetPollingDetail(ctx context.Context, detail *model.PollingDetail) ([]*model.PollingDetail, error) {
+	return Get(ctx, detail)
 }

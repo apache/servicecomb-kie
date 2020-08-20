@@ -51,7 +51,7 @@ func CreateOrUpdate(ctx context.Context, detail *model.PollingDetail) (*model.Po
 	return detail, nil
 }
 
-//Get is to get a
+//Get is to get a track data
 func Get(ctx context.Context, detail *model.PollingDetail) ([]*model.PollingDetail, error) {
 	collection := session.GetDB().Collection(session.CollectionPollingDetail)
 	queryFilter := bson.M{"domain": detail.Domain}
