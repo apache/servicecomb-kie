@@ -25,44 +25,24 @@ it means all payment service print debug log, but for other service print info l
 so you can control your application runtime behaviors 
 by setting different labels to a key.
 
+
+## Why use kie
+kie is a highly flexible config server. Nowadays, an operation team is facing diffrent "x-centralized" system.
+For example a classic application-centralized system.a operator want to change config based on application name and version, then the label could be "app,version" for locating a app's configurations.
+meanwhile some teams manage app in a data center, each application instance will be deployed in a VM machine. then label could be "farm,role,server,component" to locate a app's configurations.
+kie fit diffenrent senario for configuration management which benifit from label design.
+
+
 ## Components
-it includes 5 components
+it includes 1 components
 
 - server: rest api service to manage kv
-- kieclient: restful go clients for talking to a kie server (see [kieclient](https://github.com/go-chassis/go-archaius/tree/master/pkg/kieclient))
-- kie-template: agent can be deployed in your k8s pod 
-or VM, it connects to server and writes kv into config file 
-based on template language
-- kiectl: CLI tool for kie
-- frontend: web console for kie
 
 ## Features
-- simple key name with rich labels: user can define labels for a key, 
-that distinguish from key to another key.  
-
-TODO
-
-- a key will not be stringed by fixed schema. 
-labels for a key is like "env=test, service=cart, version=1.0" or "cluster=xxx"  
-or "env=test, service=cart, version=1.0, ip=x.x.x.x"
-- validator: value can be checked by user defined python script, 
-so in runtime if someone want to change this value, 
-the script will check if this value is appropriate.
-- encryption web hook: value can by encrypt 
-by your custom encryption service like vault.
-- Long polling: client can get key value changes by long polling
-- config view: by setting labels criteria, servicecomb-kie 
-is able to aggregate a view to return all key values which match those labels, 
-so that operator can mange key in their own understanding 
-to a distributed system in separated views.
-- rich value type: not only plain text, but support to be aware of ini, json,yaml,xml and java properties
-- heterogeneous config server: able to fetch configuration in k8s and consul 
- even more, you can update, delete, 
- and use config view for those systems, 
- and you can integrate with your own config system to MetaConfig by 
- following standardized API and model
-- consul compatible: partially compatible with consul kv management API
-- kv change history: all kv changes is recorded and can be easily roll back by UI
+- kv management: you can manage config item by key and label
+- kv revision mangement: you can mange all kv change history
+- kv change event: use long polling to watch kv changes, highly decreased network cost
+- polling detail tack: if any client poll config from server, the detail will be tracked
 ## Quick Start
 
 ### Run locally with Docker compose
