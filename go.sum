@@ -81,6 +81,8 @@ github.com/gin-contrib/sse v0.0.0-20190301062529-5545eab6dad3/go.mod h1:VJ0WA2NB
 github.com/gin-gonic/gin v1.4.0/go.mod h1:OW2EZn3DO8Ln9oIKOvM++LBO+5UPHJJDH72/q/3rZdM=
 github.com/go-chassis/foundation v0.1.1-0.20191113114104-2b05871e9ec4 h1:wx8JXvg/n4i8acXsBJ5zIkiK7EO2kn/HuEjKK3kSgv8=
 github.com/go-chassis/foundation v0.1.1-0.20191113114104-2b05871e9ec4/go.mod h1:21/ajGtgJlWTCeM0TxGJdRhO8bJkKirWyV8Stlh6g6c=
+github.com/go-chassis/foundation v0.1.1-0.20200825060850-b16bf420f7b3 h1:c+bwT0qLY69jSU8TmzuNcb9UL/QFAiU96kjuX5TMiQc=
+github.com/go-chassis/foundation v0.1.1-0.20200825060850-b16bf420f7b3/go.mod h1:21/ajGtgJlWTCeM0TxGJdRhO8bJkKirWyV8Stlh6g6c=
 github.com/go-chassis/go-archaius v1.2.1-0.20200309104817-8c3d4e87d33c h1:pimEM4Oy/Uf4xG4G7TrRUQbIRFAfHiarxDQQS2gmKaM=
 github.com/go-chassis/go-archaius v1.2.1-0.20200309104817-8c3d4e87d33c/go.mod h1:gVP52u/jCU0fgUjXdUW1VLp5YLLJ+Yl2zoOPrLM/WOM=
 github.com/go-chassis/go-archaius v1.2.1/go.mod h1:gVP52u/jCU0fgUjXdUW1VLp5YLLJ+Yl2zoOPrLM/WOM=
@@ -110,6 +112,8 @@ github.com/go-chassis/go-chassis v0.0.0-20200817095942-bf386412b79e h1:OElheBuqH
 github.com/go-chassis/go-chassis v0.0.0-20200817095942-bf386412b79e/go.mod h1:nMWwWrgDEyDKnMQLE5Gt65RdwbgrQg5amt4BqNFY09g=
 github.com/go-chassis/go-chassis v0.0.0-20200818014813-890265d94a1c h1:aAokQ5cgL/6a8tJsj3W6qr7M3EBoMs3MzlfYqalLLto=
 github.com/go-chassis/go-chassis v0.0.0-20200818014813-890265d94a1c/go.mod h1:nMWwWrgDEyDKnMQLE5Gt65RdwbgrQg5amt4BqNFY09g=
+github.com/go-chassis/go-chassis v0.0.0-20200826064053-d90be848aa10 h1:eImN6UFx4pksyxJQnT1laHoVOwSlhEC1ONhJQc4Ix08=
+github.com/go-chassis/go-chassis v0.0.0-20200826064053-d90be848aa10/go.mod h1:ZzLCaQFgFHbkwf8grJrbzBLlE19iz+4LMgNtjGlnanU=
 github.com/go-chassis/go-chassis v1.8.2-0.20200310060113-4b383ba3d3f0 h1:YD9MtuYIpQb+EKxIzV/swdXUhnV5PtXtSW696JiwW1c=
 github.com/go-chassis/go-chassis v1.8.2-0.20200310060113-4b383ba3d3f0/go.mod h1:sFnVxSvprpy6umPFK4uSdfCDdfqdgbp3FdW/CG0VNnE=
 github.com/go-chassis/go-chassis v1.8.2-0.20200331092516-8cf0b374128b h1:AvZjvPQdla1KoLrxbU8bohR3Y9FYnScZFY5KnK2HnSU=

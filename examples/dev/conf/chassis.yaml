@@ -1,9 +1,8 @@
 ---
-cse:
-  service:
-    registry:
-      disabled: true
-      address: http://127.0.0.1:30100
+servicecomb:
+  registry:
+    disabled: true
+    address: http://127.0.0.1:30100
   protocols:
     rest:
       listenAddress: 127.0.0.1:30110
@@ -18,10 +17,8 @@ cse:
       rest: 32768 #32K
     timeout:
       rest: 60s
-servicecomb:
-  service:
-    quota:
-      plugin: build-in
+  quota:
+    plugin: build-in
 # ssl:
 #   Provider.cipherPlugin: default
 #   Provider.verifyPeer: false

@@ -32,6 +32,7 @@ import (
 	"gopkg.in/mgo.v2"
 	"io/ioutil"
 	"reflect"
+	"strings"
 	"sync"
 	"time"
 
@@ -72,6 +73,11 @@ var (
 	ErrViewNotExist = errors.New("view not exists")
 	ErrViewFinding  = errors.New("view search error")
 	ErrGetPipeline  = errors.New("can not get criteria")
+)
+
+const (
+	MsgExists    = "already exists"
+	MsgDuplicate = "duplicate key error collection"
 )
 
 var client *mongo.Client
@@ -136,6 +142,7 @@ func Init() error {
 		})
 
 	})
+	EnsureDB()
 	return nil
 }
 
@@ -191,23 +198,19 @@ func GetColInfo(ctx context.Context, name string) (*CollectionInfo, error) {
 	return nil, ErrGetPipeline
 }
 
-//InitMongodb get collection info
-func InitMongodb() {
+//EnsureDB build mongo db schema
+func EnsureDB() {
 	session, err := mgo.Dial(config.GetDB().URI)
 	if err != nil {
-		panic(err)
+		openlogging.Fatal("can not dial db:" + err.Error())
 	}
 	defer session.Close()
 	session.SetMode(mgo.Monotonic, true)
-	//counter
-	c := session.DB(DBName).C(CollectionCounter)
-	docs := map[string]interface{}{"name": "revision_counter", "count": 1, "domain": "default"}
-	err = c.Insert(docs)
-	if err != nil {
-		panic(err)
-	}
+
+	ensureRevisionCounter(session)
+
 	//kv
-	c = session.DB(DBName).C("kv")
+	c := session.DB(DBName).C("kv")
 	err = c.Create(&mgo.CollectionInfo{Validator: bson.M{
 		"key":     bson.M{"$exists": true},
 		"domain":  bson.M{"$exists": true},
@@ -281,5 +284,38 @@ func InitMongodb() {
 	})
 	if err != nil {
 		panic(err)
+	}
+
+}
+
+func ensureRevisionCounter(session *mgo.Session) {
+	c := session.DB(DBName).C(CollectionCounter)
+	err := c.Create(&mgo.CollectionInfo{Validator: bson.M{
+		"name":   bson.M{"$exists": true},
+		"domain": bson.M{"$exists": true},
+		"count":  bson.M{"$exists": true},
+	}})
+	if err != nil {
+		if strings.Contains(err.Error(), MsgExists) {
+			openlogging.Debug(err.Error())
+		} else {
+			openlogging.Fatal(err.Error())
+		}
+	}
+	err = c.EnsureIndex(mgo.Index{
+		Key:    []string{"name", "domain"},
+		Unique: true,
+	})
+	if err != nil {
+		openlogging.Fatal(err.Error())
+	}
+	docs := map[string]interface{}{"name": "revision_counter", "count": 1, "domain": "default"}
+	err = c.Insert(docs)
+	if err != nil {
+		if strings.Contains(err.Error(), MsgDuplicate) {
+			openlogging.Debug(err.Error())
+		} else {
+			openlogging.Fatal(err.Error())
+		}
 	}
 }
