@@ -1,4 +1,5 @@
 ---
-service_description:
-  name: servicecomb-kie
-  version: 0.1.0
+servicecomb:
+  service:
+    name: servicecomb-kie
+    version: 0.1.0

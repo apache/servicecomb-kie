@@ -4,7 +4,7 @@ require (
 	github.com/apache/servicecomb-service-center v0.0.0-20200817025835-7bb8c4eb9421
 	github.com/emicklei/go-restful v2.12.0+incompatible
 	github.com/go-chassis/go-archaius v1.3.2
-	github.com/go-chassis/go-chassis v0.0.0-20200818014813-890265d94a1c
+	github.com/go-chassis/go-chassis v0.0.0-20200826064053-d90be848aa10
 	github.com/go-chassis/paas-lager v1.1.1
 	github.com/go-mesh/openlogging v1.0.1
 	github.com/go-playground/universal-translator v0.17.0
