@@ -27,7 +27,7 @@ by setting different labels to a key.
 
 
 ## Why use kie
-kie is a highly flexible config server. Nowadays, an operation team is facing diffrent "x-centralized" system.
+kie is a highly flexible config server. Nowadays, an operation team is facing different "x-centralized" system.
 For example a classic application-centralized system.a operator want to change config based on application name and version, then the label could be "app,version" for locating a app's configurations.
 meanwhile some teams manage app in a data center, each application instance will be deployed in a VM machine. then label could be "farm,role,server,component" to locate a app's configurations.
 kie fit diffenrent senario for configuration management which benifit from label design.
