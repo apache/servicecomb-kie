@@ -8,33 +8,33 @@ A service for configuration management in distributed system.
 ## Conceptions
 
 ### Key
-key could indicate a configuration like "timeout",
+Key could indicate a configuration like "timeout",
 then the value could be "3s"
 or indicates a file name "app.properties", 
 then the value could be content of app.properties
 
-### labels
+### Labels
 Each key could has labels. labels indicates a unique key.
 A key "log_level" with labels "env=production" 
 may saves the value "INFO" for all application log level in production environment.
 A key "log_level" with labels "env=production, component=payment" 
 may saves the value "DEBUG" for payment service in production environment.
 
-it means all payment service print debug log, but for other service print info log.
+It means all payment service print debug log, but for other service print info log.
 
-so you can control your application runtime behaviors 
+So you can control your application runtime behaviors 
 by setting different labels to a key.
 
 
 ## Why use kie
-kie is a highly flexible config server. Nowadays, an operation team is facing diffrent "x-centralized" system.
-For example a classic application-centralized system.a operator want to change config based on application name and version, then the label could be "app,version" for locating a app's configurations.
-meanwhile some teams manage app in a data center, each application instance will be deployed in a VM machine. then label could be "farm,role,server,component" to locate a app's configurations.
-kie fit diffenrent senario for configuration management which benifit from label design.
+kie is a highly flexible config server. Nowadays, an operation team is facing different "x-centralized" system.
+For example a classic application-centralized system. A operator wants to change config based on application name and version, then the label could be "app,version" for locating a app's configurations.
+Meanwhile some teams manage app in a data center, each application instance will be deployed in a VM machine. then label could be "farm,role,server,component" to locate a app's configurations.
+kie fit different senario for configuration management which benifit from label design.
 
 
 ## Components
-it includes 1 components
+It includes 1 components
 
 - server: rest api service to manage kv
 
@@ -42,7 +42,7 @@ it includes 1 components
 - kv management: you can manage config item by key and label
 - kv revision mangement: you can mange all kv change history
 - kv change event: use long polling to watch kv changes, highly decreased network cost
-- polling detail tack: if any client poll config from server, the detail will be tracked
+- polling detail track: if any client poll config from server, the detail will be tracked
 ## Quick Start
 
 ### Run locally with Docker compose
@@ -52,9 +52,9 @@ git clone git@github.com:apache/servicecomb-kie.git
 cd servicecomb-kie/deployments/docker
 sudo docker-compose up
 ```
-it will launch 3 components 
+It will launch 3 components 
 - mongodb: 127.0.0.1:27017
-- mongodb UI:http://127.0.0.1:8081
+- mongodb UI: http://127.0.0.1:8081
 - servicecomb-kie: http://127.0.0.1:30110
 
 
@@ -62,14 +62,14 @@ it will launch 3 components
 To see how to build a local dev environment, check [here](examples/dev)
 
 ### Build
-this will build your own service image and binary in local
+This will build your own service image and binary in local
 ```bash
 cd build
 export VERSION=0.0.1 #optional, it is latest by default
 ./build_docker.sh
 ```
 
-this will generate a "servicecomb-kie-0.0.1-linux-amd64.tar" in "release" folder,
+This will generate a "servicecomb-kie-0.0.1-linux-amd64.tar" in "release" folder,
 and a docker image "servicecomb/kie:0.0.1"
 
 # API Doc
