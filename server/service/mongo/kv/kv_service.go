@@ -26,7 +26,7 @@ import (
 	"github.com/apache/servicecomb-kie/pkg/util"
 	"github.com/apache/servicecomb-kie/server/service"
 	"github.com/apache/servicecomb-kie/server/service/mongo/session"
-	"github.com/go-mesh/openlogging"
+	"github.com/go-chassis/openlog"
 )
 
 //const of kv service
@@ -58,12 +58,12 @@ func (s *Service) Create(ctx context.Context, kv *model.KVDoc) (*model.KVDoc, er
 		return nil, session.ErrKVAlreadyExists
 	}
 	if err != service.ErrKeyNotExists {
-		openlogging.Error(err.Error())
+		openlog.Error(err.Error())
 		return nil, err
 	}
 	kv, err = createKey(ctx, kv)
 	if err != nil {
-		openlogging.Error(err.Error())
+		openlog.Error(err.Error())
 		return nil, err
 	}
 	clearPart(kv)
@@ -108,7 +108,7 @@ func (s *Service) Exist(ctx context.Context, domain, key string, project string,
 		kvs, err := findKVByLabel(ctx, domain, opts.LabelFormat, key, project)
 		if err != nil {
 			if err != service.ErrKeyNotExists {
-				openlogging.Error(err.Error())
+				openlog.Error(err.Error())
 			}
 			return nil, err
 		}
@@ -119,7 +119,7 @@ func (s *Service) Exist(ctx context.Context, domain, key string, project string,
 		service.WithLabels(opts.Labels),
 		service.WithKey(key))
 	if err != nil {
-		openlogging.Error("check kv exist: " + err.Error())
+		openlog.Error("check kv exist: " + err.Error())
 		return nil, err
 	}
 	if len(kvs.Data) != 1 {
@@ -160,7 +160,7 @@ func (s *Service) List(ctx context.Context, domain, project string, options ...s
 	for cur.Next(ctx) {
 		curKV := &model.KVDoc{}
 		if err := cur.Decode(curKV); err != nil {
-			openlogging.Error("decode to KVs error: " + err.Error())
+			openlog.Error("decode to KVs error: " + err.Error())
 			return nil, err
 		}
 		if opts.ExactLabels {

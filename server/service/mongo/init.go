@@ -24,11 +24,11 @@ import (
 	"github.com/apache/servicecomb-kie/server/service/mongo/kv"
 	"github.com/apache/servicecomb-kie/server/service/mongo/session"
 	"github.com/apache/servicecomb-kie/server/service/mongo/track"
-	"github.com/go-mesh/openlogging"
+	"github.com/go-chassis/openlog"
 )
 
 func init() {
-	openlogging.Info("use mongodb as storage")
+	openlog.Info("use mongodb as storage")
 	service.DBInit = session.Init
 	service.KVService = &kv.Service{}
 	service.HistoryService = &history.Service{}

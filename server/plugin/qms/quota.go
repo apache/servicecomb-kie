@@ -21,8 +21,8 @@ import (
 	"context"
 	"github.com/apache/servicecomb-kie/server/service"
 	"github.com/go-chassis/go-archaius"
-	"github.com/go-chassis/go-chassis/pkg/backends/quota"
-	"github.com/go-mesh/openlogging"
+	"github.com/go-chassis/go-chassis/v2/pkg/backends/quota"
+	"github.com/go-chassis/openlog"
 )
 
 //const
@@ -41,7 +41,7 @@ func (m *BuildInManager) GetQuotas(serviceName, domain string) ([]*quota.Quota, 
 	max := archaius.GetInt64(QuotaConfigKey, DefaultQuota)
 	total, err := service.KVService.Total(context.TODO(), domain)
 	if err != nil {
-		openlogging.Error("find quotas failed: " + err.Error())
+		openlog.Error("find quotas failed: " + err.Error())
 		return nil, err
 	}
 	return []*quota.Quota{{

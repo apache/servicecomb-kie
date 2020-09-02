@@ -24,9 +24,9 @@ import (
 	"github.com/apache/servicecomb-kie/server/rbac"
 	v1 "github.com/apache/servicecomb-kie/server/resource/v1"
 	"github.com/apache/servicecomb-kie/server/service"
-	"github.com/go-chassis/go-chassis"
-	"github.com/go-chassis/go-chassis/core/common"
-	"github.com/go-mesh/openlogging"
+	"github.com/go-chassis/go-chassis/v2"
+	"github.com/go-chassis/go-chassis/v2/core/common"
+	"github.com/go-chassis/openlog"
 )
 
 func Run() {
@@ -34,21 +34,21 @@ func Run() {
 	chassis.RegisterSchema(common.ProtocolRest, &v1.HistoryResource{})
 	chassis.RegisterSchema(common.ProtocolRest, &v1.AdminResource{})
 	if err := chassis.Init(); err != nil {
-		openlogging.Fatal(err.Error())
+		openlog.Fatal(err.Error())
 	}
 	if err := config.Init(); err != nil {
-		openlogging.Fatal(err.Error())
+		openlog.Fatal(err.Error())
 	}
 	if err := service.DBInit(); err != nil {
-		openlogging.Fatal(err.Error())
+		openlog.Fatal(err.Error())
 	}
 	if err := validate.Init(); err != nil {
-		openlogging.Fatal("validate init failed: " + err.Error())
+		openlog.Fatal("validate init failed: " + err.Error())
 	}
 	rbac.Init()
 	pubsub.Init()
 	pubsub.Start()
 	if err := chassis.Run(); err != nil {
-		openlogging.Fatal("service exit: " + err.Error())
+		openlog.Fatal("service exit: " + err.Error())
 	}
 }

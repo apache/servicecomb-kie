@@ -21,10 +21,10 @@ import (
 	"github.com/apache/servicecomb-kie/server/config"
 	"github.com/apache/servicecomb-service-center/pkg/rbacframe"
 	"github.com/go-chassis/go-archaius"
-	"github.com/go-chassis/go-chassis/middleware/jwt"
-	"github.com/go-chassis/go-chassis/security/secret"
-	"github.com/go-chassis/go-chassis/security/token"
-	"github.com/go-mesh/openlogging"
+	"github.com/go-chassis/go-chassis/v2/middleware/jwt"
+	"github.com/go-chassis/go-chassis/v2/security/secret"
+	"github.com/go-chassis/go-chassis/v2/security/token"
+	"github.com/go-chassis/openlog"
 	"io/ioutil"
 	"net/http"
 	"path/filepath"
@@ -38,7 +38,7 @@ const (
 //Init initialize the rbac module
 func Init() {
 	if !config.GetRBAC().Enabled {
-		openlogging.Info("rbac is disabled")
+		openlog.Info("rbac is disabled")
 		return
 	}
 
@@ -56,7 +56,7 @@ func Init() {
 		SecretFunc: func(claims interface{}, method token.SigningMethod) (interface{}, error) {
 			p, err := secret.ParseRSAPPublicKey(PublicKey())
 			if err != nil {
-				openlogging.Error("can not parse public key:" + err.Error())
+				openlog.Error("can not parse public key:" + err.Error())
 				return nil, err
 			}
 			return p, nil
@@ -70,7 +70,7 @@ func Init() {
 		},
 	})
 	loadPublicKey()
-	openlogging.Info("rbac is enabled")
+	openlog.Info("rbac is enabled")
 }
 
 //loadPublicKey read key to memory
@@ -78,12 +78,12 @@ func loadPublicKey() {
 	pf := config.GetRBAC().PubKeyFile
 	content, err := ioutil.ReadFile(filepath.Clean(pf))
 	if err != nil {
-		openlogging.Fatal(err.Error())
+		openlog.Fatal(err.Error())
 		return
 	}
 	err = archaius.Set(pubContentKey, string(content))
 	if err != nil {
-		openlogging.Fatal(err.Error())
+		openlog.Fatal(err.Error())
 	}
 }
 

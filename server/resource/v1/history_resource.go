@@ -24,8 +24,8 @@ import (
 	"net/http"
 
 	goRestful "github.com/emicklei/go-restful"
-	"github.com/go-chassis/go-chassis/server/restful"
-	"github.com/go-mesh/openlogging"
+	"github.com/go-chassis/go-chassis/v2/server/restful"
+	"github.com/go-chassis/openlog"
 )
 
 //HistoryResource TODO
@@ -44,7 +44,7 @@ func (r *HistoryResource) GetRevisions(context *restful.Context) {
 		return
 	}
 	if kvID == "" {
-		openlogging.Error("kv id is nil")
+		openlog.Error("kv id is nil")
 		WriteErrResponse(context, http.StatusForbidden, "kv_id must not be empty")
 		return
 	}
@@ -61,7 +61,7 @@ func (r *HistoryResource) GetRevisions(context *restful.Context) {
 	}
 	err = writeResponse(context, revisions)
 	if err != nil {
-		openlogging.Error(err.Error())
+		openlog.Error(err.Error())
 	}
 }
 
@@ -104,7 +104,7 @@ func (r *HistoryResource) GetPollingData(context *restful.Context) {
 	resp.Total = len(records)
 	err = writeResponse(context, resp)
 	if err != nil {
-		openlogging.Error(err.Error())
+		openlog.Error(err.Error())
 	}
 }
 

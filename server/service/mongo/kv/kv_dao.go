@@ -27,7 +27,7 @@ import (
 	"github.com/apache/servicecomb-kie/server/service/mongo/counter"
 	"github.com/apache/servicecomb-kie/server/service/mongo/history"
 	"github.com/apache/servicecomb-kie/server/service/mongo/session"
-	"github.com/go-mesh/openlogging"
+	"github.com/go-chassis/openlog"
 	uuid "github.com/satori/go.uuid"
 	"go.mongodb.org/mongo-driver/bson"
 	"go.mongodb.org/mongo-driver/mongo"
@@ -43,7 +43,7 @@ func createKey(ctx context.Context, kv *model.KVDoc) (*model.KVDoc, error) {
 	kv.ID = uuid.NewV4().String()
 	revision, err := counter.ApplyRevision(ctx, kv.Domain)
 	if err != nil {
-		openlogging.Error(err.Error())
+		openlog.Error(err.Error())
 		return nil, err
 	}
 	kv.UpdateRevision = revision
@@ -53,7 +53,7 @@ func createKey(ctx context.Context, kv *model.KVDoc) (*model.KVDoc, error) {
 	kv.UpdateTime = now
 	_, err = collection.InsertOne(ctx, kv)
 	if err != nil {
-		openlogging.Error("create error", openlogging.WithTags(openlogging.Tags{
+		openlog.Error("create error", openlog.WithTags(openlog.Tags{
 			"err": err.Error(),
 			"kv":  kv,
 		}))
@@ -61,11 +61,11 @@ func createKey(ctx context.Context, kv *model.KVDoc) (*model.KVDoc, error) {
 	}
 	err = history.AddHistory(ctx, kv)
 	if err != nil {
-		openlogging.Warn(
+		openlog.Warn(
 			fmt.Sprintf("can not updateKeyValue version for [%s] [%s] in [%s]",
 				kv.Key, kv.Labels, kv.Domain))
 	}
-	openlogging.Debug(fmt.Sprintf("create %s with labels %s value [%s]", kv.Key, kv.Labels, kv.Value))
+	openlog.Debug(fmt.Sprintf("create %s with labels %s value [%s]", kv.Key, kv.Labels, kv.Value))
 
 	return kv, nil
 
@@ -92,16 +92,16 @@ func updateKeyValue(ctx context.Context, kv *model.KVDoc) error {
 	if err != nil {
 		return err
 	}
-	openlogging.Debug(
+	openlog.Debug(
 		fmt.Sprintf("updateKeyValue %s with labels %s value [%s] %d ",
 			kv.Key, kv.Labels, kv.Value, ur.ModifiedCount))
 	err = history.AddHistory(ctx, kv)
 	if err != nil {
-		openlogging.Error(
+		openlog.Error(
 			fmt.Sprintf("can not add revision for [%s] [%s] in [%s],err: %s",
 				kv.Key, kv.Labels, kv.Domain, err))
 	}
-	openlogging.Debug(
+	openlog.Debug(
 		fmt.Sprintf("add history %s with labels %s value [%s] %d ",
 			kv.Key, kv.Labels, kv.Value, ur.ModifiedCount))
 	return nil
@@ -128,7 +128,7 @@ func findKV(ctx context.Context, domain string, project string, opts service.Fin
 	curTotal, err := collection.CountDocuments(ctx, filter)
 	if err != nil {
 		if err.Error() == context.DeadlineExceeded.Error() {
-			openlogging.Error(MsgFindKvFailed, openlogging.WithTags(openlogging.Tags{
+			openlog.Error(MsgFindKvFailed, openlog.WithTags(openlog.Tags{
 				"timeout": opts.Timeout,
 			}))
 			return nil, 0, fmt.Errorf(FmtErrFindKvFailed, opts.Timeout)
@@ -141,7 +141,7 @@ func findKV(ctx context.Context, domain string, project string, opts service.Fin
 	cur, err := collection.Find(ctx, filter, opt)
 	if err != nil {
 		if err.Error() == context.DeadlineExceeded.Error() {
-			openlogging.Error(MsgFindKvFailed, openlogging.WithTags(openlogging.Tags{
+			openlog.Error(MsgFindKvFailed, openlog.WithTags(openlog.Tags{
 				"timeout": opts.Timeout,
 			}))
 			return nil, 0, fmt.Errorf(FmtErrFindKvFailed, opts.Timeout)
@@ -162,7 +162,7 @@ func findOneKey(ctx context.Context, filter bson.M) ([]*model.KVDoc, error) {
 	curKV := &model.KVDoc{}
 	err := sr.Decode(curKV)
 	if err != nil {
-		openlogging.Error("decode error: " + err.Error())
+		openlog.Error("decode error: " + err.Error())
 		return nil, err
 	}
 	return []*model.KVDoc{curKV}, nil
@@ -178,19 +178,19 @@ func findOneKVAndDelete(ctx context.Context, kvID, project, domain string) (*mod
 		}
 		return nil, sr.Err()
 	}
-	openlogging.Info(fmt.Sprintf("delete success,kvID=%s", kvID))
+	openlog.Info(fmt.Sprintf("delete success,kvID=%s", kvID))
 	if _, err := counter.ApplyRevision(ctx, domain); err != nil {
-		openlogging.Error(fmt.Sprintf("the kv [%s] is deleted, but increase revision failed: [%s]", kvID, err))
+		openlog.Error(fmt.Sprintf("the kv [%s] is deleted, but increase revision failed: [%s]", kvID, err))
 		return nil, err
 	}
 	err := history.AddDeleteTime(ctx, []string{kvID}, project, domain)
 	if err != nil {
-		openlogging.Error(fmt.Sprintf("add delete time to [%s] failed : [%s]", kvID, err))
+		openlog.Error(fmt.Sprintf("add delete time to [%s] failed : [%s]", kvID, err))
 	}
 	curKV := &model.KVDoc{}
 	err = sr.Decode(curKV)
 	if err != nil {
-		openlogging.Error("decode error: " + err.Error())
+		openlog.Error("decode error: " + err.Error())
 		return nil, err
 	}
 	return curKV, nil
@@ -202,28 +202,28 @@ func findKVsAndDelete(ctx context.Context, kvIDs []string, project, domain strin
 	kvs, err := findKeys(ctx, filter, false)
 	if err != nil {
 		if err != service.ErrKeyNotExists {
-			openlogging.Error("find Keys error: " + err.Error())
+			openlog.Error("find Keys error: " + err.Error())
 		}
 		return nil, err
 	}
 	collection := session.GetDB().Collection(session.CollectionKV)
 	dr, err := collection.DeleteMany(ctx, filter)
 	if err != nil {
-		openlogging.Error(fmt.Sprintf("delete kvs [%v] failed : [%v]", kvIDs, err))
+		openlog.Error(fmt.Sprintf("delete kvs [%v] failed : [%v]", kvIDs, err))
 		return nil, err
 	}
 	if int64(len(kvs)) != dr.DeletedCount {
-		openlogging.Warn(fmt.Sprintf("The count of found and the count of deleted are not equal, found %d, deleted %d", len(kvs), dr.DeletedCount))
+		openlog.Warn(fmt.Sprintf("The count of found and the count of deleted are not equal, found %d, deleted %d", len(kvs), dr.DeletedCount))
 	} else {
-		openlogging.Info(fmt.Sprintf("deleted %d kvs, their ids are %v", dr.DeletedCount, kvIDs))
+		openlog.Info(fmt.Sprintf("deleted %d kvs, their ids are %v", dr.DeletedCount, kvIDs))
 	}
 	if _, err := counter.ApplyRevision(ctx, domain); err != nil {
-		openlogging.Error(fmt.Sprintf("kvs [%v] are deleted, but increase revision failed: [%v]", kvIDs, err))
+		openlog.Error(fmt.Sprintf("kvs [%v] are deleted, but increase revision failed: [%v]", kvIDs, err))
 		return nil, err
 	}
 	err = history.AddDeleteTime(ctx, kvIDs, project, domain)
 	if err != nil {
-		openlogging.Error(fmt.Sprintf("add delete time to kvs [%s] failed : [%s]", kvIDs, err))
+		openlog.Error(fmt.Sprintf("add delete time to kvs [%s] failed : [%s]", kvIDs, err))
 	}
 	return kvs, nil
 }
@@ -233,7 +233,7 @@ func findKeys(ctx context.Context, filter interface{}, withoutLabel bool) ([]*mo
 	cur, err := collection.Find(ctx, filter)
 	if err != nil {
 		if err.Error() == context.DeadlineExceeded.Error() {
-			openlogging.Error("find kvs failed, dead line exceeded", openlogging.WithTags(openlogging.Tags{
+			openlog.Error("find kvs failed, dead line exceeded", openlog.WithTags(openlog.Tags{
 				"timeout": session.Timeout,
 			}))
 			return nil, fmt.Errorf("can not find keys due to timout")
@@ -248,7 +248,7 @@ func findKeys(ctx context.Context, filter interface{}, withoutLabel bool) ([]*mo
 	for cur.Next(ctx) {
 		curKV := &model.KVDoc{}
 		if err := cur.Decode(curKV); err != nil {
-			openlogging.Error("decode to KVs error: " + err.Error())
+			openlog.Error("decode to KVs error: " + err.Error())
 			return nil, err
 		}
 		if withoutLabel {
@@ -281,7 +281,7 @@ func findKVDocByID(ctx context.Context, domain, project, kvID string) (*model.KV
 	filter := bson.M{"id": kvID, "domain": domain, "project": project}
 	kvs, err := findOneKey(ctx, filter)
 	if err != nil {
-		openlogging.Error(err.Error())
+		openlog.Error(err.Error())
 		return nil, err
 	}
 	return kvs[0], nil
@@ -292,7 +292,7 @@ func total(ctx context.Context, domain string) (int64, error) {
 	filter := bson.M{"domain": domain}
 	total, err := collection.CountDocuments(ctx, filter)
 	if err != nil {
-		openlogging.Error("find total number: " + err.Error())
+		openlog.Error("find total number: " + err.Error())
 		return 0, err
 	}
 	return total, err

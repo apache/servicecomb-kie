@@ -21,7 +21,7 @@ import (
 	"encoding/json"
 	"github.com/apache/servicecomb-kie/pkg/stringutil"
 	"github.com/apache/servicecomb-kie/server/config"
-	"github.com/go-mesh/openlogging"
+	"github.com/go-chassis/openlog"
 	"github.com/hashicorp/serf/cmd/serf/command/agent"
 	"github.com/hashicorp/serf/serf"
 	"sync"
@@ -60,7 +60,7 @@ func Init() {
 		ac.UserEventSizeLimit = 512
 		a, err := agent.Create(ac, sc, nil)
 		if err != nil {
-			openlogging.Fatal("can not sync key value change events to other kie nodes:" + err.Error())
+			openlog.Fatal("can not sync key value change events to other kie nodes:" + err.Error())
 		}
 		bus = &Bus{
 			agent: a,
@@ -68,9 +68,9 @@ func Init() {
 		if config.Configurations.PeerAddr != "" {
 			err := join([]string{config.Configurations.PeerAddr})
 			if err != nil {
-				openlogging.Fatal("lost event message")
+				openlog.Fatal("lost event message")
 			} else {
-				openlogging.Info("join kie node:" + config.Configurations.PeerAddr)
+				openlog.Info("join kie node:" + config.Configurations.PeerAddr)
 			}
 		}
 	})
@@ -80,9 +80,9 @@ func Init() {
 func Start() {
 	err := bus.agent.Start()
 	if err != nil {
-		openlogging.Fatal("can not sync key value change events to other kie nodes" + err.Error())
+		openlog.Fatal("can not sync key value change events to other kie nodes" + err.Error())
 	}
-	openlogging.Info("kie message bus started")
+	openlog.Info("kie message bus started")
 	bus.agent.RegisterEventHandler(&EventHandler{})
 }
 func join(addresses []string) error {
@@ -116,12 +116,12 @@ func ObserveOnce(o *Observer, topic *Topic) error {
 		topics.Store(t, map[string]*Observer{
 			o.UUID: o,
 		})
-		openlogging.Info("new topic:" + t)
+		openlog.Info("new topic:" + t)
 		return nil
 	}
 	mutexObservers.Lock()
 	observers.(map[string]*Observer)[o.UUID] = o
 	mutexObservers.Unlock()
-	openlogging.Debug("add new observer for topic:" + t)
+	openlog.Debug("add new observer for topic:" + t)
 	return nil
 }

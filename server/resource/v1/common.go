@@ -33,8 +33,8 @@ import (
 	"github.com/apache/servicecomb-kie/server/pubsub"
 	"github.com/apache/servicecomb-kie/server/service"
 	goRestful "github.com/emicklei/go-restful"
-	"github.com/go-chassis/go-chassis/server/restful"
-	"github.com/go-mesh/openlogging"
+	"github.com/go-chassis/go-chassis/v2/server/restful"
+	"github.com/go-chassis/openlog"
 	uuid "github.com/satori/go.uuid"
 	"gopkg.in/yaml.v2"
 )
@@ -104,12 +104,12 @@ func WriteErrResponse(context *restful.Context, status int, msg string) {
 	context.WriteHeader(status)
 	b, err := json.MarshalIndent(&ErrorMsg{Msg: msg}, "", " ")
 	if err != nil {
-		openlogging.Error("can not marshal:" + err.Error())
+		openlog.Error("can not marshal:" + err.Error())
 		return
 	}
 	err = context.Write(b)
 	if err != nil {
-		openlogging.Error("can not marshal:" + err.Error())
+		openlog.Error("can not marshal:" + err.Error())
 	}
 }
 
@@ -265,7 +265,7 @@ func queryAndResponse(rctx *restful.Context, request *model.ListKVRequest) {
 	}
 	kv, err := service.KVService.List(rctx.Ctx, request.Domain, request.Project, opts...)
 	if err != nil {
-		openlogging.Error("common: " + err.Error())
+		openlog.Error("common: " + err.Error())
 		WriteErrResponse(rctx, http.StatusInternalServerError, common.MsgDBError)
 		return
 	}
@@ -273,6 +273,6 @@ func queryAndResponse(rctx *restful.Context, request *model.ListKVRequest) {
 	err = writeResponse(rctx, kv)
 	rctx.ReadRestfulRequest().SetAttribute(common.RespBodyContextKey, kv.Data)
 	if err != nil {
-		openlogging.Error(err.Error())
+		openlog.Error(err.Error())
 	}
 }

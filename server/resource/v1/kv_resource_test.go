@@ -29,10 +29,10 @@ import (
 	v1 "github.com/apache/servicecomb-kie/server/resource/v1"
 	"github.com/apache/servicecomb-kie/server/service"
 	"github.com/go-chassis/go-archaius"
-	"github.com/go-chassis/go-chassis/pkg/backends/quota"
-	"github.com/go-chassis/go-chassis/server/restful/restfultest"
-	log "github.com/go-chassis/paas-lager"
-	"github.com/go-mesh/openlogging"
+	"github.com/go-chassis/go-chassis/v2/pkg/backends/quota"
+	"github.com/go-chassis/go-chassis/v2/server/restful/restfultest"
+	"github.com/go-chassis/openlog"
+	log "github.com/go-chassis/seclog"
 	"github.com/stretchr/testify/assert"
 	"io/ioutil"
 	"net/http"
@@ -55,7 +55,7 @@ func init() {
 		LogFormatText: false,
 	})
 	logger := log.NewLogger("ut")
-	openlogging.SetLogger(logger)
+	openlog.SetLogger(logger)
 	//for UT
 	config.Configurations = &config.Config{
 		DB:             config.DB{},

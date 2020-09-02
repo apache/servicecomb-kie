@@ -22,7 +22,7 @@ import (
 	"github.com/apache/servicecomb-kie/pkg/model"
 	"github.com/apache/servicecomb-kie/server/service"
 	"github.com/apache/servicecomb-kie/server/service/mongo/session"
-	"github.com/go-mesh/openlogging"
+	"github.com/go-chassis/openlog"
 	uuid "github.com/satori/go.uuid"
 	"go.mongodb.org/mongo-driver/bson"
 	"go.mongodb.org/mongo-driver/mongo"
@@ -79,7 +79,7 @@ func Get(ctx context.Context, detail *model.PollingDetail) ([]*model.PollingDeta
 	for cur.Next(ctx) {
 		curRecord := &model.PollingDetail{}
 		if err := cur.Decode(curRecord); err != nil {
-			openlogging.Error("decode to KVs error: " + err.Error())
+			openlog.Error("decode to KVs error: " + err.Error())
 			return nil, err
 		}
 		curRecord.Domain = ""

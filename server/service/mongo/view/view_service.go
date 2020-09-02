@@ -22,7 +22,7 @@ import (
 	"github.com/apache/servicecomb-kie/pkg/model"
 	"github.com/apache/servicecomb-kie/server/service"
 	"github.com/apache/servicecomb-kie/server/service/mongo/session"
-	"github.com/go-mesh/openlogging"
+	"github.com/go-chassis/openlog"
 	uuid "github.com/satori/go.uuid"
 	"go.mongodb.org/mongo-driver/bson"
 	"go.mongodb.org/mongo-driver/mongo"
@@ -62,12 +62,12 @@ func (s *Service) Create(ctx context.Context, viewDoc *model.ViewDoc, options ..
 	viewDoc.Criteria = "" //TODO parse pipe line to sql-like lang
 	err := create(ctx, viewDoc)
 	if err != nil {
-		openlogging.Error("can not insert view collection: " + err.Error())
+		openlog.Error("can not insert view collection: " + err.Error())
 		return nil, session.ErrViewCreation
 	}
 	err = session.CreateView(ctx, generateViewName(viewDoc.ID, viewDoc.Domain, viewDoc.Project), session.CollectionKV, pipeline)
 	if err != nil {
-		openlogging.Error("can not create view: " + err.Error())
+		openlog.Error("can not create view: " + err.Error())
 		return nil, session.ErrViewCreation
 	}
 	return viewDoc, nil
@@ -104,7 +104,7 @@ func (s *Service) Update(ctx context.Context, viewDoc *model.ViewDoc) error {
 			}},
 		})
 	if err != nil {
-		openlogging.Error("can not update view: " + err.Error())
+		openlog.Error("can not update view: " + err.Error())
 		return session.ErrViewUpdate
 	}
 	//TODO delete and create a new view
@@ -126,14 +126,14 @@ func (s *Service) List(ctx context.Context, domain, project string, opts ...serv
 	}
 	cur, err := collection.Find(ctx, filter, mOpt)
 	if err != nil {
-		openlogging.Error("can not find view: " + err.Error())
+		openlog.Error("can not find view: " + err.Error())
 		return nil, session.ErrViewFinding
 	}
 	result := &model.ViewResponse{}
 	for cur.Next(ctx) {
 		v := &model.ViewDoc{}
 		if err := cur.Decode(v); err != nil {
-			openlogging.Error("decode error: " + err.Error())
+			openlog.Error("decode error: " + err.Error())
 			return nil, err
 		}
 		result.Data = append(result.Data, v)
@@ -155,14 +155,14 @@ func (s *Service) GetContent(ctx context.Context, id, domain, project string, op
 	collection := session.GetDB().Collection(generateViewName(id, domain, project))
 	cur, err := collection.Find(ctx, bson.D{}, mOpt)
 	if err != nil {
-		openlogging.Error("can not find view content: " + err.Error())
+		openlog.Error("can not find view content: " + err.Error())
 		return nil, session.ErrViewFinding
 	}
 	result := &model.KVResponse{}
 	for cur.Next(ctx) {
 		v := &model.KVDoc{}
 		if err := cur.Decode(v); err != nil {
-			openlogging.Error("decode error: " + err.Error())
+			openlog.Error("decode error: " + err.Error())
 			return nil, err
 		}
 		result.Data = append(result.Data, v)
