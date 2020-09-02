@@ -25,7 +25,7 @@ import (
 	"errors"
 	"fmt"
 	"github.com/apache/servicecomb-kie/pkg/model"
-	"github.com/go-mesh/openlogging"
+	"github.com/go-chassis/openlog"
 	"go.mongodb.org/mongo-driver/bson"
 	"go.mongodb.org/mongo-driver/bson/bsoncodec"
 	"go.mongodb.org/mongo-driver/mongo/options"
@@ -124,19 +124,19 @@ func Init() error {
 				InsecureSkipVerify: !config.GetDB().VerifyPeer,
 			}
 			clientOps = append(clientOps, options.Client().SetTLSConfig(tc))
-			openlogging.Info("enabled ssl communication to mongodb")
+			openlog.Info("enabled ssl communication to mongodb")
 		}
 		client, err = mongo.NewClient(clientOps...)
 		if err != nil {
 			return
 		}
-		openlogging.Info("DB connecting")
+		openlog.Info("DB connecting")
 		ctx, _ := context.WithTimeout(context.Background(), 10*time.Second)
 		err = client.Connect(ctx)
 		if err != nil {
 			return
 		}
-		openlogging.Info("DB connected")
+		openlog.Info("DB connected")
 		db = client.Database(DBName, &options.DatabaseOptions{
 			Registry: reg,
 		})
@@ -160,7 +160,7 @@ func CreateView(ctx context.Context, view, source string, pipeline mongo.Pipelin
 			{"pipeline", pipeline},
 		})
 	if sr.Err() != nil {
-		openlogging.Error("can not create view: " + sr.Err().Error())
+		openlog.Error("can not create view: " + sr.Err().Error())
 		return ErrViewCreation
 	}
 	return nil
@@ -170,7 +170,7 @@ func CreateView(ctx context.Context, view, source string, pipeline mongo.Pipelin
 func DropView(ctx context.Context, view string) error {
 	err := GetDB().Collection(view).Drop(ctx)
 	if err != nil {
-		openlogging.Error(err.Error())
+		openlog.Error(err.Error())
 		return err
 	}
 	return nil
@@ -180,16 +180,16 @@ func DropView(ctx context.Context, view string) error {
 func GetColInfo(ctx context.Context, name string) (*CollectionInfo, error) {
 	cur, err := GetDB().ListCollections(ctx, bson.M{"name": name, "type": "view"})
 	if err != nil {
-		openlogging.Error(err.Error())
+		openlog.Error(err.Error())
 		return nil, ErrGetPipeline
 	}
 	defer cur.Close(ctx)
 	for cur.Next(ctx) {
-		openlogging.Debug(cur.Current.String())
+		openlog.Debug(cur.Current.String())
 		c := &CollectionInfo{}
 		err := cur.Decode(c)
 		if err != nil {
-			openlogging.Error(err.Error())
+			openlog.Error(err.Error())
 			return nil, ErrGetPipeline
 		}
 		return c, nil
@@ -202,7 +202,7 @@ func GetColInfo(ctx context.Context, name string) (*CollectionInfo, error) {
 func EnsureDB() {
 	session, err := mgo.Dial(config.GetDB().URI)
 	if err != nil {
-		openlogging.Fatal("can not dial db:" + err.Error())
+		openlog.Fatal("can not dial db:" + err.Error())
 	}
 	defer session.Close()
 	session.SetMode(mgo.Monotonic, true)
@@ -297,9 +297,9 @@ func ensureRevisionCounter(session *mgo.Session) {
 	}})
 	if err != nil {
 		if strings.Contains(err.Error(), MsgExists) {
-			openlogging.Debug(err.Error())
+			openlog.Debug(err.Error())
 		} else {
-			openlogging.Fatal(err.Error())
+			openlog.Fatal(err.Error())
 		}
 	}
 	err = c.EnsureIndex(mgo.Index{
@@ -307,15 +307,15 @@ func ensureRevisionCounter(session *mgo.Session) {
 		Unique: true,
 	})
 	if err != nil {
-		openlogging.Fatal(err.Error())
+		openlog.Fatal(err.Error())
 	}
 	docs := map[string]interface{}{"name": "revision_counter", "count": 1, "domain": "default"}
 	err = c.Insert(docs)
 	if err != nil {
 		if strings.Contains(err.Error(), MsgDuplicate) {
-			openlogging.Debug(err.Error())
+			openlog.Debug(err.Error())
 		} else {
-			openlogging.Fatal(err.Error())
+			openlog.Fatal(err.Error())
 		}
 	}
 }

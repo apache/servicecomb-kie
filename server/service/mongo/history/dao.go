@@ -25,7 +25,7 @@ import (
 	"github.com/apache/servicecomb-kie/pkg/model"
 	"github.com/apache/servicecomb-kie/server/service"
 	"github.com/apache/servicecomb-kie/server/service/mongo/session"
-	"github.com/go-mesh/openlogging"
+	"github.com/go-chassis/openlog"
 	"go.mongodb.org/mongo-driver/bson"
 	"go.mongodb.org/mongo-driver/mongo/options"
 )
@@ -58,7 +58,7 @@ func getHistoryByKeyID(ctx context.Context, filter bson.M, offset, limit int64) 
 		var elem model.KVDoc
 		err := cur.Decode(&elem)
 		if err != nil {
-			openlogging.Error("decode error: " + err.Error())
+			openlog.Error("decode error: " + err.Error())
 			return nil, err
 		}
 		exist = true
@@ -83,12 +83,12 @@ func AddHistory(ctx context.Context, kv *model.KVDoc) error {
 	collection := session.GetDB().Collection(session.CollectionKVRevision)
 	_, err := collection.InsertOne(ctx, kv)
 	if err != nil {
-		openlogging.Error(err.Error())
+		openlog.Error(err.Error())
 		return err
 	}
 	err = historyRotate(ctx, kv.ID, kv.Project, kv.Domain)
 	if err != nil {
-		openlogging.Error("history rotate err: " + err.Error())
+		openlog.Error("history rotate err: " + err.Error())
 		return err
 	}
 	return nil
@@ -108,7 +108,7 @@ func AddDeleteTime(ctx context.Context, kvIDs []string, project, domain string) 
 	if err != nil {
 		return err
 	}
-	openlogging.Debug(fmt.Sprintf("added delete time [%s] to kvs [%v]", now.String(), kvIDs))
+	openlog.Debug(fmt.Sprintf("added delete time [%s] to kvs [%v]", now.String(), kvIDs))
 	return nil
 }
 
@@ -140,7 +140,7 @@ func historyRotate(ctx context.Context, kvID, project, domain string) error {
 	for cur.Next(ctx) {
 		curKV := &model.KVDoc{}
 		if err := cur.Decode(curKV); err != nil {
-			openlogging.Error("decode to KVs error: " + err.Error())
+			openlog.Error("decode to KVs error: " + err.Error())
 			return err
 		}
 		_, err := collection.DeleteOne(ctx, bson.M{
@@ -152,7 +152,7 @@ func historyRotate(ctx context.Context, kvID, project, domain string) error {
 		if err != nil {
 			return err
 		}
-		openlogging.Debug("delete overflowed revision", openlogging.WithTags(openlogging.Tags{
+		openlog.Debug("delete overflowed revision", openlog.WithTags(openlog.Tags{
 			"id":       curKV.ID,
 			"key":      curKV.Key,
 			"revision": curKV.UpdateRevision,

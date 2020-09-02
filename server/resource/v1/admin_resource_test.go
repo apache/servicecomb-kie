@@ -22,7 +22,7 @@ import (
 	"fmt"
 	"github.com/apache/servicecomb-kie/pkg/model"
 	v1 "github.com/apache/servicecomb-kie/server/resource/v1"
-	"github.com/go-chassis/go-chassis/server/restful/restfultest"
+	"github.com/go-chassis/go-chassis/v2/server/restful/restfultest"
 	"github.com/stretchr/testify/assert"
 	"io/ioutil"
 	"net/http"

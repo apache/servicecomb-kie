@@ -21,9 +21,9 @@ import (
 	"github.com/apache/servicecomb-kie/pkg/model"
 	"github.com/apache/servicecomb-kie/server/service"
 	goRestful "github.com/emicklei/go-restful"
-	"github.com/go-chassis/go-chassis/pkg/runtime"
-	"github.com/go-chassis/go-chassis/server/restful"
-	"github.com/go-mesh/openlogging"
+	"github.com/go-chassis/go-chassis/v2/pkg/runtime"
+	"github.com/go-chassis/go-chassis/v2/server/restful"
+	"github.com/go-chassis/openlog"
 	"net/http"
 	"strconv"
 	"time"
@@ -73,6 +73,6 @@ func (r *AdminResource) HealthCheck(context *restful.Context) {
 	resp.Total = total
 	err = writeResponse(context, resp)
 	if err != nil {
-		openlogging.Error(err.Error())
+		openlog.Error(err.Error())
 	}
 }

@@ -22,12 +22,12 @@ import (
 
 	"github.com/apache/servicecomb-kie/server"
 	"github.com/apache/servicecomb-kie/server/command"
-	"github.com/go-mesh/openlogging"
+	"github.com/go-chassis/openlog"
 	//custom handlers
 	_ "github.com/apache/servicecomb-kie/server/handler"
-	_ "github.com/go-chassis/go-chassis/middleware/jwt"
-	_ "github.com/go-chassis/go-chassis/middleware/monitoring"
-	_ "github.com/go-chassis/go-chassis/middleware/ratelimiter"
+	_ "github.com/go-chassis/go-chassis/v2/middleware/jwt"
+	_ "github.com/go-chassis/go-chassis/v2/middleware/monitoring"
+	_ "github.com/go-chassis/go-chassis/v2/middleware/ratelimiter"
 	//storage
 	_ "github.com/apache/servicecomb-kie/server/service/mongo"
 	//quota management
@@ -36,7 +36,7 @@ import (
 
 func main() {
 	if err := command.ParseConfig(os.Args); err != nil {
-		openlogging.Fatal(err.Error())
+		openlog.Fatal(err.Error())
 	}
 
 	server.Run()

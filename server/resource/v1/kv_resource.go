@@ -31,9 +31,9 @@ import (
 	"github.com/apache/servicecomb-kie/server/service/mongo/session"
 
 	goRestful "github.com/emicklei/go-restful"
-	"github.com/go-chassis/go-chassis/pkg/backends/quota"
-	"github.com/go-chassis/go-chassis/server/restful"
-	"github.com/go-mesh/openlogging"
+	"github.com/go-chassis/go-chassis/v2/pkg/backends/quota"
+	"github.com/go-chassis/go-chassis/v2/server/restful"
+	"github.com/go-chassis/openlog"
 )
 
 //KVResource has API about kv operations
@@ -63,17 +63,17 @@ func (r *KVResource) Post(rctx *restful.Context) {
 	err = quota.PreCreate("", kv.Domain, "", 1)
 	if err != nil {
 		if err == quota.ErrReached {
-			openlogging.Info(fmt.Sprintf("can not create kv %s@%s, due to quota violation", kv.Key, kv.Project))
+			openlog.Info(fmt.Sprintf("can not create kv %s@%s, due to quota violation", kv.Key, kv.Project))
 			WriteErrResponse(rctx, http.StatusUnprocessableEntity, err.Error())
 			return
 		}
-		openlogging.Error(err.Error())
+		openlog.Error(err.Error())
 		WriteErrResponse(rctx, http.StatusInternalServerError, "quota check failed")
 		return
 	}
 	kv, err = service.KVService.Create(rctx.Ctx, kv)
 	if err != nil {
-		openlogging.Error(fmt.Sprintf("post err:%s", err.Error()))
+		openlog.Error(fmt.Sprintf("post err:%s", err.Error()))
 		if err == session.ErrKVAlreadyExists {
 			WriteErrResponse(rctx, http.StatusConflict, err.Error())
 			return
@@ -89,13 +89,13 @@ func (r *KVResource) Post(rctx *restful.Context) {
 		Action:   pubsub.ActionPut,
 	})
 	if err != nil {
-		openlogging.Warn("lost kv change event when post:" + err.Error())
+		openlog.Warn("lost kv change event when post:" + err.Error())
 	}
-	openlogging.Info(
+	openlog.Info(
 		fmt.Sprintf("post [%s] success", kv.ID))
 	err = writeResponse(rctx, kv)
 	if err != nil {
-		openlogging.Error(err.Error())
+		openlog.Error(err.Error())
 	}
 
 }
@@ -121,7 +121,7 @@ func (r *KVResource) Put(rctx *restful.Context) {
 	}
 	kv, err := service.KVService.Update(rctx.Ctx, kvReq)
 	if err != nil {
-		openlogging.Error(fmt.Sprintf("put [%s] err:%s", kvID, err.Error()))
+		openlog.Error(fmt.Sprintf("put [%s] err:%s", kvID, err.Error()))
 		WriteErrResponse(rctx, http.StatusInternalServerError, "update kv failed")
 		return
 	}
@@ -133,13 +133,13 @@ func (r *KVResource) Put(rctx *restful.Context) {
 		Action:   pubsub.ActionPut,
 	})
 	if err != nil {
-		openlogging.Warn("lost kv change event when put:" + err.Error())
+		openlog.Warn("lost kv change event when put:" + err.Error())
 	}
-	openlogging.Info(
+	openlog.Info(
 		fmt.Sprintf("put [%s] success", kvID))
 	err = writeResponse(rctx, kv)
 	if err != nil {
-		openlogging.Error(err.Error())
+		openlog.Error(err.Error())
 	}
 
 }
@@ -158,7 +158,7 @@ func (r *KVResource) Get(rctx *restful.Context) {
 	}
 	kv, err := service.KVService.Get(rctx.Ctx, request)
 	if err != nil {
-		openlogging.Error("kv_resource: " + err.Error())
+		openlog.Error("kv_resource: " + err.Error())
 		if err == service.ErrKeyNotExists {
 			WriteErrResponse(rctx, http.StatusNotFound, err.Error())
 			return
@@ -170,7 +170,7 @@ func (r *KVResource) Get(rctx *restful.Context) {
 	kv.Project = ""
 	err = writeResponse(rctx, kv)
 	if err != nil {
-		openlogging.Error(err.Error())
+		openlog.Error(err.Error())
 	}
 }
 
@@ -277,7 +277,7 @@ func (r *KVResource) Delete(rctx *restful.Context) {
 	}
 	kv, err := service.KVService.FindOneAndDelete(rctx.Ctx, kvID, domain, project)
 	if err != nil {
-		openlogging.Error("delete failed, ", openlogging.WithTags(openlogging.Tags{
+		openlog.Error("delete failed, ", openlog.WithTags(openlog.Tags{
 			"kvID":  kvID,
 			"error": err.Error(),
 		}))
@@ -296,7 +296,7 @@ func (r *KVResource) Delete(rctx *restful.Context) {
 		Action:   pubsub.ActionDelete,
 	})
 	if err != nil {
-		openlogging.Warn("lost kv change event:" + err.Error())
+		openlog.Warn("lost kv change event:" + err.Error())
 	}
 	rctx.WriteHeader(http.StatusNoContent)
 }
@@ -321,7 +321,7 @@ func (r *KVResource) DeleteList(rctx *restful.Context) {
 			rctx.WriteHeader(http.StatusNoContent)
 			return
 		}
-		openlogging.Error("delete list failed, ", openlogging.WithTags(openlogging.Tags{
+		openlog.Error("delete list failed, ", openlog.WithTags(openlog.Tags{
 			"kvIDs": b.IDs,
 			"error": err.Error(),
 		}))
@@ -337,7 +337,7 @@ func (r *KVResource) DeleteList(rctx *restful.Context) {
 			Action:   pubsub.ActionDelete,
 		})
 		if err != nil {
-			openlogging.Warn("lost kv change event:" + err.Error())
+			openlog.Warn("lost kv change event:" + err.Error())
 		}
 	}
 	rctx.WriteHeader(http.StatusNoContent)

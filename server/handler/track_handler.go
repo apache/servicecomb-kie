@@ -24,9 +24,9 @@ import (
 	"github.com/apache/servicecomb-kie/server/resource/v1"
 	"github.com/apache/servicecomb-kie/server/service"
 	"github.com/emicklei/go-restful"
-	"github.com/go-chassis/go-chassis/core/handler"
-	"github.com/go-chassis/go-chassis/core/invocation"
-	"github.com/go-mesh/openlogging"
+	"github.com/go-chassis/go-chassis/v2/core/handler"
+	"github.com/go-chassis/go-chassis/v2/core/invocation"
+	"github.com/go-chassis/openlog"
 	"net/http"
 	"strings"
 )
@@ -81,7 +81,7 @@ func (h *TrackHandler) Handle(chain *handler.Chain, inv *invocation.Invocation, 
 		}
 		_, err := service.TrackService.CreateOrUpdate(inv.Ctx, data)
 		if err != nil {
-			openlogging.Warn("record polling detail failed:" + err.Error())
+			openlog.Warn("record polling detail failed:" + err.Error())
 			cb(ir)
 			return
 		}
@@ -101,6 +101,6 @@ func (h *TrackHandler) Name() string {
 }
 func init() {
 	if err := handler.RegisterHandler(TrackHandlerName, newTrackHandler); err != nil {
-		openlogging.Fatal("register handler failed: " + err.Error())
+		openlog.Fatal("register handler failed: " + err.Error())
 	}
 }

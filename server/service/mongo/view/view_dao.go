@@ -21,7 +21,7 @@ import (
 	"context"
 	"github.com/apache/servicecomb-kie/pkg/model"
 	"github.com/apache/servicecomb-kie/server/service/mongo/session"
-	"github.com/go-mesh/openlogging"
+	"github.com/go-chassis/openlog"
 	uuid "github.com/satori/go.uuid"
 	"go.mongodb.org/mongo-driver/bson"
 )
@@ -31,7 +31,7 @@ func create(ctx context.Context, viewDoc *model.ViewDoc) error {
 	viewDoc.Criteria = "" //TODO parse pipe line to sql-like lang
 	_, err := session.GetDB().Collection(session.CollectionView).InsertOne(ctx, viewDoc)
 	if err != nil {
-		openlogging.Error("can not insert view collection: " + err.Error())
+		openlog.Error("can not insert view collection: " + err.Error())
 		return session.ErrViewCreation
 	}
 	return nil
@@ -42,13 +42,13 @@ func findOne(ctx context.Context, viewID, domain, project string) (*model.ViewDo
 		"id":      viewID}
 	sr := session.GetDB().Collection(session.CollectionView).FindOne(ctx, filter)
 	if sr.Err() != nil {
-		openlogging.Error("can not insert view collection: " + sr.Err().Error())
+		openlog.Error("can not find view collection: " + sr.Err().Error())
 		return nil, sr.Err()
 	}
 	result := &model.ViewDoc{}
 	err := sr.Decode(result)
 	if err != nil {
-		openlogging.Error("decode error: " + err.Error())
+		openlog.Error("decode error: " + err.Error())
 		return nil, err
 	}
 	if result.ID == viewID {

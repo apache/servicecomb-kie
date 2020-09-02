@@ -18,7 +18,7 @@
 package pubsub
 
 import (
-	"github.com/go-mesh/openlogging"
+	"github.com/go-chassis/openlog"
 	"github.com/hashicorp/serf/serf"
 	"strings"
 )
@@ -29,7 +29,7 @@ type EventHandler struct {
 
 //HandleEvent send event to subscribers
 func (h *EventHandler) HandleEvent(e serf.Event) {
-	openlogging.Info("receive event:" + e.EventType().String())
+	openlog.Info("receive event:" + e.EventType().String())
 	switch e.EventType().String() {
 	case "user":
 		if strings.Contains(e.String(), EventKVChange) {
@@ -43,13 +43,13 @@ func handleKVEvent(e serf.Event) {
 	ue := e.(serf.UserEvent)
 	ke, err := NewKVChangeEvent(ue.Payload)
 	if err != nil {
-		openlogging.Error("invalid json:" + string(ue.Payload))
+		openlog.Error("invalid json:" + string(ue.Payload))
 	}
-	openlogging.Debug("kv event:" + ke.Key)
+	openlog.Debug("kv event:" + ke.Key)
 	topics.Range(func(key, value interface{}) bool { //range all topics
 		t, err := ParseTopicString(key.(string))
 		if err != nil {
-			openlogging.Error("can not parse topic " + key.(string) + ": " + err.Error())
+			openlog.Error("can not parse topic " + key.(string) + ": " + err.Error())
 			return true
 		}
 		if t.Match(ke) {

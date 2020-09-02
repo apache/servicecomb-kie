@@ -25,8 +25,8 @@ import (
 	"github.com/apache/servicecomb-kie/server/service"
 	"github.com/apache/servicecomb-kie/server/service/mongo/kv"
 	"github.com/apache/servicecomb-kie/server/service/mongo/session"
-	log "github.com/go-chassis/paas-lager"
-	"github.com/go-mesh/openlogging"
+	"github.com/go-chassis/openlog"
+	log "github.com/go-chassis/seclog"
 	"github.com/stretchr/testify/assert"
 	"testing"
 )
@@ -40,7 +40,7 @@ func init() {
 	})
 
 	logger := log.NewLogger("ut")
-	openlogging.SetLogger(logger)
+	openlog.SetLogger(logger)
 }
 
 func TestService_CreateOrUpdate(t *testing.T) {

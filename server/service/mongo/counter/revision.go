@@ -22,7 +22,7 @@ import (
 	"errors"
 
 	"github.com/apache/servicecomb-kie/server/service/mongo/session"
-	"github.com/go-mesh/openlogging"
+	"github.com/go-chassis/openlog"
 	"go.mongodb.org/mongo-driver/bson"
 	"go.mongodb.org/mongo-driver/mongo/options"
 )
@@ -41,7 +41,7 @@ func (s *Service) GetRevision(ctx context.Context, domain string) (int64, error)
 	if err != nil {
 		if err.Error() == context.DeadlineExceeded.Error() {
 			msg := "operation timeout"
-			openlogging.Error(msg)
+			openlog.Error(msg)
 			return 0, errors.New(msg)
 		}
 		return 0, err
@@ -50,7 +50,7 @@ func (s *Service) GetRevision(ctx context.Context, domain string) (int64, error)
 	c := &Counter{}
 	for cur.Next(ctx) {
 		if err := cur.Decode(c); err != nil {
-			openlogging.Error("decode error: " + err.Error())
+			openlog.Error("decode error: " + err.Error())
 			return 0, err
 		}
 	}
@@ -72,7 +72,7 @@ func ApplyRevision(ctx context.Context, domain string) (int64, error) {
 	c := &Counter{}
 	err := sr.Decode(c)
 	if err != nil {
-		openlogging.Error("decode error: " + err.Error())
+		openlog.Error("decode error: " + err.Error())
 		return 0, err
 	}
 	return c.Count, nil
