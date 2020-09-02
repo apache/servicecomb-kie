@@ -76,7 +76,7 @@ var (
 )
 
 const (
-	MsgExists    = "already exists"
+	MsgDBExists  = "already exists"
 	MsgDuplicate = "duplicate key error collection"
 )
 
@@ -209,83 +209,86 @@ func EnsureDB() {
 
 	ensureRevisionCounter(session)
 
-	//kv
-	c := session.DB(DBName).C("kv")
-	err = c.Create(&mgo.CollectionInfo{Validator: bson.M{
-		"key":     bson.M{"$exists": true},
-		"domain":  bson.M{"$exists": true},
-		"project": bson.M{"$exists": true},
-		"id":      bson.M{"$exists": true},
+	ensureKV(session)
+
+	ensureKVRevision(session)
+
+	ensureView(session)
+
+	ensureKVLongPolling(session)
+}
+
+func ensureKVLongPolling(session *mgo.Session) {
+	c := session.DB(DBName).C(CollectionPollingDetail)
+	err := c.Create(&mgo.CollectionInfo{Validator: bson.M{
+		"id":         bson.M{"$exists": true},
+		"params":     bson.M{"$exists": true},
+		"session_id": bson.M{"$exists": true},
+		"url_path":   bson.M{"$exists": true},
 	}})
+	wrapError(err, MsgDBExists)
 	err = c.EnsureIndex(mgo.Index{
 		Key:    []string{"id"},
 		Unique: true,
 	})
-	if err != nil {
-		panic(err)
-	}
+	wrapError(err)
 	err = c.EnsureIndex(mgo.Index{
-		Key:    []string{"key", "label_format", "domain", "project"},
+		Key:    []string{"session_id", "domain"},
 		Unique: true,
 	})
-	if err != nil {
-		panic(err)
-	}
-	//kv_revision
-	c = session.DB(DBName).C(CollectionKVRevision)
-	err = c.EnsureIndex(mgo.Index{
-		Key:         []string{"delete_time"},
-		ExpireAfter: 7 * 24 * time.Hour,
-	})
-	if err != nil {
-		panic(err)
-	}
-	//view
-	c = session.DB(DBName).C(CollectionView)
-	err = c.Create(&mgo.CollectionInfo{Validator: bson.M{
+	wrapError(err)
+}
+
+func ensureView(session *mgo.Session) {
+	c := session.DB(DBName).C(CollectionView)
+	err := c.Create(&mgo.CollectionInfo{Validator: bson.M{
 		"id":      bson.M{"$exists": true},
 		"domain":  bson.M{"$exists": true},
 		"project": bson.M{"$exists": true},
 		"display": bson.M{"$exists": true},
 		"label":   bson.M{"$exists": true},
 	}})
+	wrapError(err, MsgDBExists)
 	err = c.EnsureIndex(mgo.Index{
 		Key:    []string{"id"},
 		Unique: true,
 	})
-	if err != nil {
-		panic(err)
-	}
+	wrapError(err)
 	err = c.EnsureIndex(mgo.Index{
 		Key:    []string{"display", "domain", "project"},
 		Unique: true,
 	})
-	if err != nil {
-		panic(err)
-	}
-	//long polling
-	c = session.DB(DBName).C(CollectionPollingDetail)
-	err = c.Create(&mgo.CollectionInfo{Validator: bson.M{
-		"id":         bson.M{"$exists": true},
-		"params":     bson.M{"$exists": true},
-		"session_id": bson.M{"$exists": true},
-		"url_path":   bson.M{"$exists": true},
+	wrapError(err)
+}
+
+func ensureKVRevision(session *mgo.Session) {
+	c := session.DB(DBName).C(CollectionKVRevision)
+	err := c.EnsureIndex(mgo.Index{
+		Key:         []string{"delete_time"},
+		ExpireAfter: 7 * 24 * time.Hour,
+	})
+	wrapError(err, MsgDBExists)
+}
+
+func ensureKV(session *mgo.Session) {
+	c := session.DB(DBName).C(CollectionKV)
+	err := c.Create(&mgo.CollectionInfo{Validator: bson.M{
+		"key":     bson.M{"$exists": true},
+		"domain":  bson.M{"$exists": true},
+		"project": bson.M{"$exists": true},
+		"id":      bson.M{"$exists": true},
 	}})
+	wrapError(err, MsgDBExists)
 	err = c.EnsureIndex(mgo.Index{
 		Key:    []string{"id"},
 		Unique: true,
 	})
-	if err != nil {
-		panic(err)
-	}
+	wrapError(err)
 	err = c.EnsureIndex(mgo.Index{
-		Key:    []string{"session_id", "domain"},
+		Key:    []string{"key", "label_format", "domain", "project"},
 		Unique: true,
 	})
-	if err != nil {
-		panic(err)
-	}
-
+	wrapError(err)
 }
 
 func ensureRevisionCounter(session *mgo.Session) {
@@ -295,27 +298,25 @@ func ensureRevisionCounter(session *mgo.Session) {
 		"domain": bson.M{"$exists": true},
 		"count":  bson.M{"$exists": true},
 	}})
-	if err != nil {
-		if strings.Contains(err.Error(), MsgExists) {
-			openlog.Debug(err.Error())
-		} else {
-			openlog.Fatal(err.Error())
-		}
-	}
+	wrapError(err, MsgDBExists)
 	err = c.EnsureIndex(mgo.Index{
 		Key:    []string{"name", "domain"},
 		Unique: true,
 	})
-	if err != nil {
-		openlog.Fatal(err.Error())
-	}
+	wrapError(err)
 	docs := map[string]interface{}{"name": "revision_counter", "count": 1, "domain": "default"}
 	err = c.Insert(docs)
+	wrapError(err, MsgDuplicate)
+}
+
+func wrapError(err error, skipMsg ...string) {
 	if err != nil {
-		if strings.Contains(err.Error(), MsgDuplicate) {
-			openlog.Debug(err.Error())
-		} else {
-			openlog.Fatal(err.Error())
+		for _, str := range skipMsg {
+			if strings.Contains(err.Error(), str) {
+				openlog.Debug(err.Error())
+				return
+			}
 		}
+		openlog.Fatal(err.Error())
 	}
 }
