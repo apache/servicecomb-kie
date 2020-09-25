@@ -32,3 +32,13 @@ jobs:
         - go get golang.org/x/tools/cmd/cover
         - sleep 30
         - bash scripts/travis/unit_test.sh && $HOME/gopath/bin/goveralls -coverprofile=coverage.txt -service=travis-ci
+    - arch: arm64
+      script:
+        - export GOPROXY=https://goproxy.io
+        - GO111MODULE=on go mod download
+        - GO111MODULE=on go mod vendor
+        - bash scripts/travis/start_deps.sh
+        - go get github.com/mattn/goveralls
+        - go get golang.org/x/tools/cmd/cover
+        - sleep 30
+        - bash scripts/travis/unit_test.sh && $HOME/gopath/bin/goveralls -coverprofile=coverage.txt -service=travis-ci
