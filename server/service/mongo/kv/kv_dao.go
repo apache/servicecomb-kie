@@ -20,6 +20,8 @@ package kv
 import (
 	"context"
 	"fmt"
+	"regexp"
+	"strings"
 	"time"
 
 	"github.com/apache/servicecomb-kie/pkg/model"
@@ -108,12 +110,23 @@ func updateKeyValue(ctx context.Context, kv *model.KVDoc) error {
 
 }
 
+//Extract key values
+func getValue(str string) string {
+	rex :=regexp.MustCompile(`\(([^)]+)\)`)
+	res :=rex.FindStringSubmatch(str)
+	return res[len(res)-1]
+}
+
 func findKV(ctx context.Context, domain string, project string, opts service.FindOptions) (*mongo.Cursor, int, error) {
 	collection := session.GetDB().Collection(session.CollectionKV)
 	ctx, _ = context.WithTimeout(ctx, opts.Timeout)
 	filter := bson.M{"domain": domain, "project": project}
 	if opts.Key != "" {
-		filter["key"] = opts.Key
+		if strings.HasPrefix(opts.Key, "beginWith"){
+			filter["key"] = bson.M{"$regex": getValue(opts.Key), "$options":"$i"}
+		} else {
+			filter["key"] = opts.Key
+		}
 	}
 	if len(opts.Labels) != 0 {
 		for k, v := range opts.Labels {
