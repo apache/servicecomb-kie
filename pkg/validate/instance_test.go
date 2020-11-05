@@ -107,4 +107,19 @@ func TestValidate(t *testing.T) {
 		Labels: map[string]string{string32 + "a": "a"},
 	}
 	assert.Error(t, validate.Validate(kvDoc))
+
+	ListKVRe := &model.ListKVRequest{Project: "a", Domain: "a",
+		Key:  "beginWith(a)",
+	}
+	assert.NoError(t, validate.Validate(ListKVRe))
+
+	ListKVRe = &model.ListKVRequest{Project: "a", Domain: "a",
+		Key:  "beginW(a)",
+	}
+	assert.Error(t, validate.Validate(ListKVRe))
+
+	ListKVRe = &model.ListKVRequest{Project: "a", Domain: "a",
+		Key:  "beginW()",
+	}
+	assert.Error(t, validate.Validate(ListKVRe))
 }

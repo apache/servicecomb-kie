@@ -5,6 +5,7 @@ var defaultValidator = NewValidator()
 const (
 	key                   = "key"
 	commonNameRegexString = `^[a-zA-Z0-9]*$|^[a-zA-Z0-9][a-zA-Z0-9_\-.]*[a-zA-Z0-9]$`
+	getKeyRegexString     = `^[a-zA-Z0-9]*$|^[a-zA-Z0-9][a-zA-Z0-9_\-.]*[a-zA-Z0-9]$|^beginWith\([a-zA-Z0-9][a-zA-Z0-9_\-.]*\)$`
 	asciiRegexString      = `^[\x00-\x7F]*$`
 )
 
@@ -12,7 +13,7 @@ const (
 // please use different tag names from third party tags
 var customRules = []*RegexValidateRule{
 	NewRule(key, commonNameRegexString, &Option{Min: 1, Max: 128}),
-	NewRule("getKey", commonNameRegexString, &Option{Max: 128}),
+	NewRule("getKey", getKeyRegexString, &Option{Max: 128}),
 	NewRule("commonName", commonNameRegexString, &Option{Min: 1, Max: 256}),
 	NewRule("valueType", `^$|^(ini|json|text|yaml|properties)$`, nil),
 	NewRule("kvStatus", `^$|^(enabled|disabled)$`, nil),
