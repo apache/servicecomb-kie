@@ -109,17 +109,17 @@ func TestValidate(t *testing.T) {
 	assert.Error(t, validate.Validate(kvDoc))
 
 	ListKVRe := &model.ListKVRequest{Project: "a", Domain: "a",
-		Key:  "beginWith(a)",
+		Key: "beginWith(a)",
 	}
 	assert.NoError(t, validate.Validate(ListKVRe))
 
 	ListKVRe = &model.ListKVRequest{Project: "a", Domain: "a",
-		Key:  "beginW(a)",
+		Key: "beginW(a)",
 	}
 	assert.Error(t, validate.Validate(ListKVRe))
 
 	ListKVRe = &model.ListKVRequest{Project: "a", Domain: "a",
-		Key:  "beginW()",
+		Key: "beginW()",
 	}
 	assert.Error(t, validate.Validate(ListKVRe))
 }
