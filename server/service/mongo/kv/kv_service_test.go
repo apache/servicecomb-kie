@@ -64,6 +64,17 @@ func TestService_CreateOrUpdate(t *testing.T) {
 		assert.NoError(t, err)
 		assert.NotEmpty(t, kv.ID)
 	})
+	t.Run("put kv timeout,without labels app and service", func(t *testing.T) {
+		kv, err := kvsvc.Create(context.TODO(), &model.KVDoc{
+			Key:    "timeout",
+			Value:  "2s",
+			Status: common2.StatusEnabled,
+			Domain:  "default",
+			Project: "kv-test",
+		})
+		assert.Error(t, err)
+		assert.Empty(t, kv)
+	})
 	t.Run("put kv timeout,with labels app, service and version", func(t *testing.T) {
 		kv, err := kvsvc.Create(context.TODO(), &model.KVDoc{
 			Key:    "timeout",
