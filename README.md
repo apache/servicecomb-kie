@@ -80,6 +80,9 @@ https://kie.readthedocs.io/en/latest/
 
 or follow [here](docs/README.md) to generate it in local
 
+## Clients
+- go https://github.com/go-chassis/kie-client
+
 ## Contact
 
 Bugs: [issues](https://issues.apache.org/jira/browse/SCB)
