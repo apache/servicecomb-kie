@@ -70,7 +70,7 @@ type PollingDetail struct {
 	URLPath        string                 `json:"url_path,omitempty"  bson:"url_path,"  yaml:"url_path,omitempty"`
 	ResponseBody   []*KVDoc               `json:"kv,omitempty"  bson:"kv,"  yaml:"kv,omitempty"`
 	ResponseCode   int                    `json:"response_code,omitempty"  bson:"response_code,"  yaml:"response_code,omitempty"`
-	Timestamp     time.Time               `json:"timestamp,omitempty" yaml:"timestamp,omitempty"`
+	Timestamp      time.Time              `json:"timestamp,omitempty" yaml:"timestamp,omitempty"`
 }
 
 // UpdateKVRequest is db struct, it contains kv update request params
