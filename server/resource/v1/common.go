@@ -43,7 +43,7 @@ import (
 const (
 	HeaderUserAgent    = "User-Agent"
 	HeaderSessionID    = "X-Session-Id"
-	HeaderSessionGroup    = "X-Session-Group"
+	HeaderSessionGroup = "X-Session-Group"
 	AttributeDomainKey = "domain"
 
 	FmtReadRequestError = "decode request body failed: %v"

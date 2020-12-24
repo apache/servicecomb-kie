@@ -83,7 +83,7 @@ db.createCollection( "polling_detail", {
     max: 100,
     validator: { $jsonSchema: {
             bsonType: "object",
-            required: [ "id","session_id","revision","url_path"],
+            required: [ "id","session_id","revision","url_path" ],
             properties: {
                 id: {
                     bsonType: "string",
@@ -118,10 +118,10 @@ db.kv.createIndex({"id": 1}, { unique: true } );
 db.kv.createIndex({key: 1, label_format: 1,domain:1,project:1},{ unique: true });
 db.kv_revision.createIndex( { "delete_time": 1 }, { expireAfterSeconds: 7 * 24 * 3600 } );
 db.label.createIndex({"id": 1}, { unique: true } );
-db.label.createIndex({format: 1,domain:1,project:1},{ unique: true });
-db.polling_detail.createIndex({timestamp: 1}, { expireAfterSeconds: 7 * 24 * 3600});
+db.label.createIndex({format: 1,domain:1,project:1},{ unique: true } );
+db.polling_detail.createIndex({timestamp: 1}, { expireAfterSeconds: 7 * 24 * 3600 } );
 db.counter.createIndex({name: 1,domain:1},{ unique: true });
 db.view.createIndex({"id": 1}, { unique: true } );
-db.view.createIndex({display:1,domain:1,project:1},{ unique: true });
+db.view.createIndex({display:1,domain:1,project:1},{ unique: true } );
 //db config
 db.setProfilingLevel(1, {slowms: 80, sampleRate: 1} );
