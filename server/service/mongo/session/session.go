@@ -222,19 +222,13 @@ func ensureKVLongPolling(session *mgo.Session) {
 	c := session.DB(DBName).C(CollectionPollingDetail)
 	err := c.Create(&mgo.CollectionInfo{Validator: bson.M{
 		"id":         bson.M{"$exists": true},
-		"params":     bson.M{"$exists": true},
+		"revision":   bson.M{"$exists": true},
 		"session_id": bson.M{"$exists": true},
 		"url_path":   bson.M{"$exists": true},
 	}})
-	wrapError(err, MsgDBExists)
 	err = c.EnsureIndex(mgo.Index{
-		Key:    []string{"id"},
-		Unique: true,
-	})
-	wrapError(err)
-	err = c.EnsureIndex(mgo.Index{
-		Key:    []string{"session_id", "domain"},
-		Unique: true,
+		Key:         []string{"timestamp"},
+		ExpireAfter: 7 * 24 * time.Hour,
 	})
 	wrapError(err)
 }

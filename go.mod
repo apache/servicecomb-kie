@@ -5,9 +5,7 @@ require (
 	github.com/emicklei/go-restful v2.12.0+incompatible
 	github.com/go-chassis/go-archaius v1.3.6-0.20201103103813-43dd1680ebfb
 	github.com/go-chassis/go-chassis/v2 v2.1.1-0.20201208062518-9c2e86bd7a6c
-
 	github.com/go-chassis/openlog v1.1.2
-	github.com/go-chassis/paas-lager v1.1.1
 	github.com/go-chassis/seclog v1.3.0
 	github.com/go-playground/universal-translator v0.17.0
 	github.com/go-playground/validator v9.31.0+incompatible
