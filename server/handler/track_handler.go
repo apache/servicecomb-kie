@@ -29,6 +29,7 @@ import (
 	"github.com/go-chassis/openlog"
 	"net/http"
 	"strings"
+	"time"
 )
 
 //const of noop auth handler
@@ -66,13 +67,15 @@ func (h *TrackHandler) Handle(chain *handler.Chain, inv *invocation.Invocation, 
 		data := &model.PollingDetail{}
 		data.URLPath = req.Request.Method + " " + req.Request.URL.Path
 		data.SessionID = sessionID
+		data.SessionGroup = req.HeaderParameter(v1.HeaderSessionGroup)
 		data.UserAgent = req.HeaderParameter(v1.HeaderUserAgent)
 		data.Domain = v1.ReadDomain(req.Request.Context())
 		data.IP = iputil.ClientIP(req.Request)
 		data.ResponseBody = req.Attribute(common.RespBodyContextKey).([]*model.KVDoc)
+		data.Timestamp = time.Now()
 		data.ResponseCode = ir.Status
 		if resp != nil {
-			data.ResponseHeader = resp.Header()
+			data.Revision = resp.Header().Get(common.HeaderRevision)
 		}
 		data.PollingData = map[string]interface{}{
 			"revision": revStr,
