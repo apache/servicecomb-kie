@@ -72,6 +72,14 @@ func (r *HistoryResource) GetPollingData(context *restful.Context) {
 	if sessionID != "" {
 		query.SessionID = sessionID
 	}
+	sessionCroup := context.ReadQueryParameter(common.QueryParamSessionGroup)
+	if sessionCroup != "" {
+		query.SessionGroup = sessionCroup
+	}
+	revision := context.ReadQueryParameter(common.QueryParamRev)
+	if revision != "" {
+		query.Revision = revision
+	}
 	ip := context.ReadQueryParameter(common.QueryParamIP)
 	if ip != "" {
 		query.IP = ip
