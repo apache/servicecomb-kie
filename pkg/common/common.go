@@ -35,6 +35,7 @@ const (
 	PathParameterProject = "project"
 	//polling data
 	QueryParamSessionID = "sessionId"
+	QueryParamSessionGroup = "sessionGroup"
 	QueryParamIP        = "ip"
 	QueryParamURLPath   = "urlPath"
 	QueryParamUserAgent = "userAgent"
