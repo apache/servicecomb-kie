@@ -29,9 +29,10 @@ import (
 )
 
 //CreateOrUpdate create a record or update exist record
+//If revision and session_id is exist: update else:insert
 func CreateOrUpdate(ctx context.Context, detail *model.PollingDetail) (*model.PollingDetail, error) {
 	collection := session.GetDB().Collection(session.CollectionPollingDetail)
-	queryFilter := bson.M{"domain": detail.Domain, "session_id": detail.SessionID}
+	queryFilter := bson.M{"revision": detail.Domain, "session_id": detail.SessionID}
 	res := collection.FindOne(ctx, queryFilter)
 	if res.Err() != nil {
 		if res.Err() == mongo.ErrNoDocuments {
@@ -66,6 +67,9 @@ func Get(ctx context.Context, detail *model.PollingDetail) ([]*model.PollingDeta
 	}
 	if detail.URLPath != "" {
 		queryFilter["url_path"] = detail.URLPath
+	}
+	if detail.Revision != "" {
+		queryFilter["revision"] = detail.Revision
 	}
 	cur, err := collection.Find(ctx, queryFilter)
 	if err != nil {
