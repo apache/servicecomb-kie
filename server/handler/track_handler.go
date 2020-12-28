@@ -61,6 +61,10 @@ func (h *TrackHandler) Handle(chain *handler.Chain, inv *invocation.Invocation, 
 		return
 	}
 	chain.Next(inv, func(ir *invocation.Response) {
+		if ir.Status != 200 {
+			cb(ir)
+			return
+		}
 		resp, _ := ir.Result.(*restful.Response)
 		revStr := req.QueryParameter(common.QueryParamRev)
 		wait := req.QueryParameter(common.QueryParamWait)

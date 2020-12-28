@@ -232,6 +232,11 @@ func ensureKVLongPolling(session *mgo.Session) {
 		ExpireAfter: 7 * 24 * time.Hour,
 	})
 	wrapError(err)
+	err = c.EnsureIndex(mgo.Index{
+		Key:    []string{"revision", "domain", "session_id"},
+		Unique: true,
+	})
+	wrapError(err)
 }
 
 func ensureView(session *mgo.Session) {

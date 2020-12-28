@@ -120,6 +120,7 @@ db.kv_revision.createIndex({"delete_time": 1}, {expireAfterSeconds: 7 * 24 * 360
 db.label.createIndex({"id": 1}, {unique: true});
 db.label.createIndex({format: 1, domain: 1, project: 1}, {unique: true});
 db.polling_detail.createIndex({timestamp: 1}, {expireAfterSeconds: 7 * 24 * 3600});
+db.polling_detail.createIndex({revision: 1, session_id: 1, domain: 1}, {unique: true});
 db.counter.createIndex({name: 1, domain: 1}, {unique: true});
 db.view.createIndex({"id": 1}, {unique: true});
 db.view.createIndex({display: 1, domain: 1, project: 1}, {unique: true});

@@ -32,7 +32,7 @@ import (
 //If revision and session_id is exist: update else:insert
 func CreateOrUpdate(ctx context.Context, detail *model.PollingDetail) (*model.PollingDetail, error) {
 	collection := session.GetDB().Collection(session.CollectionPollingDetail)
-	queryFilter := bson.M{"revision": detail.Domain, "session_id": detail.SessionID}
+	queryFilter := bson.M{"revision": detail.Revision, "domain": detail.Domain, "session_id": detail.SessionID}
 	res := collection.FindOne(ctx, queryFilter)
 	if res.Err() != nil {
 		if res.Err() == mongo.ErrNoDocuments {
