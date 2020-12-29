@@ -170,6 +170,11 @@ type KVCreateBody struct {
 	ValueType string            `json:"value_type"`
 }
 
+//KVListCreateBody is open api doc
+type KVListCreateBody struct {
+	KvList []*KVCreateBody `json:"kv_list"`
+}
+
 //KVUpdateBody is open api doc
 type KVUpdateBody struct {
 	Status string `json:"status"`

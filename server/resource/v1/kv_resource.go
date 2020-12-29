@@ -97,6 +97,74 @@ func (r *KVResource) Post(rctx *restful.Context) {
 	if err != nil {
 		openlog.Error(err.Error())
 	}
+}
+
+//PostList create kv list value
+func (r *KVResource) PostList(rctx *restful.Context) {
+	var err error
+	project := rctx.ReadPathParameter(common.PathParameterProject)
+	kvs := new(model.KVListDoc)
+	if err = readRequest(rctx, kvs); err != nil {
+		WriteErrResponse(rctx, http.StatusBadRequest, fmt.Sprintf(FmtReadRequestError, err))
+		return
+	}
+	domain := ReadDomain(rctx.Ctx)
+	kvList := kvs.KVListDoc
+	for i := 0; i < len(kvList); i++ {
+		kvList[i].Domain = domain
+		kvList[i].Project = project
+
+		if kvList[i].Status == "" {
+			kvList[i].Status = common.StatusDisabled
+		}
+
+		err = validate.Validate(kvList[i])
+		if err != nil {
+			WriteErrResponse(rctx, http.StatusBadRequest, err.Error())
+			return
+		}
+		err = quota.PreCreate("", kvList[i].Domain, "", 1)
+		if err != nil {
+			if err == quota.ErrReached {
+				openlog.Info(fmt.Sprintf("can not create kv %s@%s, due to quota violation", kvList[i].Key, kvList[i].Project))
+				WriteErrResponse(rctx, http.StatusUnprocessableEntity, err.Error())
+				return
+			}
+			openlog.Error(err.Error())
+			WriteErrResponse(rctx, http.StatusInternalServerError, "quota check failed")
+			return
+		}
+	}
+	kvs, err = service.KVService.CreateList(rctx.Ctx, kvs)
+	if err != nil {
+		openlog.Error(fmt.Sprintf("post err:%s", err.Error()))
+		if err == session.ErrKVAlreadyExists {
+			WriteErrResponse(rctx, http.StatusConflict, err.Error())
+			return
+		}
+		WriteErrResponse(rctx, http.StatusInternalServerError, "create kv list failed")
+		return
+	}
+
+	for i := 0; i < len(kvs.KVListDoc); i++ {
+		err = pubsub.Publish(&pubsub.KVChangeEvent{
+			Key:      kvs.KVListDoc[i].Key,
+			Labels:   kvs.KVListDoc[i].Labels,
+			Project:  project,
+			DomainID: kvs.KVListDoc[i].Domain,
+			Action:   pubsub.ActionPut,
+		})
+		if err != nil {
+			openlog.Warn("lost kv change event when post:" + err.Error())
+		}
+		openlog.Info(
+			fmt.Sprintf("post [%s] success", kvs.KVListDoc[i].ID))
+	}
+
+	err = writeResponse(rctx, kvs)
+	if err != nil {
+		openlog.Error(err.Error())
+	}
 
 }
 
@@ -359,6 +427,23 @@ func (r *KVResource) URLPatterns() []restful.Route {
 				{
 					Code:  http.StatusOK,
 					Model: model.DocResponseSingleKey{},
+				},
+			},
+			Consumes: []string{goRestful.MIME_JSON, common.ContentTypeYaml},
+			Produces: []string{goRestful.MIME_JSON, common.ContentTypeYaml},
+		}, {
+			Method:       http.MethodPost,
+			Path:         "/v1/{project}/kie/kv_list",
+			ResourceFunc: r.PostList,
+			FuncDesc:     "create key value list",
+			Parameters: []*restful.Parameters{
+				DocPathProject, DocHeaderContentTypeJSONAndYaml,
+			},
+			Read: KVListCreateBody{},
+			Returns: []*restful.Returns{
+				{
+					Code:  http.StatusOK,
+					Model: model.DocResponseGetKey{},
 				},
 			},
 			Consumes: []string{goRestful.MIME_JSON, common.ContentTypeYaml},

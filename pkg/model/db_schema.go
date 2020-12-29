@@ -29,6 +29,11 @@ type LabelDoc struct {
 	Alias   string            `json:"alias,omitempty" yaml:"alias,omitempty"`
 }
 
+//KVListDoc is database struct to store kvs
+type KVListDoc struct {
+	KVListDoc []*KVDoc `json:"kv_list,omitempty" bson:"kv_list,omitempty" yaml:"kv_list, omitempty"`
+}
+
 //KVDoc is database struct to store kv
 type KVDoc struct {
 	ID             string `json:"id,omitempty" bson:"id,omitempty" yaml:"id,omitempty" swag:"string"`

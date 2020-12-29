@@ -70,6 +70,41 @@ func (s *Service) Create(ctx context.Context, kv *model.KVDoc) (*model.KVDoc, er
 	return kv, nil
 }
 
+//CreateList will create key value list record
+func (s *Service) CreateList(ctx context.Context, kvsDoc *model.KVListDoc) (*model.KVListDoc, error) {
+	ctx, _ = context.WithTimeout(ctx, session.Timeout)
+	kvs := kvsDoc.KVListDoc
+	for i := 0; i < len(kvs); i++ {
+		if kvs[i].Labels == nil {
+			kvs[i].Labels = map[string]string{}
+		}
+
+		//check whether the project has certain labels or not
+		kvs[i].LabelFormat = stringutil.FormatMap(kvs[i].Labels)
+		if kvs[i].ValueType == "" {
+			kvs[i].ValueType = session.DefaultValueType
+		}
+		_, err := s.Exist(ctx, kvs[i].Domain, kvs[i].Key, kvs[i].Project, service.WithLabelFormat(kvs[i].LabelFormat))
+		if err == nil {
+			return nil, session.ErrKVAlreadyExists
+		}
+
+		if err != service.ErrKeyNotExists {
+			openlog.Error(err.Error())
+			return nil, err
+		}
+
+		kvs[i], err = createKey(ctx, kvs[i])
+		if err != nil {
+			openlog.Error(err.Error())
+			return nil, err
+		}
+		clearPart(kvs[i])
+	}
+
+	return kvsDoc, nil
+}
+
 //Update will update a key value record
 func (s *Service) Update(ctx context.Context, kv *model.UpdateKVRequest) (*model.KVDoc, error) {
 	ctx, _ = context.WithTimeout(ctx, session.Timeout)

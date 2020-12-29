@@ -150,6 +150,93 @@ func TestService_Create(t *testing.T) {
 	})
 }
 
+func TestService_CreateList(t *testing.T) {
+	kvsvc := &kv.Service{}
+	t.Run("create a kv timeout,with labels app and service", func(t *testing.T) {
+		result, err := kvsvc.CreateList(context.TODO(), &model.KVListDoc{
+			KVListDoc: []*model.KVDoc{
+				{
+					Key:    "timeout",
+					Value:  "2s",
+					Status: common2.StatusEnabled,
+					Labels: map[string]string{
+						"app":     "mall",
+						"service": "utCart",
+						"version": "1.0.1",
+					},
+					Domain:  "default",
+					Project: "kv-test",
+				},
+			},
+		})
+		assert.NoError(t, err)
+		assert.NotEmpty(t, result.KVListDoc[0].ID)
+		assert.Equal(t, "2s", result.KVListDoc[0].Value)
+
+	})
+	t.Run("create a kv list which contains a exist kv value", func(t *testing.T) {
+		_, err := kvsvc.CreateList(context.TODO(), &model.KVListDoc{
+			KVListDoc: []*model.KVDoc{
+				{
+					Key:    "timeout",
+					Value:  "2s",
+					Status: common2.StatusEnabled,
+					Labels: map[string]string{
+						"app":     "mall",
+						"service": "utCart",
+						"version": "1.0.1",
+					},
+					Domain:  "default",
+					Project: "kv-test",
+				},
+				{
+					Key:    "test",
+					Value:  "5s",
+					Status: common2.StatusEnabled,
+					Labels: map[string]string{
+						"app":     "mall",
+						"service": "utCart",
+					},
+					Domain:  "default",
+					Project: "kv-test",
+				},
+			},
+		})
+		assert.Error(t, err)
+	})
+
+	t.Run("create a kv list with more than one kv value", func(t *testing.T) {
+		_, err := kvsvc.CreateList(context.TODO(), &model.KVListDoc{
+			KVListDoc: []*model.KVDoc{
+				{
+					Key:    "test1",
+					Value:  "2s",
+					Status: common2.StatusEnabled,
+					Labels: map[string]string{
+						"app":     "mall",
+						"service": "utCart",
+						"version": "1.0.1",
+					},
+					Domain:  "default",
+					Project: "kv-test",
+				},
+				{
+					Key:    "test2",
+					Value:  "5s",
+					Status: common2.StatusEnabled,
+					Labels: map[string]string{
+						"app":     "mall",
+						"service": "utCart",
+					},
+					Domain:  "default",
+					Project: "kv-test",
+				},
+			},
+		})
+		assert.NoError(t, err)
+	})
+}
+
 func TestService_Update(t *testing.T) {
 	kvsvc := &kv.Service{}
 	t.Run("update kv by kvID", func(t *testing.T) {

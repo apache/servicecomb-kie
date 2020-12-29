@@ -152,6 +152,67 @@ func TestKVResource_Post(t *testing.T) {
 		assert.NotEmpty(t, data.ID)
 	})
 }
+
+func TestKVResource_PostList(t *testing.T) {
+	t.Run("post a kv, label is service", func(t *testing.T) {
+		kvs := &model.KVListDoc{
+			KVListDoc: []*model.KVDoc{
+				{
+					Key:    "single-kv",
+					Value:  "1s",
+					Labels: map[string]string{"service": "listService"},
+				},
+			},
+		}
+		j, _ := json.Marshal(kvs)
+		r, _ := http.NewRequest("POST", "/v1/kv_test/kie/kv_list", bytes.NewBuffer(j))
+		r.Header.Set("Content-Type", "application/json")
+		kvr := &v1.KVResource{}
+		c, _ := restfultest.New(kvr, nil)
+		resp := httptest.NewRecorder()
+		c.ServeHTTP(resp, r)
+
+		body, err := ioutil.ReadAll(resp.Body)
+		assert.NoError(t, err)
+		res := &model.KVListDoc{}
+		err = json.Unmarshal(body, res)
+		assert.NoError(t, err)
+		assert.NotEmpty(t, kvs.KVListDoc)
+		t.Log(kvs.KVListDoc)
+	})
+	t.Run("post more than 1 key value, which label is same to timeout", func(t *testing.T) {
+		kvs := &model.KVListDoc{
+			KVListDoc: []*model.KVDoc{
+				{
+					Key:    "kv_list1",
+					Value:  "1s",
+					Labels: map[string]string{"service": "listService"},
+				},
+				{
+					Key:    "kv_list2",
+					Value:  "2s",
+					Labels: map[string]string{"service": "listService"},
+				},
+			},
+		}
+
+		j, _ := json.Marshal(kvs)
+		r, _ := http.NewRequest("POST", "/v1/kv_test/kie/kv_list", bytes.NewBuffer(j))
+		r.Header.Set("Content-Type", "application/json")
+		kvr := &v1.KVResource{}
+		c, _ := restfultest.New(kvr, nil)
+		resp := httptest.NewRecorder()
+		c.ServeHTTP(resp, r)
+
+		body, err := ioutil.ReadAll(resp.Body)
+		assert.NoError(t, err)
+		res := &model.KVListDoc{}
+		err = json.Unmarshal(body, res)
+		assert.NoError(t, err)
+		assert.NotEmpty(t, res.KVListDoc)
+		assert.Equal(t, 2, len(res.KVListDoc))
+	})
+}
 func TestKVResource_List(t *testing.T) {
 	t.Run("list kv by service label, should return 3 kvs", func(t *testing.T) {
 		r, _ := http.NewRequest("GET", "/v1/kv_test/kie/kv?label=service:utService", nil)
