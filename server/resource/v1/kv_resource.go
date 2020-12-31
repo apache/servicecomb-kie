@@ -135,7 +135,7 @@ func (r *KVResource) PostList(rctx *restful.Context) {
 			return
 		}
 	}
-	kvs, err = service.KVService.CreateList(rctx.Ctx, kvs)
+	kvsList, err := service.KVService.CreateList(rctx.Ctx, kvs)
 	if err != nil {
 		openlog.Error(fmt.Sprintf("post err:%s", err.Error()))
 		if err == session.ErrKVAlreadyExists {
@@ -146,22 +146,22 @@ func (r *KVResource) PostList(rctx *restful.Context) {
 		return
 	}
 
-	for i := 0; i < len(kvs.KVListDoc); i++ {
+	for i := 0; i < len(kvsList.KVListDoc); i++ {
 		err = pubsub.Publish(&pubsub.KVChangeEvent{
-			Key:      kvs.KVListDoc[i].Key,
-			Labels:   kvs.KVListDoc[i].Labels,
+			Key:      kvsList.KVListDoc[i].Key,
+			Labels:   kvsList.KVListDoc[i].Labels,
 			Project:  project,
-			DomainID: kvs.KVListDoc[i].Domain,
+			DomainID: kvsList.KVListDoc[i].Domain,
 			Action:   pubsub.ActionPut,
 		})
 		if err != nil {
 			openlog.Warn("lost kv change event when post:" + err.Error())
 		}
 		openlog.Info(
-			fmt.Sprintf("post [%s] success", kvs.KVListDoc[i].ID))
+			fmt.Sprintf("post [%s] success", kvsList.KVListDoc[i].ID))
 	}
 
-	err = writeResponse(rctx, kvs)
+	err = writeResponse(rctx, kvsList)
 	if err != nil {
 		openlog.Error(err.Error())
 	}
@@ -210,6 +210,57 @@ func (r *KVResource) Put(rctx *restful.Context) {
 		openlog.Error(err.Error())
 	}
 
+}
+
+//PutList update kv list
+func (r *KVResource) PutList(rctx *restful.Context) {
+	var err error
+
+	project := rctx.ReadPathParameter(common.PathParameterProject)
+	kvListReq := new(model.UpdateKVListRequest)
+	if err = readRequest(rctx, kvListReq); err != nil {
+		WriteErrResponse(rctx, http.StatusBadRequest, fmt.Sprintf(FmtReadRequestError, err))
+		return
+	}
+	domain := ReadDomain(rctx.Ctx)
+
+	updateKVList := kvListReq.UpdateKVList
+	for i := 0; i < len(updateKVList); i++ {
+		updateKVList[i].Domain = domain
+		updateKVList[i].Project = project
+		err = validate.Validate(updateKVList[i])
+		if err != nil {
+			WriteErrResponse(rctx, http.StatusBadRequest, err.Error())
+			return
+		}
+	}
+
+	kvs, err := service.KVService.UpdateList(rctx.Ctx, kvListReq)
+	if err != nil {
+		openlog.Error(fmt.Sprintf("put kv list err:%s", err.Error()))
+		WriteErrResponse(rctx, http.StatusInternalServerError, "update kv list failed")
+		return
+	}
+	for i := 0; i < len(updateKVList); i++ {
+
+		err = pubsub.Publish(&pubsub.KVChangeEvent{
+			Key:      kvs.KVListDoc[i].Key,
+			Labels:   kvs.KVListDoc[i].Labels,
+			Project:  project,
+			DomainID: kvs.KVListDoc[i].Domain,
+			Action:   pubsub.ActionPut,
+		})
+		if err != nil {
+			openlog.Warn("lost kv change event when put:" + err.Error())
+		}
+		openlog.Info(
+			fmt.Sprintf("put [%s] success", kvs.KVListDoc[i].ID))
+	}
+
+	err = writeResponse(rctx, kvs)
+	if err != nil {
+		openlog.Error(err.Error())
+	}
 }
 
 //Get search key by kv id
@@ -443,7 +494,7 @@ func (r *KVResource) URLPatterns() []restful.Route {
 			Returns: []*restful.Returns{
 				{
 					Code:  http.StatusOK,
-					Model: model.DocResponseGetKey{},
+					Model: model.KVListResponseDoc{},
 				},
 			},
 			Consumes: []string{goRestful.MIME_JSON, common.ContentTypeYaml},
@@ -461,6 +512,23 @@ func (r *KVResource) URLPatterns() []restful.Route {
 				{
 					Code:  http.StatusOK,
 					Model: model.DocResponseSingleKey{},
+				},
+			},
+			Consumes: []string{goRestful.MIME_JSON, common.ContentTypeYaml},
+			Produces: []string{goRestful.MIME_JSON, common.ContentTypeYaml},
+		}, {
+			Method:       http.MethodPut,
+			Path:         "/v1/{project}/kie/kv_list",
+			ResourceFunc: r.PutList,
+			FuncDesc:     "update a key value list",
+			Parameters: []*restful.Parameters{
+				DocPathProject, DocPathKeyID, DocHeaderContentTypeJSONAndYaml,
+			},
+			Read: KVListUpdateBody{},
+			Returns: []*restful.Returns{
+				{
+					Code:  http.StatusOK,
+					Model: model.KVListResponseDoc{},
 				},
 			},
 			Consumes: []string{goRestful.MIME_JSON, common.ContentTypeYaml},

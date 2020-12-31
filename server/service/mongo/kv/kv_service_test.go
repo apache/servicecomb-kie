@@ -31,7 +31,7 @@ import (
 	"testing"
 )
 
-var id string
+var id, id2 string
 
 func init() {
 	log.Init(log.Config{
@@ -171,7 +171,9 @@ func TestService_CreateList(t *testing.T) {
 		})
 		assert.NoError(t, err)
 		assert.NotEmpty(t, result.KVListDoc[0].ID)
+		assert.Equal(t, int64(1), result.Total)
 		assert.Equal(t, "2s", result.KVListDoc[0].Value)
+		id2 = result.KVListDoc[0].ID
 
 	})
 	t.Run("create a kv list which contains a exist kv value", func(t *testing.T) {
@@ -248,6 +250,32 @@ func TestService_Update(t *testing.T) {
 		})
 		assert.NoError(t, err)
 		assert.Equal(t, "3s", result.Value)
+	})
+}
+
+func TestService_UpdateList(t *testing.T) {
+	kvsvc := &kv.Service{}
+	t.Run("update kv by kvID", func(t *testing.T) {
+		result, err := kvsvc.UpdateList(context.TODO(), &model.UpdateKVListRequest{
+			UpdateKVList: []*model.UpdateKVRequest{
+				{
+					ID:      id,
+					Value:   "5s",
+					Domain:  "default",
+					Project: "kv-test",
+				},
+				{
+					ID:      id2,
+					Value:   "8s",
+					Domain:  "default",
+					Project: "kv-test",
+				},
+			},
+		})
+		assert.NoError(t, err)
+		assert.Equal(t, int64(2), result.Total)
+		assert.Equal(t, "5s", result.KVListDoc[0].Value)
+		assert.Equal(t, "8s", result.KVListDoc[1].Value)
 	})
 }
 

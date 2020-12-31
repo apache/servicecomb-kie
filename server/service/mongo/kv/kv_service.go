@@ -71,7 +71,7 @@ func (s *Service) Create(ctx context.Context, kv *model.KVDoc) (*model.KVDoc, er
 }
 
 //CreateList will create key value list record
-func (s *Service) CreateList(ctx context.Context, kvsDoc *model.KVListDoc) (*model.KVListDoc, error) {
+func (s *Service) CreateList(ctx context.Context, kvsDoc *model.KVListDoc) (*model.KVListResponseDoc, error) {
 	ctx, _ = context.WithTimeout(ctx, session.Timeout)
 	kvs := kvsDoc.KVListDoc
 	for i := 0; i < len(kvs); i++ {
@@ -101,8 +101,11 @@ func (s *Service) CreateList(ctx context.Context, kvsDoc *model.KVListDoc) (*mod
 		}
 		clearPart(kvs[i])
 	}
-
-	return kvsDoc, nil
+	kvListDoc := &model.KVListResponseDoc{
+		Total:     int64(len(kvs)),
+		KVListDoc: kvs,
+	}
+	return kvListDoc, nil
 }
 
 //Update will update a key value record
@@ -130,6 +133,42 @@ func (s *Service) Update(ctx context.Context, kv *model.UpdateKVRequest) (*model
 	clearPart(oldKV)
 	return oldKV, nil
 
+}
+
+//UpdateList will update key value list record
+func (s *Service) UpdateList(ctx context.Context, kvsDoc *model.UpdateKVListRequest) (*model.KVListResponseDoc, error) {
+	ctx, _ = context.WithTimeout(ctx, session.Timeout)
+	kvList := kvsDoc.UpdateKVList
+	updateKvs := &model.KVListResponseDoc{
+		KVListDoc: make([]*model.KVDoc, 0, len(kvList)),
+	}
+	for i := 0; i < len(kvList); i++ {
+		getRequest := &model.GetKVRequest{
+			Domain:  kvList[i].Domain,
+			Project: kvList[i].Project,
+			ID:      kvList[i].ID,
+		}
+
+		oldKV, err := s.Get(ctx, getRequest)
+		if err != nil {
+			return nil, err
+		}
+
+		if kvList[i].Status != "" {
+			oldKV.Status = kvList[i].Status
+		}
+		if kvList[i].Value != "" {
+			oldKV.Value = kvList[i].Value
+		}
+		err = updateKeyValue(ctx, oldKV)
+		if err != nil {
+			return nil, err
+		}
+		clearPart(oldKV)
+		updateKvs.KVListDoc = append(updateKvs.KVListDoc, oldKV)
+	}
+	updateKvs.Total = int64(len(kvList))
+	return updateKvs, nil
 }
 
 //Exist supports you query a key value by label map or labels id

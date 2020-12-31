@@ -44,8 +44,9 @@ var (
 type KV interface {
 	//below 3 methods is usually for admin console
 	Create(ctx context.Context, kv *model.KVDoc) (*model.KVDoc, error)
-	CreateList(ctx context.Context, kvs *model.KVListDoc) (*model.KVListDoc, error)
+	CreateList(ctx context.Context, kvs *model.KVListDoc) (*model.KVListResponseDoc, error)
 	Update(ctx context.Context, kv *model.UpdateKVRequest) (*model.KVDoc, error)
+	UpdateList(ctx context.Context, kvs *model.UpdateKVListRequest) (*model.KVListResponseDoc, error)
 	List(ctx context.Context, domain, project string, options ...FindOption) (*model.KVResponse, error)
 	//FindOneAndDelete deletes one kv by id and return the deleted kv as these appeared before deletion
 	FindOneAndDelete(ctx context.Context, kvID string, domain, project string) (*model.KVDoc, error)

@@ -87,6 +87,11 @@ type UpdateKVRequest struct {
 	Status  string `json:"status,omitempty" yaml:"status,omitempty" validate:"kvStatus"`
 }
 
+// UpdateKVListRequest
+type UpdateKVListRequest struct {
+	UpdateKVList []*UpdateKVRequest `json:"kv_list,omitempty" bson:"kv_list,omitempty" yaml:"kv_list, omitempty"`
+}
+
 // GetKVRequest contains kv get request params
 type GetKVRequest struct {
 	Project string `json:"project,omitempty" yaml:"project,omitempty" validate:"commonName"`

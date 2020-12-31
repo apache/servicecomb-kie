@@ -181,6 +181,18 @@ type KVUpdateBody struct {
 	Value  string `json:"value"`
 }
 
+//KVListUpdateBody is open api doc
+type KVListUpdateBody struct {
+	KVListUpdate []*SingleKVUpdateBody `json:"kv_list"`
+}
+
+//SingleKVUpdateBody is open api doc
+type SingleKVUpdateBody struct {
+	ID     string `json:"id"`
+	Status string `json:"status"`
+	Value  string `json:"value"`
+}
+
 //DeleteBody is the request body struct of delete multiple kvs interface
 type DeleteBody struct {
 	IDs []string `json:"ids"`

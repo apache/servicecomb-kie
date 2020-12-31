@@ -174,11 +174,12 @@ func TestKVResource_PostList(t *testing.T) {
 
 		body, err := ioutil.ReadAll(resp.Body)
 		assert.NoError(t, err)
-		res := &model.KVListDoc{}
-		err = json.Unmarshal(body, res)
+		result := &model.KVListResponseDoc{}
+		err = json.Unmarshal(body, result)
 		assert.NoError(t, err)
-		assert.NotEmpty(t, kvs.KVListDoc)
-		t.Log(kvs.KVListDoc)
+		assert.Equal(t, int64(1), result.Total)
+		assert.NotEmpty(t, result.KVListDoc)
+
 	})
 	t.Run("post more than 1 key value, which label is same to timeout", func(t *testing.T) {
 		kvs := &model.KVListDoc{
@@ -206,11 +207,11 @@ func TestKVResource_PostList(t *testing.T) {
 
 		body, err := ioutil.ReadAll(resp.Body)
 		assert.NoError(t, err)
-		res := &model.KVListDoc{}
-		err = json.Unmarshal(body, res)
+		result := &model.KVListResponseDoc{}
+		err = json.Unmarshal(body, result)
 		assert.NoError(t, err)
-		assert.NotEmpty(t, res.KVListDoc)
-		assert.Equal(t, 2, len(res.KVListDoc))
+		assert.Equal(t, int64(2), result.Total)
+		assert.Equal(t, 2, len(result.KVListDoc))
 	})
 }
 func TestKVResource_List(t *testing.T) {
@@ -415,8 +416,78 @@ func TestKVResource_List(t *testing.T) {
 
 	})
 }
+func TestKVResource_PutList(t *testing.T) {
+	var id1, id2 string
+	kvs := &model.KVListDoc{
+		KVListDoc: []*model.KVDoc{
+			{
+				Key:    "user1",
+				Value:  "guest1",
+				Labels: map[string]string{"service": "listService"},
+			},
+			{
+				Key:    "user2",
+				Value:  "2s",
+				Labels: map[string]string{"service": "listService"},
+			},
+		},
+	}
+
+	t.Run("create a kv list, the value of user1 is guest1, the user2 is guest2", func(t *testing.T) {
+		j, _ := json.Marshal(kvs)
+		r, _ := http.NewRequest("POST", "/v1/kv_test/kie/kv_list", bytes.NewBuffer(j))
+		r.Header.Set("Content-Type", "application/json")
+		kvr := &v1.KVResource{}
+		c, _ := restfultest.New(kvr, nil)
+		resp := httptest.NewRecorder()
+		c.ServeHTTP(resp, r)
+
+		body, err := ioutil.ReadAll(resp.Body)
+		assert.NoError(t, err)
+		result := &model.KVListDoc{}
+		err = json.Unmarshal(body, result)
+		assert.NoError(t, err)
+		assert.NotEmpty(t, result.KVListDoc)
+		assert.Equal(t, 2, len(result.KVListDoc))
+
+		id1 = result.KVListDoc[0].ID
+		id2 = result.KVListDoc[1].ID
+	})
+
+	kvListUpdate := &model.UpdateKVListRequest{UpdateKVList: []*model.UpdateKVRequest{
+		{
+			ID:    id1,
+			Value: "admin",
+		},
+		{
+			ID:    id2,
+			Value: "admin",
+		},
+	}}
+
+	t.Run("update the kv list, set the value of user to admin", func(t *testing.T) {
+		j, _ := json.Marshal(kvListUpdate)
+		r, _ := http.NewRequest("PUT", "/v1/kv_test/kie/kv_list", bytes.NewBuffer(j))
+		r.Header.Set("Content-Type", "application/json")
+		kvr := &v1.KVResource{}
+		c, _ := restfultest.New(kvr, nil)
+		resp := httptest.NewRecorder()
+		c.ServeHTTP(resp, r)
+
+		body, err := ioutil.ReadAll(resp.Body)
+		assert.NoError(t, err)
+		result := &model.KVListResponseDoc{}
+		err = json.Unmarshal(body, result)
+		assert.NoError(t, err)
+		assert.Equal(t, int64(2), result.Total)
+		assert.Equal(t, "admin", result.KVListDoc[0].Value)
+		assert.Equal(t, "admin", result.KVListDoc[1].Value)
+	})
+}
+
 func TestKVResource_PutAndGet(t *testing.T) {
 	var id string
+
 	kv := &model.KVDoc{
 		Key:    "user",
 		Value:  "guest",
@@ -507,6 +578,7 @@ func TestKVResource_PutAndGet(t *testing.T) {
 		assert.Equal(t, http.StatusUnprocessableEntity, resp.Code)
 	})
 }
+
 func TestKVResource_DeleteList(t *testing.T) {
 	var ids []string
 	t.Run("get ids of all kvs", func(t *testing.T) {
