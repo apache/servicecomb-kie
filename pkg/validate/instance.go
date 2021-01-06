@@ -7,6 +7,7 @@ const (
 	commonNameRegexString = `^[a-zA-Z0-9]*$|^[a-zA-Z0-9][a-zA-Z0-9_\-.]*[a-zA-Z0-9]$`
 	getKeyRegexString     = `^[a-zA-Z0-9]*$|^[a-zA-Z0-9][a-zA-Z0-9_\-.]*[a-zA-Z0-9]$|^beginWith\([a-zA-Z0-9][a-zA-Z0-9_\-.]*\)$`
 	asciiRegexString      = `^[\x00-\x7F]*$`
+	allCharString         = `.*`
 )
 
 // custom validate rules
@@ -17,7 +18,7 @@ var customRules = []*RegexValidateRule{
 	NewRule("commonName", commonNameRegexString, &Option{Min: 1, Max: 256}),
 	NewRule("valueType", `^$|^(ini|json|text|yaml|properties)$`, nil),
 	NewRule("kvStatus", `^$|^(enabled|disabled)$`, nil),
-	NewRule("value", asciiRegexString, &Option{Max: 2097152}), //ASCII, 2M
+	NewRule("value", allCharString, &Option{Max: 2097152}), //ASCII, 2M
 	NewRule("labelKV", commonNameRegexString, &Option{Max: 32}),
 	NewRule("check", asciiRegexString, &Option{Max: 1048576}), //ASCII, 1M
 }
