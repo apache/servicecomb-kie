@@ -200,10 +200,7 @@ func GetColInfo(ctx context.Context, name string) (*CollectionInfo, error) {
 
 //EnsureDB build mongo db schema
 func EnsureDB() {
-	session, err := mgo.Dial(config.GetDB().URI)
-	if err != nil {
-		openlog.Fatal("can not dial db:" + err.Error())
-	}
+	session := OpenSession()
 	defer session.Close()
 	session.SetMode(mgo.Monotonic, true)
 
@@ -216,6 +213,26 @@ func EnsureDB() {
 	ensureView(session)
 
 	ensureKVLongPolling(session)
+}
+
+func OpenSession() *mgo.Session {
+	var timeout time.Duration
+	var err error
+	if config.GetDB().Timeout != "" {
+		timeout, err = time.ParseDuration(config.GetDB().Timeout)
+		if err != nil {
+			openlog.Fatal("invalid timeout :" + err.Error())
+		}
+	}
+	session, err := mgo.DialWithTimeout(config.GetDB().URI, timeout)
+	if err != nil {
+		openlog.Warn("can not dial db, retry once:" + err.Error())
+		session, err = mgo.DialWithTimeout(config.GetDB().URI, timeout)
+		if err != nil {
+			openlog.Fatal("can not dial db:" + err.Error())
+		}
+	}
+	return session
 }
 
 func ensureKVLongPolling(session *mgo.Session) {
