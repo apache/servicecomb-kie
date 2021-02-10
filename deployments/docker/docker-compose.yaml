@@ -18,7 +18,6 @@ version: '3.1'
 services:
   mongo:
     image: mongo:4.0
-    restart: always
     ports:
       - 27017:27017
     environment:
@@ -29,7 +28,6 @@ services:
       - ../db.js:/docker-entrypoint-initdb.d/db.js:ro
   mongo-express:
     image: mongo-express
-    restart: always
     ports:
       - 8081:8081
     environment:
@@ -37,8 +35,7 @@ services:
       ME_CONFIG_MONGODB_ADMINPASSWORD: 123
       ME_CONFIG_MONGODB_SERVER: mongo
   servicecomb-kie:
-    image: servicecomb/kie:latest
-    restart: always
+    image: servicecomb/kie
     ports:
       - 30110:30110
     environment:

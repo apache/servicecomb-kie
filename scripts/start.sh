@@ -26,15 +26,12 @@ fi
 writeConfig(){
 echo "write template config..."
 cat <<EOM > ${root_dir}/conf/chassis.yaml
-cse:
-  service:
-    registry:
-      disabled: true
+servicecomb:
+  registry:
+    disabled: true
   protocols:
     rest:
       listenAddress: ${listen_addr}:30110
-    rest-consul: #consul compatible API
-      listenAddress: ${listen_addr}:8500
   handler:
     chain:
       Provider:
@@ -45,19 +42,19 @@ servicecomb:
       plugin: build-in
 EOM
 cat <<EOM > ${root_dir}/conf/lager.yaml
-logger_level: ${LOG_LEVEL}
+logLevel: ${LOG_LEVEL}
 
-logger_file: log/chassis.log
+logFile: log/chassis.log
 
-log_format_text: false
+logFormatText: false
 
 rollingPolicy: size
 
-log_rotate_date: 1
+logRotateDate: 1
 
-log_rotate_size: 10
+logRotateSize: 10
 
-log_backup_count: 7
+logBackupCount: 7
 EOM
 cat <<EOM > /etc/servicecomb-kie/kie-conf.yaml
 db:

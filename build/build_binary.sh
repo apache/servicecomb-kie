@@ -44,16 +44,12 @@ echo "build from ${GIT_COMMIT}"
 writeConfig(){
 echo "write chassis config..."
 cat <<EOM > ${release_dir}/conf/chassis.yaml
-cse:
-  service:
-    registry:
-      disabled: true
-      address: http://127.0.0.1:30100
+servicecomb:
+  registry:
+    disabled: true
   protocols:
     rest:
       listenAddress: 127.0.0.1:30108
-    rest-consul: #consul compatible API
-      listenAddress: 127.0.0.1:8500
   handler:
     chain:
       Provider:
@@ -61,9 +57,10 @@ cse:
 EOM
 echo "write miroservice config..."
 cat <<EOM > ${release_dir}/conf/microservice.yaml
-service_description:
-  name: servicecomb-kie
-  version: ${version}
+servicecomb:
+  service:
+    name: servicecomb-kie
+    version: ${version}
 EOM
 
 cat <<EOM > ${release_dir}/conf/kie-conf.yaml
