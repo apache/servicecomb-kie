@@ -22,4 +22,5 @@ cp ${PROJECT_DIR}/scripts/start.sh ./
 cp ${PROJECT_DIR}/build/docker/server/Dockerfile ./
 
 sudo docker version
-sudo docker build -t servicecomb/kie:${version} .
+sudo docker build -t servicecomb/kie:latest .
+sudo docker tag servicecomb/kie:latest servicecomb/kie:${version}
