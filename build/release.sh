@@ -17,17 +17,22 @@
 
 export BUILD_DIR=$(cd "$(dirname "$0")"; pwd)
 export PROJECT_DIR=$(dirname ${BUILD_DIR})
-
+sign(){
+  #asc
+  gpg --armor --output "$1".asc --detach-sig "$1"
+  #sha512
+  sha512sum "$1" > "$1".sha512
+}
 component="apache-servicecomb-kie"
 x86_pkg_name="$component-$VERSION-linux-amd64.tar.gz"
 arm_pkg_name="$component-$VERSION-linux-arm64.tar.gz"
+darwin_pkg_name="$component-$VERSION-darwin-amd64.tar.gz"
+windows_pkg_name="$component-$VERSION-windows-amd64.tar.gz"
 cd $PROJECT_DIR/release/kie
-#asc
-gpg --armor --output "${x86_pkg_name}".asc --detach-sig "${x86_pkg_name}"
-gpg --armor --output "${arm_pkg_name}".asc --detach-sig "${arm_pkg_name}"
-#512
-sha512sum "${x86_pkg_name}" > "${x86_pkg_name}".sha512
-sha512sum "${arm_pkg_name}" > "${arm_pkg_name}".sha512
+sign "${x86_pkg_name}"
+sign "${arm_pkg_name}"
+sign "${darwin_pkg_name}"
+sign "${windows_pkg_name}"
 #src
 wget "https://github.com/apache/servicecomb-kie/archive/v${VERSION}.tar.gz"
 tar xzf "v${VERSION}.tar.gz"
