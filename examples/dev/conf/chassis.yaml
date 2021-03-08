@@ -19,7 +19,9 @@ servicecomb:
       rest: 60s
   quota:
     plugin: build-in
-# ssl:
+  cipher:
+    plugin: default
+# ssl:t
 #   Provider.cipherPlugin: default
 #   Provider.verifyPeer: false
 #   Provider.cipherSuits: TLS_ECDHE_RSA_WITH_AES_128_GCM_SHA256,TLS_ECDHE_RSA_WITH_AES_256_GCM_SHA384

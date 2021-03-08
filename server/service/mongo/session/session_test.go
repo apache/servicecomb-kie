@@ -4,6 +4,7 @@ import (
 	"context"
 	"github.com/apache/servicecomb-kie/server/config"
 	"github.com/apache/servicecomb-kie/server/service/mongo/session"
+	_ "github.com/apache/servicecomb-kie/test"
 	"github.com/stretchr/testify/assert"
 	"go.mongodb.org/mongo-driver/bson"
 	"testing"

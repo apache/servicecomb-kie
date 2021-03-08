@@ -25,6 +25,7 @@ import (
 	"errors"
 	"fmt"
 	"github.com/apache/servicecomb-kie/pkg/model"
+	"github.com/go-chassis/go-chassis/v2/security/cipher"
 	"github.com/go-chassis/openlog"
 	"go.mongodb.org/mongo-driver/bson"
 	"go.mongodb.org/mongo-driver/bson/bsoncodec"
@@ -217,6 +218,7 @@ func EnsureDB() {
 
 func OpenSession() *mgo.Session {
 	var timeout time.Duration
+	var uri string
 	var err error
 	if config.GetDB().Timeout != "" {
 		timeout, err = time.ParseDuration(config.GetDB().Timeout)
@@ -224,7 +226,12 @@ func OpenSession() *mgo.Session {
 			openlog.Fatal("invalid timeout :" + err.Error())
 		}
 	}
-	session, err := mgo.DialWithTimeout(config.GetDB().URI, timeout)
+	uri, err = cipher.Decrypt(config.GetDB().URI)
+	if err != nil {
+		openlog.Info("cipher fallback: " + err.Error())
+		uri = config.GetDB().URI
+	}
+	session, err := mgo.DialWithTimeout(uri, timeout)
 	if err != nil {
 		openlog.Warn("can not dial db, retry once:" + err.Error())
 		session, err = mgo.DialWithTimeout(config.GetDB().URI, timeout)
@@ -263,7 +270,6 @@ func ensureView(session *mgo.Session) {
 		"domain":  bson.M{"$exists": true},
 		"project": bson.M{"$exists": true},
 		"display": bson.M{"$exists": true},
-		"label":   bson.M{"$exists": true},
 	}})
 	wrapError(err, MsgDBExists)
 	err = c.EnsureIndex(mgo.Index{

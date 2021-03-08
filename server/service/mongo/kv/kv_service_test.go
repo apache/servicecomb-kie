@@ -18,6 +18,8 @@
 package kv_test
 
 import (
+	_ "github.com/apache/servicecomb-kie/test"
+
 	"context"
 	common2 "github.com/apache/servicecomb-kie/pkg/common"
 	"github.com/apache/servicecomb-kie/pkg/model"
