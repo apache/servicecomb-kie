@@ -49,11 +49,11 @@ servicecomb:
     disabled: true
   protocols:
     rest:
-      listenAddress: 127.0.0.1:30108
+      listenAddress: 127.0.0.1:30110
   handler:
     chain:
       Provider:
-        default: auth-handler,ratelimiter-provider
+        default: ratelimiter-provider,monitoring,jwt,track-handler
 EOM
 echo "write miroservice config..."
 cat <<EOM > ${release_dir}/conf/microservice.yaml
@@ -85,9 +85,18 @@ buildAndPackage(){
   GOOS=$1
   GOARCH=$2
   echo "building & packaging ${GOOS} ${GOARCH}..."
-  GOOS=${GOOS} GOARCH=${GOARCH} go build -o ${release_dir}/kie github.com/apache/servicecomb-kie/cmd/kieserver
+  if [ "$GOOS" = "windows" ]; then
+     GOOS=${GOOS} GOARCH=${GOARCH} go build -o ${release_dir}/kie.exe github.com/apache/servicecomb-kie/cmd/kieserver
+  else
+     GOOS=${GOOS} GOARCH=${GOARCH} go build -o ${release_dir}/kie github.com/apache/servicecomb-kie/cmd/kieserver
+  fi
+
   if [ $? -eq 0 ]; then
-    tar zcf "$component-$VERSION-${GOOS}-${GOARCH}.tar.gz" conf kie LICENSE NOTICE licenses
+    if [ "$GOOS" = "windows" ]; then
+       tar zcf "$component-$VERSION-${GOOS}-${GOARCH}.tar.gz" conf kie.exe LICENSE NOTICE licenses
+    else
+       tar zcf "$component-$VERSION-${GOOS}-${GOARCH}.tar.gz" conf kie LICENSE NOTICE licenses
+    fi
   else
     echo -e "\033[31m build ${GOOS}-${GOARCH} fail !! \033[0m"
   fi
