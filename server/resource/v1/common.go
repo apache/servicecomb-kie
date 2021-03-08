@@ -23,7 +23,7 @@ import (
 	"errors"
 	"github.com/apache/servicecomb-kie/pkg/model"
 	"github.com/apache/servicecomb-kie/server/service/mongo/session"
-	"github.com/apache/servicecomb-service-center/pkg/rbacframe"
+	"github.com/go-chassis/cari/rbac"
 	"net/http"
 	"strconv"
 	"strings"
@@ -56,11 +56,11 @@ var (
 
 //ReadClaims get auth info
 func ReadClaims(ctx context.Context) map[string]interface{} {
-	i := rbacframe.FromContext(ctx)
-	if i != nil {
-		return i.(map[string]interface{})
+	c, err := rbac.FromContext(ctx)
+	if err != nil {
+		return nil
 	}
-	return nil
+	return c
 }
 
 //ReadDomain get domain info

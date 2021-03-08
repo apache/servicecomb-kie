@@ -19,7 +19,7 @@ package rbac
 
 import (
 	"github.com/apache/servicecomb-kie/server/config"
-	"github.com/apache/servicecomb-service-center/pkg/rbacframe"
+	"github.com/go-chassis/cari/rbac"
 	"github.com/go-chassis/go-archaius"
 	"github.com/go-chassis/go-chassis/v2/middleware/jwt"
 	"github.com/go-chassis/go-chassis/v2/security/secret"
@@ -63,7 +63,7 @@ func Init() {
 		},
 		Authorize: func(payload map[string]interface{}, req *http.Request) error {
 			payload["domain"] = "default" //TODO eliminate dead code
-			newReq := req.WithContext(rbacframe.NewContext(req.Context(), payload))
+			newReq := req.WithContext(rbac.NewContext(req.Context(), payload))
 			*req = *newReq
 			//TODO role perm check
 			return nil

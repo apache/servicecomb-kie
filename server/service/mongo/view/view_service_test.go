@@ -27,6 +27,7 @@ import (
 	"github.com/apache/servicecomb-kie/server/service/mongo/kv"
 	"github.com/apache/servicecomb-kie/server/service/mongo/session"
 	"github.com/apache/servicecomb-kie/server/service/mongo/view"
+	_ "github.com/apache/servicecomb-kie/test"
 	"github.com/stretchr/testify/assert"
 	"go.mongodb.org/mongo-driver/bson"
 	"go.mongodb.org/mongo-driver/mongo"

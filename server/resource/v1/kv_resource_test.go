@@ -43,6 +43,7 @@ import (
 
 	_ "github.com/apache/servicecomb-kie/server/plugin/qms"
 	_ "github.com/apache/servicecomb-kie/server/service/mongo"
+	_ "github.com/apache/servicecomb-kie/test"
 )
 
 func init() {

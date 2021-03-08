@@ -18,6 +18,8 @@
 package counter_test
 
 import (
+	_ "github.com/apache/servicecomb-kie/test"
+
 	"context"
 	"github.com/apache/servicecomb-kie/server/config"
 	"github.com/apache/servicecomb-kie/server/service/mongo/counter"

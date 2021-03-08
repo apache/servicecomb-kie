@@ -32,6 +32,8 @@ import (
 	_ "github.com/apache/servicecomb-kie/server/service/mongo"
 	//quota management
 	_ "github.com/apache/servicecomb-kie/server/plugin/qms"
+	//noop cipher
+	_ "github.com/go-chassis/go-chassis/v2/security/cipher/plugins/plain"
 )
 
 func main() {
