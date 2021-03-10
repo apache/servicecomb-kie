@@ -203,7 +203,7 @@ func GetColInfo(ctx context.Context, name string) (*CollectionInfo, error) {
 func EnsureDB() {
 	session := OpenSession()
 	defer session.Close()
-	session.SetMode(mgo.Monotonic, true)
+	session.SetMode(mgo.Primary, true)
 
 	ensureRevisionCounter(session)
 
