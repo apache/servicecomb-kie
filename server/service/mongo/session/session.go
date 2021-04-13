@@ -24,8 +24,8 @@ import (
 	"crypto/x509"
 	"errors"
 	"fmt"
+	"github.com/apache/servicecomb-kie/pkg/cipherutil"
 	"github.com/apache/servicecomb-kie/pkg/model"
-	"github.com/go-chassis/go-chassis/v2/security/cipher"
 	"github.com/go-chassis/openlog"
 	"go.mongodb.org/mongo-driver/bson"
 	"go.mongodb.org/mongo-driver/bson/bsoncodec"
@@ -106,7 +106,8 @@ func Init() error {
 			RegisterEncoder(reflect.TypeOf(model.LabelDoc{}), sc).
 			RegisterEncoder(reflect.TypeOf(model.KVDoc{}), sc).
 			Build()
-		clientOps := []*options.ClientOptions{options.Client().ApplyURI(config.GetDB().URI)}
+		uri := cipherutil.TryDecrypt(config.GetDB().URI)
+		clientOps := []*options.ClientOptions{options.Client().ApplyURI(uri)}
 		if config.GetDB().SSLEnabled {
 			if config.GetDB().RootCA == "" {
 				err = ErrRootCAMissing
@@ -226,15 +227,11 @@ func OpenSession() *mgo.Session {
 			openlog.Fatal("invalid timeout :" + err.Error())
 		}
 	}
-	uri, err = cipher.Decrypt(config.GetDB().URI)
-	if err != nil {
-		openlog.Info("cipher fallback: " + err.Error())
-		uri = config.GetDB().URI
-	}
+	uri = cipherutil.TryDecrypt(config.GetDB().URI)
 	session, err := mgo.DialWithTimeout(uri, timeout)
 	if err != nil {
 		openlog.Warn("can not dial db, retry once:" + err.Error())
-		session, err = mgo.DialWithTimeout(config.GetDB().URI, timeout)
+		session, err = mgo.DialWithTimeout(uri, timeout)
 		if err != nil {
 			openlog.Fatal("can not dial db:" + err.Error())
 		}
