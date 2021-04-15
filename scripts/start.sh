@@ -56,9 +56,15 @@ logRotateSize: 10
 
 logBackupCount: 7
 EOM
+
+local uri="mongodb://${MONGODB_ADDR}/kie"
+if [ -n "${MONGODB_USER}" ]; then
+  uri="mongodb://${MONGODB_USER}:${MONGODB_PWD}@${MONGODB_ADDR}/kie"
+fi
+
 cat <<EOM > /etc/servicecomb-kie/kie-conf.yaml
 db:
-  uri: mongodb://${MONGODB_USER}:${MONGODB_PWD}@${MONGODB_ADDR}/kie
+  uri: ${uri}
   type: mongodb
   poolSize: 10
   ssl: false
