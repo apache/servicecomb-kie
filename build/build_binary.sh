@@ -16,6 +16,9 @@
 echo "GOPATH is "${GOPATH}
 export BUILD_DIR=$(cd "$(dirname "$0")"; pwd)
 export PROJECT_DIR=$(dirname ${BUILD_DIR})
+export CGO_ENABLED=${CGO_ENABLED:-0} # prevent to compile cgo file
+export GO_EXTLINK_ENABLED=${GO_EXTLINK_ENABLED:-0} # do not use host linker
+export GO_LDFLAGS=${GO_LDFLAGS:-" -s -w"}
 echo "downloading dependencies"
 cd ${PROJECT_DIR}
 GO111MODULE=on go mod vendor
@@ -86,9 +89,9 @@ buildAndPackage(){
   GOARCH=$2
   echo "building & packaging ${GOOS} ${GOARCH}..."
   if [ "$GOOS" = "windows" ]; then
-     GOOS=${GOOS} GOARCH=${GOARCH} go build -o ${release_dir}/kie.exe github.com/apache/servicecomb-kie/cmd/kieserver
+     GOOS=${GOOS} GOARCH=${GOARCH} go build --ldflags "${GO_LDFLAGS}" -o ${release_dir}/kie.exe github.com/apache/servicecomb-kie/cmd/kieserver
   else
-     GOOS=${GOOS} GOARCH=${GOARCH} go build -o ${release_dir}/kie github.com/apache/servicecomb-kie/cmd/kieserver
+     GOOS=${GOOS} GOARCH=${GOARCH} go build --ldflags "${GO_LDFLAGS}" -o ${release_dir}/kie github.com/apache/servicecomb-kie/cmd/kieserver
   fi
 
   if [ $? -eq 0 ]; then

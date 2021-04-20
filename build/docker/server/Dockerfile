@@ -13,7 +13,7 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
-FROM ubuntu:19.04
+FROM alpine:latest
 
 RUN mkdir -p /etc/servicecomb-kie/
 RUN mkdir -p /opt/servicecomb-kie/conf
