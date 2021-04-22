@@ -114,7 +114,6 @@ func TestService_CreateOrUpdate(t *testing.T) {
 		assert.NoError(t, err)
 		assert.Equal(t, afterKV.Value, savedKV.Value)
 	})
-
 }
 
 func TestService_Create(t *testing.T) {
@@ -149,6 +148,14 @@ func TestService_Create(t *testing.T) {
 			Project: "kv-test",
 		})
 		assert.EqualError(t, err, session.ErrKVAlreadyExists.Error())
+	})
+	t.Run("list the kv", func(t *testing.T) {
+		res, err := kvsvc.List(context.TODO(), "default", "kv-test", service.WithKey("wildcard(time*1)"))
+		assert.NoError(t, err)
+		assert.Equal(t, 0, len(res.Data))
+		res, err = kvsvc.List(context.TODO(), "default", "kv-test", service.WithKey("wildcard(time*t)"))
+		assert.NoError(t, err)
+		assert.NotEqual(t, 0, len(res.Data))
 	})
 }
 
