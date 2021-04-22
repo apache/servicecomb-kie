@@ -5,7 +5,7 @@ var defaultValidator = NewValidator()
 const (
 	key                   = "key"
 	commonNameRegexString = `^[a-zA-Z0-9]*$|^[a-zA-Z0-9][a-zA-Z0-9_\-.]*[a-zA-Z0-9]$`
-	getKeyRegexString     = `^[a-zA-Z0-9]*$|^[a-zA-Z0-9][a-zA-Z0-9_\-.]*[a-zA-Z0-9]$|^beginWith\([a-zA-Z0-9][a-zA-Z0-9_\-.]*\)$`
+	getKeyRegexString     = `^[a-zA-Z0-9]*$|^[a-zA-Z0-9][a-zA-Z0-9_\-.]*[a-zA-Z0-9]$|^beginWith\([a-zA-Z0-9][a-zA-Z0-9_\-.]*\)$|^wildcard\([a-zA-Z0-9][a-zA-Z0-9_\-.*]*\)$`
 	asciiRegexString      = `^[\x00-\x7F]*$`
 	allCharString         = `.*`
 )
