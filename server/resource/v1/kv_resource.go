@@ -22,6 +22,7 @@ import (
 	"encoding/json"
 	"fmt"
 	"github.com/go-chassis/foundation/validator"
+	"github.com/go-chassis/cari/config"
 	"net/http"
 
 	"github.com/apache/servicecomb-kie/pkg/common"
@@ -46,7 +47,7 @@ func (r *KVResource) Post(rctx *restful.Context) {
 	project := rctx.ReadPathParameter(common.PathParameterProject)
 	kv := new(model.KVDoc)
 	if err = readRequest(rctx, kv); err != nil {
-		WriteErrResponse(rctx, http.StatusBadRequest, fmt.Sprintf(FmtReadRequestError, err))
+		WriteErrResponse(rctx, config.ErrInvalidParams, fmt.Sprintf(FmtReadRequestError, err))
 		return
 	}
 	domain := ReadDomain(rctx.Ctx)
@@ -57,28 +58,28 @@ func (r *KVResource) Post(rctx *restful.Context) {
 	}
 	err = validator.Validate(kv)
 	if err != nil {
-		WriteErrResponse(rctx, http.StatusBadRequest, err.Error())
+		WriteErrResponse(rctx, config.ErrInvalidParams, err.Error())
 		return
 	}
 	err = quota.PreCreate("", kv.Domain, "", 1)
 	if err != nil {
 		if err == quota.ErrReached {
 			openlog.Info(fmt.Sprintf("can not create kv %s@%s, due to quota violation", kv.Key, kv.Project))
-			WriteErrResponse(rctx, http.StatusUnprocessableEntity, err.Error())
+			WriteErrResponse(rctx, config.ErrNotEnoughQuota, err.Error())
 			return
 		}
 		openlog.Error(err.Error())
-		WriteErrResponse(rctx, http.StatusInternalServerError, "quota check failed")
+		WriteErrResponse(rctx, config.ErrInternal, "quota check failed")
 		return
 	}
 	kv, err = service.KVService.Create(rctx.Ctx, kv)
 	if err != nil {
 		openlog.Error(fmt.Sprintf("post err:%s", err.Error()))
 		if err == session.ErrKVAlreadyExists {
-			WriteErrResponse(rctx, http.StatusConflict, err.Error())
+			WriteErrResponse(rctx, config.ErrRecordAlreadyExists, err.Error())
 			return
 		}
-		WriteErrResponse(rctx, http.StatusInternalServerError, "create kv failed")
+		WriteErrResponse(rctx, config.ErrInternal, "create kv failed")
 		return
 	}
 	err = pubsub.Publish(&pubsub.KVChangeEvent{
@@ -107,7 +108,7 @@ func (r *KVResource) Put(rctx *restful.Context) {
 	project := rctx.ReadPathParameter(common.PathParameterProject)
 	kvReq := new(model.UpdateKVRequest)
 	if err = readRequest(rctx, kvReq); err != nil {
-		WriteErrResponse(rctx, http.StatusBadRequest, fmt.Sprintf(FmtReadRequestError, err))
+		WriteErrResponse(rctx, config.ErrInvalidParams, fmt.Sprintf(FmtReadRequestError, err))
 		return
 	}
 	domain := ReadDomain(rctx.Ctx)
@@ -116,13 +117,13 @@ func (r *KVResource) Put(rctx *restful.Context) {
 	kvReq.Project = project
 	err = validator.Validate(kvReq)
 	if err != nil {
-		WriteErrResponse(rctx, http.StatusBadRequest, err.Error())
+		WriteErrResponse(rctx, config.ErrInvalidParams, err.Error())
 		return
 	}
 	kv, err := service.KVService.Update(rctx.Ctx, kvReq)
 	if err != nil {
 		openlog.Error(fmt.Sprintf("put [%s] err:%s", kvID, err.Error()))
-		WriteErrResponse(rctx, http.StatusInternalServerError, "update kv failed")
+		WriteErrResponse(rctx, config.ErrInternal, "update kv failed")
 		return
 	}
 	err = pubsub.Publish(&pubsub.KVChangeEvent{
@@ -153,17 +154,17 @@ func (r *KVResource) Get(rctx *restful.Context) {
 	}
 	err := validator.Validate(request)
 	if err != nil {
-		WriteErrResponse(rctx, http.StatusBadRequest, err.Error())
+		WriteErrResponse(rctx, config.ErrInvalidParams, err.Error())
 		return
 	}
 	kv, err := service.KVService.Get(rctx.Ctx, request)
 	if err != nil {
 		openlog.Error("kv_resource: " + err.Error())
 		if err == service.ErrKeyNotExists {
-			WriteErrResponse(rctx, http.StatusNotFound, err.Error())
+			WriteErrResponse(rctx, config.ErrRecordNotExists, err.Error())
 			return
 		}
-		WriteErrResponse(rctx, http.StatusInternalServerError, "get kv failed")
+		WriteErrResponse(rctx, config.ErrInternal, "get kv failed")
 		return
 	}
 	kv.Domain = ""
@@ -185,7 +186,7 @@ func (r *KVResource) List(rctx *restful.Context) {
 	}
 	labels, err := getLabels(rctx)
 	if err != nil {
-		WriteErrResponse(rctx, http.StatusBadRequest, common.MsgIllegalLabels)
+		WriteErrResponse(rctx, config.ErrInvalidParams, common.MsgIllegalLabels)
 		return
 	}
 	request.Labels = labels
@@ -193,14 +194,14 @@ func (r *KVResource) List(rctx *restful.Context) {
 	limitStr := rctx.ReadQueryParameter(common.QueryParamLimit)
 	offset, limit, err := checkPagination(offsetStr, limitStr)
 	if err != nil {
-		WriteErrResponse(rctx, http.StatusBadRequest, err.Error())
+		WriteErrResponse(rctx, config.ErrInvalidParams, err.Error())
 		return
 	}
 	request.Offset = offset
 	request.Limit = limit
 	err = validator.Validate(request)
 	if err != nil {
-		WriteErrResponse(rctx, http.StatusBadRequest, err.Error())
+		WriteErrResponse(rctx, config.ErrInvalidParams, err.Error())
 		return
 	}
 	returnData(rctx, request)
@@ -221,7 +222,7 @@ func returnData(rctx *restful.Context, request *model.ListKVRequest) {
 			DomainID:  request.Domain,
 		})
 		if err != nil {
-			WriteErrResponse(rctx, http.StatusBadRequest, err.Error())
+			WriteErrResponse(rctx, config.ErrObserveEvent, err.Error())
 			return
 		}
 		if changed {
@@ -233,10 +234,10 @@ func returnData(rctx *restful.Context, request *model.ListKVRequest) {
 		revised, err := isRevised(rctx.Ctx, revStr, request.Domain)
 		if err != nil {
 			if err == ErrInvalidRev {
-				WriteErrResponse(rctx, http.StatusBadRequest, err.Error())
+				WriteErrResponse(rctx, config.ErrInvalidParams, err.Error())
 				return
 			}
-			WriteErrResponse(rctx, http.StatusInternalServerError, err.Error())
+			WriteErrResponse(rctx, config.ErrInternal, err.Error())
 			return
 		}
 		if revised {
@@ -250,7 +251,7 @@ func returnData(rctx *restful.Context, request *model.ListKVRequest) {
 				DomainID:  request.Domain,
 			})
 			if err != nil {
-				WriteErrResponse(rctx, http.StatusBadRequest, err.Error())
+				WriteErrResponse(rctx, config.ErrObserveEvent, err.Error())
 				return
 			}
 			if changed {
@@ -272,7 +273,7 @@ func (r *KVResource) Delete(rctx *restful.Context) {
 	kvID := rctx.ReadPathParameter(common.PathParamKVID)
 	err := validateDelete(domain, project, kvID)
 	if err != nil {
-		WriteErrResponse(rctx, http.StatusBadRequest, err.Error())
+		WriteErrResponse(rctx, config.ErrInvalidParams, err.Error())
 		return
 	}
 	kv, err := service.KVService.FindOneAndDelete(rctx.Ctx, kvID, domain, project)
@@ -282,10 +283,10 @@ func (r *KVResource) Delete(rctx *restful.Context) {
 			"error": err.Error(),
 		}))
 		if err == service.ErrKeyNotExists {
-			WriteErrResponse(rctx, http.StatusNotFound, err.Error())
+			WriteErrResponse(rctx, config.ErrRecordNotExists, err.Error())
 			return
 		}
-		WriteErrResponse(rctx, http.StatusInternalServerError, common.MsgDeleteKVFailed)
+		WriteErrResponse(rctx, config.ErrInternal, common.MsgDeleteKVFailed)
 		return
 	}
 	err = pubsub.Publish(&pubsub.KVChangeEvent{
@@ -307,12 +308,12 @@ func (r *KVResource) DeleteList(rctx *restful.Context) {
 	domain := ReadDomain(rctx.Ctx)
 	b := new(DeleteBody)
 	if err := json.NewDecoder(rctx.ReadRequest().Body).Decode(b); err != nil {
-		WriteErrResponse(rctx, http.StatusBadRequest, fmt.Sprintf(FmtReadRequestError, err))
+		WriteErrResponse(rctx, config.ErrInvalidParams, fmt.Sprintf(FmtReadRequestError, err))
 		return
 	}
 	err := validateDeleteList(domain, project)
 	if err != nil {
-		WriteErrResponse(rctx, http.StatusBadRequest, err.Error())
+		WriteErrResponse(rctx, config.ErrInvalidParams, err.Error())
 		return
 	}
 	kvs, err := service.KVService.FindManyAndDelete(rctx.Ctx, b.IDs, domain, project)
@@ -325,7 +326,7 @@ func (r *KVResource) DeleteList(rctx *restful.Context) {
 			"kvIDs": b.IDs,
 			"error": err.Error(),
 		}))
-		WriteErrResponse(rctx, http.StatusInternalServerError, common.MsgDeleteKVFailed)
+		WriteErrResponse(rctx, config.ErrInternal, common.MsgDeleteKVFailed)
 		return
 	}
 	for _, kv := range kvs {

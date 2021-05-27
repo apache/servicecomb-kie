@@ -21,6 +21,7 @@ import (
 	"github.com/apache/servicecomb-kie/pkg/common"
 	"github.com/apache/servicecomb-kie/pkg/model"
 	"github.com/apache/servicecomb-kie/server/service"
+	"github.com/go-chassis/cari/config"
 	"net/http"
 
 	goRestful "github.com/emicklei/go-restful"
@@ -40,12 +41,12 @@ func (r *HistoryResource) GetRevisions(context *restful.Context) {
 	limitStr := context.ReadQueryParameter(common.QueryParamLimit)
 	offset, limit, err := checkPagination(offsetStr, limitStr)
 	if err != nil {
-		WriteErrResponse(context, http.StatusBadRequest, err.Error())
+		WriteErrResponse(context, config.ErrInvalidParams, err.Error())
 		return
 	}
 	if kvID == "" {
 		openlog.Error("kv id is nil")
-		WriteErrResponse(context, http.StatusForbidden, "kv_id must not be empty")
+		WriteErrResponse(context, config.ErrRequiredRecordId, "kv_id must not be empty")
 		return
 	}
 	revisions, err := service.HistoryService.GetHistory(context.Ctx, kvID,
@@ -53,10 +54,10 @@ func (r *HistoryResource) GetRevisions(context *restful.Context) {
 		service.WithLimit(limit))
 	if err != nil {
 		if err == service.ErrRevisionNotExist {
-			WriteErrResponse(context, http.StatusNotFound, err.Error())
+			WriteErrResponse(context, config.ErrRecordNotExists, err.Error())
 			return
 		}
-		WriteErrResponse(context, http.StatusInternalServerError, err.Error())
+		WriteErrResponse(context, config.ErrInternal, err.Error())
 		return
 	}
 	err = writeResponse(context, revisions)
@@ -94,17 +95,17 @@ func (r *HistoryResource) GetPollingData(context *restful.Context) {
 	}
 	domain := ReadDomain(context.Ctx)
 	if domain == "" {
-		WriteErrResponse(context, http.StatusInternalServerError, common.MsgDomainMustNotBeEmpty)
+		WriteErrResponse(context, config.ErrInternal, common.MsgDomainMustNotBeEmpty)
 		return
 	}
 	query.Domain = domain
 	records, err := service.TrackService.GetPollingDetail(context.Ctx, query)
 	if err != nil {
 		if err == service.ErrRecordNotExists {
-			WriteErrResponse(context, http.StatusNotFound, err.Error())
+			WriteErrResponse(context, config.ErrRecordNotExists, err.Error())
 			return
 		}
-		WriteErrResponse(context, http.StatusInternalServerError, err.Error())
+		WriteErrResponse(context, config.ErrInternal, err.Error())
 		return
 	}
 	resp := &model.PollingDataResponse{}

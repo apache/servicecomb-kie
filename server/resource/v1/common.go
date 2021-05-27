@@ -23,6 +23,7 @@ import (
 	"errors"
 	"github.com/apache/servicecomb-kie/pkg/model"
 	"github.com/apache/servicecomb-kie/server/service/mongo/session"
+	"github.com/go-chassis/cari/config"
 	"github.com/go-chassis/cari/rbac"
 	"net/http"
 	"strconv"
@@ -100,10 +101,11 @@ func ReadLabelCombinations(req *goRestful.Request) ([]map[string]string, error) 
 }
 
 //WriteErrResponse write error message to client
-func WriteErrResponse(context *restful.Context, status int, msg string) {
+func WriteErrResponse(context *restful.Context, code int32, msg string) {
+	configErr := config.NewError(code, msg)
 	context.Resp.Header().Set(goRestful.HEADER_ContentType, goRestful.MIME_JSON)
-	context.WriteHeader(status)
-	b, err := json.MarshalIndent(&ErrorMsg{Msg: msg}, "", " ")
+	context.WriteHeader(configErr.StatusCode())
+	b, err := json.MarshalIndent(configErr, "", " ")
 	if err != nil {
 		openlog.Error("can not marshal:" + err.Error())
 		return
@@ -261,13 +263,13 @@ func queryAndResponse(rctx *restful.Context, request *model.ListKVRequest) {
 	}
 	rev, err := service.RevisionService.GetRevision(rctx.Ctx, request.Domain)
 	if err != nil {
-		WriteErrResponse(rctx, http.StatusInternalServerError, err.Error())
+		WriteErrResponse(rctx, config.ErrInternal, err.Error())
 		return
 	}
 	kv, err := service.KVService.List(rctx.Ctx, request.Domain, request.Project, opts...)
 	if err != nil {
 		openlog.Error("common: " + err.Error())
-		WriteErrResponse(rctx, http.StatusInternalServerError, common.MsgDBError)
+		WriteErrResponse(rctx, config.ErrInternal, common.MsgDBError)
 		return
 	}
 	rctx.ReadResponseWriter().Header().Set(common.HeaderRevision, strconv.FormatInt(rev, 10))
