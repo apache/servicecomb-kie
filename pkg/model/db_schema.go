@@ -33,19 +33,19 @@ type LabelDoc struct {
 type KVDoc struct {
 	ID             string `json:"id,omitempty" bson:"id,omitempty" yaml:"id,omitempty" swag:"string"`
 	LabelFormat    string `json:"label_format,omitempty" bson:"label_format,omitempty" yaml:"label_format,omitempty"`
-	Key            string `json:"key" yaml:"key" validate:"key"`
-	Value          string `json:"value" yaml:"value" validate:"value"`
+	Key            string `json:"key" yaml:"key" validate:"min=1,max=128,key"`
+	Value          string `json:"value" yaml:"value" validate:"max=2097152,value"`
 	ValueType      string `json:"value_type,omitempty" bson:"value_type,omitempty" yaml:"value_type,omitempty" validate:"valueType"` //ini,json,text,yaml,properties
-	Checker        string `json:"check,omitempty" yaml:"check,omitempty" validate:"check"`                                           //python script
+	Checker        string `json:"check,omitempty" yaml:"check,omitempty" validate:"max=1048576,check"`                               //python script
 	CreateRevision int64  `json:"create_revision,omitempty" bson:"create_revision," yaml:"create_revision,omitempty"`
 	UpdateRevision int64  `json:"update_revision,omitempty" bson:"update_revision," yaml:"update_revision,omitempty"`
-	Project        string `json:"project,omitempty" yaml:"project,omitempty" validate:"commonName"`
+	Project        string `json:"project,omitempty" yaml:"project,omitempty" validate:"min=1,max=256,commonName"`
 	Status         string `json:"status,omitempty" yaml:"status,omitempty" validate:"kvStatus"`
 	CreateTime     int64  `json:"create_time,omitempty" bson:"create_time," yaml:"create_time,omitempty"`
 	UpdateTime     int64  `json:"update_time,omitempty" bson:"update_time," yaml:"update_time,omitempty"`
 
 	Labels map[string]string `json:"labels,omitempty" yaml:"labels,omitempty" validate:"max=6,dive,keys,labelKV,endkeys,labelKV"` //redundant
-	Domain string            `json:"domain,omitempty" yaml:"domain,omitempty" validate:"commonName"`                              //redundant
+	Domain string            `json:"domain,omitempty" yaml:"domain,omitempty" validate:"min=1,max=256,commonName"`                //redundant
 }
 
 //ViewDoc is db struct, it saves user's custom view name and criteria
@@ -76,24 +76,24 @@ type PollingDetail struct {
 // UpdateKVRequest is db struct, it contains kv update request params
 type UpdateKVRequest struct {
 	ID      string `json:"id,omitempty" bson:"id,omitempty" yaml:"id,omitempty" swag:"string" validate:"uuid"`
-	Value   string `json:"value,omitempty" yaml:"value,omitempty" validate:"value"`
-	Project string `json:"project,omitempty" yaml:"project,omitempty" validate:"commonName"`
-	Domain  string `json:"domain,omitempty" yaml:"domain,omitempty" validate:"commonName"` //redundant
+	Value   string `json:"value,omitempty" yaml:"value,omitempty" validate:"max=2097152,value"`
+	Project string `json:"project,omitempty" yaml:"project,omitempty" validate:"min=1,max=256,commonName"`
+	Domain  string `json:"domain,omitempty" yaml:"domain,omitempty" validate:"min=1,max=256,commonName"` //redundant
 	Status  string `json:"status,omitempty" yaml:"status,omitempty" validate:"kvStatus"`
 }
 
 // GetKVRequest contains kv get request params
 type GetKVRequest struct {
-	Project string `json:"project,omitempty" yaml:"project,omitempty" validate:"commonName"`
-	Domain  string `json:"domain,omitempty" yaml:"domain,omitempty" validate:"commonName"` //redundant
+	Project string `json:"project,omitempty" yaml:"project,omitempty" validate:"min=1,max=256,commonName"`
+	Domain  string `json:"domain,omitempty" yaml:"domain,omitempty" validate:"min=1,max=256,commonName"` //redundant
 	ID      string `json:"id,omitempty" bson:"id,omitempty" yaml:"id,omitempty" swag:"string" validate:"uuid"`
 }
 
 // ListKVRequest contains kv list request params
 type ListKVRequest struct {
-	Project string            `json:"project,omitempty" yaml:"project,omitempty" validate:"commonName"`
-	Domain  string            `json:"domain,omitempty" yaml:"domain,omitempty" validate:"commonName"` //redundant
-	Key     string            `json:"key" yaml:"key" validate:"getKey"`
+	Project string            `json:"project,omitempty" yaml:"project,omitempty" validate:"min=1,max=256,commonName"`
+	Domain  string            `json:"domain,omitempty" yaml:"domain,omitempty" validate:"min=1,max=256,commonName"` //redundant
+	Key     string            `json:"key" yaml:"key" validate:"max=128,getKey"`
 	Labels  map[string]string `json:"labels,omitempty" yaml:"labels,omitempty" validate:"max=8,dive,keys,labelKV,endkeys,labelKV"` //redundant
 	Offset  int64             `validate:"min=0"`
 	Limit   int64             `validate:"min=0,max=100"`
