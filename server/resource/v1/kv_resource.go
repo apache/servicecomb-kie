@@ -21,11 +21,11 @@ package v1
 import (
 	"encoding/json"
 	"fmt"
+	"github.com/go-chassis/foundation/validator"
 	"net/http"
 
 	"github.com/apache/servicecomb-kie/pkg/common"
 	"github.com/apache/servicecomb-kie/pkg/model"
-	"github.com/apache/servicecomb-kie/pkg/validate"
 	"github.com/apache/servicecomb-kie/server/pubsub"
 	"github.com/apache/servicecomb-kie/server/service"
 	"github.com/apache/servicecomb-kie/server/service/mongo/session"
@@ -55,7 +55,7 @@ func (r *KVResource) Post(rctx *restful.Context) {
 	if kv.Status == "" {
 		kv.Status = common.StatusDisabled
 	}
-	err = validate.Validate(kv)
+	err = validator.Validate(kv)
 	if err != nil {
 		WriteErrResponse(rctx, http.StatusBadRequest, err.Error())
 		return
@@ -114,7 +114,7 @@ func (r *KVResource) Put(rctx *restful.Context) {
 	kvReq.ID = kvID
 	kvReq.Domain = domain
 	kvReq.Project = project
-	err = validate.Validate(kvReq)
+	err = validator.Validate(kvReq)
 	if err != nil {
 		WriteErrResponse(rctx, http.StatusBadRequest, err.Error())
 		return
@@ -151,7 +151,7 @@ func (r *KVResource) Get(rctx *restful.Context) {
 		Domain:  ReadDomain(rctx.Ctx),
 		ID:      rctx.ReadPathParameter(common.PathParamKVID),
 	}
-	err := validate.Validate(request)
+	err := validator.Validate(request)
 	if err != nil {
 		WriteErrResponse(rctx, http.StatusBadRequest, err.Error())
 		return
@@ -198,7 +198,7 @@ func (r *KVResource) List(rctx *restful.Context) {
 	}
 	request.Offset = offset
 	request.Limit = limit
-	err = validate.Validate(request)
+	err = validator.Validate(request)
 	if err != nil {
 		WriteErrResponse(rctx, http.StatusBadRequest, err.Error())
 		return

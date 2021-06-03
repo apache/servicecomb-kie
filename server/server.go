@@ -18,7 +18,7 @@
 package server
 
 import (
-	"github.com/apache/servicecomb-kie/pkg/validate"
+	"github.com/apache/servicecomb-kie/pkg/validator"
 	"github.com/apache/servicecomb-kie/server/config"
 	"github.com/apache/servicecomb-kie/server/pubsub"
 	"github.com/apache/servicecomb-kie/server/rbac"
@@ -42,7 +42,7 @@ func Run() {
 	if err := service.DBInit(); err != nil {
 		openlog.Fatal(err.Error())
 	}
-	if err := validate.Init(); err != nil {
+	if err := validator.Init(); err != nil {
 		openlog.Fatal("validate init failed: " + err.Error())
 	}
 	rbac.Init()

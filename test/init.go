@@ -18,6 +18,7 @@
 package test
 
 import (
+	"github.com/apache/servicecomb-kie/pkg/validator"
 	"github.com/go-chassis/go-archaius"
 	"github.com/go-chassis/go-chassis/v2/security/cipher"
 	_ "github.com/go-chassis/go-chassis/v2/security/cipher/plugins/plain"
@@ -27,4 +28,5 @@ func init() {
 	archaius.Init(archaius.WithMemorySource())
 	archaius.Set("servicecomb.cipher.plugin", "default")
 	cipher.Init()
+	validator.Init()
 }
