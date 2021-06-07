@@ -21,6 +21,7 @@ import (
 	"github.com/apache/servicecomb-kie/pkg/model"
 	"github.com/apache/servicecomb-kie/server/service"
 	goRestful "github.com/emicklei/go-restful"
+	"github.com/go-chassis/cari/config"
 	"github.com/go-chassis/go-chassis/v2/pkg/runtime"
 	"github.com/go-chassis/go-chassis/v2/server/restful"
 	"github.com/go-chassis/openlog"
@@ -59,7 +60,7 @@ func (r *AdminResource) HealthCheck(context *restful.Context) {
 	resp := &model.DocHealthCheck{}
 	latest, err := service.RevisionService.GetRevision(context.Ctx, domain)
 	if err != nil {
-		WriteErrResponse(context, http.StatusInternalServerError, err.Error())
+		WriteErrResponse(context, config.ErrInternal, err.Error())
 		return
 	}
 	resp.Revision = strconv.FormatInt(latest, 10)
@@ -67,7 +68,7 @@ func (r *AdminResource) HealthCheck(context *restful.Context) {
 	resp.Timestamp = time.Now().Unix()
 	total, err := service.KVService.Total(context.Ctx, domain)
 	if err != nil {
-		WriteErrResponse(context, http.StatusInternalServerError, err.Error())
+		WriteErrResponse(context, config.ErrInternal, err.Error())
 		return
 	}
 	resp.Total = total
