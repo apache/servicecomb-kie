@@ -40,6 +40,11 @@ import (
 type KVResource struct {
 }
 
+//Upload upload kvs
+func (r *KVResource) Upload(rctx *restful.Context) {
+
+}
+
 //Post create a kv
 func (r *KVResource) Post(rctx *restful.Context) {
 	var err error
@@ -347,6 +352,24 @@ func (r *KVResource) DeleteList(rctx *restful.Context) {
 func (r *KVResource) URLPatterns() []restful.Route {
 	return []restful.Route{
 		{
+			Method:       http.MethodPost,
+			Path:         "/v1/{project}/kie/file",
+			ResourceFunc: r.Upload,
+			FuncDesc:     "upload key-values",
+			Parameters: []*restful.Parameters{
+				DocPathProject,
+				DocHeaderContentTypeJSONAndYaml,
+			},
+			Read: []*KVCreateBody{},
+			Returns: []*restful.Returns{
+				{
+					Code:  http.StatusOK,
+					Model: model.LabelDocResponse{},
+				},
+			},
+			Consumes: []string{goRestful.MIME_JSON, common.ContentTypeYaml},
+			Produces: []string{goRestful.MIME_JSON, common.ContentTypeYaml},
+		}, {
 			Method:       http.MethodPost,
 			Path:         "/v1/{project}/kie/kv",
 			ResourceFunc: r.Post,
