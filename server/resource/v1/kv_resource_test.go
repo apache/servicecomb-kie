@@ -508,3 +508,168 @@ func TestKVResource_DeleteList(t *testing.T) {
 		assert.Equal(t, 0, len(result.Data))
 	})
 }
+func TestKVResource_Upload(t *testing.T) {
+	var ids []string
+	t.Run("post all kvs success", func(t *testing.T) {
+		kvs := &[]model.KVDoc{
+			{
+				Key:       "1",
+				Value:     "1",
+				Labels:    map[string]string{"1": "1"},
+				ValueType: "text",
+				Status:    "enabled",
+			},
+			{
+				Key:       "2",
+				Value:     "2",
+				Labels:    map[string]string{"2": "2"},
+				ValueType: "text",
+				Status:    "enabled",
+			},
+			{
+				Key:       "3",
+				Value:     "3",
+				Labels:    map[string]string{"3": "3"},
+				ValueType: "text",
+				Status:    "enabled",
+			},
+		}
+		j, _ := json.Marshal(kvs)
+		r, _ := http.NewRequest("POST", "/v1/kv_test_upload/kie/file", bytes.NewBuffer(j))
+		r.Header.Set("Content-Type", "application/json")
+		kvr := &v1.KVResource{}
+		c, _ := restfultest.New(kvr, nil)
+		resp := httptest.NewRecorder()
+		c.ServeHTTP(resp, r)
+
+		body, err := ioutil.ReadAll(resp.Body)
+		assert.NoError(t, err)
+		data := &model.DocRespOfUpload{
+			Success: []*model.KVDoc{},
+			Failure: []*model.DocFailedOfUpload{},
+		}
+		err = json.Unmarshal(body, data)
+		assert.NoError(t, err)
+		assert.NotEmpty(t, data.Success)
+		assert.Equal(t, 0, len(data.Failure))
+		assert.Equal(t, 3, len(data.Success))
+	})
+	t.Run("post part of kvs success", func(t *testing.T) {
+		kvs := &[]model.KVDoc{
+			{
+				Key:       "1",
+				Value:     "1",
+				Labels:    map[string]string{"1": "1"},
+				ValueType: "text",
+				Status:    "enabled",
+			},
+			{
+				Key:       "4",
+				Value:     "4",
+				Labels:    map[string]string{"2": "2"},
+				ValueType: "text",
+				Status:    "enabled",
+			},
+			{
+				Key:       "5",
+				Value:     "5",
+				Labels:    map[string]string{"3": "3"},
+				ValueType: "text",
+				Status:    "enabled",
+			},
+		}
+		j, _ := json.Marshal(kvs)
+		r, _ := http.NewRequest("POST", "/v1/kv_test_upload/kie/file", bytes.NewBuffer(j))
+		r.Header.Set("Content-Type", "application/json")
+		kvr := &v1.KVResource{}
+		c, _ := restfultest.New(kvr, nil)
+		resp := httptest.NewRecorder()
+		c.ServeHTTP(resp, r)
+
+		body, err := ioutil.ReadAll(resp.Body)
+		assert.NoError(t, err)
+		data := &model.DocRespOfUpload{
+			Success: []*model.KVDoc{},
+			Failure: []*model.DocFailedOfUpload{},
+		}
+		err = json.Unmarshal(body, data)
+		assert.NoError(t, err)
+
+		assert.Equal(t, 1, len(data.Failure))
+		assert.Equal(t, 2, len(data.Success))
+	})
+	t.Run("post all kvs fail", func(t *testing.T) {
+		kvs := &[]model.KVDoc{
+			{
+				Key:       "1",
+				Value:     "1",
+				Labels:    map[string]string{"1": "1"},
+				ValueType: "text",
+				Status:    "enabled",
+			},
+			{
+				Key:       "4",
+				Value:     "4",
+				Labels:    map[string]string{"2": "2"},
+				ValueType: "text",
+				Status:    "enabled",
+			},
+			{
+				Key:       "5",
+				Value:     "5",
+				Labels:    map[string]string{"3": "3"},
+				ValueType: "text",
+				Status:    "enabled",
+			},
+		}
+		j, _ := json.Marshal(kvs)
+		r, _ := http.NewRequest("POST", "/v1/kv_test_upload/kie/file", bytes.NewBuffer(j))
+		r.Header.Set("Content-Type", "application/json")
+		kvr := &v1.KVResource{}
+		c, _ := restfultest.New(kvr, nil)
+		resp := httptest.NewRecorder()
+		c.ServeHTTP(resp, r)
+
+		body, err := ioutil.ReadAll(resp.Body)
+		assert.NoError(t, err)
+		data := &model.DocRespOfUpload{
+			Success: []*model.KVDoc{},
+			Failure: []*model.DocFailedOfUpload{},
+		}
+		err = json.Unmarshal(body, data)
+		assert.NoError(t, err)
+
+		assert.Equal(t, 3, len(data.Failure))
+		assert.Equal(t, 0, len(data.Success))
+	})
+	t.Run("get ids of all kvs", func(t *testing.T) {
+		r, _ := http.NewRequest("GET", "/v1/kv_test_upload/kie/kv", nil)
+		r.Header.Set("Content-Type", "application/json")
+		kvr := &v1.KVResource{}
+		c, err := restfultest.New(kvr, nil)
+		assert.NoError(t, err)
+		resp := httptest.NewRecorder()
+		c.ServeHTTP(resp, r)
+		body, err := ioutil.ReadAll(resp.Body)
+		assert.NoError(t, err)
+		result := &model.KVResponse{}
+		err = json.Unmarshal(body, result)
+		assert.NoError(t, err)
+		assert.NotEqual(t, 0, len(result.Data))
+		for _, kv := range result.Data {
+			ids = append(ids, kv.ID)
+		}
+	})
+	t.Run("delete all kvs by ids", func(t *testing.T) {
+		j, _ := json.Marshal(v1.DeleteBody{IDs: ids})
+		r, _ := http.NewRequest("DELETE", "/v1/kv_test_upload/kie/kv", bytes.NewBuffer(j))
+
+		r.Header.Set("Content-Type", "application/json")
+		kvr := &v1.KVResource{}
+		c, err := restfultest.New(kvr, nil)
+		assert.NoError(t, err)
+		resp := httptest.NewRecorder()
+		c.ServeHTTP(resp, r)
+		assert.Equal(t, http.StatusNoContent, resp.Code)
+	})
+}

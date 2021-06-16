@@ -42,7 +42,80 @@ type KVResource struct {
 
 //Upload upload kvs
 func (r *KVResource) Upload(rctx *restful.Context) {
+	var err error
+	project := rctx.ReadPathParameter(common.PathParameterProject)
+	kvs := new([]*model.KVDoc)
+	if err = readRequest(rctx, kvs); err != nil {
+		WriteErrResponse(rctx, config.ErrInvalidParams, fmt.Sprintf(FmtReadRequestError, err))
+		return
+	}
+	result := &model.DocRespOfUpload{
+		Success: []*model.KVDoc{},
+		Failure: []*model.DocFailedOfUpload{},
+	}
+	for _, kv := range *kvs {
+		if kv == nil {
+			continue
+		}
+		key := kv.Key
+		domain := ReadDomain(rctx.Ctx)
+		kv.Domain = domain
+		kv.Project = project
+		if kv.Status == "" {
+			kv.Status = common.StatusDisabled
+		}
+		err = validator.Validate(kv)
+		if err != nil {
+			getFailedKV(config.ErrInvalidParams, err.Error(), key, result)
+			continue
+		}
+		err = quota.PreCreate("", kv.Domain, "", 1)
+		if err != nil {
+			if err == quota.ErrReached {
+				openlog.Info(fmt.Sprintf("can not create kv %s@%s, due to quota violation", kv.Key, kv.Project))
+				getFailedKV(config.ErrNotEnoughQuota, err.Error(), key, result)
+				continue
+			}
+			openlog.Error(err.Error())
+			getFailedKV(config.ErrInternal, "quota check failed", key, result)
+			continue
+		}
+		kv, err = service.KVService.Create(rctx.Ctx, kv)
+		if err != nil {
+			openlog.Error(fmt.Sprintf("post err:%s", err.Error()))
+			if err == session.ErrKVAlreadyExists {
+				getFailedKV(config.ErrRecordAlreadyExists, err.Error(), key, result)
+				continue
+			}
+			getFailedKV(config.ErrInternal, "create kv failed", key, result)
+			continue
+		}
+		err = pubsub.Publish(&pubsub.KVChangeEvent{
+			Key:      kv.Key,
+			Labels:   kv.Labels,
+			Project:  project,
+			DomainID: kv.Domain,
+			Action:   pubsub.ActionPut,
+		})
+		if err != nil {
+			openlog.Warn("lost kv change event when post:" + err.Error())
+		}
+		openlog.Info(
+			fmt.Sprintf("post [%s] success", kv.ID))
+		result.Success = append(result.Success, kv)
+	}
+	err = writeResponse(rctx, result)
+	if err != nil {
+		openlog.Error(err.Error())
+	}
+}
 
+func getFailedKV(errCode int32, errMsg string, key string, result *model.DocRespOfUpload) {
+	failedKv := new(model.DocFailedOfUpload)
+	failedKv.ErrCode = errCode
+	failedKv.ErrMsg = errMsg
+	failedKv.Key = key
+	result.Failure = append(result.Failure, failedKv)
 }
 
 //Post create a kv
@@ -355,7 +428,7 @@ func (r *KVResource) URLPatterns() []restful.Route {
 			Method:       http.MethodPost,
 			Path:         "/v1/{project}/kie/file",
 			ResourceFunc: r.Upload,
-			FuncDesc:     "upload key-values",
+			FuncDesc:     "upload key values",
 			Parameters: []*restful.Parameters{
 				DocPathProject,
 				DocHeaderContentTypeJSONAndYaml,
@@ -364,7 +437,7 @@ func (r *KVResource) URLPatterns() []restful.Route {
 			Returns: []*restful.Returns{
 				{
 					Code:  http.StatusOK,
-					Model: model.LabelDocResponse{},
+					Model: model.DocRespOfUpload{},
 				},
 			},
 			Consumes: []string{goRestful.MIME_JSON, common.ContentTypeYaml},
@@ -398,7 +471,7 @@ func (r *KVResource) URLPatterns() []restful.Route {
 			Returns: []*restful.Returns{
 				{
 					Code:  http.StatusOK,
-					Model: model.DocResponseSingleKey{},
+					Model: model.ViewResponse{},
 				},
 			},
 			Consumes: []string{goRestful.MIME_JSON, common.ContentTypeYaml},

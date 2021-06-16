@@ -71,6 +71,19 @@ type DocResponseGetKey struct {
 	Total int64                   `json:"total"`
 }
 
+//DocRespOfUpload is response doc
+type DocRespOfUpload struct {
+	Success []*KVDoc             `json:"success"`
+	Failure []*DocFailedOfUpload `json:"failure"`
+}
+
+//DocFailedOfUpload is reponse doc
+type DocFailedOfUpload struct {
+	Key     string `json:"key"`
+	ErrCode int32  `json:"error_code"`
+	ErrMsg  string `json:"error_message"`
+}
+
 //PollingDataResponse  is response doc
 type PollingDataResponse struct {
 	Data  []*PollingDetail `json:"data"`
