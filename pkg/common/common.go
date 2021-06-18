@@ -38,6 +38,7 @@ const (
 	QueryParamIP           = "ip"
 	QueryParamURLPath      = "urlPath"
 	QueryParamUserAgent    = "userAgent"
+	QueryParamOverridden   = "overridden"
 )
 
 //http headers
@@ -75,4 +76,11 @@ const (
 // all msg server returns
 const (
 	MsgDBError = "database operation error"
+)
+
+// all strategy of overridden
+const (
+	Force = "force"
+	Stop  = "stop"
+	Skip  = "skip"
 )

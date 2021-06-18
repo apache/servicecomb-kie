@@ -22,6 +22,7 @@ import (
 	"encoding/json"
 	"fmt"
 	"net/http"
+	"strings"
 
 	"github.com/apache/servicecomb-kie/pkg/common"
 	"github.com/apache/servicecomb-kie/pkg/model"
@@ -49,6 +50,8 @@ func (r *KVResource) Upload(rctx *restful.Context) {
 		WriteErrResponse(rctx, config.ErrInvalidParams, fmt.Sprintf(FmtReadRequestError, err))
 		return
 	}
+	overridden := rctx.ReadQueryParameter(common.QueryParamOverridden)
+	stopped := false
 	result := &model.DocRespOfUpload{
 		Success: []*model.KVDoc{},
 		Failure: []*model.DocFailedOfUpload{},
@@ -58,6 +61,11 @@ func (r *KVResource) Upload(rctx *restful.Context) {
 			continue
 		}
 		key := kv.Key
+		if strings.EqualFold(overridden, common.Stop) && stopped {
+			openlog.Info(fmt.Sprintf("stop create kv %s", kv.Key))
+			getFailedKV(config.ErrStopUpload, "stop overriding kvs after reaching the duplicate kv", key, result)
+			continue
+		}
 		domain := ReadDomain(rctx.Ctx)
 		kv.Domain = domain
 		kv.Project = project
@@ -80,11 +88,28 @@ func (r *KVResource) Upload(rctx *restful.Context) {
 			getFailedKV(config.ErrInternal, "quota check failed", key, result)
 			continue
 		}
-		kv, err = service.KVService.Create(rctx.Ctx, kv)
+		var kvOld *model.KVDoc
+		kvOld, err = service.KVService.Create(rctx.Ctx, kv)
+		kv.ID = kvOld.ID
 		if err != nil {
 			openlog.Error(fmt.Sprintf("post err:%s", err.Error()))
 			if err == session.ErrKVAlreadyExists {
-				getFailedKV(config.ErrRecordAlreadyExists, err.Error(), key, result)
+				if strings.EqualFold(overridden, common.Skip) {
+					openlog.Info(fmt.Sprintf("skip create kv %s", kv.Key))
+					getFailedKV(config.ErrSkipDuplicateKV, "skip overriding duplicate kvs", key, result)
+				} else if strings.EqualFold(overridden, common.Force) {
+					kvReq := new(model.UpdateKVRequest)
+					kvReq.ID = kv.ID
+					kvReq.Value = kv.Value
+					kvReq.Domain = domain
+					kvReq.Project = project
+					kvReq.Status = kv.Status
+					kv, err = service.KVService.Update(rctx.Ctx, kvReq)
+					result.Success = append(result.Success, kv)
+				} else {
+					getFailedKV(config.ErrRecordAlreadyExists, err.Error(), key, result)
+				}
+				stopped = true
 				continue
 			}
 			getFailedKV(config.ErrInternal, "create kv failed", key, result)
