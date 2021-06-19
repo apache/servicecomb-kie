@@ -53,9 +53,9 @@ func (s *Service) Create(ctx context.Context, kv *model.KVDoc) (*model.KVDoc, er
 	if kv.ValueType == "" {
 		kv.ValueType = session.DefaultValueType
 	}
-	kv0, err := s.Exist(ctx, kv.Domain, kv.Key, kv.Project, service.WithLabelFormat(kv.LabelFormat))
+	_, err := s.Exist(ctx, kv.Domain, kv.Key, kv.Project, service.WithLabelFormat(kv.LabelFormat))
 	if err == nil {
-		return kv0, session.ErrKVAlreadyExists
+		return nil, session.ErrKVAlreadyExists
 	}
 	if err != service.ErrKeyNotExists {
 		openlog.Error(err.Error())
