@@ -510,149 +510,17 @@ func TestKVResource_DeleteList(t *testing.T) {
 }
 func TestKVResource_Upload(t *testing.T) {
 	var ids []string
-	t.Run("post all kvs success", func(t *testing.T) {
-		kvs := &[]model.KVDoc{
-			{
-				Key:       "1",
-				Value:     "1",
-				Labels:    map[string]string{"1": "1"},
-				ValueType: "text",
-				Status:    "enabled",
-			},
-			{
-				Key:       "2",
-				Value:     "2",
-				Labels:    map[string]string{"2": "2"},
-				ValueType: "text",
-				Status:    "enabled",
-			},
-			{
-				Key:       "3",
-				Value:     "3",
-				Labels:    map[string]string{"3": "3"},
-				ValueType: "text",
-				Status:    "enabled",
-			},
-		}
-		j, _ := json.Marshal(kvs)
-		r, _ := http.NewRequest("POST", "/v1/kv_test_upload/kie/file", bytes.NewBuffer(j))
-		r.Header.Set("Content-Type", "application/json")
-		kvr := &v1.KVResource{}
-		c, _ := restfultest.New(kvr, nil)
-		resp := httptest.NewRecorder()
-		c.ServeHTTP(resp, r)
-
-		body, err := ioutil.ReadAll(resp.Body)
-		assert.NoError(t, err)
-		data := &model.DocRespOfUpload{
-			Success: []*model.KVDoc{},
-			Failure: []*model.DocFailedOfUpload{},
-		}
-		err = json.Unmarshal(body, data)
-		assert.NoError(t, err)
-		assert.Equal(t, http.StatusOK, resp.Code)
-		assert.Equal(t, 0, len(data.Failure))
-		assert.Equal(t, 3, len(data.Success))
-	})
-	t.Run("post part of kvs success", func(t *testing.T) {
-		kvs := &[]model.KVDoc{
-			{
-				Key:       "1",
-				Value:     "1",
-				Labels:    map[string]string{"1": "1"},
-				ValueType: "text",
-				Status:    "enabled",
-			},
-			{
-				Key:       "4",
-				Value:     "4",
-				Labels:    map[string]string{"2": "2"},
-				ValueType: "text",
-				Status:    "enabled",
-			},
-			{
-				Key:       "5",
-				Value:     "5",
-				Labels:    map[string]string{"3": "3"},
-				ValueType: "text",
-				Status:    "enabled",
-			},
-		}
-		j, _ := json.Marshal(kvs)
-		r, _ := http.NewRequest("POST", "/v1/kv_test_upload/kie/file", bytes.NewBuffer(j))
-		r.Header.Set("Content-Type", "application/json")
-		kvr := &v1.KVResource{}
-		c, _ := restfultest.New(kvr, nil)
-		resp := httptest.NewRecorder()
-		c.ServeHTTP(resp, r)
-
-		body, err := ioutil.ReadAll(resp.Body)
-		assert.NoError(t, err)
-		data := &model.DocRespOfUpload{
-			Success: []*model.KVDoc{},
-			Failure: []*model.DocFailedOfUpload{},
-		}
-		err = json.Unmarshal(body, data)
-		assert.NoError(t, err)
-		assert.Equal(t, http.StatusOK, resp.Code)
-		assert.Equal(t, 1, len(data.Failure))
-		assert.Equal(t, 2, len(data.Success))
-	})
-	t.Run("post all kvs fail", func(t *testing.T) {
-		kvs := &[]model.KVDoc{
-			{
-				Key:       "1",
-				Value:     "1",
-				Labels:    map[string]string{"1": "1"},
-				ValueType: "text",
-				Status:    "enabled",
-			},
-			{
-				Key:       "4",
-				Value:     "4",
-				Labels:    map[string]string{"2": "2"},
-				ValueType: "text",
-				Status:    "enabled",
-			},
-			{
-				Key:       "5",
-				Value:     "5",
-				Labels:    map[string]string{"3": "3"},
-				ValueType: "text",
-				Status:    "enabled",
-			},
-		}
-		j, _ := json.Marshal(kvs)
-		r, _ := http.NewRequest("POST", "/v1/kv_test_upload/kie/file", bytes.NewBuffer(j))
-		r.Header.Set("Content-Type", "application/json")
-		kvr := &v1.KVResource{}
-		c, _ := restfultest.New(kvr, nil)
-		resp := httptest.NewRecorder()
-		c.ServeHTTP(resp, r)
-
-		body, err := ioutil.ReadAll(resp.Body)
-		assert.NoError(t, err)
-		data := &model.DocRespOfUpload{
-			Success: []*model.KVDoc{},
-			Failure: []*model.DocFailedOfUpload{},
-		}
-		err = json.Unmarshal(body, data)
-		assert.NoError(t, err)
-		assert.Equal(t, http.StatusOK, resp.Code)
-		assert.Equal(t, 3, len(data.Failure))
-		assert.Equal(t, 0, len(data.Success))
-	})
 	t.Run("test force with the same key and the same labels", func(t *testing.T) {
 		kvs := &[]model.KVDoc{
 			{
-				Key:       "11",
+				Key:       "1",
 				Value:     "1",
 				Labels:    map[string]string{"2": "2"},
 				ValueType: "text",
 				Status:    "enabled",
 			},
 			{
-				Key:       "11",
+				Key:       "1",
 				Value:     "1",
 				Labels:    map[string]string{"2": "2"},
 				ValueType: "text",
@@ -683,14 +551,14 @@ func TestKVResource_Upload(t *testing.T) {
 	t.Run("test force with the same key and not the same labels", func(t *testing.T) {
 		kvs := &[]model.KVDoc{
 			{
-				Key:       "21",
+				Key:       "2",
 				Value:     "2",
 				Labels:    map[string]string{"1": "1"},
 				ValueType: "text",
 				Status:    "enabled",
 			},
 			{
-				Key:       "21",
+				Key:       "2",
 				Value:     "2",
 				Labels:    map[string]string{"2": "2"},
 				ValueType: "text",
@@ -722,21 +590,21 @@ func TestKVResource_Upload(t *testing.T) {
 	t.Run("test skip", func(t *testing.T) {
 		kvs := &[]model.KVDoc{
 			{
-				Key:       "31",
+				Key:       "3",
 				Value:     "1",
 				Labels:    map[string]string{"2": "2"},
 				ValueType: "text",
 				Status:    "enabled",
 			},
 			{
-				Key:       "31",
+				Key:       "3",
 				Value:     "1",
 				Labels:    map[string]string{"2": "2"},
 				ValueType: "text",
 				Status:    "enabled",
 			},
 			{
-				Key:       "31_1",
+				Key:       "4",
 				Value:     "1",
 				Labels:    map[string]string{"2": "2"},
 				ValueType: "text",
@@ -767,21 +635,21 @@ func TestKVResource_Upload(t *testing.T) {
 	t.Run("test stop", func(t *testing.T) {
 		kvs := &[]model.KVDoc{
 			{
-				Key:       "41",
+				Key:       "5",
 				Value:     "2",
 				Labels:    map[string]string{"1": "1"},
 				ValueType: "text",
 				Status:    "enabled",
 			},
 			{
-				Key:       "41",
+				Key:       "5",
 				Value:     "2",
 				Labels:    map[string]string{"1": "1"},
 				ValueType: "text",
 				Status:    "enabled",
 			},
 			{
-				Key:       "41_1",
+				Key:       "6",
 				Value:     "2",
 				Labels:    map[string]string{"4": "4"},
 				ValueType: "text",

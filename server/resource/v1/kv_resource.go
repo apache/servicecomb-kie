@@ -22,7 +22,6 @@ import (
 	"encoding/json"
 	"fmt"
 	"net/http"
-	"strings"
 
 	"github.com/apache/servicecomb-kie/pkg/common"
 	"github.com/apache/servicecomb-kie/pkg/model"
@@ -70,7 +69,7 @@ func logicOfOverride(kvs *[]*model.KVDoc, rctx *restful.Context, result *model.D
 			continue
 		}
 		key := kv.Key
-		if strings.EqualFold(override, common.Stop) && isDuplicate {
+		if override == common.Stop && isDuplicate {
 			openlog.Info(fmt.Sprintf("stop overriding kvs after reaching the duplicate kv %s", kv.Key))
 			appendFailedKVResult(config.ErrStopUpload, "stop overriding kvs after reaching the duplicate kv", key, result)
 			continue
