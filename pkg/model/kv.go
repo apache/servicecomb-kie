@@ -79,9 +79,10 @@ type DocRespOfUpload struct {
 
 //DocFailedOfUpload is reponse doc
 type DocFailedOfUpload struct {
-	Key     string `json:"key"`
-	ErrCode int32  `json:"error_code"`
-	ErrMsg  string `json:"error_message"`
+	Key     string            `json:"key"`
+	Labels  map[string]string `json:"labels"`
+	ErrCode int32             `json:"error_code"`
+	ErrMsg  string            `json:"error_message"`
 }
 
 //PollingDataResponse  is response doc

@@ -43,35 +43,34 @@ type KVResource struct {
 //Upload upload kvs
 func (r *KVResource) Upload(rctx *restful.Context) {
 	var err error
-	kvs := new([]*model.KVDoc)
-	if err = readRequest(rctx, kvs); err != nil {
+	kvs := make([]*model.KVDoc, 0)
+	if err = readRequest(rctx, &kvs); err != nil {
 		WriteErrResponse(rctx, config.ErrInvalidParams, fmt.Sprintf(FmtReadRequestError, err))
 		return
 	}
-	result := &model.DocRespOfUpload{
-		Success: []*model.KVDoc{},
-		Failure: []*model.DocFailedOfUpload{},
-	}
-	logicOfOverride(kvs, rctx, result)
+	result := logicOfOverride(kvs[:], rctx)
 	err = writeResponse(rctx, result)
 	if err != nil {
 		openlog.Error(err.Error())
 	}
 }
 
-func logicOfOverride(kvs *[]*model.KVDoc, rctx *restful.Context, result *model.DocRespOfUpload) {
+func logicOfOverride(kvs []*model.KVDoc, rctx *restful.Context) *model.DocRespOfUpload {
 	project := rctx.ReadPathParameter(common.PathParameterProject)
 	override := rctx.ReadQueryParameter(common.QueryParamOverride)
 	domain := ReadDomain(rctx.Ctx)
 	isDuplicate := false
-	for _, kv := range *kvs {
+	result := &model.DocRespOfUpload{
+		Success: []*model.KVDoc{},
+		Failure: []*model.DocFailedOfUpload{},
+	}
+	for _, kv := range kvs {
 		if kv == nil {
 			continue
 		}
-		key := kv.Key
 		if override == common.Stop && isDuplicate {
-			openlog.Info(fmt.Sprintf("stop overriding kvs after reaching the duplicate kv %s", kv.Key))
-			appendFailedKVResult(config.ErrStopUpload, "stop overriding kvs after reaching the duplicate kv", key, result)
+			openlog.Info(fmt.Sprintf("stop overriding kvs after reaching the duplicate [key: %s, labels: %s]", kv.Key, kv.Labels))
+			appendFailedKVResult(config.ErrStopUpload, "stop overriding kvs after reaching the duplicate kv", kv, result)
 			continue
 		}
 		kv.Domain = domain
@@ -79,80 +78,110 @@ func logicOfOverride(kvs *[]*model.KVDoc, rctx *restful.Context, result *model.D
 		if kv.Status == "" {
 			kv.Status = common.StatusDisabled
 		}
-		errCode, errMsg := postOneKv(rctx, kv)
-		if errMsg != "" {
-			isDuplicate = strategyOfDuplicate(errCode, errMsg, kv, result, rctx)
+		inputKV := kv
+		errCode, err, getKvsByOpts := getKvByOptions(rctx, kv)
+		if err != nil {
+			openlog.Info(fmt.Sprintf("get record [key: %s, labels: %s] failed", inputKV.Key, inputKV.Labels))
+			appendFailedKVResult(errCode, err.Error(), inputKV, result)
+			continue
+		}
+		if len(getKvsByOpts) != 0 {
+			// record exist
+			isDuplicate = true
+			kv.ID = getKvsByOpts[0].ID
+			strategyOfDuplicate(kv, result, rctx)
+			continue
+		}
+		errCode, err = postOneKv(rctx, kv)
+		if err != nil {
+			appendFailedKVResult(errCode, err.Error(), inputKV, result)
 			continue
 		}
 		checkKvChangeEvent(kv)
 		result.Success = append(result.Success, kv)
 	}
+	return result
 }
 
-func strategyOfDuplicate(errCode int32, errMsg string,
-	kv *model.KVDoc, result *model.DocRespOfUpload, rctx *restful.Context) bool {
+func getKvByOptions(rctx *restful.Context, kv *model.KVDoc) (int32, error, []*model.KVDoc) {
+	request := &model.ListKVRequest{
+		Project: kv.Project,
+		Domain:  kv.Domain,
+		Key:     kv.Key,
+		Labels:  kv.Labels,
+	}
+	code, err, _, kvsDoc := queryListByOpts(rctx, request)
+	if err != nil {
+		return code, err, nil
+	}
+	return 0, nil, kvsDoc.Data
+}
+
+func strategyOfDuplicate(kv *model.KVDoc, result *model.DocRespOfUpload, rctx *restful.Context) {
 	override := rctx.ReadQueryParameter(common.QueryParamOverride)
-	if errCode != config.ErrRecordAlreadyExists {
-		appendFailedKVResult(errCode, errMsg, kv.Key, result)
-		return false
-	}
 	if override == common.Skip {
-		openlog.Info(fmt.Sprintf("skip overriding duplicate kv %s", kv.Key))
-		appendFailedKVResult(config.ErrSkipDuplicateKV, "skip overriding duplicate kvs", kv.Key, result)
-	} else if override == common.Force {
-		request := &model.ListKVRequest{
-			Project: kv.Project,
-			Domain:  kv.Domain,
-			Key:     kv.Key,
-			Labels:  kv.Labels,
-		}
-		code, msg, _, kvsDoc := queryListByOpts(rctx, request)
-		if msg != "" {
-			openlog.Info(fmt.Sprintf("get kv %s failed", kv.Key))
-			appendFailedKVResult(code, msg, kv.Key, result)
-		} else {
-			kvReq := new(model.UpdateKVRequest)
-			kvReq.ID = kvsDoc.Data[0].ID
-			kvReq.Value = kv.Value
-			kvReq.Domain = kv.Domain
-			kvReq.Project = kv.Project
-			kvReq.Status = kv.Status
-			key := kv.Key
-			kv, err := service.KVService.Update(rctx.Ctx, kvReq)
-			if err != nil {
-				openlog.Info(fmt.Sprintf("update kv %s failed", key))
-				appendFailedKVResult(config.ErrInternal, err.Error(), key, result)
-			} else {
-				checkKvChangeEvent(kv)
-				result.Success = append(result.Success, kv)
-			}
-		}
+		openlog.Info(fmt.Sprintf("skip overriding duplicate [key: %s, labels: %s]", kv.Key, kv.Labels))
+		appendFailedKVResult(config.ErrSkipDuplicateKV, "skip overriding duplicate kvs", kv, result)
+	} else if override == common.Stop {
+		openlog.Info(fmt.Sprintf("stop overriding duplicate [key: %s, labels: %s]", kv.Key, kv.Labels))
+		appendFailedKVResult(config.ErrRecordAlreadyExists, "stop overriding duplicate kv", kv, result)
 	} else {
-		openlog.Info(fmt.Sprintf("stop overriding duplicate kv %s", kv.Key))
-		appendFailedKVResult(config.ErrStopUpload, "stop overriding duplicate kv", kv.Key, result)
+		err := validator.Validate(kv)
+		if err != nil {
+			appendFailedKVResult(config.ErrInternal, err.Error(), kv, result)
+			return
+		}
+		kvReq := &model.UpdateKVRequest{
+			ID:      kv.ID,
+			Value:   kv.Value,
+			Domain:  kv.Domain,
+			Project: kv.Project,
+			Status:  kv.Status,
+		}
+		err = validator.Validate(kvReq)
+		if err != nil {
+			appendFailedKVResult(config.ErrInvalidParams, err.Error(), kv, result)
+			return
+		}
+		kvNew, err := service.KVService.Update(rctx.Ctx, kvReq)
+		if err != nil {
+			openlog.Error(fmt.Sprintf("update record [key: %s, labels: %s] failed", kv.Key, kv.Labels))
+			appendFailedKVResult(config.ErrInternal, err.Error(), kv, result)
+			return
+		}
+		checkKvChangeEvent(kv)
+		result.Success = append(result.Success, kvNew)
 	}
-	return true
 }
 
-func appendFailedKVResult(errCode int32, errMsg string, key string, result *model.DocRespOfUpload) {
-	failedKv := new(model.DocFailedOfUpload)
-	failedKv.ErrCode = errCode
-	failedKv.ErrMsg = errMsg
-	failedKv.Key = key
+func appendFailedKVResult(errCode int32, errMsg string, kv *model.KVDoc, result *model.DocRespOfUpload) {
+	failedKv := &model.DocFailedOfUpload{
+		Key:     kv.Key,
+		Labels:  kv.Labels,
+		ErrCode: errCode,
+		ErrMsg:  errMsg,
+	}
 	result.Failure = append(result.Failure, failedKv)
 }
 
 //Post create a kv
 func (r *KVResource) Post(rctx *restful.Context) {
 	var err error
+	project := rctx.ReadPathParameter(common.PathParameterProject)
 	kv := new(model.KVDoc)
 	if err = readRequest(rctx, kv); err != nil {
 		WriteErrResponse(rctx, config.ErrInvalidParams, fmt.Sprintf(FmtReadRequestError, err))
 		return
 	}
-	errCode, errMsg := postOneKv(rctx, kv)
-	if errMsg != "" {
-		WriteErrResponse(rctx, errCode, errMsg)
+	domain := ReadDomain(rctx.Ctx)
+	kv.Domain = domain
+	kv.Project = project
+	if kv.Status == "" {
+		kv.Status = common.StatusDisabled
+	}
+	errCode, err := postOneKv(rctx, kv)
+	if err != nil {
+		WriteErrResponse(rctx, errCode, err.Error())
 		return
 	}
 	checkKvChangeEvent(kv)
@@ -177,42 +206,38 @@ func checkKvChangeEvent(kv *model.KVDoc) {
 		fmt.Sprintf("post [%s] success", kv.ID))
 }
 
-func postOneKv(rctx *restful.Context, kv *model.KVDoc) (int32, string) {
-	kv.Domain = ReadDomain(rctx.Ctx)
-	kv.Project = rctx.ReadPathParameter(common.PathParameterProject)
-	if kv.Status == "" {
-		kv.Status = common.StatusDisabled
+func postOneKv(rctx *restful.Context, kv *model.KVDoc) (int32, error) {
+	errCode, err := inputAndQuotaCheck(kv)
+	if err != nil {
+		return errCode, err
 	}
-	errCode, errMsg := inputCheck(kv)
-	if errMsg != "" {
-		return errCode, errMsg
-	}
-	kv, err := service.KVService.Create(rctx.Ctx, kv)
+	kv, err = service.KVService.Create(rctx.Ctx, kv)
 	if err != nil {
 		openlog.Error(fmt.Sprintf("post err:%s", err.Error()))
 		if err == session.ErrKVAlreadyExists {
-			return config.ErrRecordAlreadyExists, err.Error()
+			return config.ErrRecordAlreadyExists, err
 		}
-		return config.ErrInternal, "create kv failed"
+		return config.ErrInternal, err
 	}
-	return 0, ""
+	return 0, nil
 }
 
-func inputCheck(kv *model.KVDoc) (int32, string) {
-	err := validator.Validate(kv)
+func inputAndQuotaCheck(kv *model.KVDoc) (int32, error) {
+	var err error
+	err = validator.Validate(kv)
 	if err != nil {
-		return config.ErrInvalidParams, err.Error()
+		return config.ErrInvalidParams, err
 	}
 	err = quota.PreCreate("", kv.Domain, "", 1)
 	if err != nil {
 		if err == quota.ErrReached {
-			openlog.Info(fmt.Sprintf("can not create kv %s@%s, due to quota violation", kv.Key, kv.Project))
-			return config.ErrNotEnoughQuota, err.Error()
+			openlog.Error(fmt.Sprintf("can not create kv %s@%s, due to quota violation", kv.Key, kv.Project))
+			return config.ErrNotEnoughQuota, err
 		}
-		openlog.Error(err.Error())
-		return config.ErrInternal, "quota check failed"
+		openlog.Error("quota check failed")
+		return config.ErrInternal, err
 	}
-	return 0, ""
+	return 0, nil
 }
 
 //Put update a kv

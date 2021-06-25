@@ -248,20 +248,20 @@ func checkDomainAndProject(domain, project string) error {
 }
 
 func queryAndResponse(rctx *restful.Context, request *model.ListKVRequest) {
-	errCode, errMsg, rev, kv := queryListByOpts(rctx, request)
-	if errMsg != "" {
-		WriteErrResponse(rctx, errCode, errMsg)
+	errCode, err, rev, kv := queryListByOpts(rctx, request)
+	if err != nil {
+		WriteErrResponse(rctx, errCode, err.Error())
 		return
 	}
 	rctx.ReadResponseWriter().Header().Set(common.HeaderRevision, strconv.FormatInt(rev, 10))
-	err := writeResponse(rctx, kv)
+	err = writeResponse(rctx, kv)
 	rctx.ReadRestfulRequest().SetAttribute(common.RespBodyContextKey, kv.Data)
 	if err != nil {
 		openlog.Error(err.Error())
 	}
 }
 
-func queryListByOpts(rctx *restful.Context, request *model.ListKVRequest) (int32, string, int64, *model.KVResponse) {
+func queryListByOpts(rctx *restful.Context, request *model.ListKVRequest) (int32, error, int64, *model.KVResponse) {
 	m := getMatchPattern(rctx)
 	opts := []service.FindOption{
 		service.WithKey(request.Key),
@@ -277,12 +277,12 @@ func queryListByOpts(rctx *restful.Context, request *model.ListKVRequest) (int32
 	}
 	rev, err := service.RevisionService.GetRevision(rctx.Ctx, request.Domain)
 	if err != nil {
-		return config.ErrInternal, err.Error(), rev, nil
+		return config.ErrInternal, err, rev, nil
 	}
 	kv, err := service.KVService.List(rctx.Ctx, request.Domain, request.Project, opts...)
 	if err != nil {
-		openlog.Error("common: " + err.Error())
-		return config.ErrInternal, common.MsgDBError, rev, nil
+		openlog.Error("common: " + common.MsgDBError)
+		return config.ErrInternal, err, rev, nil
 	}
-	return 0, "", rev, kv
+	return 0, nil, rev, kv
 }
