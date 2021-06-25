@@ -78,6 +78,11 @@ func logicOfOverride(kvs []*model.KVDoc, rctx *restful.Context) *model.DocRespOf
 		if kv.Status == "" {
 			kv.Status = common.StatusDisabled
 		}
+		err := validator.Validate(kv)
+		if err != nil {
+			appendFailedKVResult(config.ErrInvalidParams, err.Error(), kv, result)
+			continue
+		}
 		inputKV := kv
 		errCode, err, getKvsByOpts := getKvByOptions(rctx, kv)
 		if err != nil {
@@ -138,11 +143,6 @@ func strategyOfDuplicate(kv *model.KVDoc, result *model.DocRespOfUpload, rctx *r
 			Project: kv.Project,
 			Status:  kv.Status,
 		}
-		err = validator.Validate(kvReq)
-		if err != nil {
-			appendFailedKVResult(config.ErrInvalidParams, err.Error(), kv, result)
-			return
-		}
 		kvNew, err := service.KVService.Update(rctx.Ctx, kvReq)
 		if err != nil {
 			openlog.Error(fmt.Sprintf("update record [key: %s, labels: %s] failed", kv.Key, kv.Labels))
@@ -179,6 +179,11 @@ func (r *KVResource) Post(rctx *restful.Context) {
 	if kv.Status == "" {
 		kv.Status = common.StatusDisabled
 	}
+	err = validator.Validate(kv)
+	if err != nil {
+		WriteErrResponse(rctx, config.ErrInvalidParams, err.Error())
+		return
+	}
 	errCode, err := postOneKv(rctx, kv)
 	if err != nil {
 		WriteErrResponse(rctx, errCode, err.Error())
@@ -207,7 +212,7 @@ func checkKvChangeEvent(kv *model.KVDoc) {
 }
 
 func postOneKv(rctx *restful.Context, kv *model.KVDoc) (int32, error) {
-	errCode, err := inputAndQuotaCheck(kv)
+	errCode, err := quotaCheck(kv)
 	if err != nil {
 		return errCode, err
 	}
@@ -222,13 +227,8 @@ func postOneKv(rctx *restful.Context, kv *model.KVDoc) (int32, error) {
 	return 0, nil
 }
 
-func inputAndQuotaCheck(kv *model.KVDoc) (int32, error) {
-	var err error
-	err = validator.Validate(kv)
-	if err != nil {
-		return config.ErrInvalidParams, err
-	}
-	err = quota.PreCreate("", kv.Domain, "", 1)
+func quotaCheck(kv *model.KVDoc) (int32, error) {
+	err := quota.PreCreate("", kv.Domain, "", 1)
 	if err != nil {
 		if err == quota.ErrReached {
 			openlog.Error(fmt.Sprintf("can not create kv %s@%s, due to quota violation", kv.Key, kv.Project))
