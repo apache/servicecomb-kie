@@ -43,11 +43,12 @@ type KVResource struct {
 //Upload upload kvs
 func (r *KVResource) Upload(rctx *restful.Context) {
 	var err error
-	kvs := make([]*model.KVDoc, 0)
-	if err = readRequest(rctx, &kvs); err != nil {
+	inputUpload := new(KVUploadBody)
+	if err = readRequest(rctx, &inputUpload); err != nil {
 		WriteErrResponse(rctx, config.ErrInvalidParams, fmt.Sprintf(FmtReadRequestError, err))
 		return
 	}
+	kvs := inputUpload.Data
 	result := logicOfOverride(kvs[:], rctx)
 	err = writeResponse(rctx, result)
 	if err != nil {
@@ -68,7 +69,7 @@ func logicOfOverride(kvs []*model.KVDoc, rctx *restful.Context) *model.DocRespOf
 		if kv == nil {
 			continue
 		}
-		if override == common.Stop && isDuplicate {
+		if override == common.Abort && isDuplicate {
 			openlog.Info(fmt.Sprintf("stop overriding kvs after reaching the duplicate [key: %s, labels: %s]", kv.Key, kv.Labels))
 			appendFailedKVResult(config.ErrStopUpload, "stop overriding kvs after reaching the duplicate kv", kv, result)
 			continue
@@ -84,20 +85,12 @@ func logicOfOverride(kvs []*model.KVDoc, rctx *restful.Context) *model.DocRespOf
 			continue
 		}
 		inputKV := kv
-		errCode, err, getKvsByOpts := getKvByOptions(rctx, kv)
-		if err != nil {
-			openlog.Info(fmt.Sprintf("get record [key: %s, labels: %s] failed", inputKV.Key, inputKV.Labels))
-			appendFailedKVResult(errCode, err.Error(), inputKV, result)
-			continue
-		}
-		if len(getKvsByOpts) != 0 {
-			// record exist
+		errCode, err := postOneKv(rctx, kv)
+		if errCode == config.ErrRecordAlreadyExists {
 			isDuplicate = true
-			kv.ID = getKvsByOpts[0].ID
 			strategyOfDuplicate(kv, result, rctx)
 			continue
 		}
-		errCode, err = postOneKv(rctx, kv)
 		if err != nil {
 			appendFailedKVResult(errCode, err.Error(), inputKV, result)
 			continue
@@ -127,17 +120,18 @@ func strategyOfDuplicate(kv *model.KVDoc, result *model.DocRespOfUpload, rctx *r
 	if override == common.Skip {
 		openlog.Info(fmt.Sprintf("skip overriding duplicate [key: %s, labels: %s]", kv.Key, kv.Labels))
 		appendFailedKVResult(config.ErrSkipDuplicateKV, "skip overriding duplicate kvs", kv, result)
-	} else if override == common.Stop {
+	} else if override == common.Abort {
 		openlog.Info(fmt.Sprintf("stop overriding duplicate [key: %s, labels: %s]", kv.Key, kv.Labels))
 		appendFailedKVResult(config.ErrRecordAlreadyExists, "stop overriding duplicate kv", kv, result)
 	} else {
-		err := validator.Validate(kv)
+		errCode, err, getKvsByOpts := getKvByOptions(rctx, kv)
 		if err != nil {
-			appendFailedKVResult(config.ErrInternal, err.Error(), kv, result)
+			openlog.Info(fmt.Sprintf("get record [key: %s, labels: %s] failed", kv.Key, kv.Labels))
+			appendFailedKVResult(errCode, err.Error(), kv, result)
 			return
 		}
 		kvReq := &model.UpdateKVRequest{
-			ID:      kv.ID,
+			ID:      getKvsByOpts[0].ID,
 			Value:   kv.Value,
 			Domain:  kv.Domain,
 			Project: kv.Project,
@@ -149,7 +143,7 @@ func strategyOfDuplicate(kv *model.KVDoc, result *model.DocRespOfUpload, rctx *r
 			appendFailedKVResult(config.ErrInternal, err.Error(), kv, result)
 			return
 		}
-		checkKvChangeEvent(kv)
+		checkKvChangeEvent(kvNew)
 		result.Success = append(result.Success, kvNew)
 	}
 }

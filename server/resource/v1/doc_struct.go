@@ -19,6 +19,7 @@ package v1
 
 import (
 	"github.com/apache/servicecomb-kie/pkg/common"
+	"github.com/apache/servicecomb-kie/pkg/model"
 
 	goRestful "github.com/emicklei/go-restful"
 	"github.com/go-chassis/go-chassis/v2/server/restful"
@@ -172,7 +173,17 @@ type KVCreateBody struct {
 
 //KVUploadBody is open api doc
 type KVUploadBody struct {
-	Kvs []*KVCreateBody `json:"kvs"`
+	MetaData MetaData       `json:"metadata"`
+	Data     []*model.KVDoc `json:"data"`
+}
+
+//MetaData is extra info
+type MetaData struct {
+	Version     string      `json:"version"`
+	Annotations Annotations `json:"annotations"`
+}
+
+type Annotations struct {
 }
 
 //KVUpdateBody is open api doc

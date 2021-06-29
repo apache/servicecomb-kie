@@ -81,6 +81,6 @@ const (
 // all strategy of override
 const (
 	Force = "force"
-	Stop  = "stop"
+	Abort = "abort"
 	Skip  = "skip"
 )

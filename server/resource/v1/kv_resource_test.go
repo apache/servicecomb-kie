@@ -369,7 +369,8 @@ func TestKVResource_List(t *testing.T) {
 }
 func TestKVResource_Upload(t *testing.T) {
 	t.Run("test force with the same key and the same labels", func(t *testing.T) {
-		kvs := &[]model.KVDoc{
+		input := new(v1.KVUploadBody)
+		input.Data = []*model.KVDoc{
 			{
 				Key:    "1",
 				Value:  "1",
@@ -381,7 +382,7 @@ func TestKVResource_Upload(t *testing.T) {
 				Labels: map[string]string{"2": "2"},
 			},
 		}
-		j, _ := json.Marshal(kvs)
+		j, _ := json.Marshal(input)
 		r, _ := http.NewRequest("POST", "/v1/kv_test/kie/file?override=force", bytes.NewBuffer(j))
 		r.Header.Set("Content-Type", "application/json")
 		kvr := &v1.KVResource{}
@@ -403,7 +404,8 @@ func TestKVResource_Upload(t *testing.T) {
 		assert.Equal(t, data.Success[0].ID, data.Success[0].ID)
 	})
 	t.Run("test force with the same key and not the same labels", func(t *testing.T) {
-		kvs := &[]model.KVDoc{
+		input := new(v1.KVUploadBody)
+		input.Data = []*model.KVDoc{
 			{
 				Key:    "2",
 				Value:  "2",
@@ -415,7 +417,7 @@ func TestKVResource_Upload(t *testing.T) {
 				Labels: map[string]string{"2": "2"},
 			},
 		}
-		j, _ := json.Marshal(kvs)
+		j, _ := json.Marshal(input)
 		r, _ := http.NewRequest("POST", "/v1/kv_test/kie/file?override=force", bytes.NewBuffer(j))
 		r.Header.Set("Content-Type", "application/json")
 		kvr := &v1.KVResource{}
@@ -438,7 +440,8 @@ func TestKVResource_Upload(t *testing.T) {
 	})
 
 	t.Run("test skip", func(t *testing.T) {
-		kvs := &[]model.KVDoc{
+		input := new(v1.KVUploadBody)
+		input.Data = []*model.KVDoc{
 			{
 				Key:    "3",
 				Value:  "1",
@@ -457,7 +460,7 @@ func TestKVResource_Upload(t *testing.T) {
 				Status:    "enabled",
 			},
 		}
-		j, _ := json.Marshal(kvs)
+		j, _ := json.Marshal(input)
 		r, _ := http.NewRequest("POST", "/v1/kv_test/kie/file?override=skip", bytes.NewBuffer(j))
 		r.Header.Set("Content-Type", "application/json")
 		kvr := &v1.KVResource{}
@@ -478,8 +481,9 @@ func TestKVResource_Upload(t *testing.T) {
 		assert.Equal(t, 2, len(data.Success))
 		assert.Equal(t, "skip overriding duplicate kvs", data.Failure[0].ErrMsg)
 	})
-	t.Run("test stop", func(t *testing.T) {
-		kvs := &[]model.KVDoc{
+	t.Run("test abort", func(t *testing.T) {
+		input := new(v1.KVUploadBody)
+		input.Data = []*model.KVDoc{
 			{
 				Key:    "5",
 				Value:  "2",
@@ -496,8 +500,8 @@ func TestKVResource_Upload(t *testing.T) {
 				Labels: map[string]string{"4": "4"},
 			},
 		}
-		j, _ := json.Marshal(kvs)
-		r, _ := http.NewRequest("POST", "/v1/kv_test/kie/file?override=stop", bytes.NewBuffer(j))
+		j, _ := json.Marshal(input)
+		r, _ := http.NewRequest("POST", "/v1/kv_test/kie/file?override=abort", bytes.NewBuffer(j))
 		r.Header.Set("Content-Type", "application/json")
 		kvr := &v1.KVResource{}
 		c, _ := restfultest.New(kvr, nil)
