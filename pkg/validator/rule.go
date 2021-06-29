@@ -22,7 +22,8 @@ import "github.com/go-chassis/foundation/validator"
 const (
 	key                   = "key"
 	commonNameRegexString = `^[a-zA-Z0-9]*$|^[a-zA-Z0-9][a-zA-Z0-9_\-.]*[a-zA-Z0-9]$`
-	labelKvRegexString    = `^[a-zA-Z0-9]{0,32}$|^[a-zA-Z0-9][a-zA-Z0-9_\-.]{0,30}[a-zA-Z0-9]$`
+	labelKeyRegexString   = `^[a-zA-Z0-9]{0,32}$|^[a-zA-Z0-9][a-zA-Z0-9_\-.]{0,30}[a-zA-Z0-9]$`
+	labelValueRegexString = `^[a-zA-Z0-9]{0,160}$|^[a-zA-Z0-9][a-zA-Z0-9_\-.]{0,158}[a-zA-Z0-9]$`
 	getKeyRegexString     = `^[a-zA-Z0-9]*$|^[a-zA-Z0-9][a-zA-Z0-9_\-.]*[a-zA-Z0-9]$|^beginWith\([a-zA-Z0-9][a-zA-Z0-9_\-.]*\)$|^wildcard\([a-zA-Z0-9][a-zA-Z0-9_\-.*]*\)$`
 	asciiRegexString      = `^[\x00-\x7F]*$`
 	allCharString         = `.*`
@@ -37,7 +38,8 @@ var customRules = []*validator.RegexValidateRule{
 	validator.NewRegexRule("valueType", `^$|^(ini|json|text|yaml|properties)$`),
 	validator.NewRegexRule("kvStatus", `^$|^(enabled|disabled)$`),
 	validator.NewRegexRule("value", allCharString), //ASCII, 2M
-	validator.NewRegexRule("labelKV", labelKvRegexString),
+	validator.NewRegexRule("labelK", labelKeyRegexString),
+	validator.NewRegexRule("labelV", labelValueRegexString),
 	validator.NewRegexRule("check", asciiRegexString), //ASCII, 1M
 }
 

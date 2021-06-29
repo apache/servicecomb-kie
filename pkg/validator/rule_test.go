@@ -144,7 +144,7 @@ func TestValidate(t *testing.T) {
 			"3": "a",
 			"4": "a",
 			"5": "a",
-			"6": "a-" + strings.Repeat("x", 31), // error
+			"6": "a-" + strings.Repeat("x", 159), // error
 		},
 	}
 	assert.Error(t, validator.Validate(kvDoc))

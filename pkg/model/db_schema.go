@@ -44,8 +44,8 @@ type KVDoc struct {
 	CreateTime     int64  `json:"create_time,omitempty" bson:"create_time," yaml:"create_time,omitempty"`
 	UpdateTime     int64  `json:"update_time,omitempty" bson:"update_time," yaml:"update_time,omitempty"`
 
-	Labels map[string]string `json:"labels,omitempty" yaml:"labels,omitempty" validate:"max=6,dive,keys,labelKV,endkeys,labelKV"` //redundant
-	Domain string            `json:"domain,omitempty" yaml:"domain,omitempty" validate:"min=1,max=256,commonName"`                //redundant
+	Labels map[string]string `json:"labels,omitempty" yaml:"labels,omitempty" validate:"max=6,dive,keys,labelK,endkeys,labelV"` //redundant
+	Domain string            `json:"domain,omitempty" yaml:"domain,omitempty" validate:"min=1,max=256,commonName"`              //redundant
 }
 
 //ViewDoc is db struct, it saves user's custom view name and criteria
@@ -94,7 +94,7 @@ type ListKVRequest struct {
 	Project string            `json:"project,omitempty" yaml:"project,omitempty" validate:"min=1,max=256,commonName"`
 	Domain  string            `json:"domain,omitempty" yaml:"domain,omitempty" validate:"min=1,max=256,commonName"` //redundant
 	Key     string            `json:"key" yaml:"key" validate:"max=128,getKey"`
-	Labels  map[string]string `json:"labels,omitempty" yaml:"labels,omitempty" validate:"max=8,dive,keys,labelKV,endkeys,labelKV"` //redundant
+	Labels  map[string]string `json:"labels,omitempty" yaml:"labels,omitempty" validate:"max=8,dive,keys,labelK,endkeys,labelV"` //redundant
 	Offset  int64             `validate:"min=0"`
 	Limit   int64             `validate:"min=0,max=100"`
 	Status  string            `json:"status,omitempty" yaml:"status,omitempty" validate:"kvStatus"`
