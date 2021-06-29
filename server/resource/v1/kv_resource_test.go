@@ -36,6 +36,7 @@ import (
 	"io/ioutil"
 	"net/http"
 	"net/http/httptest"
+	"strings"
 	"sync"
 	"testing"
 	"time"
@@ -79,6 +80,21 @@ func init() {
 	}
 }
 func TestKVResource_Post(t *testing.T) {
+	t.Run("post kv, label is invalid, should return err", func(t *testing.T) {
+		kv := &model.KVDoc{
+			Key:    "timeout",
+			Value:  "1s",
+			Labels: map[string]string{"service": strings.Repeat("x", 161)},
+		}
+		j, _ := json.Marshal(kv)
+		r, _ := http.NewRequest("POST", "/v1/kv_test/kie/kv", bytes.NewBuffer(j))
+		r.Header.Set("Content-Type", "application/json")
+		kvr := &v1.KVResource{}
+		c, _ := restfultest.New(kvr, nil)
+		resp := httptest.NewRecorder()
+		c.ServeHTTP(resp, r)
+		assert.Equal(t, http.StatusBadRequest, resp.Result().StatusCode)
+	})
 	t.Run("post kv, label is service", func(t *testing.T) {
 		kv := &model.KVDoc{
 			Key:    "timeout",
