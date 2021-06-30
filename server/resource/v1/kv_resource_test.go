@@ -60,7 +60,7 @@ func init() {
 		ListenPeerAddr: "127.0.0.1:4000",
 		AdvertiseAddr:  "127.0.0.1:4000",
 	}
-	config.Configurations.DB.URI = "mongodb://kie:123@192.168.0.5:27017/kie"
+	config.Configurations.DB.URI = "mongodb://kie:123@127.0.0.1:27017/kie"
 	err := service.DBInit()
 	if err != nil {
 		panic(err)
