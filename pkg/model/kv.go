@@ -71,6 +71,12 @@ type DocResponseGetKey struct {
 	Total int64                   `json:"total"`
 }
 
+//KVListResponseDoc is response doc
+type KVListResponseDoc struct {
+	KVListDoc []*KVDoc `json:"kv_list"`
+	Total     int64    `json:"total"`
+}
+
 //PollingDataResponse  is response doc
 type PollingDataResponse struct {
 	Data  []*PollingDetail `json:"data"`

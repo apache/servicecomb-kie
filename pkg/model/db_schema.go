@@ -29,6 +29,11 @@ type LabelDoc struct {
 	Alias   string            `json:"alias,omitempty" yaml:"alias,omitempty"`
 }
 
+//KVListDoc is database struct to store kvs
+type KVListDoc struct {
+	KVListDoc []*KVDoc `json:"kv_list,omitempty" bson:"kv_list,omitempty" yaml:"kv_list, omitempty"`
+}
+
 //KVDoc is database struct to store kv
 type KVDoc struct {
 	ID             string `json:"id,omitempty" bson:"id,omitempty" yaml:"id,omitempty" swag:"string"`
@@ -80,6 +85,11 @@ type UpdateKVRequest struct {
 	Project string `json:"project,omitempty" yaml:"project,omitempty" validate:"min=1,max=256,commonName"`
 	Domain  string `json:"domain,omitempty" yaml:"domain,omitempty" validate:"min=1,max=256,commonName"` //redundant
 	Status  string `json:"status,omitempty" yaml:"status,omitempty" validate:"kvStatus"`
+}
+
+// UpdateKVListRequest
+type UpdateKVListRequest struct {
+	UpdateKVList []*UpdateKVRequest `json:"kv_list,omitempty" bson:"kv_list,omitempty" yaml:"kv_list, omitempty"`
 }
 
 // GetKVRequest contains kv get request params
