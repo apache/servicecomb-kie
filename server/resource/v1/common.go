@@ -24,6 +24,7 @@ import (
 	"github.com/apache/servicecomb-kie/pkg/model"
 	"github.com/apache/servicecomb-kie/server/service/mongo/session"
 	"github.com/go-chassis/cari/config"
+	"github.com/go-chassis/cari/pkg/errsvc"
 	"github.com/go-chassis/cari/rbac"
 	"net/http"
 	"strconv"
@@ -248,20 +249,20 @@ func checkDomainAndProject(domain, project string) error {
 }
 
 func queryAndResponse(rctx *restful.Context, request *model.ListKVRequest) {
-	errCode, err, rev, kv := queryListByOpts(rctx, request)
-	if err != nil {
-		WriteErrResponse(rctx, errCode, err.Error())
+	rev, kv, err0 := queryListByOpts(rctx, request)
+	if err0.Message != "" {
+		WriteErrResponse(rctx, err0.Code, err0.Message)
 		return
 	}
 	rctx.ReadResponseWriter().Header().Set(common.HeaderRevision, strconv.FormatInt(rev, 10))
-	err = writeResponse(rctx, kv)
+	err := writeResponse(rctx, kv)
 	rctx.ReadRestfulRequest().SetAttribute(common.RespBodyContextKey, kv.Data)
 	if err != nil {
 		openlog.Error(err.Error())
 	}
 }
 
-func queryListByOpts(rctx *restful.Context, request *model.ListKVRequest) (int32, error, int64, *model.KVResponse) {
+func queryListByOpts(rctx *restful.Context, request *model.ListKVRequest) (int64, *model.KVResponse, errsvc.Error) {
 	m := getMatchPattern(rctx)
 	opts := []service.FindOption{
 		service.WithKey(request.Key),
@@ -277,12 +278,21 @@ func queryListByOpts(rctx *restful.Context, request *model.ListKVRequest) (int32
 	}
 	rev, err := service.RevisionService.GetRevision(rctx.Ctx, request.Domain)
 	if err != nil {
-		return config.ErrInternal, err, rev, nil
+		return rev, nil, errsvc.Error{
+			Code:    config.ErrInternal,
+			Message: err.Error(),
+		}
 	}
 	kv, err := service.KVService.List(rctx.Ctx, request.Domain, request.Project, opts...)
 	if err != nil {
-		openlog.Error("common: " + common.MsgDBError)
-		return config.ErrInternal, err, rev, nil
+		openlog.Error("common: " + err.Error())
+		return rev, nil, errsvc.Error{
+			Code:    config.ErrInternal,
+			Message: common.MsgDBError,
+		}
 	}
-	return 0, nil, rev, kv
+	return rev, kv, errsvc.Error{
+		Code:    0,
+		Message: "",
+	}
 }

@@ -21,6 +21,7 @@ package v1
 import (
 	"encoding/json"
 	"fmt"
+	"github.com/go-chassis/cari/pkg/errsvc"
 	"net/http"
 
 	"github.com/apache/servicecomb-kie/pkg/common"
@@ -49,111 +50,52 @@ func (r *KVResource) Upload(rctx *restful.Context) {
 		return
 	}
 	kvs := inputUpload.Data
-	result := logicOfOverride(kvs[:], rctx)
+	result := &model.DocRespOfUpload{
+		Success: []*model.KVDoc{},
+		Failure: []*model.DocFailedOfUpload{},
+	}
+	override := rctx.ReadQueryParameter(common.QueryParamOverride)
+	factory := new(OverrideType)
+	strategy := factory.getType(override)
+	isDuplicate := false
+	for _, kv := range kvs {
+		if kv == nil {
+			continue
+		}
+		kv, err0 := strategy.Execute(kv, rctx, isDuplicate)
+		if err0.Message != "" {
+			if err0.Code == config.ErrRecordAlreadyExists {
+				isDuplicate = true
+			}
+			appendFailedKVResult(err0, kv, result)
+		} else {
+			checkKvChangeEvent(kv)
+			result.Success = append(result.Success, kv)
+		}
+	}
 	err = writeResponse(rctx, result)
 	if err != nil {
 		openlog.Error(err.Error())
 	}
 }
 
-func logicOfOverride(kvs []*model.KVDoc, rctx *restful.Context) *model.DocRespOfUpload {
-	project := rctx.ReadPathParameter(common.PathParameterProject)
-	override := rctx.ReadQueryParameter(common.QueryParamOverride)
-	domain := ReadDomain(rctx.Ctx)
-	isDuplicate := false
-	result := &model.DocRespOfUpload{
-		Success: []*model.KVDoc{},
-		Failure: []*model.DocFailedOfUpload{},
-	}
-	for _, kv := range kvs {
-		if kv == nil {
-			continue
-		}
-		if override == common.Abort && isDuplicate {
-			openlog.Info(fmt.Sprintf("stop overriding kvs after reaching the duplicate [key: %s, labels: %s]", kv.Key, kv.Labels))
-			appendFailedKVResult(config.ErrStopUpload, "stop overriding kvs after reaching the duplicate kv", kv, result)
-			continue
-		}
-		kv.Domain = domain
-		kv.Project = project
-		if kv.Status == "" {
-			kv.Status = common.StatusDisabled
-		}
-		err := validator.Validate(kv)
-		if err != nil {
-			appendFailedKVResult(config.ErrInvalidParams, err.Error(), kv, result)
-			continue
-		}
-		inputKV := kv
-		errCode, err := postOneKv(rctx, kv)
-		if errCode == config.ErrRecordAlreadyExists {
-			isDuplicate = true
-			strategyOfDuplicate(kv, result, rctx)
-			continue
-		}
-		if err != nil {
-			appendFailedKVResult(errCode, err.Error(), inputKV, result)
-			continue
-		}
-		checkKvChangeEvent(kv)
-		result.Success = append(result.Success, kv)
-	}
-	return result
-}
-
-func getKvByOptions(rctx *restful.Context, kv *model.KVDoc) (int32, error, []*model.KVDoc) {
+func getKvByOptions(rctx *restful.Context, kv *model.KVDoc) ([]*model.KVDoc, errsvc.Error) {
 	request := &model.ListKVRequest{
 		Project: kv.Project,
 		Domain:  kv.Domain,
 		Key:     kv.Key,
 		Labels:  kv.Labels,
 	}
-	code, err, _, kvsDoc := queryListByOpts(rctx, request)
-	if err != nil {
-		return code, err, nil
-	}
-	return 0, nil, kvsDoc.Data
+	_, kvsDoc, err := queryListByOpts(rctx, request)
+	return kvsDoc.Data, err
 }
 
-func strategyOfDuplicate(kv *model.KVDoc, result *model.DocRespOfUpload, rctx *restful.Context) {
-	override := rctx.ReadQueryParameter(common.QueryParamOverride)
-	if override == common.Skip {
-		openlog.Info(fmt.Sprintf("skip overriding duplicate [key: %s, labels: %s]", kv.Key, kv.Labels))
-		appendFailedKVResult(config.ErrSkipDuplicateKV, "skip overriding duplicate kvs", kv, result)
-	} else if override == common.Abort {
-		openlog.Info(fmt.Sprintf("stop overriding duplicate [key: %s, labels: %s]", kv.Key, kv.Labels))
-		appendFailedKVResult(config.ErrRecordAlreadyExists, "stop overriding duplicate kv", kv, result)
-	} else {
-		errCode, err, getKvsByOpts := getKvByOptions(rctx, kv)
-		if err != nil {
-			openlog.Info(fmt.Sprintf("get record [key: %s, labels: %s] failed", kv.Key, kv.Labels))
-			appendFailedKVResult(errCode, err.Error(), kv, result)
-			return
-		}
-		kvReq := &model.UpdateKVRequest{
-			ID:      getKvsByOpts[0].ID,
-			Value:   kv.Value,
-			Domain:  kv.Domain,
-			Project: kv.Project,
-			Status:  kv.Status,
-		}
-		kvNew, err := service.KVService.Update(rctx.Ctx, kvReq)
-		if err != nil {
-			openlog.Error(fmt.Sprintf("update record [key: %s, labels: %s] failed", kv.Key, kv.Labels))
-			appendFailedKVResult(config.ErrInternal, err.Error(), kv, result)
-			return
-		}
-		checkKvChangeEvent(kvNew)
-		result.Success = append(result.Success, kvNew)
-	}
-}
-
-func appendFailedKVResult(errCode int32, errMsg string, kv *model.KVDoc, result *model.DocRespOfUpload) {
+func appendFailedKVResult(err errsvc.Error, kv *model.KVDoc, result *model.DocRespOfUpload) {
 	failedKv := &model.DocFailedOfUpload{
 		Key:     kv.Key,
 		Labels:  kv.Labels,
-		ErrCode: errCode,
-		ErrMsg:  errMsg,
+		ErrCode: err.Code,
+		ErrMsg:  err.Message,
 	}
 	result.Failure = append(result.Failure, failedKv)
 }
@@ -161,26 +103,14 @@ func appendFailedKVResult(errCode int32, errMsg string, kv *model.KVDoc, result 
 //Post create a kv
 func (r *KVResource) Post(rctx *restful.Context) {
 	var err error
-	project := rctx.ReadPathParameter(common.PathParameterProject)
 	kv := new(model.KVDoc)
 	if err = readRequest(rctx, kv); err != nil {
 		WriteErrResponse(rctx, config.ErrInvalidParams, fmt.Sprintf(FmtReadRequestError, err))
 		return
 	}
-	domain := ReadDomain(rctx.Ctx)
-	kv.Domain = domain
-	kv.Project = project
-	if kv.Status == "" {
-		kv.Status = common.StatusDisabled
-	}
-	err = validator.Validate(kv)
-	if err != nil {
-		WriteErrResponse(rctx, config.ErrInvalidParams, err.Error())
-		return
-	}
-	errCode, err := postOneKv(rctx, kv)
-	if err != nil {
-		WriteErrResponse(rctx, errCode, err.Error())
+	kv, error1 := postOneKv(rctx, kv)
+	if error1.Message != "" {
+		WriteErrResponse(rctx, error1.Code, error1.Message)
 		return
 	}
 	checkKvChangeEvent(kv)
@@ -205,33 +135,54 @@ func checkKvChangeEvent(kv *model.KVDoc) {
 		fmt.Sprintf("post [%s] success", kv.ID))
 }
 
-func postOneKv(rctx *restful.Context, kv *model.KVDoc) (int32, error) {
-	errCode, err := quotaCheck(kv)
+func postOneKv(rctx *restful.Context, kv *model.KVDoc) (*model.KVDoc, errsvc.Error) {
+	project := rctx.ReadPathParameter(common.PathParameterProject)
+	domain := ReadDomain(rctx.Ctx)
+	kv.Domain = domain
+	kv.Project = project
+	if kv.Status == "" {
+		kv.Status = common.StatusDisabled
+	}
+	err := validator.Validate(kv)
 	if err != nil {
-		return errCode, err
+		return nil, errsvc.Error{
+			Code:    config.ErrInvalidParams,
+			Message: err.Error(),
+		}
+	}
+	err = quota.PreCreate("", kv.Domain, "", 1)
+	if err != nil {
+		if err == quota.ErrReached {
+			openlog.Error(fmt.Sprintf("can not create kv %s@%s, due to quota violation", kv.Key, kv.Project))
+			return nil, errsvc.Error{
+				Code:    config.ErrNotEnoughQuota,
+				Message: err.Error(),
+			}
+		}
+		openlog.Error(err.Error())
+		return nil, errsvc.Error{
+			Code:    config.ErrInternal,
+			Message: "quota check failed",
+		}
 	}
 	kv, err = service.KVService.Create(rctx.Ctx, kv)
 	if err != nil {
 		openlog.Error(fmt.Sprintf("post err:%s", err.Error()))
 		if err == session.ErrKVAlreadyExists {
-			return config.ErrRecordAlreadyExists, err
+			return nil, errsvc.Error{
+				Code:    config.ErrRecordAlreadyExists,
+				Message: err.Error(),
+			}
 		}
-		return config.ErrInternal, err
-	}
-	return 0, nil
-}
-
-func quotaCheck(kv *model.KVDoc) (int32, error) {
-	err := quota.PreCreate("", kv.Domain, "", 1)
-	if err != nil {
-		if err == quota.ErrReached {
-			openlog.Error(fmt.Sprintf("can not create kv %s@%s, due to quota violation", kv.Key, kv.Project))
-			return config.ErrNotEnoughQuota, err
+		return nil, errsvc.Error{
+			Code:    config.ErrInternal,
+			Message: err.Error(),
 		}
-		openlog.Error("quota check failed")
-		return config.ErrInternal, err
 	}
-	return 0, nil
+	return kv, errsvc.Error{
+		Code:    0,
+		Message: "",
+	}
 }
 
 //Put update a kv
