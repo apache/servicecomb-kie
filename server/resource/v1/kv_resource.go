@@ -55,19 +55,18 @@ func (r *KVResource) Upload(rctx *restful.Context) {
 		Failure: []*model.DocFailedOfUpload{},
 	}
 	override := rctx.ReadQueryParameter(common.QueryParamOverride)
-	factory := new(OverrideType)
-	strategy := factory.getType(override)
+	strategy := getType(override)
 	isDuplicate := false
 	for _, kv := range kvs {
 		if kv == nil {
 			continue
 		}
-		kv, err0 := strategy.Execute(kv, rctx, isDuplicate)
-		if err0.Message != "" {
-			if err0.Code == config.ErrRecordAlreadyExists {
+		kv, executeErr := strategy.Execute(kv, rctx, isDuplicate)
+		if executeErr != nil {
+			if executeErr.Code == config.ErrRecordAlreadyExists {
 				isDuplicate = true
 			}
-			appendFailedKVResult(err0, kv, result)
+			appendFailedKVResult(executeErr, kv, result)
 		} else {
 			checkKvChangeEvent(kv)
 			result.Success = append(result.Success, kv)
@@ -79,7 +78,7 @@ func (r *KVResource) Upload(rctx *restful.Context) {
 	}
 }
 
-func getKvByOptions(rctx *restful.Context, kv *model.KVDoc) ([]*model.KVDoc, errsvc.Error) {
+func getKvByOptions(rctx *restful.Context, kv *model.KVDoc) ([]*model.KVDoc, *errsvc.Error) {
 	request := &model.ListKVRequest{
 		Project: kv.Project,
 		Domain:  kv.Domain,
@@ -90,12 +89,12 @@ func getKvByOptions(rctx *restful.Context, kv *model.KVDoc) ([]*model.KVDoc, err
 	return kvsDoc.Data, err
 }
 
-func appendFailedKVResult(err errsvc.Error, kv *model.KVDoc, result *model.DocRespOfUpload) {
+func appendFailedKVResult(err *errsvc.Error, kv *model.KVDoc, result *model.DocRespOfUpload) {
 	failedKv := &model.DocFailedOfUpload{
 		Key:     kv.Key,
 		Labels:  kv.Labels,
 		ErrCode: err.Code,
-		ErrMsg:  err.Message,
+		ErrMsg:  err.Detail,
 	}
 	result.Failure = append(result.Failure, failedKv)
 }
@@ -108,9 +107,9 @@ func (r *KVResource) Post(rctx *restful.Context) {
 		WriteErrResponse(rctx, config.ErrInvalidParams, fmt.Sprintf(FmtReadRequestError, err))
 		return
 	}
-	kv, error1 := postOneKv(rctx, kv)
-	if error1.Message != "" {
-		WriteErrResponse(rctx, error1.Code, error1.Message)
+	kv, postErr := postOneKv(rctx, kv)
+	if postErr != nil {
+		WriteErrResponse(rctx, postErr.Code, postErr.Message)
 		return
 	}
 	checkKvChangeEvent(kv)
@@ -135,7 +134,7 @@ func checkKvChangeEvent(kv *model.KVDoc) {
 		fmt.Sprintf("post [%s] success", kv.ID))
 }
 
-func postOneKv(rctx *restful.Context, kv *model.KVDoc) (*model.KVDoc, errsvc.Error) {
+func postOneKv(rctx *restful.Context, kv *model.KVDoc) (*model.KVDoc, *errsvc.Error) {
 	project := rctx.ReadPathParameter(common.PathParameterProject)
 	domain := ReadDomain(rctx.Ctx)
 	kv.Domain = domain
@@ -145,44 +144,26 @@ func postOneKv(rctx *restful.Context, kv *model.KVDoc) (*model.KVDoc, errsvc.Err
 	}
 	err := validator.Validate(kv)
 	if err != nil {
-		return nil, errsvc.Error{
-			Code:    config.ErrInvalidParams,
-			Message: err.Error(),
-		}
+		return nil, config.NewError(config.ErrInvalidParams, err.Error())
 	}
 	err = quota.PreCreate("", kv.Domain, "", 1)
 	if err != nil {
 		if err == quota.ErrReached {
 			openlog.Error(fmt.Sprintf("can not create kv %s@%s, due to quota violation", kv.Key, kv.Project))
-			return nil, errsvc.Error{
-				Code:    config.ErrNotEnoughQuota,
-				Message: err.Error(),
-			}
+			return nil, config.NewError(config.ErrNotEnoughQuota, err.Error())
 		}
 		openlog.Error(err.Error())
-		return nil, errsvc.Error{
-			Code:    config.ErrInternal,
-			Message: "quota check failed",
-		}
+		return nil, config.NewError(config.ErrInternal, "quota check failed")
 	}
 	kv, err = service.KVService.Create(rctx.Ctx, kv)
 	if err != nil {
 		openlog.Error(fmt.Sprintf("post err:%s", err.Error()))
 		if err == session.ErrKVAlreadyExists {
-			return nil, errsvc.Error{
-				Code:    config.ErrRecordAlreadyExists,
-				Message: err.Error(),
-			}
+			return nil, config.NewError(config.ErrRecordAlreadyExists, err.Error())
 		}
-		return nil, errsvc.Error{
-			Code:    config.ErrInternal,
-			Message: err.Error(),
-		}
+		return nil, config.NewError(config.ErrInternal, err.Error())
 	}
-	return kv, errsvc.Error{
-		Code:    0,
-		Message: "",
-	}
+	return kv, nil
 }
 
 //Put update a kv

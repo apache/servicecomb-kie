@@ -28,19 +28,26 @@ import (
 	"github.com/go-chassis/openlog"
 )
 
+func init() {
+	Register("force", &Force{})
+}
+
 type Force struct {
 }
 
-func (f *Force) Execute(kv *model.KVDoc, rctx *restful.Context, _ bool) (*model.KVDoc, errsvc.Error) {
+func (f *Force) Execute(kv *model.KVDoc, rctx *restful.Context, _ bool) (*model.KVDoc, *errsvc.Error) {
 	project := rctx.ReadPathParameter(common.PathParameterProject)
 	domain := ReadDomain(rctx.Ctx)
 	inputKV := kv
 	kv, err := postOneKv(rctx, kv)
+	if err == nil {
+		return kv, nil
+	}
 	if err.Code == config.ErrRecordAlreadyExists {
-		getKvsByOpts, err0 := getKvByOptions(rctx, inputKV)
-		if err0.Message != "" {
+		getKvsByOpts, getKvErr := getKvByOptions(rctx, inputKV)
+		if getKvErr != nil {
 			openlog.Info(fmt.Sprintf("get record [key: %s, labels: %s] failed", inputKV.Key, inputKV.Labels))
-			return inputKV, err0
+			return inputKV, getKvErr
 		}
 		kvReq := &model.UpdateKVRequest{
 			ID:      getKvsByOpts[0].ID,
@@ -49,24 +56,12 @@ func (f *Force) Execute(kv *model.KVDoc, rctx *restful.Context, _ bool) (*model.
 			Domain:  domain,
 			Project: project,
 		}
-		kv, err := service.KVService.Update(rctx.Ctx, kvReq)
-		if err != nil {
+		kv, updateErr := service.KVService.Update(rctx.Ctx, kvReq)
+		if updateErr != nil {
 			openlog.Error(fmt.Sprintf("update record [key: %s, labels: %s] failed", inputKV.Key, inputKV.Labels))
-			return inputKV, errsvc.Error{
-				Code:    config.ErrInternal,
-				Message: err.Error(),
-			}
+			return inputKV, config.NewError(config.ErrInternal, updateErr.Error())
 		}
-		return kv, errsvc.Error{
-			Code:    0,
-			Message: "",
-		}
+		return kv, nil
 	}
-	if err.Message != "" {
-		return inputKV, err
-	}
-	return kv, errsvc.Error{
-		Code:    0,
-		Message: "",
-	}
+	return inputKV, err
 }

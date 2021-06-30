@@ -26,31 +26,26 @@ import (
 	"github.com/go-chassis/openlog"
 )
 
+func init() {
+	Register("abort", &Abort{})
+}
+
 type Abort struct {
 }
 
-func (a *Abort) Execute(kv *model.KVDoc, rctx *restful.Context, isDuplicate bool) (*model.KVDoc, errsvc.Error) {
+func (a *Abort) Execute(kv *model.KVDoc, rctx *restful.Context, isDuplicate bool) (*model.KVDoc, *errsvc.Error) {
 	inputKV := kv
 	if isDuplicate {
 		openlog.Info(fmt.Sprintf("stop overriding kvs after reaching the duplicate [key: %s, labels: %s]", kv.Key, kv.Labels))
-		return inputKV, errsvc.Error{
-			Code:    config.ErrStopUpload,
-			Message: "stop overriding kvs after reaching the duplicate kv",
-		}
+		return inputKV, config.NewError(config.ErrStopUpload, "stop overriding kvs after reaching the duplicate kv")
 	}
 	kv, err := postOneKv(rctx, kv)
+	if err == nil {
+		return kv, nil
+	}
 	if err.Code == config.ErrRecordAlreadyExists {
 		openlog.Info(fmt.Sprintf("stop overriding duplicate [key: %s, labels: %s]", inputKV.Key, inputKV.Labels))
-		return inputKV, errsvc.Error{
-			Code:    config.ErrRecordAlreadyExists,
-			Message: "stop overriding duplicate kv",
-		}
+		return inputKV, config.NewError(config.ErrRecordAlreadyExists, "stop overriding duplicate kv")
 	}
-	if err.Message != "" {
-		return inputKV, err
-	}
-	return kv, errsvc.Error{
-		Code:    0,
-		Message: "",
-	}
+	return inputKV, err
 }

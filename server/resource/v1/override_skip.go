@@ -26,24 +26,22 @@ import (
 	"github.com/go-chassis/openlog"
 )
 
+func init() {
+	Register("skip", &Skip{})
+}
+
 type Skip struct {
 }
 
-func (s *Skip) Execute(kv *model.KVDoc, rctx *restful.Context, _ bool) (*model.KVDoc, errsvc.Error) {
+func (s *Skip) Execute(kv *model.KVDoc, rctx *restful.Context, _ bool) (*model.KVDoc, *errsvc.Error) {
 	inputKV := kv
 	kv, err := postOneKv(rctx, kv)
+	if err == nil {
+		return kv, nil
+	}
 	if err.Code == config.ErrRecordAlreadyExists {
 		openlog.Info(fmt.Sprintf("skip overriding duplicate [key: %s, labels: %s]", inputKV.Key, inputKV.Labels))
-		return inputKV, errsvc.Error{
-			Code:    config.ErrSkipDuplicateKV,
-			Message: "skip overriding duplicate kvs",
-		}
+		return inputKV, config.NewError(config.ErrSkipDuplicateKV, "skip overriding duplicate kvs")
 	}
-	if err.Message != "" {
-		return inputKV, err
-	}
-	return kv, errsvc.Error{
-		Code:    0,
-		Message: "",
-	}
+	return inputKV, err
 }

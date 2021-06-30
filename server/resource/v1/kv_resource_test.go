@@ -60,7 +60,7 @@ func init() {
 		ListenPeerAddr: "127.0.0.1:4000",
 		AdvertiseAddr:  "127.0.0.1:4000",
 	}
-	config.Configurations.DB.URI = "mongodb://kie:123@127.0.0.1:27017/kie"
+	config.Configurations.DB.URI = "mongodb://kie:123@192.168.0.5:27017/kie"
 	err := service.DBInit()
 	if err != nil {
 		panic(err)
@@ -368,7 +368,7 @@ func TestKVResource_List(t *testing.T) {
 	})
 }
 func TestKVResource_Upload(t *testing.T) {
-	t.Run("test force with the same key and the same labels", func(t *testing.T) {
+	t.Run("test force with the same key and the same labels, should return 2 success and 0 failure", func(t *testing.T) {
 		input := new(v1.KVUploadBody)
 		input.Data = []*model.KVDoc{
 			{
@@ -401,9 +401,8 @@ func TestKVResource_Upload(t *testing.T) {
 		assert.Equal(t, http.StatusOK, resp.Code)
 		assert.Equal(t, 0, len(data.Failure))
 		assert.Equal(t, 2, len(data.Success))
-		assert.Equal(t, data.Success[0].ID, data.Success[0].ID)
 	})
-	t.Run("test force with the same key and not the same labels", func(t *testing.T) {
+	t.Run("test force with the same key and not the same labels, should return 2 success and 0 failure", func(t *testing.T) {
 		input := new(v1.KVUploadBody)
 		input.Data = []*model.KVDoc{
 			{
@@ -436,10 +435,9 @@ func TestKVResource_Upload(t *testing.T) {
 		assert.Equal(t, http.StatusOK, resp.Code)
 		assert.Equal(t, 0, len(data.Failure))
 		assert.Equal(t, 2, len(data.Success))
-		assert.NotEmpty(t, data.Success[0].ID, data.Success[0].ID)
 	})
 
-	t.Run("test skip", func(t *testing.T) {
+	t.Run("test skip, should return 2 success and 1 failure", func(t *testing.T) {
 		input := new(v1.KVUploadBody)
 		input.Data = []*model.KVDoc{
 			{
@@ -481,7 +479,7 @@ func TestKVResource_Upload(t *testing.T) {
 		assert.Equal(t, 2, len(data.Success))
 		assert.Equal(t, "skip overriding duplicate kvs", data.Failure[0].ErrMsg)
 	})
-	t.Run("test abort", func(t *testing.T) {
+	t.Run("test abort, should return 1 success and 2 failure", func(t *testing.T) {
 		input := new(v1.KVUploadBody)
 		input.Data = []*model.KVDoc{
 			{

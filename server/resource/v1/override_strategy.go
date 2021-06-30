@@ -23,25 +23,19 @@ import (
 	"github.com/go-chassis/go-chassis/v2/server/restful"
 )
 
-var overrideMap = make(map[string]strategyOverride)
-
-func init() {
-	Register()
-}
+var overrideMap = make(map[string]StrategyOverride)
 
 type OverrideType struct {
 }
 
-type strategyOverride interface {
-	Execute(input *model.KVDoc, rctx *restful.Context, isDuplicate bool) (*model.KVDoc, errsvc.Error)
+type StrategyOverride interface {
+	Execute(input *model.KVDoc, rctx *restful.Context, isDuplicate bool) (*model.KVDoc, *errsvc.Error)
 }
 
-func Register() {
-	overrideMap["force"] = &Force{}
-	overrideMap["abort"] = &Abort{}
-	overrideMap["skip"] = &Skip{}
+func Register(override string, strategyOverride StrategyOverride) {
+	overrideMap[override] = strategyOverride
 }
 
-func (o *OverrideType) getType(override string) strategyOverride {
+func getType(override string) StrategyOverride {
 	return overrideMap[override]
 }
