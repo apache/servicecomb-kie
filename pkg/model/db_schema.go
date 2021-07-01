@@ -101,7 +101,7 @@ type ListKVRequest struct {
 	Match   string            `json:"match,omitempty" yaml:"match,omitempty"`
 }
 
-// UploadKVRequest
+// UploadKVRequest contains kv list upload request params
 type UploadKVRequest struct {
 	Domain   string `json:"domain,omitempty" yaml:"domain,omitempty" validate:"min=1,max=256,commonName"` //redundant
 	Project  string `json:"project,omitempty" yaml:"project,omitempty" validate:"min=1,max=256,commonName"`
