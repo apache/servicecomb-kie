@@ -60,7 +60,7 @@ func (r *KVResource) Upload(rctx *restful.Context) {
 		if kv == nil {
 			continue
 		}
-		kv, executeErr := strategy.Execute(kv, rctx)
+		kv, executeErr := strategy.Execute(rctx, kv)
 		if executeErr != nil {
 			if executeErr.Code == config.ErrRecordAlreadyExists {
 				appendAbortFailedKVResult(kvs[i:], result)

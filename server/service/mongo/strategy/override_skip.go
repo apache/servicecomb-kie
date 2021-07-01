@@ -35,7 +35,7 @@ func init() {
 type Skip struct {
 }
 
-func (s *Skip) Execute(kv *model.KVDoc, rctx *restful.Context) (*model.KVDoc, *errsvc.Error) {
+func (s *Skip) Execute(rctx *restful.Context, kv *model.KVDoc) (*model.KVDoc, *errsvc.Error) {
 	inputKV := kv
 	kv, err := v1.PostOneKv(rctx, kv)
 	if err == nil {

@@ -35,7 +35,7 @@ func init() {
 type Abort struct {
 }
 
-func (a *Abort) Execute(kv *model.KVDoc, rctx *restful.Context) (*model.KVDoc, *errsvc.Error) {
+func (a *Abort) Execute(rctx *restful.Context, kv *model.KVDoc) (*model.KVDoc, *errsvc.Error) {
 	inputKV := kv
 	kv, err := v1.PostOneKv(rctx, kv)
 	if err == nil {

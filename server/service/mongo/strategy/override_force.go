@@ -36,7 +36,7 @@ func init() {
 type Force struct {
 }
 
-func (f *Force) Execute(kv *model.KVDoc, rctx *restful.Context) (*model.KVDoc, *errsvc.Error) {
+func (f *Force) Execute(rctx *restful.Context, kv *model.KVDoc) (*model.KVDoc, *errsvc.Error) {
 	project := rctx.ReadPathParameter(common.PathParameterProject)
 	domain := v1.ReadDomain(rctx.Ctx)
 	inputKV := kv

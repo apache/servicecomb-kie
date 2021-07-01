@@ -88,7 +88,7 @@ type View interface {
 var overrideMap = make(map[string]OverrideStrategy)
 
 type OverrideStrategy interface {
-	Execute(input *model.KVDoc, rctx *restful.Context) (*model.KVDoc, *errsvc.Error)
+	Execute(rctx *restful.Context, input *model.KVDoc) (*model.KVDoc, *errsvc.Error)
 }
 
 func Register(override string, overrideStrategy OverrideStrategy) {
