@@ -20,6 +20,7 @@ package v1
 import (
 	"github.com/apache/servicecomb-kie/pkg/model"
 	"github.com/apache/servicecomb-kie/server/service"
+	"github.com/apache/servicecomb-kie/server/service/ctxsvc"
 	goRestful "github.com/emicklei/go-restful"
 	"github.com/go-chassis/cari/config"
 	"github.com/go-chassis/go-chassis/v2/pkg/runtime"
@@ -56,7 +57,7 @@ func (r *AdminResource) URLPatterns() []restful.Route {
 
 //HealthCheck provider version info and time info
 func (r *AdminResource) HealthCheck(context *restful.Context) {
-	domain := ReadDomain(context.Ctx)
+	domain := ctxsvc.ReadDomain(context.Ctx)
 	resp := &model.DocHealthCheck{}
 	latest, err := service.RevisionService.GetRevision(context.Ctx, domain)
 	if err != nil {

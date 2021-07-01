@@ -15,23 +15,24 @@
  * limitations under the License.
  */
 
-package mongo
+package kv
 
 import (
-	"github.com/apache/servicecomb-kie/server/service"
-	"github.com/apache/servicecomb-kie/server/service/mongo/counter"
-	"github.com/apache/servicecomb-kie/server/service/mongo/history"
-	"github.com/apache/servicecomb-kie/server/service/mongo/kv"
-	"github.com/apache/servicecomb-kie/server/service/mongo/session"
-	"github.com/apache/servicecomb-kie/server/service/mongo/track"
-	"github.com/go-chassis/openlog"
+	"context"
+	"github.com/apache/servicecomb-kie/pkg/model"
+	"github.com/go-chassis/cari/pkg/errsvc"
 )
 
-func init() {
-	openlog.Info("use mongodb as storage")
-	service.DBInit = session.Init
-	service.KVService = &kv.Service{}
-	service.HistoryService = &history.Service{}
-	service.TrackService = &track.Service{}
-	service.RevisionService = &counter.Service{}
+var strategyMap = make(map[string]OverrideStrategy)
+
+type OverrideStrategy interface {
+	Execute(ctx context.Context, input *model.KVDoc) (*model.KVDoc, *errsvc.Error)
+}
+
+func RegisterStrategy(override string, strategy OverrideStrategy) {
+	strategyMap[override] = strategy
+}
+
+func SelectStrategy(override string) OverrideStrategy {
+	return strategyMap[override]
 }

@@ -21,20 +21,19 @@ import (
 	"context"
 	"encoding/json"
 	"errors"
-	"github.com/apache/servicecomb-kie/pkg/model"
-	"github.com/apache/servicecomb-kie/server/service/mongo/session"
-	"github.com/go-chassis/cari/config"
-	"github.com/go-chassis/cari/pkg/errsvc"
-	"github.com/go-chassis/cari/rbac"
+	kvsvc "github.com/apache/servicecomb-kie/server/service/kv"
 	"net/http"
 	"strconv"
 	"strings"
 	"time"
 
 	"github.com/apache/servicecomb-kie/pkg/common"
+	"github.com/apache/servicecomb-kie/pkg/model"
 	"github.com/apache/servicecomb-kie/server/pubsub"
 	"github.com/apache/servicecomb-kie/server/service"
+	"github.com/apache/servicecomb-kie/server/service/mongo/session"
 	goRestful "github.com/emicklei/go-restful"
+	"github.com/go-chassis/cari/config"
 	"github.com/go-chassis/go-chassis/v2/server/restful"
 	"github.com/go-chassis/openlog"
 	uuid "github.com/satori/go.uuid"
@@ -55,24 +54,6 @@ const (
 var (
 	ErrInvalidRev = errors.New(common.MsgInvalidRev)
 )
-
-//ReadClaims get auth info
-func ReadClaims(ctx context.Context) map[string]interface{} {
-	c, err := rbac.FromContext(ctx)
-	if err != nil {
-		return nil
-	}
-	return c
-}
-
-//ReadDomain get domain info
-func ReadDomain(ctx context.Context) string {
-	c := ReadClaims(ctx)
-	if c != nil {
-		return c["domain"].(string)
-	}
-	return "default"
-}
 
 //ReadLabelCombinations get query combination from url
 //q=app:default+service:payment&q=app:default
@@ -249,7 +230,7 @@ func checkDomainAndProject(domain, project string) error {
 }
 
 func queryAndResponse(rctx *restful.Context, request *model.ListKVRequest) {
-	rev, kv, queryErr := queryListByOpts(rctx, request)
+	rev, kv, queryErr := kvsvc.ListKV(rctx.Ctx, request)
 	if queryErr != nil {
 		WriteErrResponse(rctx, queryErr.Code, queryErr.Message)
 		return
@@ -260,30 +241,4 @@ func queryAndResponse(rctx *restful.Context, request *model.ListKVRequest) {
 	if err != nil {
 		openlog.Error(err.Error())
 	}
-}
-
-func queryListByOpts(rctx *restful.Context, request *model.ListKVRequest) (int64, *model.KVResponse, *errsvc.Error) {
-	m := getMatchPattern(rctx)
-	opts := []service.FindOption{
-		service.WithKey(request.Key),
-		service.WithLabels(request.Labels),
-		service.WithOffset(request.Offset),
-		service.WithLimit(request.Limit),
-	}
-	if m == common.PatternExact {
-		opts = append(opts, service.WithExactLabels())
-	}
-	if request.Status != "" {
-		opts = append(opts, service.WithStatus(request.Status))
-	}
-	rev, err := service.RevisionService.GetRevision(rctx.Ctx, request.Domain)
-	if err != nil {
-		return rev, nil, config.NewError(config.ErrInternal, err.Error())
-	}
-	kv, err := service.KVService.List(rctx.Ctx, request.Domain, request.Project, opts...)
-	if err != nil {
-		openlog.Error("common: " + err.Error())
-		return rev, nil, config.NewError(config.ErrInternal, common.MsgDBError)
-	}
-	return rev, kv, nil
 }

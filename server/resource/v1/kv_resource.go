@@ -21,18 +21,17 @@ package v1
 import (
 	"encoding/json"
 	"fmt"
-	"github.com/go-chassis/cari/pkg/errsvc"
+	"github.com/apache/servicecomb-kie/server/service/ctxsvc"
+	kvsvc "github.com/apache/servicecomb-kie/server/service/kv"
 	"net/http"
 
 	"github.com/apache/servicecomb-kie/pkg/common"
 	"github.com/apache/servicecomb-kie/pkg/model"
 	"github.com/apache/servicecomb-kie/server/pubsub"
 	"github.com/apache/servicecomb-kie/server/service"
-	"github.com/apache/servicecomb-kie/server/service/mongo/session"
 	goRestful "github.com/emicklei/go-restful"
 	"github.com/go-chassis/cari/config"
 	"github.com/go-chassis/foundation/validator"
-	"github.com/go-chassis/go-chassis/v2/pkg/backends/quota"
 	"github.com/go-chassis/go-chassis/v2/server/restful"
 	"github.com/go-chassis/openlog"
 )
@@ -49,64 +48,15 @@ func (r *KVResource) Upload(rctx *restful.Context) {
 		WriteErrResponse(rctx, config.ErrInvalidParams, fmt.Sprintf(FmtReadRequestError, err))
 		return
 	}
-	kvs := inputUpload.Data
-	result := &model.DocRespOfUpload{
-		Success: []*model.KVDoc{},
-		Failure: []*model.DocFailedOfUpload{},
-	}
-	override := rctx.ReadQueryParameter(common.QueryParamOverride)
-	strategy := service.GetType(override)
-	for i, kv := range kvs {
-		if kv == nil {
-			continue
-		}
-		kv, executeErr := strategy.Execute(rctx, kv)
-		if executeErr != nil {
-			if executeErr.Code == config.ErrRecordAlreadyExists {
-				appendAbortFailedKVResult(kvs[i:], result)
-				break
-			}
-			appendFailedKVResult(executeErr, kv, result)
-		} else {
-			result.Success = append(result.Success, kv)
-		}
-	}
+	result := kvsvc.Upload(rctx.Ctx, &model.UploadKVRequest{
+		Domain:   ctxsvc.ReadDomain(rctx.Ctx),
+		Project:  rctx.ReadPathParameter(common.PathParameterProject),
+		KVs:      inputUpload.Data,
+		Override: rctx.ReadQueryParameter(common.QueryParamOverride),
+	})
 	err = writeResponse(rctx, result)
 	if err != nil {
 		openlog.Error(err.Error())
-	}
-}
-
-func GetKvByOptions(rctx *restful.Context, kv *model.KVDoc) ([]*model.KVDoc, *errsvc.Error) {
-	request := &model.ListKVRequest{
-		Project: kv.Project,
-		Domain:  kv.Domain,
-		Key:     kv.Key,
-		Labels:  kv.Labels,
-	}
-	_, kvsDoc, err := queryListByOpts(rctx, request)
-	return kvsDoc.Data, err
-}
-
-func appendFailedKVResult(err *errsvc.Error, kv *model.KVDoc, result *model.DocRespOfUpload) {
-	failedKv := &model.DocFailedOfUpload{
-		Key:     kv.Key,
-		Labels:  kv.Labels,
-		ErrCode: err.Code,
-		ErrMsg:  err.Detail,
-	}
-	result.Failure = append(result.Failure, failedKv)
-}
-
-func appendAbortFailedKVResult(kvs []*model.KVDoc, result *model.DocRespOfUpload) {
-	for _, kv := range kvs {
-		failedKv := &model.DocFailedOfUpload{
-			Key:     kv.Key,
-			Labels:  kv.Labels,
-			ErrCode: config.ErrStopUpload,
-			ErrMsg:  "stop overriding kvs after reaching the duplicate kv",
-		}
-		result.Failure = append(result.Failure, failedKv)
 	}
 }
 
@@ -118,63 +68,18 @@ func (r *KVResource) Post(rctx *restful.Context) {
 		WriteErrResponse(rctx, config.ErrInvalidParams, fmt.Sprintf(FmtReadRequestError, err))
 		return
 	}
-	kv, postErr := PostOneKv(rctx, kv)
+	kv.Domain = ctxsvc.ReadDomain(rctx.Ctx)
+	kv.Project = rctx.ReadPathParameter(common.PathParameterProject)
+	kv, postErr := kvsvc.Post(rctx.Ctx, kv)
 	if postErr != nil {
 		WriteErrResponse(rctx, postErr.Code, postErr.Message)
 		return
 	}
-	checkKvChangeEvent(kv)
+	kvsvc.Publish(kv)
 	err = writeResponse(rctx, kv)
 	if err != nil {
 		openlog.Error(err.Error())
 	}
-}
-
-func checkKvChangeEvent(kv *model.KVDoc) {
-	err := pubsub.Publish(&pubsub.KVChangeEvent{
-		Key:      kv.Key,
-		Labels:   kv.Labels,
-		Project:  kv.Project,
-		DomainID: kv.Domain,
-		Action:   pubsub.ActionPut,
-	})
-	if err != nil {
-		openlog.Warn("lost kv change event when post:" + err.Error())
-	}
-	openlog.Info(
-		fmt.Sprintf("post [%s] success", kv.ID))
-}
-
-func PostOneKv(rctx *restful.Context, kv *model.KVDoc) (*model.KVDoc, *errsvc.Error) {
-	project := rctx.ReadPathParameter(common.PathParameterProject)
-	domain := ReadDomain(rctx.Ctx)
-	kv.Domain = domain
-	kv.Project = project
-	if kv.Status == "" {
-		kv.Status = common.StatusDisabled
-	}
-	err := validator.Validate(kv)
-	if err != nil {
-		return nil, config.NewError(config.ErrInvalidParams, err.Error())
-	}
-	err = quota.PreCreate("", kv.Domain, "", 1)
-	if err != nil {
-		if err == quota.ErrReached {
-			openlog.Error(fmt.Sprintf("can not create kv %s@%s, due to quota violation", kv.Key, kv.Project))
-			return nil, config.NewError(config.ErrNotEnoughQuota, err.Error())
-		}
-		openlog.Error(err.Error())
-		return nil, config.NewError(config.ErrInternal, "quota check failed")
-	}
-	kv, err = service.KVService.Create(rctx.Ctx, kv)
-	if err != nil {
-		openlog.Error(fmt.Sprintf("post err:%s", err.Error()))
-		if err == session.ErrKVAlreadyExists {
-			return nil, config.NewError(config.ErrRecordAlreadyExists, err.Error())
-		}
-		return nil, config.NewError(config.ErrInternal, "create kv failed")
-	}
-	return kv, nil
 }
 
 //Put update a kv
@@ -187,7 +92,7 @@ func (r *KVResource) Put(rctx *restful.Context) {
 		WriteErrResponse(rctx, config.ErrInvalidParams, fmt.Sprintf(FmtReadRequestError, err))
 		return
 	}
-	domain := ReadDomain(rctx.Ctx)
+	domain := ctxsvc.ReadDomain(rctx.Ctx)
 	kvReq.ID = kvID
 	kvReq.Domain = domain
 	kvReq.Project = project
@@ -225,7 +130,7 @@ func (r *KVResource) Put(rctx *restful.Context) {
 func (r *KVResource) Get(rctx *restful.Context) {
 	request := &model.GetKVRequest{
 		Project: rctx.ReadPathParameter(common.PathParameterProject),
-		Domain:  ReadDomain(rctx.Ctx),
+		Domain:  ctxsvc.ReadDomain(rctx.Ctx),
 		ID:      rctx.ReadPathParameter(common.PathParamKVID),
 	}
 	err := validator.Validate(request)
@@ -256,9 +161,10 @@ func (r *KVResource) List(rctx *restful.Context) {
 	var err error
 	request := &model.ListKVRequest{
 		Project: rctx.ReadPathParameter(common.PathParameterProject),
-		Domain:  ReadDomain(rctx.Ctx),
+		Domain:  ctxsvc.ReadDomain(rctx.Ctx),
 		Key:     rctx.ReadQueryParameter(common.QueryParamKey),
 		Status:  rctx.ReadQueryParameter(common.QueryParamStatus),
+		Match:   getMatchPattern(rctx),
 	}
 	labels, err := getLabels(rctx)
 	if err != nil {
@@ -294,7 +200,7 @@ func returnData(rctx *restful.Context, request *model.ListKVRequest) {
 		changed, err := eventHappened(rctx, wait, &pubsub.Topic{
 			Labels:    request.Labels,
 			Project:   request.Project,
-			MatchType: getMatchPattern(rctx),
+			MatchType: request.Match,
 			DomainID:  request.Domain,
 		})
 		if err != nil {
@@ -323,7 +229,7 @@ func returnData(rctx *restful.Context, request *model.ListKVRequest) {
 			changed, err := eventHappened(rctx, wait, &pubsub.Topic{
 				Labels:    request.Labels,
 				Project:   request.Project,
-				MatchType: getMatchPattern(rctx),
+				MatchType: request.Match,
 				DomainID:  request.Domain,
 			})
 			if err != nil {
@@ -345,7 +251,7 @@ func returnData(rctx *restful.Context, request *model.ListKVRequest) {
 //Delete deletes one kv by id
 func (r *KVResource) Delete(rctx *restful.Context) {
 	project := rctx.ReadPathParameter(common.PathParameterProject)
-	domain := ReadDomain(rctx.Ctx)
+	domain := ctxsvc.ReadDomain(rctx.Ctx)
 	kvID := rctx.ReadPathParameter(common.PathParamKVID)
 	err := validateDelete(domain, project, kvID)
 	if err != nil {
@@ -381,7 +287,7 @@ func (r *KVResource) Delete(rctx *restful.Context) {
 //DeleteList deletes multiple kvs by ids
 func (r *KVResource) DeleteList(rctx *restful.Context) {
 	project := rctx.ReadPathParameter(common.PathParameterProject)
-	domain := ReadDomain(rctx.Ctx)
+	domain := ctxsvc.ReadDomain(rctx.Ctx)
 	b := new(DeleteBody)
 	if err := json.NewDecoder(rctx.ReadRequest().Body).Decode(b); err != nil {
 		WriteErrResponse(rctx, config.ErrInvalidParams, fmt.Sprintf(FmtReadRequestError, err))

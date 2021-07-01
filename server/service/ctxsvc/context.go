@@ -15,23 +15,41 @@
  * limitations under the License.
  */
 
-package mongo
+package ctxsvc
 
 import (
-	"github.com/apache/servicecomb-kie/server/service"
-	"github.com/apache/servicecomb-kie/server/service/mongo/counter"
-	"github.com/apache/servicecomb-kie/server/service/mongo/history"
-	"github.com/apache/servicecomb-kie/server/service/mongo/kv"
-	"github.com/apache/servicecomb-kie/server/service/mongo/session"
-	"github.com/apache/servicecomb-kie/server/service/mongo/track"
-	"github.com/go-chassis/openlog"
+	"context"
+	"github.com/go-chassis/cari/rbac"
+	"github.com/go-chassis/go-chassis/v2/core/common"
 )
 
-func init() {
-	openlog.Info("use mongodb as storage")
-	service.DBInit = session.Init
-	service.KVService = &kv.Service{}
-	service.HistoryService = &history.Service{}
-	service.TrackService = &track.Service{}
-	service.RevisionService = &counter.Service{}
+//ReadClaims get auth info
+func ReadClaims(ctx context.Context) map[string]interface{} {
+	c, err := rbac.FromContext(ctx)
+	if err != nil {
+		return nil
+	}
+	return c
+}
+
+//ReadDomain get domain info
+func ReadDomain(ctx context.Context) string {
+	c := ReadClaims(ctx)
+	if c != nil {
+		return c["domain"].(string)
+	}
+	return "default"
+}
+
+func SetProject(ctx context.Context, project string) context.Context {
+	return common.WithContext(ctx, "project", project)
+}
+
+//ReadProject get project info
+func ReadProject(ctx context.Context) string {
+	c := ReadClaims(ctx)
+	if c != nil {
+		return c["project"].(string)
+	}
+	return "default"
 }

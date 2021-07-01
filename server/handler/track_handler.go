@@ -23,6 +23,7 @@ import (
 	"github.com/apache/servicecomb-kie/pkg/model"
 	"github.com/apache/servicecomb-kie/server/resource/v1"
 	"github.com/apache/servicecomb-kie/server/service"
+	"github.com/apache/servicecomb-kie/server/service/ctxsvc"
 	"github.com/emicklei/go-restful"
 	"github.com/go-chassis/go-chassis/v2/core/handler"
 	"github.com/go-chassis/go-chassis/v2/core/invocation"
@@ -73,7 +74,7 @@ func (h *TrackHandler) Handle(chain *handler.Chain, inv *invocation.Invocation, 
 		data.SessionID = sessionID
 		data.SessionGroup = req.HeaderParameter(v1.HeaderSessionGroup)
 		data.UserAgent = req.HeaderParameter(v1.HeaderUserAgent)
-		data.Domain = v1.ReadDomain(req.Request.Context())
+		data.Domain = ctxsvc.ReadDomain(req.Request.Context())
 		data.IP = iputil.ClientIP(req.Request)
 		data.ResponseBody = req.Attribute(common.RespBodyContextKey).([]*model.KVDoc)
 		data.ResponseCode = ir.Status

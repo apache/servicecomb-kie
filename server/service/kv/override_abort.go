@@ -15,35 +15,33 @@
  * limitations under the License.
  */
 
-package strategy
+package kv
 
 import (
+	"context"
 	"fmt"
 	"github.com/apache/servicecomb-kie/pkg/model"
-	v1 "github.com/apache/servicecomb-kie/server/resource/v1"
-	"github.com/apache/servicecomb-kie/server/service"
 	"github.com/go-chassis/cari/config"
 	"github.com/go-chassis/cari/pkg/errsvc"
-	"github.com/go-chassis/go-chassis/v2/server/restful"
 	"github.com/go-chassis/openlog"
 )
 
 func init() {
-	service.Register("abort", &Abort{})
+	RegisterStrategy("abort", &Abort{})
 }
 
 type Abort struct {
 }
 
-func (a *Abort) Execute(rctx *restful.Context, kv *model.KVDoc) (*model.KVDoc, *errsvc.Error) {
+func (a *Abort) Execute(ctx context.Context, kv *model.KVDoc) (*model.KVDoc, *errsvc.Error) {
 	inputKV := kv
-	kv, err := v1.PostOneKv(rctx, kv)
+	kv, err := Post(ctx, kv)
 	if err == nil {
 		return kv, nil
 	}
 	if err.Code == config.ErrRecordAlreadyExists {
 		openlog.Info(fmt.Sprintf("stop overriding duplicate [key: %s, labels: %s]", inputKV.Key, inputKV.Labels))
-		return inputKV, config.NewError(config.ErrRecordAlreadyExists, "stop overriding duplicate kv")
+		return inputKV, config.NewError(config.ErrStopUpload, "stop overriding duplicate kv")
 	}
 	return inputKV, err
 }
