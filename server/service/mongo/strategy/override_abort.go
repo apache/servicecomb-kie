@@ -15,12 +15,12 @@
  * limitations under the License.
  */
 
-package v1
+package strategy
 
 import (
 	"fmt"
-	"github.com/apache/servicecomb-kie/pkg/common"
 	"github.com/apache/servicecomb-kie/pkg/model"
+	v1 "github.com/apache/servicecomb-kie/server/resource/v1"
 	"github.com/apache/servicecomb-kie/server/service"
 	"github.com/go-chassis/cari/config"
 	"github.com/go-chassis/cari/pkg/errsvc"
@@ -29,39 +29,25 @@ import (
 )
 
 func init() {
-	Register("force", &Force{})
+	service.Register("abort", &Abort{})
 }
 
-type Force struct {
+type Abort struct {
 }
 
-func (f *Force) Execute(kv *model.KVDoc, rctx *restful.Context, _ bool) (*model.KVDoc, *errsvc.Error) {
-	project := rctx.ReadPathParameter(common.PathParameterProject)
-	domain := ReadDomain(rctx.Ctx)
+func (a *Abort) Execute(kv *model.KVDoc, rctx *restful.Context, isDuplicate bool) (*model.KVDoc, *errsvc.Error) {
 	inputKV := kv
-	kv, err := postOneKv(rctx, kv)
+	if isDuplicate {
+		openlog.Info(fmt.Sprintf("stop overriding kvs after reaching the duplicate [key: %s, labels: %s]", kv.Key, kv.Labels))
+		return inputKV, config.NewError(config.ErrStopUpload, "stop overriding kvs after reaching the duplicate kv")
+	}
+	kv, err := v1.PostOneKv(rctx, kv)
 	if err == nil {
 		return kv, nil
 	}
 	if err.Code == config.ErrRecordAlreadyExists {
-		getKvsByOpts, getKvErr := getKvByOptions(rctx, inputKV)
-		if getKvErr != nil {
-			openlog.Info(fmt.Sprintf("get record [key: %s, labels: %s] failed", inputKV.Key, inputKV.Labels))
-			return inputKV, getKvErr
-		}
-		kvReq := &model.UpdateKVRequest{
-			ID:      getKvsByOpts[0].ID,
-			Value:   getKvsByOpts[0].Value,
-			Status:  getKvsByOpts[0].Status,
-			Domain:  domain,
-			Project: project,
-		}
-		kv, updateErr := service.KVService.Update(rctx.Ctx, kvReq)
-		if updateErr != nil {
-			openlog.Error(fmt.Sprintf("update record [key: %s, labels: %s] failed", inputKV.Key, inputKV.Labels))
-			return inputKV, config.NewError(config.ErrInternal, updateErr.Error())
-		}
-		return kv, nil
+		openlog.Info(fmt.Sprintf("stop overriding duplicate [key: %s, labels: %s]", inputKV.Key, inputKV.Labels))
+		return inputKV, config.NewError(config.ErrRecordAlreadyExists, "stop overriding duplicate kv")
 	}
 	return inputKV, err
 }

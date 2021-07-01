@@ -368,7 +368,7 @@ func TestKVResource_List(t *testing.T) {
 	})
 }
 func TestKVResource_Upload(t *testing.T) {
-	t.Run("test force with the same key and the same labels, should return 2 success and 0 failure", func(t *testing.T) {
+	t.Run("test force with the same key and the same labels, and one invalid input, should return 2 success and 1 failure", func(t *testing.T) {
 		input := new(v1.KVUploadBody)
 		input.Data = []*model.KVDoc{
 			{
@@ -379,6 +379,12 @@ func TestKVResource_Upload(t *testing.T) {
 			{
 				Key:    "1",
 				Value:  "1",
+				Status: "invalid",
+				Labels: map[string]string{"1": "1"},
+			},
+			{
+				Key:    "1",
+				Value:  "1-update",
 				Labels: map[string]string{"2": "2"},
 			},
 		}
@@ -399,10 +405,12 @@ func TestKVResource_Upload(t *testing.T) {
 		err = json.Unmarshal(body, data)
 		assert.NoError(t, err)
 		assert.Equal(t, http.StatusOK, resp.Code)
-		assert.Equal(t, 0, len(data.Failure))
+		assert.Equal(t, 1, len(data.Failure))
 		assert.Equal(t, 2, len(data.Success))
+		assert.Equal(t, data.Success[0].ID, data.Success[1].ID)
+		assert.Equal(t, "1-update", data.Success[1].Value)
 	})
-	t.Run("test force with the same key and not the same labels, should return 2 success and 0 failure", func(t *testing.T) {
+	t.Run("test force with the same key and not the same labels and ont invalid input, should return 2 success and 1 failure", func(t *testing.T) {
 		input := new(v1.KVUploadBody)
 		input.Data = []*model.KVDoc{
 			{
@@ -413,6 +421,13 @@ func TestKVResource_Upload(t *testing.T) {
 			{
 				Key:    "2",
 				Value:  "2",
+				Status: "invalid",
+				Labels: map[string]string{"1": "1"},
+			},
+
+			{
+				Key:    "2",
+				Value:  "2",
 				Labels: map[string]string{"2": "2"},
 			},
 		}
@@ -433,11 +448,11 @@ func TestKVResource_Upload(t *testing.T) {
 		err = json.Unmarshal(body, data)
 		assert.NoError(t, err)
 		assert.Equal(t, http.StatusOK, resp.Code)
-		assert.Equal(t, 0, len(data.Failure))
+		assert.Equal(t, 1, len(data.Failure))
 		assert.Equal(t, 2, len(data.Success))
+		assert.NotEqual(t, data.Success[0].ID, data.Success[1].ID)
 	})
-
-	t.Run("test skip, should return 2 success and 1 failure", func(t *testing.T) {
+	t.Run("test skip, with one invalid input, should return 2 success and 2 failure", func(t *testing.T) {
 		input := new(v1.KVUploadBody)
 		input.Data = []*model.KVDoc{
 			{
@@ -446,8 +461,14 @@ func TestKVResource_Upload(t *testing.T) {
 				Labels: map[string]string{"2": "2"},
 			},
 			{
+				Key:    "2",
+				Value:  "2",
+				Status: "invalid",
+				Labels: map[string]string{"1": "1"},
+			},
+			{
 				Key:    "3",
-				Value:  "1",
+				Value:  "1-update",
 				Labels: map[string]string{"2": "2"},
 			},
 			{
@@ -475,11 +496,14 @@ func TestKVResource_Upload(t *testing.T) {
 		err = json.Unmarshal(body, data)
 		assert.NoError(t, err)
 		assert.Equal(t, http.StatusOK, resp.Code)
-		assert.Equal(t, 1, len(data.Failure))
+		assert.Equal(t, 2, len(data.Failure))
 		assert.Equal(t, 2, len(data.Success))
-		assert.Equal(t, "skip overriding duplicate kvs", data.Failure[0].ErrMsg)
+		assert.Equal(t, "1", data.Success[0].Value)
+		assert.Equal(t, "1", data.Success[1].Value)
+		assert.Equal(t, "validate failed, field: KVDoc.Status, rule: ^$|^(enabled|disabled)$", data.Failure[0].ErrMsg)
+		assert.Equal(t, "skip overriding duplicate kvs", data.Failure[1].ErrMsg)
 	})
-	t.Run("test abort, should return 1 success and 2 failure", func(t *testing.T) {
+	t.Run("test abort, with one invalid input, should return 1 success and 3 failure", func(t *testing.T) {
 		input := new(v1.KVUploadBody)
 		input.Data = []*model.KVDoc{
 			{
@@ -489,7 +513,13 @@ func TestKVResource_Upload(t *testing.T) {
 			},
 			{
 				Key:    "5",
-				Value:  "2",
+				Value:  "2-update",
+				Labels: map[string]string{"1": "1"},
+			},
+			{
+				Key:    "5",
+				Value:  "2-update",
+				Status: "invalid",
 				Labels: map[string]string{"1": "1"},
 			},
 			{
@@ -515,8 +545,9 @@ func TestKVResource_Upload(t *testing.T) {
 		err = json.Unmarshal(body, data)
 		assert.NoError(t, err)
 		assert.Equal(t, http.StatusOK, resp.Code)
-		assert.Equal(t, 2, len(data.Failure))
+		assert.Equal(t, 3, len(data.Failure))
 		assert.Equal(t, 1, len(data.Success))
+		assert.Equal(t, "2", data.Success[0].Value)
 		assert.Equal(t, "stop overriding duplicate kv", data.Failure[0].ErrMsg)
 		assert.Equal(t, "stop overriding kvs after reaching the duplicate kv", data.Failure[1].ErrMsg)
 	})

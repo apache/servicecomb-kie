@@ -15,11 +15,13 @@
  * limitations under the License.
  */
 
-package v1
+package strategy
 
 import (
 	"fmt"
 	"github.com/apache/servicecomb-kie/pkg/model"
+	v1 "github.com/apache/servicecomb-kie/server/resource/v1"
+	"github.com/apache/servicecomb-kie/server/service"
 	"github.com/go-chassis/cari/config"
 	"github.com/go-chassis/cari/pkg/errsvc"
 	"github.com/go-chassis/go-chassis/v2/server/restful"
@@ -27,25 +29,21 @@ import (
 )
 
 func init() {
-	Register("abort", &Abort{})
+	service.Register("skip", &Skip{})
 }
 
-type Abort struct {
+type Skip struct {
 }
 
-func (a *Abort) Execute(kv *model.KVDoc, rctx *restful.Context, isDuplicate bool) (*model.KVDoc, *errsvc.Error) {
+func (s *Skip) Execute(kv *model.KVDoc, rctx *restful.Context, _ bool) (*model.KVDoc, *errsvc.Error) {
 	inputKV := kv
-	if isDuplicate {
-		openlog.Info(fmt.Sprintf("stop overriding kvs after reaching the duplicate [key: %s, labels: %s]", kv.Key, kv.Labels))
-		return inputKV, config.NewError(config.ErrStopUpload, "stop overriding kvs after reaching the duplicate kv")
-	}
-	kv, err := postOneKv(rctx, kv)
+	kv, err := v1.PostOneKv(rctx, kv)
 	if err == nil {
 		return kv, nil
 	}
 	if err.Code == config.ErrRecordAlreadyExists {
-		openlog.Info(fmt.Sprintf("stop overriding duplicate [key: %s, labels: %s]", inputKV.Key, inputKV.Labels))
-		return inputKV, config.NewError(config.ErrRecordAlreadyExists, "stop overriding duplicate kv")
+		openlog.Info(fmt.Sprintf("skip overriding duplicate [key: %s, labels: %s]", inputKV.Key, inputKV.Labels))
+		return inputKV, config.NewError(config.ErrSkipDuplicateKV, "skip overriding duplicate kvs")
 	}
 	return inputKV, err
 }

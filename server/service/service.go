@@ -21,6 +21,8 @@ import (
 	"context"
 	"errors"
 	"github.com/apache/servicecomb-kie/pkg/model"
+	"github.com/go-chassis/cari/pkg/errsvc"
+	"github.com/go-chassis/go-chassis/v2/server/restful"
 )
 
 //services
@@ -30,6 +32,7 @@ var (
 	TrackService    Track
 	RevisionService Revision
 	DBInit          Init
+	StrategyService StrategyOverride
 )
 
 //db errors
@@ -80,6 +83,20 @@ type View interface {
 	List(ctx context.Context, domain, project string, options ...FindOption) ([]*model.ViewDoc, error)
 	GetCriteria(ctx context.Context, viewName, domain, project string) (map[string]map[string]string, error)
 	GetContent(ctx context.Context, id, domain, project string, options ...FindOption) ([]*model.KVResponse, error)
+}
+
+var overrideMap = make(map[string]StrategyOverride)
+
+type StrategyOverride interface {
+	Execute(input *model.KVDoc, rctx *restful.Context, isDuplicate bool) (*model.KVDoc, *errsvc.Error)
+}
+
+func Register(override string, strategyOverride StrategyOverride) {
+	overrideMap[override] = strategyOverride
+}
+
+func GetType(override string) StrategyOverride {
+	return overrideMap[override]
 }
 
 //Init init db session

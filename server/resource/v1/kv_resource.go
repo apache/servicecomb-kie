@@ -55,7 +55,7 @@ func (r *KVResource) Upload(rctx *restful.Context) {
 		Failure: []*model.DocFailedOfUpload{},
 	}
 	override := rctx.ReadQueryParameter(common.QueryParamOverride)
-	strategy := getType(override)
+	strategy := service.GetType(override)
 	isDuplicate := false
 	for _, kv := range kvs {
 		if kv == nil {
@@ -78,7 +78,7 @@ func (r *KVResource) Upload(rctx *restful.Context) {
 	}
 }
 
-func getKvByOptions(rctx *restful.Context, kv *model.KVDoc) ([]*model.KVDoc, *errsvc.Error) {
+func GetKvByOptions(rctx *restful.Context, kv *model.KVDoc) ([]*model.KVDoc, *errsvc.Error) {
 	request := &model.ListKVRequest{
 		Project: kv.Project,
 		Domain:  kv.Domain,
@@ -107,7 +107,7 @@ func (r *KVResource) Post(rctx *restful.Context) {
 		WriteErrResponse(rctx, config.ErrInvalidParams, fmt.Sprintf(FmtReadRequestError, err))
 		return
 	}
-	kv, postErr := postOneKv(rctx, kv)
+	kv, postErr := PostOneKv(rctx, kv)
 	if postErr != nil {
 		WriteErrResponse(rctx, postErr.Code, postErr.Message)
 		return
@@ -134,7 +134,7 @@ func checkKvChangeEvent(kv *model.KVDoc) {
 		fmt.Sprintf("post [%s] success", kv.ID))
 }
 
-func postOneKv(rctx *restful.Context, kv *model.KVDoc) (*model.KVDoc, *errsvc.Error) {
+func PostOneKv(rctx *restful.Context, kv *model.KVDoc) (*model.KVDoc, *errsvc.Error) {
 	project := rctx.ReadPathParameter(common.PathParameterProject)
 	domain := ReadDomain(rctx.Ctx)
 	kv.Domain = domain
@@ -161,7 +161,7 @@ func postOneKv(rctx *restful.Context, kv *model.KVDoc) (*model.KVDoc, *errsvc.Er
 		if err == session.ErrKVAlreadyExists {
 			return nil, config.NewError(config.ErrRecordAlreadyExists, err.Error())
 		}
-		return nil, config.NewError(config.ErrInternal, err.Error())
+		return nil, config.NewError(config.ErrInternal, "create kv failed")
 	}
 	return kv, nil
 }

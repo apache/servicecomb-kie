@@ -23,6 +23,7 @@ import (
 	"github.com/apache/servicecomb-kie/server/service/mongo/history"
 	"github.com/apache/servicecomb-kie/server/service/mongo/kv"
 	"github.com/apache/servicecomb-kie/server/service/mongo/session"
+	"github.com/apache/servicecomb-kie/server/service/mongo/strategy"
 	"github.com/apache/servicecomb-kie/server/service/mongo/track"
 	"github.com/go-chassis/openlog"
 )
@@ -34,4 +35,7 @@ func init() {
 	service.HistoryService = &history.Service{}
 	service.TrackService = &track.Service{}
 	service.RevisionService = &counter.Service{}
+	service.StrategyService = &strategy.Abort{}
+	service.StrategyService = &strategy.Force{}
+	service.StrategyService = &strategy.Skip{}
 }
