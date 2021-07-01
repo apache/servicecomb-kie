@@ -32,7 +32,7 @@ var (
 	TrackService    Track
 	RevisionService Revision
 	DBInit          Init
-	StrategyService StrategyOverride
+	StrategyService OverrideStrategy
 )
 
 //db errors
@@ -85,17 +85,17 @@ type View interface {
 	GetContent(ctx context.Context, id, domain, project string, options ...FindOption) ([]*model.KVResponse, error)
 }
 
-var overrideMap = make(map[string]StrategyOverride)
+var overrideMap = make(map[string]OverrideStrategy)
 
-type StrategyOverride interface {
-	Execute(input *model.KVDoc, rctx *restful.Context, isDuplicate bool) (*model.KVDoc, *errsvc.Error)
+type OverrideStrategy interface {
+	Execute(input *model.KVDoc, rctx *restful.Context) (*model.KVDoc, *errsvc.Error)
 }
 
-func Register(override string, strategyOverride StrategyOverride) {
-	overrideMap[override] = strategyOverride
+func Register(override string, overrideStrategy OverrideStrategy) {
+	overrideMap[override] = overrideStrategy
 }
 
-func GetType(override string) StrategyOverride {
+func GetType(override string) OverrideStrategy {
 	return overrideMap[override]
 }
 

@@ -56,19 +56,18 @@ func (r *KVResource) Upload(rctx *restful.Context) {
 	}
 	override := rctx.ReadQueryParameter(common.QueryParamOverride)
 	strategy := service.GetType(override)
-	isDuplicate := false
-	for _, kv := range kvs {
+	for i, kv := range kvs {
 		if kv == nil {
 			continue
 		}
-		kv, executeErr := strategy.Execute(kv, rctx, isDuplicate)
+		kv, executeErr := strategy.Execute(kv, rctx)
 		if executeErr != nil {
 			if executeErr.Code == config.ErrRecordAlreadyExists {
-				isDuplicate = true
+				appendAbortFailedKVResult(kvs[i:], result)
+				break
 			}
 			appendFailedKVResult(executeErr, kv, result)
 		} else {
-			checkKvChangeEvent(kv)
 			result.Success = append(result.Success, kv)
 		}
 	}
@@ -97,6 +96,18 @@ func appendFailedKVResult(err *errsvc.Error, kv *model.KVDoc, result *model.DocR
 		ErrMsg:  err.Detail,
 	}
 	result.Failure = append(result.Failure, failedKv)
+}
+
+func appendAbortFailedKVResult(kvs []*model.KVDoc, result *model.DocRespOfUpload) {
+	for _, kv := range kvs {
+		failedKv := &model.DocFailedOfUpload{
+			Key:     kv.Key,
+			Labels:  kv.Labels,
+			ErrCode: config.ErrStopUpload,
+			ErrMsg:  "stop overriding kvs after reaching the duplicate kv",
+		}
+		result.Failure = append(result.Failure, failedKv)
+	}
 }
 
 //Post create a kv

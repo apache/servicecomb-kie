@@ -99,10 +99,14 @@ func AddHistory(ctx context.Context, kv *model.KVDoc) error {
 func AddDeleteTime(ctx context.Context, kvIDs []string, project, domain string) error {
 	collection := session.GetDB().Collection(session.CollectionKVRevision)
 	now := time.Now()
-	filter := bson.D{{"id", bson.M{"$in": kvIDs}}, {"project", project}, {"domain", domain}}
+	filter := bson.D{
+		{Key: "id", Value: bson.M{"$in": kvIDs}},
+		{Key: "project", Value: project},
+		{Key: "domain", Value: domain},
+	}
 	_, err := collection.UpdateMany(ctx, filter, bson.D{
-		{"$set", bson.D{
-			{"delete_time", now},
+		{Key: "$set", Value: bson.D{
+			{Key: "delete_time", Value: now},
 		}},
 	})
 	if err != nil {

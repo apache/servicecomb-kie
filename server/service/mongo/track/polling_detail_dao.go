@@ -45,7 +45,7 @@ func CreateOrUpdate(ctx context.Context, detail *model.PollingDetail) (*model.Po
 		}
 		return nil, res.Err()
 	}
-	_, err := collection.UpdateOne(ctx, queryFilter, bson.D{{"$set", detail}})
+	_, err := collection.UpdateOne(ctx, queryFilter, bson.D{{Key: "$set", Value: detail}})
 	if err != nil {
 		return nil, err
 	}

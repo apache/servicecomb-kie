@@ -35,12 +35,8 @@ func init() {
 type Abort struct {
 }
 
-func (a *Abort) Execute(kv *model.KVDoc, rctx *restful.Context, isDuplicate bool) (*model.KVDoc, *errsvc.Error) {
+func (a *Abort) Execute(kv *model.KVDoc, rctx *restful.Context) (*model.KVDoc, *errsvc.Error) {
 	inputKV := kv
-	if isDuplicate {
-		openlog.Info(fmt.Sprintf("stop overriding kvs after reaching the duplicate [key: %s, labels: %s]", kv.Key, kv.Labels))
-		return inputKV, config.NewError(config.ErrStopUpload, "stop overriding kvs after reaching the duplicate kv")
-	}
 	kv, err := v1.PostOneKv(rctx, kv)
 	if err == nil {
 		return kv, nil

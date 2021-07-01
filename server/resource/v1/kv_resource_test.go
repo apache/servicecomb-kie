@@ -548,8 +548,6 @@ func TestKVResource_Upload(t *testing.T) {
 		assert.Equal(t, 3, len(data.Failure))
 		assert.Equal(t, 1, len(data.Success))
 		assert.Equal(t, "2", data.Success[0].Value)
-		assert.Equal(t, "stop overriding duplicate kv", data.Failure[0].ErrMsg)
-		assert.Equal(t, "stop overriding kvs after reaching the duplicate kv", data.Failure[1].ErrMsg)
 	})
 }
 func TestKVResource_PutAndGet(t *testing.T) {

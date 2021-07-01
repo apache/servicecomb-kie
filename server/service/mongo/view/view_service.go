@@ -27,12 +27,10 @@ import (
 	"go.mongodb.org/mongo-driver/bson"
 	"go.mongodb.org/mongo-driver/mongo"
 	"go.mongodb.org/mongo-driver/mongo/options"
-	"time"
 )
 
 //Service operate data in mongodb
 type Service struct {
-	timeout time.Duration
 }
 
 //Create insert a view data and create a mongo db view
@@ -42,8 +40,11 @@ func (s *Service) Create(ctx context.Context, viewDoc *model.ViewDoc, options ..
 	}
 	var pipeline mongo.Pipeline = []bson.D{
 		{{
-			"$match",
-			bson.D{{"domain", viewDoc.Domain}, {"project", viewDoc.Project}},
+			Key: "$match",
+			Value: bson.D{
+				{Key: "domain", Value: viewDoc.Domain},
+				{Key: "project", Value: viewDoc.Project},
+			},
 		}},
 	}
 	opts := service.FindOptions{}
@@ -51,11 +52,11 @@ func (s *Service) Create(ctx context.Context, viewDoc *model.ViewDoc, options ..
 		o(&opts)
 	}
 	if opts.Key != "" {
-		pipeline = append(pipeline, bson.D{{"$match", bson.D{{"key", opts.Key}}}})
+		pipeline = append(pipeline, bson.D{{Key: "$match", Value: bson.D{{Key: "key", Value: opts.Key}}}})
 	}
 	if len(opts.Labels) != 0 {
 		for k, v := range opts.Labels {
-			pipeline = append(pipeline, bson.D{{"$match", bson.D{{"labels." + k, v}}}})
+			pipeline = append(pipeline, bson.D{{Key: "$match", Value: bson.D{{Key: "labels." + k, Value: v}}}})
 		}
 	}
 	viewDoc.ID = uuid.NewV4().String()
@@ -98,9 +99,9 @@ func (s *Service) Update(ctx context.Context, viewDoc *model.ViewDoc) error {
 		"project": oldView.Project,
 		"id":      oldView.ID},
 		bson.D{
-			{"$set", bson.D{
-				{"name", oldView.Display},
-				{"criteria", oldView.Criteria},
+			{Key: "$set", Value: bson.D{
+				{Key: "name", Value: oldView.Display},
+				{Key: "criteria", Value: oldView.Criteria},
 			}},
 		})
 	if err != nil {
