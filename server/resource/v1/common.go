@@ -22,6 +22,7 @@ import (
 	"encoding/json"
 	"errors"
 	kvsvc "github.com/apache/servicecomb-kie/server/service/kv"
+	"github.com/go-chassis/cari/rbac"
 	"net/http"
 	"strconv"
 	"strings"
@@ -54,6 +55,24 @@ const (
 var (
 	ErrInvalidRev = errors.New(common.MsgInvalidRev)
 )
+
+//ReadClaims get auth info
+func ReadClaims(ctx context.Context) map[string]interface{} {
+	c, err := rbac.FromContext(ctx)
+	if err != nil {
+		return nil
+	}
+	return c
+}
+
+//ReadDomain get domain info
+func ReadDomain(ctx context.Context) string {
+	c := ReadClaims(ctx)
+	if c != nil {
+		return c["domain"].(string)
+	}
+	return "default"
+}
 
 //ReadLabelCombinations get query combination from url
 //q=app:default+service:payment&q=app:default

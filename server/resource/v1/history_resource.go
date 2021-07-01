@@ -21,7 +21,6 @@ import (
 	"github.com/apache/servicecomb-kie/pkg/common"
 	"github.com/apache/servicecomb-kie/pkg/model"
 	"github.com/apache/servicecomb-kie/server/service"
-	"github.com/apache/servicecomb-kie/server/service/ctxsvc"
 	"github.com/go-chassis/cari/config"
 	"net/http"
 
@@ -94,7 +93,7 @@ func (r *HistoryResource) GetPollingData(context *restful.Context) {
 	if userAgent != "" {
 		query.UserAgent = userAgent
 	}
-	domain := ctxsvc.ReadDomain(context.Ctx)
+	domain := ReadDomain(context.Ctx)
 	if domain == "" {
 		WriteErrResponse(context, config.ErrInternal, common.MsgDomainMustNotBeEmpty)
 		return

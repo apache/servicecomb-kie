@@ -77,10 +77,3 @@ const (
 const (
 	MsgDBError = "database operation error"
 )
-
-// all strategy of override
-const (
-	Force = "force"
-	Abort = "abort"
-	Skip  = "skip"
-)

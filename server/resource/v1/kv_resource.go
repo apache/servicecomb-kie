@@ -21,7 +21,6 @@ package v1
 import (
 	"encoding/json"
 	"fmt"
-	"github.com/apache/servicecomb-kie/server/service/ctxsvc"
 	kvsvc "github.com/apache/servicecomb-kie/server/service/kv"
 	"net/http"
 
@@ -49,7 +48,7 @@ func (r *KVResource) Upload(rctx *restful.Context) {
 		return
 	}
 	result := kvsvc.Upload(rctx.Ctx, &model.UploadKVRequest{
-		Domain:   ctxsvc.ReadDomain(rctx.Ctx),
+		Domain:   ReadDomain(rctx.Ctx),
 		Project:  rctx.ReadPathParameter(common.PathParameterProject),
 		KVs:      inputUpload.Data,
 		Override: rctx.ReadQueryParameter(common.QueryParamOverride),
@@ -68,7 +67,7 @@ func (r *KVResource) Post(rctx *restful.Context) {
 		WriteErrResponse(rctx, config.ErrInvalidParams, fmt.Sprintf(FmtReadRequestError, err))
 		return
 	}
-	kv.Domain = ctxsvc.ReadDomain(rctx.Ctx)
+	kv.Domain = ReadDomain(rctx.Ctx)
 	kv.Project = rctx.ReadPathParameter(common.PathParameterProject)
 	kv, postErr := kvsvc.Post(rctx.Ctx, kv)
 	if postErr != nil {
@@ -92,7 +91,7 @@ func (r *KVResource) Put(rctx *restful.Context) {
 		WriteErrResponse(rctx, config.ErrInvalidParams, fmt.Sprintf(FmtReadRequestError, err))
 		return
 	}
-	domain := ctxsvc.ReadDomain(rctx.Ctx)
+	domain := ReadDomain(rctx.Ctx)
 	kvReq.ID = kvID
 	kvReq.Domain = domain
 	kvReq.Project = project
@@ -130,7 +129,7 @@ func (r *KVResource) Put(rctx *restful.Context) {
 func (r *KVResource) Get(rctx *restful.Context) {
 	request := &model.GetKVRequest{
 		Project: rctx.ReadPathParameter(common.PathParameterProject),
-		Domain:  ctxsvc.ReadDomain(rctx.Ctx),
+		Domain:  ReadDomain(rctx.Ctx),
 		ID:      rctx.ReadPathParameter(common.PathParamKVID),
 	}
 	err := validator.Validate(request)
@@ -161,7 +160,7 @@ func (r *KVResource) List(rctx *restful.Context) {
 	var err error
 	request := &model.ListKVRequest{
 		Project: rctx.ReadPathParameter(common.PathParameterProject),
-		Domain:  ctxsvc.ReadDomain(rctx.Ctx),
+		Domain:  ReadDomain(rctx.Ctx),
 		Key:     rctx.ReadQueryParameter(common.QueryParamKey),
 		Status:  rctx.ReadQueryParameter(common.QueryParamStatus),
 		Match:   getMatchPattern(rctx),
@@ -251,7 +250,7 @@ func returnData(rctx *restful.Context, request *model.ListKVRequest) {
 //Delete deletes one kv by id
 func (r *KVResource) Delete(rctx *restful.Context) {
 	project := rctx.ReadPathParameter(common.PathParameterProject)
-	domain := ctxsvc.ReadDomain(rctx.Ctx)
+	domain := ReadDomain(rctx.Ctx)
 	kvID := rctx.ReadPathParameter(common.PathParamKVID)
 	err := validateDelete(domain, project, kvID)
 	if err != nil {
@@ -287,7 +286,7 @@ func (r *KVResource) Delete(rctx *restful.Context) {
 //DeleteList deletes multiple kvs by ids
 func (r *KVResource) DeleteList(rctx *restful.Context) {
 	project := rctx.ReadPathParameter(common.PathParameterProject)
-	domain := ctxsvc.ReadDomain(rctx.Ctx)
+	domain := ReadDomain(rctx.Ctx)
 	b := new(DeleteBody)
 	if err := json.NewDecoder(rctx.ReadRequest().Body).Decode(b); err != nil {
 		WriteErrResponse(rctx, config.ErrInvalidParams, fmt.Sprintf(FmtReadRequestError, err))
