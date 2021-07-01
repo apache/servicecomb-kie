@@ -98,4 +98,13 @@ type ListKVRequest struct {
 	Offset  int64             `validate:"min=0"`
 	Limit   int64             `validate:"min=0,max=100"`
 	Status  string            `json:"status,omitempty" yaml:"status,omitempty" validate:"kvStatus"`
+	Match   string            `json:"match,omitempty" yaml:"match,omitempty"`
+}
+
+// UploadKVRequest contains kv list upload request params
+type UploadKVRequest struct {
+	Domain   string `json:"domain,omitempty" yaml:"domain,omitempty" validate:"min=1,max=256,commonName"` //redundant
+	Project  string `json:"project,omitempty" yaml:"project,omitempty" validate:"min=1,max=256,commonName"`
+	KVs      []*KVDoc
+	Override string
 }

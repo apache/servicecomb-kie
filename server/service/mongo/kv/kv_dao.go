@@ -83,12 +83,12 @@ func updateKeyValue(ctx context.Context, kv *model.KVDoc) error {
 	}
 	collection := session.GetDB().Collection(session.CollectionKV)
 	ur, err := collection.UpdateOne(ctx, bson.M{"key": kv.Key, "label_format": kv.LabelFormat}, bson.D{
-		{"$set", bson.D{
-			{"value", kv.Value},
-			{"status", kv.Status},
-			{"checker", kv.Checker},
-			{"update_time", kv.UpdateTime},
-			{"update_revision", kv.UpdateRevision},
+		{Key: "$set", Value: bson.D{
+			{Key: "value", Value: kv.Value},
+			{Key: "status", Value: kv.Status},
+			{Key: "checker", Value: kv.Checker},
+			{Key: "update_time", Value: kv.UpdateTime},
+			{Key: "update_revision", Value: kv.UpdateRevision},
 		}},
 	})
 	if err != nil {
@@ -119,7 +119,9 @@ func getValue(str string) string {
 
 func findKV(ctx context.Context, domain string, project string, opts service.FindOptions) (*mongo.Cursor, int, error) {
 	collection := session.GetDB().Collection(session.CollectionKV)
-	ctx, _ = context.WithTimeout(ctx, opts.Timeout)
+	ctx, cancel := context.WithTimeout(ctx, opts.Timeout)
+	defer cancel()
+
 	filter := bson.M{"domain": domain, "project": project}
 	if opts.Key != "" {
 		filter["key"] = opts.Key
@@ -216,7 +218,10 @@ func findOneKVAndDelete(ctx context.Context, kvID, project, domain string) (*mod
 
 //findKVsAndDelete deletes multiple kvs and return the deleted kv list as these appeared before deletion
 func findKVsAndDelete(ctx context.Context, kvIDs []string, project, domain string) ([]*model.KVDoc, error) {
-	filter := bson.D{{"id", bson.M{"$in": kvIDs}}, {"project", project}, {"domain", domain}}
+	filter := bson.D{
+		{Key: "id", Value: bson.M{"$in": kvIDs}},
+		{Key: "project", Value: project},
+		{Key: "domain", Value: domain}}
 	kvs, err := findKeys(ctx, filter, false)
 	if err != nil {
 		if err != service.ErrKeyNotExists {

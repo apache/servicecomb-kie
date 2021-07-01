@@ -103,20 +103,20 @@ func Init() error {
 	once.Do(func() {
 		sc, _ := bsoncodec.NewStructCodec(bsoncodec.DefaultStructTagParser)
 		reg := bson.NewRegistryBuilder().
-			RegisterEncoder(reflect.TypeOf(model.LabelDoc{}), sc).
-			RegisterEncoder(reflect.TypeOf(model.KVDoc{}), sc).
+			RegisterTypeEncoder(reflect.TypeOf(model.LabelDoc{}), sc).
+			RegisterTypeEncoder(reflect.TypeOf(model.KVDoc{}), sc).
 			Build()
 		uri := cipherutil.TryDecrypt(config.GetDB().URI)
 		clientOps := []*options.ClientOptions{options.Client().ApplyURI(uri)}
 		if config.GetDB().SSLEnabled {
 			if config.GetDB().RootCA == "" {
-				err = ErrRootCAMissing
+				openlog.Error(ErrRootCAMissing.Error())
 				return
 			}
 			pool := x509.NewCertPool()
 			caCert, err := ioutil.ReadFile(config.GetDB().RootCA)
 			if err != nil {
-				err = fmt.Errorf("read ca cert file %s failed", caCert)
+				openlog.Error(fmt.Sprintf("read ca cert file %s failed", caCert))
 				return
 			}
 			pool.AppendCertsFromPEM(caCert)
@@ -133,7 +133,10 @@ func Init() error {
 			return
 		}
 		openlog.Info("DB connecting")
-		ctx, _ := context.WithTimeout(context.Background(), 10*time.Second)
+
+		ctx, cancel := context.WithTimeout(context.Background(), 10*time.Second)
+		defer cancel()
+
 		err = client.Connect(ctx)
 		if err != nil {
 			return
@@ -157,9 +160,9 @@ func GetDB() *mongo.Database {
 func CreateView(ctx context.Context, view, source string, pipeline mongo.Pipeline) error {
 	sr := GetDB().RunCommand(ctx,
 		bson.D{
-			{"create", view},
-			{"viewOn", source},
-			{"pipeline", pipeline},
+			{Key: "create", Value: view},
+			{Key: "viewOn", Value: source},
+			{Key: "pipeline", Value: pipeline},
 		})
 	if sr.Err() != nil {
 		openlog.Error("can not create view: " + sr.Err().Error())
@@ -186,18 +189,16 @@ func GetColInfo(ctx context.Context, name string) (*CollectionInfo, error) {
 		return nil, ErrGetPipeline
 	}
 	defer cur.Close(ctx)
-	for cur.Next(ctx) {
-		openlog.Debug(cur.Current.String())
-		c := &CollectionInfo{}
-		err := cur.Decode(c)
-		if err != nil {
-			openlog.Error(err.Error())
-			return nil, ErrGetPipeline
-		}
-		return c, nil
-		break
+	if !cur.Next(ctx) {
+		return nil, ErrGetPipeline
 	}
-	return nil, ErrGetPipeline
+	openlog.Debug(cur.Current.String())
+	c := &CollectionInfo{}
+	if err := cur.Decode(c); err != nil {
+		openlog.Error(err.Error())
+		return nil, ErrGetPipeline
+	}
+	return c, nil
 }
 
 //EnsureDB build mongo db schema

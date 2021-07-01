@@ -19,10 +19,8 @@ package kv
 
 import (
 	"context"
-	"github.com/apache/servicecomb-kie/pkg/stringutil"
-	"time"
-
 	"github.com/apache/servicecomb-kie/pkg/model"
+	"github.com/apache/servicecomb-kie/pkg/stringutil"
 	"github.com/apache/servicecomb-kie/pkg/util"
 	"github.com/apache/servicecomb-kie/server/service"
 	"github.com/apache/servicecomb-kie/server/service/mongo/session"
@@ -39,12 +37,13 @@ const (
 
 //Service operate data in mongodb
 type Service struct {
-	timeout time.Duration
 }
 
 //Create will create a key value record
 func (s *Service) Create(ctx context.Context, kv *model.KVDoc) (*model.KVDoc, error) {
-	ctx, _ = context.WithTimeout(ctx, session.Timeout)
+	ctx, cancel := context.WithTimeout(ctx, session.Timeout)
+	defer cancel()
+
 	if kv.Labels == nil {
 		kv.Labels = map[string]string{}
 	}
@@ -72,7 +71,9 @@ func (s *Service) Create(ctx context.Context, kv *model.KVDoc) (*model.KVDoc, er
 
 //Update will update a key value record
 func (s *Service) Update(ctx context.Context, kv *model.UpdateKVRequest) (*model.KVDoc, error) {
-	ctx, _ = context.WithTimeout(ctx, session.Timeout)
+	ctx, cancel := context.WithTimeout(ctx, session.Timeout)
+	defer cancel()
+
 	getRequest := &model.GetKVRequest{
 		Domain:  kv.Domain,
 		Project: kv.Project,
@@ -99,7 +100,9 @@ func (s *Service) Update(ctx context.Context, kv *model.UpdateKVRequest) (*model
 
 //Exist supports you query a key value by label map or labels id
 func (s *Service) Exist(ctx context.Context, domain, key string, project string, options ...service.FindOption) (*model.KVDoc, error) {
-	ctx, _ = context.WithTimeout(context.Background(), session.Timeout)
+	ctx, cancel := context.WithTimeout(ctx, session.Timeout)
+	defer cancel()
+
 	opts := service.FindOptions{}
 	for _, o := range options {
 		o(&opts)
@@ -133,13 +136,15 @@ func (s *Service) Exist(ctx context.Context, domain, key string, project string,
 //FindOneAndDelete deletes one kv by id and return the deleted kv as these appeared before deletion
 //domain=tenant
 func (s *Service) FindOneAndDelete(ctx context.Context, kvID string, domain string, project string) (*model.KVDoc, error) {
-	ctx, _ = context.WithTimeout(context.Background(), session.Timeout)
+	ctx, cancel := context.WithTimeout(ctx, session.Timeout)
+	defer cancel()
 	return findOneKVAndDelete(ctx, kvID, project, domain)
 }
 
 //FindManyAndDelete deletes multiple kvs and return the deleted kv list as these appeared before deletion
 func (s *Service) FindManyAndDelete(ctx context.Context, kvIDs []string, domain string, project string) ([]*model.KVDoc, error) {
-	ctx, _ = context.WithTimeout(context.Background(), session.Timeout)
+	ctx, cancel := context.WithTimeout(ctx, session.Timeout)
+	defer cancel()
 	return findKVsAndDelete(ctx, kvIDs, project, domain)
 }
 
@@ -182,6 +187,7 @@ func (s *Service) Get(ctx context.Context, request *model.GetKVRequest) (*model.
 
 //Total return kv record number
 func (s *Service) Total(ctx context.Context, domain string) (int64, error) {
-	ctx, _ = context.WithTimeout(ctx, session.Timeout)
+	ctx, cancel := context.WithTimeout(ctx, session.Timeout)
+	defer cancel()
 	return total(ctx, domain)
 }

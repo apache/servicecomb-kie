@@ -38,6 +38,7 @@ const (
 	QueryParamIP           = "ip"
 	QueryParamURLPath      = "urlPath"
 	QueryParamUserAgent    = "userAgent"
+	QueryParamOverride     = "override"
 )
 
 //http headers

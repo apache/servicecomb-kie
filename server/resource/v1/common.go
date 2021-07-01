@@ -21,9 +21,7 @@ import (
 	"context"
 	"encoding/json"
 	"errors"
-	"github.com/apache/servicecomb-kie/pkg/model"
-	"github.com/apache/servicecomb-kie/server/service/mongo/session"
-	"github.com/go-chassis/cari/config"
+	kvsvc "github.com/apache/servicecomb-kie/server/service/kv"
 	"github.com/go-chassis/cari/rbac"
 	"net/http"
 	"strconv"
@@ -31,9 +29,12 @@ import (
 	"time"
 
 	"github.com/apache/servicecomb-kie/pkg/common"
+	"github.com/apache/servicecomb-kie/pkg/model"
 	"github.com/apache/servicecomb-kie/server/pubsub"
 	"github.com/apache/servicecomb-kie/server/service"
+	"github.com/apache/servicecomb-kie/server/service/mongo/session"
 	goRestful "github.com/emicklei/go-restful"
+	"github.com/go-chassis/cari/config"
 	"github.com/go-chassis/go-chassis/v2/server/restful"
 	"github.com/go-chassis/openlog"
 	uuid "github.com/satori/go.uuid"
@@ -248,32 +249,13 @@ func checkDomainAndProject(domain, project string) error {
 }
 
 func queryAndResponse(rctx *restful.Context, request *model.ListKVRequest) {
-	m := getMatchPattern(rctx)
-	opts := []service.FindOption{
-		service.WithKey(request.Key),
-		service.WithLabels(request.Labels),
-		service.WithOffset(request.Offset),
-		service.WithLimit(request.Limit),
-	}
-	if m == common.PatternExact {
-		opts = append(opts, service.WithExactLabels())
-	}
-	if request.Status != "" {
-		opts = append(opts, service.WithStatus(request.Status))
-	}
-	rev, err := service.RevisionService.GetRevision(rctx.Ctx, request.Domain)
-	if err != nil {
-		WriteErrResponse(rctx, config.ErrInternal, err.Error())
-		return
-	}
-	kv, err := service.KVService.List(rctx.Ctx, request.Domain, request.Project, opts...)
-	if err != nil {
-		openlog.Error("common: " + err.Error())
-		WriteErrResponse(rctx, config.ErrInternal, common.MsgDBError)
+	rev, kv, queryErr := kvsvc.ListKV(rctx.Ctx, request)
+	if queryErr != nil {
+		WriteErrResponse(rctx, queryErr.Code, queryErr.Message)
 		return
 	}
 	rctx.ReadResponseWriter().Header().Set(common.HeaderRevision, strconv.FormatInt(rev, 10))
-	err = writeResponse(rctx, kv)
+	err := writeResponse(rctx, kv)
 	rctx.ReadRestfulRequest().SetAttribute(common.RespBodyContextKey, kv.Data)
 	if err != nil {
 		openlog.Error(err.Error())

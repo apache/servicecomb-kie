@@ -63,8 +63,8 @@ func ApplyRevision(ctx context.Context, domain string) (int64, error) {
 	filter := bson.M{"name": revision, "domain": domain}
 	sr := collection.FindOneAndUpdate(ctx, filter,
 		bson.D{
-			{"$inc", bson.D{
-				{"count", 1},
+			{Key: "$inc", Value: bson.D{
+				{Key: "count", Value: 1},
 			}}}, options.FindOneAndUpdate().SetReturnDocument(options.After))
 	if sr.Err() != nil {
 		return 0, sr.Err()
