@@ -189,17 +189,16 @@ func GetColInfo(ctx context.Context, name string) (*CollectionInfo, error) {
 		return nil, ErrGetPipeline
 	}
 	defer cur.Close(ctx)
-	for cur.Next(ctx) {
-		openlog.Debug(cur.Current.String())
-		c := &CollectionInfo{}
-		err := cur.Decode(c)
-		if err != nil {
-			openlog.Error(err.Error())
-			return nil, ErrGetPipeline
-		}
-		return c, nil
+	if !cur.Next(ctx) {
+		return nil, ErrGetPipeline
 	}
-	return nil, ErrGetPipeline
+	openlog.Debug(cur.Current.String())
+	c := &CollectionInfo{}
+	if err := cur.Decode(c); err != nil {
+		openlog.Error(err.Error())
+		return nil, ErrGetPipeline
+	}
+	return c, nil
 }
 
 //EnsureDB build mongo db schema
