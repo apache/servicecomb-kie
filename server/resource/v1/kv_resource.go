@@ -41,19 +41,27 @@ type KVResource struct {
 
 //Upload upload kvs
 func (r *KVResource) Upload(rctx *restful.Context) {
+	openlog.Warn("enter kie: ")
+	openlog.Warn(fmt.Sprintf("body: %s", rctx.Req.Request.Body))
+	openlog.Warn(fmt.Sprintf("request url: %s", rctx.Req.Request.URL))
 	var err error
 	inputUpload := new(KVUploadBody)
 	if err = readRequest(rctx, &inputUpload); err != nil {
 		WriteErrResponse(rctx, config.ErrInvalidParams, fmt.Sprintf(FmtReadRequestError, err))
+		openlog.Warn("finish read request")
 		return
 	}
+	openlog.Warn(fmt.Sprintf("body: %s", rctx.Req.Request.Body))
 	result := kvsvc.Upload(rctx.Ctx, &model.UploadKVRequest{
 		Domain:   ReadDomain(rctx.Ctx),
 		Project:  rctx.ReadPathParameter(common.PathParameterProject),
 		KVs:      inputUpload.Data,
 		Override: rctx.ReadQueryParameter(common.QueryParamOverride),
 	})
+
 	err = writeResponse(rctx, result)
+	openlog.Warn("finish write response")
+	openlog.Warn("finish kie")
 	if err != nil {
 		openlog.Error(err.Error())
 	}

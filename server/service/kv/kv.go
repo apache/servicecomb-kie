@@ -87,6 +87,7 @@ func Post(ctx context.Context, kv *model.KVDoc) (*model.KVDoc, *errsvc.Error) {
 }
 
 func Upload(ctx context.Context, request *model.UploadKVRequest) *model.DocRespOfUpload {
+	openlog.Warn("enter upload")
 	override := request.Override
 	kvs := request.KVs
 	result := &model.DocRespOfUpload{
@@ -100,6 +101,7 @@ func Upload(ctx context.Context, request *model.UploadKVRequest) *model.DocRespO
 		}
 		kv.Domain = request.Domain
 		kv.Project = request.Project
+		openlog.Warn(fmt.Sprintf("kv --key: %s, --value: %s", kv.Key, kv.Value))
 		kv, err := strategy.Execute(ctx, kv)
 		if err != nil {
 			if err.Code == config.ErrStopUpload {
@@ -113,6 +115,7 @@ func Upload(ctx context.Context, request *model.UploadKVRequest) *model.DocRespO
 		Publish(kv)
 		result.Success = append(result.Success, kv)
 	}
+	openlog.Warn("finish upload")
 	return result
 }
 

@@ -34,6 +34,8 @@ type Abort struct {
 }
 
 func (a *Abort) Execute(ctx context.Context, kv *model.KVDoc) (*model.KVDoc, *errsvc.Error) {
+	openlog.Warn("enter abort execute")
+	openlog.Warn(fmt.Sprintf("kv --key: %s, --value: %s", kv.Key, kv.Value))
 	inputKV := kv
 	kv, err := Post(ctx, kv)
 	if err == nil {
