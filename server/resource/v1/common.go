@@ -118,7 +118,6 @@ func WriteErrResponse(context *restful.Context, code int32, msg string) {
 }
 
 func readRequest(ctx *restful.Context, v interface{}) error {
-	openlog.Warn("enter read request")
 	if ctx.ReadHeader(common.HeaderContentType) == common.ContentTypeYaml {
 		return yaml.NewDecoder(ctx.ReadRequest().Body).Decode(v)
 	}
@@ -136,7 +135,6 @@ func writeYaml(resp *goRestful.Response, v interface{}) error {
 }
 
 func writeResponse(ctx *restful.Context, v interface{}) error {
-	openlog.Warn("enter write response")
 	if ctx.ReadHeader(common.HeaderAccept) == common.ContentTypeYaml {
 		return writeYaml(ctx.Resp, v)
 	}
