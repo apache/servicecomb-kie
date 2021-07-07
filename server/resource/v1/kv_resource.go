@@ -42,7 +42,7 @@ type KVResource struct {
 //Upload upload kvs
 func (r *KVResource) Upload(rctx *restful.Context) {
 	if rctx.ReadQueryParameter(common.QueryParamOverride) == "" {
-		WriteErrResponse(rctx, config.ErrInvalidParams, "label should not be empty")
+		WriteErrResponse(rctx, config.ErrInvalidParams, "Query parameter 'override' is required")
 		return
 	}
 	var err error
