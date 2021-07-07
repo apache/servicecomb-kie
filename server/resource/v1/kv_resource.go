@@ -53,7 +53,6 @@ func (r *KVResource) Upload(rctx *restful.Context) {
 		KVs:      inputUpload.Data,
 		Override: rctx.ReadQueryParameter(common.QueryParamOverride),
 	})
-
 	err = writeResponse(rctx, result)
 	if err != nil {
 		openlog.Error(err.Error())
