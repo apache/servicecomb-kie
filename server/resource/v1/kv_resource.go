@@ -48,7 +48,7 @@ func (r *KVResource) Upload(rctx *restful.Context) {
 		return
 	}
 	if rctx.ReadQueryParameter(common.QueryParamOverride) == "" {
-		WriteErrResponse(rctx, config.ErrInvalidParams, "label should not be null")
+		WriteErrResponse(rctx, config.ErrInvalidParams, "label should not be empty")
 		return
 	}
 	result := kvsvc.Upload(rctx.Ctx, &model.UploadKVRequest{
