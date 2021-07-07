@@ -338,6 +338,7 @@ func (r *KVResource) URLPatterns() []restful.Route {
 				DocPathProject,
 				DocHeaderContentTypeJSONAndYaml,
 			},
+			Read: KVUploadBody{},
 			Returns: []*restful.Returns{
 				{
 					Code:  http.StatusOK,
