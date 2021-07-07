@@ -368,6 +368,53 @@ func TestKVResource_List(t *testing.T) {
 	})
 }
 func TestKVResource_Upload(t *testing.T) {
+	t.Run("test no override, with one invalid input, two repeated input, another normal input, should return 2 success and 2 failure", func(t *testing.T) {
+		input := new(v1.KVUploadBody)
+		input.Data = []*model.KVDoc{
+			{
+				Key:    "test_no_override",
+				Value:  "test_no_override",
+				Labels: map[string]string{"test_no_override": "test_no_override"},
+			},
+			{
+				Key:    "test_no_override",
+				Value:  "the same with first",
+				Labels: map[string]string{"test_no_override": "test_no_override"},
+			},
+			{
+				Key:    "test_no_override_with_invalid_input",
+				Value:  "test_no_override_with_invalid_input",
+				Status: "invalid",
+				Labels: map[string]string{"test_no_override_with_invalid_input": "test_no_override_with_invalid_input"},
+			},
+			{
+				Key:    "test_no_override_01",
+				Value:  "test_no_override_01",
+				Labels: map[string]string{"test_no_override_01": "test_no_override_01"},
+			},
+		}
+		j, _ := json.Marshal(input)
+		r, _ := http.NewRequest("POST", "/v1/kv_test/kie/file", bytes.NewBuffer(j))
+		r.Header.Set("Content-Type", "application/json")
+		kvr := &v1.KVResource{}
+		c, _ := restfultest.New(kvr, nil)
+		resp := httptest.NewRecorder()
+		c.ServeHTTP(resp, r)
+
+		body, err := ioutil.ReadAll(resp.Body)
+		assert.NoError(t, err)
+		data := &model.DocRespOfUpload{
+			Success: []*model.KVDoc{},
+			Failure: []*model.DocFailedOfUpload{},
+		}
+		err = json.Unmarshal(body, data)
+		assert.NoError(t, err)
+		assert.Equal(t, http.StatusOK, resp.Code)
+		assert.Equal(t, 2, len(data.Failure))
+		assert.Equal(t, 2, len(data.Success))
+		assert.Equal(t, int32(409001), data.Failure[0].ErrCode)
+		assert.Equal(t, int32(400001), data.Failure[1].ErrCode)
+	})
 	t.Run("test force with the same key and the same labels, and one invalid input, should return 2 success and 1 failure", func(t *testing.T) {
 		input := new(v1.KVUploadBody)
 		input.Data = []*model.KVDoc{
