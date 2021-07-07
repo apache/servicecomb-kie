@@ -41,14 +41,14 @@ type KVResource struct {
 
 //Upload upload kvs
 func (r *KVResource) Upload(rctx *restful.Context) {
+	if rctx.ReadQueryParameter(common.QueryParamOverride) == "" {
+		WriteErrResponse(rctx, config.ErrInvalidParams, "label should not be empty")
+		return
+	}
 	var err error
 	inputUpload := new(KVUploadBody)
 	if err = readRequest(rctx, &inputUpload); err != nil {
 		WriteErrResponse(rctx, config.ErrInvalidParams, fmt.Sprintf(FmtReadRequestError, err))
-		return
-	}
-	if rctx.ReadQueryParameter(common.QueryParamOverride) == "" {
-		WriteErrResponse(rctx, config.ErrInvalidParams, "label should not be empty")
 		return
 	}
 	result := kvsvc.Upload(rctx.Ctx, &model.UploadKVRequest{
