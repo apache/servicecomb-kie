@@ -41,6 +41,10 @@ type KVResource struct {
 
 //Upload upload kvs
 func (r *KVResource) Upload(rctx *restful.Context) {
+	if rctx.ReadQueryParameter(common.QueryParamOverride) == "" {
+		WriteErrResponse(rctx, config.ErrInvalidParams, "Query parameter 'override' is required")
+		return
+	}
 	var err error
 	inputUpload := new(KVUploadBody)
 	if err = readRequest(rctx, &inputUpload); err != nil {
