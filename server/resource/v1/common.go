@@ -21,18 +21,19 @@ import (
 	"context"
 	"encoding/json"
 	"errors"
-	kvsvc "github.com/apache/servicecomb-kie/server/service/kv"
-	"github.com/go-chassis/cari/rbac"
 	"net/http"
 	"strconv"
 	"strings"
 	"time"
 
+	"github.com/apache/servicecomb-kie/server/datasource"
+	kvsvc "github.com/apache/servicecomb-kie/server/service/kv"
+	"github.com/go-chassis/cari/rbac"
+
 	"github.com/apache/servicecomb-kie/pkg/common"
 	"github.com/apache/servicecomb-kie/pkg/model"
+	"github.com/apache/servicecomb-kie/server/datasource/mongo/session"
 	"github.com/apache/servicecomb-kie/server/pubsub"
-	"github.com/apache/servicecomb-kie/server/service"
-	"github.com/apache/servicecomb-kie/server/service/mongo/session"
 	goRestful "github.com/emicklei/go-restful"
 	"github.com/go-chassis/cari/config"
 	"github.com/go-chassis/go-chassis/v2/server/restful"
@@ -160,7 +161,7 @@ func isRevised(ctx context.Context, revStr, domain string) (bool, error) {
 	if err != nil {
 		return false, ErrInvalidRev
 	}
-	latest, err := service.RevisionService.GetRevision(ctx, domain)
+	latest, err := datasource.GetBroker().GetRevisionDao().GetRevision(ctx, domain)
 	if err != nil {
 		return false, err
 	}

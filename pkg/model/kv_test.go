@@ -19,9 +19,10 @@ package model_test
 
 import (
 	"encoding/json"
+	"testing"
+
 	"github.com/apache/servicecomb-kie/pkg/model"
 	"github.com/stretchr/testify/assert"
-	"testing"
 )
 
 func TestKV_UnmarshalJSON(t *testing.T) {

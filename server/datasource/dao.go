@@ -15,33 +15,59 @@
  * limitations under the License.
  */
 
-package service
+//package dao supply pure persistence layer access
+package datasource
 
 import (
 	"context"
 	"errors"
+	"fmt"
+	"time"
+
 	"github.com/apache/servicecomb-kie/pkg/model"
+	"github.com/apache/servicecomb-kie/server/config"
+	"github.com/go-chassis/openlog"
 )
 
-//services
 var (
-	KVService       KV
-	HistoryService  History
-	TrackService    Track
-	RevisionService Revision
-	DBInit          Init
+	b       Broker
+	plugins = make(map[string]New)
 )
 
-//db errors
 var (
 	ErrKeyNotExists     = errors.New("can not find any key value")
 	ErrRecordNotExists  = errors.New("can not find any polling data")
 	ErrRevisionNotExist = errors.New("revision does not exist")
 	ErrAliasNotGiven    = errors.New("label alias not given")
+	ErrKVAlreadyExists  = errors.New("kv already exists")
+	ErrTooMany          = errors.New("key with labels should be only one")
 )
 
-//KV provide api of KV entity
-type KV interface {
+const (
+	DefaultValueType = "text"
+)
+
+//New init db session
+type New func(c *Config) (Broker, error)
+
+func RegisterPlugin(name string, f New) {
+	plugins[name] = f
+}
+
+//Broker avoid directly depend on one kind of persistence solution
+type Broker interface {
+	GetRevisionDao() RevisionDao
+	GetHistoryDao() HistoryDao
+	GetTrackDao() TrackDao
+	GetKVDao() KVDao
+}
+
+func GetBroker() Broker {
+	return b
+}
+
+//KVDao provide api of KV entity
+type KVDao interface {
 	//below 3 methods is usually for admin console
 	Create(ctx context.Context, kv *model.KVDoc) (*model.KVDoc, error)
 	Update(ctx context.Context, kv *model.UpdateKVRequest) (*model.KVDoc, error)
@@ -52,28 +78,28 @@ type KV interface {
 	FindManyAndDelete(ctx context.Context, kvIDs []string, domain, project string) ([]*model.KVDoc, error)
 	//Get return kv by id
 	Get(ctx context.Context, request *model.GetKVRequest) (*model.KVDoc, error)
-	//KV is a resource of kie, this api should return kv resource number by domain id
+	//KVDao is a resource of kie, this api should return kv resource number by domain id
 	Total(ctx context.Context, domain string) (int64, error)
 }
 
-//History provide api of History entity
-type History interface {
+//HistoryDao provide api of HistoryDao entity
+type HistoryDao interface {
 	GetHistory(ctx context.Context, keyID string, options ...FindOption) (*model.KVResponse, error)
 }
 
-//History provide api of History entity
-type Track interface {
+//TrackDao provide api of TrackDao entity
+type TrackDao interface {
 	CreateOrUpdate(ctx context.Context, detail *model.PollingDetail) (*model.PollingDetail, error)
 	GetPollingDetail(ctx context.Context, detail *model.PollingDetail) ([]*model.PollingDetail, error)
 }
 
-//Revision is global revision number management
-type Revision interface {
+//RevisionDao is global revision number management
+type RevisionDao interface {
 	GetRevision(ctx context.Context, domain string) (int64, error)
 }
 
-//View create update and get view data
-type View interface {
+//ViewDao create update and get view data
+type ViewDao interface {
 	Create(ctx context.Context, viewDoc *model.ViewDoc, options ...FindOption) error
 	Update(ctx context.Context, viewDoc *model.ViewDoc) error
 	//TODO
@@ -82,5 +108,37 @@ type View interface {
 	GetContent(ctx context.Context, id, domain, project string, options ...FindOption) ([]*model.KVResponse, error)
 }
 
-//Init init db session
-type Init func() error
+const DefaultTimeout = 5 * time.Second
+
+func Init(c config.DB) error {
+	var err error
+	if c.Kind == "" {
+		c.Kind = "mongo"
+	}
+	f, ok := plugins[c.Kind]
+	if !ok {
+		return fmt.Errorf("do not support %s", c.Kind)
+	}
+	var timeout time.Duration
+	if c.Timeout != "" {
+		timeout, err = time.ParseDuration(c.Timeout)
+		if err != nil {
+			return errors.New("timeout setting invalid:" + c.Timeout)
+		}
+	}
+	if timeout == 0 {
+		timeout = DefaultTimeout
+	}
+	dbc := &Config{
+		URI:        c.URI,
+		PoolSize:   c.PoolSize,
+		SSLEnabled: c.SSLEnabled,
+		RootCA:     c.RootCA,
+		Timeout:    timeout,
+	}
+	if b, err = f(dbc); err != nil {
+		return err
+	}
+	openlog.Info(fmt.Sprintf("use %s as storage", c.Kind))
+	return nil
+}

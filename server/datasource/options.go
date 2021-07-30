@@ -15,17 +15,25 @@
  * limitations under the License.
  */
 
-package service
+package datasource
 
 import (
-	"github.com/apache/servicecomb-kie/server/service/mongo/session"
 	"time"
 )
+
+type Config struct {
+	URI        string        `yaml:"uri"`
+	PoolSize   int           `yaml:"poolSize"`
+	SSLEnabled bool          `yaml:"sslEnabled"`
+	RootCA     string        `yaml:"rootCAFile"`
+	Timeout    time.Duration `yaml:"timeout"`
+	VerifyPeer bool          `yaml:"verifyPeer"`
+}
 
 //NewDefaultFindOpts return default options
 func NewDefaultFindOpts() FindOptions {
 	return FindOptions{
-		Timeout: session.DefaultTimeout,
+		Timeout: DefaultTimeout,
 	}
 }
 
@@ -93,20 +101,6 @@ func WithLabels(labels map[string]string) FindOption {
 func WithLabelFormat(label string) FindOption {
 	return func(o *FindOptions) {
 		o.LabelFormat = label
-	}
-}
-
-//WithDepth if you use greedy match this can specify the match depth
-func WithDepth(d int) FindOption {
-	return func(o *FindOptions) {
-		o.Depth = d
-	}
-}
-
-//WithOutLabelField will clear all labels attributes in kv doc
-func WithOutLabelField() FindOption {
-	return func(o *FindOptions) {
-		o.ClearLabel = true
 	}
 }
 

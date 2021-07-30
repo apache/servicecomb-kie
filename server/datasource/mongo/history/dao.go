@@ -22,9 +22,10 @@ import (
 	"fmt"
 	"time"
 
+	"github.com/apache/servicecomb-kie/server/datasource"
+
 	"github.com/apache/servicecomb-kie/pkg/model"
-	"github.com/apache/servicecomb-kie/server/service"
-	"github.com/apache/servicecomb-kie/server/service/mongo/session"
+	"github.com/apache/servicecomb-kie/server/datasource/mongo/session"
 	"github.com/go-chassis/openlog"
 	"go.mongodb.org/mongo-driver/bson"
 	"go.mongodb.org/mongo-driver/mongo/options"
@@ -67,7 +68,7 @@ func getHistoryByKeyID(ctx context.Context, filter bson.M, offset, limit int64) 
 		kvs = append(kvs, &elem)
 	}
 	if !exist {
-		return nil, service.ErrRevisionNotExist
+		return nil, datasource.ErrRevisionNotExist
 	}
 	result := &model.KVResponse{
 		Data:  kvs,
@@ -78,8 +79,6 @@ func getHistoryByKeyID(ctx context.Context, filter bson.M, offset, limit int64) 
 
 //AddHistory add kv history
 func AddHistory(ctx context.Context, kv *model.KVDoc) error {
-	ctx, cancel := context.WithTimeout(ctx, session.Timeout)
-	defer cancel()
 	collection := session.GetDB().Collection(session.CollectionKVRevision)
 	_, err := collection.InsertOne(ctx, kv)
 	if err != nil {
@@ -118,8 +117,6 @@ func AddDeleteTime(ctx context.Context, kvIDs []string, project, domain string) 
 
 //historyRotate delete historical versions for a key that exceeds the limited number
 func historyRotate(ctx context.Context, kvID, project, domain string) error {
-	ctx, cancel := context.WithTimeout(ctx, session.Timeout)
-	defer cancel()
 	filter := bson.M{"id": kvID, "domain": domain, "project": project}
 	collection := session.GetDB().Collection(session.CollectionKVRevision)
 	curTotal, err := collection.CountDocuments(ctx, filter)

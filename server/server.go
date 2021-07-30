@@ -20,10 +20,10 @@ package server
 import (
 	"github.com/apache/servicecomb-kie/pkg/validator"
 	"github.com/apache/servicecomb-kie/server/config"
+	"github.com/apache/servicecomb-kie/server/datasource"
 	"github.com/apache/servicecomb-kie/server/pubsub"
 	"github.com/apache/servicecomb-kie/server/rbac"
 	v1 "github.com/apache/servicecomb-kie/server/resource/v1"
-	"github.com/apache/servicecomb-kie/server/service"
 	"github.com/go-chassis/go-chassis/v2"
 	"github.com/go-chassis/go-chassis/v2/core/common"
 	"github.com/go-chassis/openlog"
@@ -39,7 +39,7 @@ func Run() {
 	if err := config.Init(); err != nil {
 		openlog.Fatal(err.Error())
 	}
-	if err := service.DBInit(); err != nil {
+	if err := datasource.Init(config.GetDB()); err != nil {
 		openlog.Fatal(err.Error())
 	}
 	if err := validator.Init(); err != nil {

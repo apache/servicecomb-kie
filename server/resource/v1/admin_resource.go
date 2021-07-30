@@ -18,16 +18,17 @@
 package v1
 
 import (
+	"net/http"
+	"strconv"
+	"time"
+
 	"github.com/apache/servicecomb-kie/pkg/model"
-	"github.com/apache/servicecomb-kie/server/service"
+	"github.com/apache/servicecomb-kie/server/datasource"
 	goRestful "github.com/emicklei/go-restful"
 	"github.com/go-chassis/cari/config"
 	"github.com/go-chassis/go-chassis/v2/pkg/runtime"
 	"github.com/go-chassis/go-chassis/v2/server/restful"
 	"github.com/go-chassis/openlog"
-	"net/http"
-	"strconv"
-	"time"
 )
 
 type AdminResource struct {
@@ -58,7 +59,7 @@ func (r *AdminResource) URLPatterns() []restful.Route {
 func (r *AdminResource) HealthCheck(context *restful.Context) {
 	domain := ReadDomain(context.Ctx)
 	resp := &model.DocHealthCheck{}
-	latest, err := service.RevisionService.GetRevision(context.Ctx, domain)
+	latest, err := datasource.GetBroker().GetRevisionDao().GetRevision(context.Ctx, domain)
 	if err != nil {
 		WriteErrResponse(context, config.ErrInternal, err.Error())
 		return
@@ -66,7 +67,7 @@ func (r *AdminResource) HealthCheck(context *restful.Context) {
 	resp.Revision = strconv.FormatInt(latest, 10)
 	resp.Version = runtime.Version
 	resp.Timestamp = time.Now().Unix()
-	total, err := service.KVService.Total(context.Ctx, domain)
+	total, err := datasource.GetBroker().GetKVDao().Total(context.Ctx, domain)
 	if err != nil {
 		WriteErrResponse(context, config.ErrInternal, err.Error())
 		return

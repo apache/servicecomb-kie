@@ -19,9 +19,10 @@ package view
 
 import (
 	"context"
+
 	"github.com/apache/servicecomb-kie/pkg/model"
-	"github.com/apache/servicecomb-kie/server/service"
-	"github.com/apache/servicecomb-kie/server/service/mongo/session"
+	"github.com/apache/servicecomb-kie/server/datasource"
+	"github.com/apache/servicecomb-kie/server/datasource/mongo/session"
 	"github.com/go-chassis/openlog"
 	uuid "github.com/satori/go.uuid"
 	"go.mongodb.org/mongo-driver/bson"
@@ -34,7 +35,7 @@ type Service struct {
 }
 
 //Create insert a view data and create a mongo db view
-func (s *Service) Create(ctx context.Context, viewDoc *model.ViewDoc, options ...service.FindOption) (*model.ViewDoc, error) {
+func (s *Service) Create(ctx context.Context, viewDoc *model.ViewDoc, options ...datasource.FindOption) (*model.ViewDoc, error) {
 	if viewDoc.Domain == "" {
 		return nil, session.ErrMissingDomain
 	}
@@ -47,7 +48,7 @@ func (s *Service) Create(ctx context.Context, viewDoc *model.ViewDoc, options ..
 			},
 		}},
 	}
-	opts := service.FindOptions{}
+	opts := datasource.FindOptions{}
 	for _, o := range options {
 		o(&opts)
 	}
@@ -113,8 +114,8 @@ func (s *Service) Update(ctx context.Context, viewDoc *model.ViewDoc) error {
 }
 
 //List return all view user created
-func (s *Service) List(ctx context.Context, domain, project string, opts ...service.FindOption) (*model.ViewResponse, error) {
-	option := service.FindOptions{}
+func (s *Service) List(ctx context.Context, domain, project string, opts ...datasource.FindOption) (*model.ViewResponse, error) {
+	option := datasource.FindOptions{}
 	for _, o := range opts {
 		o(&option)
 	}
@@ -143,8 +144,8 @@ func (s *Service) List(ctx context.Context, domain, project string, opts ...serv
 }
 
 //GetContent query view's kv data
-func (s *Service) GetContent(ctx context.Context, id, domain, project string, opts ...service.FindOption) (*model.KVResponse, error) {
-	option := service.FindOptions{}
+func (s *Service) GetContent(ctx context.Context, id, domain, project string, opts ...datasource.FindOption) (*model.KVResponse, error) {
+	option := datasource.FindOptions{}
 	for _, o := range opts {
 		o(&option)
 	}

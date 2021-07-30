@@ -18,6 +18,11 @@
 package rbac
 
 import (
+	"io/ioutil"
+	"net/http"
+	"path/filepath"
+	"strings"
+
 	"github.com/apache/servicecomb-kie/server/config"
 	"github.com/go-chassis/cari/rbac"
 	"github.com/go-chassis/go-archaius"
@@ -25,10 +30,6 @@ import (
 	"github.com/go-chassis/go-chassis/v2/security/secret"
 	"github.com/go-chassis/go-chassis/v2/security/token"
 	"github.com/go-chassis/openlog"
-	"io/ioutil"
-	"net/http"
-	"path/filepath"
-	"strings"
 )
 
 const (

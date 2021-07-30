@@ -21,7 +21,7 @@ import (
 	"context"
 	"errors"
 
-	"github.com/apache/servicecomb-kie/server/service/mongo/session"
+	"github.com/apache/servicecomb-kie/server/datasource/mongo/session"
 	"github.com/go-chassis/openlog"
 	"go.mongodb.org/mongo-driver/bson"
 	"go.mongodb.org/mongo-driver/mongo/options"

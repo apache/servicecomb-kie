@@ -19,9 +19,13 @@ package test
 
 import (
 	"github.com/apache/servicecomb-kie/pkg/validator"
+	"github.com/apache/servicecomb-kie/server/config"
+	"github.com/apache/servicecomb-kie/server/datasource"
 	"github.com/go-chassis/go-archaius"
 	"github.com/go-chassis/go-chassis/v2/security/cipher"
 	_ "github.com/go-chassis/go-chassis/v2/security/cipher/plugins/plain"
+
+	_ "github.com/apache/servicecomb-kie/server/datasource/mongo"
 )
 
 func init() {
@@ -29,4 +33,11 @@ func init() {
 	archaius.Set("servicecomb.cipher.plugin", "default")
 	cipher.Init()
 	validator.Init()
+	err := datasource.Init(config.DB{
+		URI:     "mongodb://kie:123@127.0.0.1:27017/kie",
+		Timeout: "10s",
+	})
+	if err != nil {
+		panic(err)
+	}
 }

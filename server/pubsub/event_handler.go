@@ -18,9 +18,10 @@
 package pubsub
 
 import (
+	"strings"
+
 	"github.com/go-chassis/openlog"
 	"github.com/hashicorp/serf/serf"
-	"strings"
 )
 
 //EventHandler handler serf custom event

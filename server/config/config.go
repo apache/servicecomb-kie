@@ -18,10 +18,11 @@
 package config
 
 import (
+	"path/filepath"
+
 	"github.com/go-chassis/go-archaius"
 	"github.com/go-chassis/go-archaius/source/util"
 	"gopkg.in/yaml.v2"
-	"path/filepath"
 )
 
 //Configurations is kie config items

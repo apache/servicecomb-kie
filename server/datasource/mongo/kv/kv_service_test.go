@@ -18,19 +18,21 @@
 package kv_test
 
 import (
+	"time"
+
+	"github.com/apache/servicecomb-kie/server/datasource"
 	_ "github.com/apache/servicecomb-kie/test"
 
 	"context"
+	"testing"
+
 	common2 "github.com/apache/servicecomb-kie/pkg/common"
 	"github.com/apache/servicecomb-kie/pkg/model"
-	"github.com/apache/servicecomb-kie/server/config"
-	"github.com/apache/servicecomb-kie/server/service"
-	"github.com/apache/servicecomb-kie/server/service/mongo/kv"
-	"github.com/apache/servicecomb-kie/server/service/mongo/session"
+	"github.com/apache/servicecomb-kie/server/datasource/mongo/kv"
+	"github.com/apache/servicecomb-kie/server/datasource/mongo/session"
 	"github.com/go-chassis/openlog"
 	log "github.com/go-chassis/seclog"
 	"github.com/stretchr/testify/assert"
-	"testing"
 )
 
 var id string
@@ -47,8 +49,10 @@ func init() {
 
 func TestService_CreateOrUpdate(t *testing.T) {
 	var err error
-	config.Configurations = &config.Config{DB: config.DB{URI: "mongodb://kie:123@127.0.0.1:27017/kie"}}
-	err = session.Init()
+	err = session.Init(&datasource.Config{
+		URI:     "mongodb://kie:123@127.0.0.1:27017/kie",
+		Timeout: 10 * time.Second,
+	})
 	assert.NoError(t, err)
 	kvsvc := &kv.Service{}
 	t.Run("put kv timeout,with labels app and service", func(t *testing.T) {
@@ -79,7 +83,7 @@ func TestService_CreateOrUpdate(t *testing.T) {
 			Domain:  "default",
 			Project: "kv-test",
 		})
-		oid, err := kvsvc.Exist(context.TODO(), "default", "timeout", "kv-test", service.WithLabels(map[string]string{
+		oid, err := kvsvc.Exist(context.TODO(), "default", "timeout", "kv-test", datasource.WithLabels(map[string]string{
 			"app":     "mall",
 			"service": "cart",
 			"version": "1.0.0",
@@ -108,7 +112,7 @@ func TestService_CreateOrUpdate(t *testing.T) {
 			Project: "kv-test",
 		})
 		assert.Equal(t, "3s", afterKV.Value)
-		savedKV, err := kvsvc.Exist(context.Background(), "default", "timeout", "kv-test", service.WithLabels(map[string]string{
+		savedKV, err := kvsvc.Exist(context.Background(), "default", "timeout", "kv-test", datasource.WithLabels(map[string]string{
 			"app": "mall",
 		}))
 		assert.NoError(t, err)
@@ -147,13 +151,13 @@ func TestService_Create(t *testing.T) {
 			Domain:  "default",
 			Project: "kv-test",
 		})
-		assert.EqualError(t, err, session.ErrKVAlreadyExists.Error())
+		assert.EqualError(t, err, datasource.ErrKVAlreadyExists.Error())
 	})
 	t.Run("list the kv", func(t *testing.T) {
-		res, err := kvsvc.List(context.TODO(), "default", "kv-test", service.WithKey("wildcard(time*1)"))
+		res, err := kvsvc.List(context.TODO(), "default", "kv-test", datasource.WithKey("wildcard(time*1)"))
 		assert.NoError(t, err)
 		assert.Equal(t, 0, len(res.Data))
-		res, err = kvsvc.List(context.TODO(), "default", "kv-test", service.WithKey("wildcard(time*t)"))
+		res, err = kvsvc.List(context.TODO(), "default", "kv-test", datasource.WithKey("wildcard(time*t)"))
 		assert.NoError(t, err)
 		assert.NotEqual(t, 0, len(res.Data))
 	})

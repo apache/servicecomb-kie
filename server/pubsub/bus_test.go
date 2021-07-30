@@ -18,10 +18,11 @@
 package pubsub_test
 
 import (
+	"testing"
+
 	"github.com/apache/servicecomb-kie/server/config"
 	"github.com/apache/servicecomb-kie/server/pubsub"
 	uuid "github.com/satori/go.uuid"
-	"testing"
 )
 
 func TestInit(t *testing.T) {

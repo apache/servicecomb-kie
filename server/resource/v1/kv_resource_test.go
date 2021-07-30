@@ -20,19 +20,6 @@ package v1_test
 import (
 	"bytes"
 	"encoding/json"
-	common2 "github.com/apache/servicecomb-kie/pkg/common"
-	"github.com/apache/servicecomb-kie/pkg/model"
-	"github.com/apache/servicecomb-kie/server/config"
-	"github.com/apache/servicecomb-kie/server/plugin/qms"
-	"github.com/apache/servicecomb-kie/server/pubsub"
-	v1 "github.com/apache/servicecomb-kie/server/resource/v1"
-	"github.com/apache/servicecomb-kie/server/service"
-	"github.com/go-chassis/go-archaius"
-	"github.com/go-chassis/go-chassis/v2/pkg/backends/quota"
-	"github.com/go-chassis/go-chassis/v2/server/restful/restfultest"
-	"github.com/go-chassis/openlog"
-	log "github.com/go-chassis/seclog"
-	"github.com/stretchr/testify/assert"
 	"io/ioutil"
 	"net/http"
 	"net/http/httptest"
@@ -41,8 +28,21 @@ import (
 	"testing"
 	"time"
 
+	common2 "github.com/apache/servicecomb-kie/pkg/common"
+	"github.com/apache/servicecomb-kie/pkg/model"
+	"github.com/apache/servicecomb-kie/server/config"
+	"github.com/apache/servicecomb-kie/server/plugin/qms"
+	"github.com/apache/servicecomb-kie/server/pubsub"
+	v1 "github.com/apache/servicecomb-kie/server/resource/v1"
+	"github.com/go-chassis/go-archaius"
+	"github.com/go-chassis/go-chassis/v2/pkg/backends/quota"
+	"github.com/go-chassis/go-chassis/v2/server/restful/restfultest"
+	"github.com/go-chassis/openlog"
+	log "github.com/go-chassis/seclog"
+	"github.com/stretchr/testify/assert"
+
+	_ "github.com/apache/servicecomb-kie/server/datasource/mongo"
 	_ "github.com/apache/servicecomb-kie/server/plugin/qms"
-	_ "github.com/apache/servicecomb-kie/server/service/mongo"
 	_ "github.com/apache/servicecomb-kie/test"
 )
 
@@ -60,15 +60,11 @@ func init() {
 		ListenPeerAddr: "127.0.0.1:4000",
 		AdvertiseAddr:  "127.0.0.1:4000",
 	}
-	config.Configurations.DB.URI = "mongodb://kie:123@127.0.0.1:27017/kie"
-	err := service.DBInit()
-	if err != nil {
-		panic(err)
-	}
+
 	pubsub.Init()
 	pubsub.Start()
 
-	err = quota.Init(quota.Options{
+	err := quota.Init(quota.Options{
 		Plugin: "build-in",
 	})
 	if err != nil {

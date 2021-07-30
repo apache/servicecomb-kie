@@ -15,23 +15,43 @@
  * limitations under the License.
  */
 
-package track
+package history_test
 
 import (
 	"context"
-	"github.com/apache/servicecomb-kie/pkg/model"
+	"time"
+
+	"github.com/apache/servicecomb-kie/server/datasource"
+
+	"testing"
+
+	"github.com/apache/servicecomb-kie/server/datasource/mongo/session"
+	_ "github.com/apache/servicecomb-kie/test"
+	"github.com/stretchr/testify/assert"
+	"go.mongodb.org/mongo-driver/bson"
 )
 
-//Service is the implementation
-type Service struct {
+func init() {
+	session.Init(&datasource.Config{
+		URI:     "mongodb://kie:123@127.0.0.1:27017/kie",
+		Timeout: 10 * time.Second,
+	})
 }
 
-//CreateOrUpdate create or update a track data
-func (s *Service) CreateOrUpdate(ctx context.Context, detail *model.PollingDetail) (*model.PollingDetail, error) {
-	return CreateOrUpdate(ctx, detail)
-}
-
-//GetPollingDetail get a track data
-func (s *Service) GetPollingDetail(ctx context.Context, detail *model.PollingDetail) ([]*model.PollingDetail, error) {
-	return Get(ctx, detail)
+func TestAddHistory(t *testing.T) {
+	ctx := context.Background()
+	coll := session.GetDB().Collection("label_revision")
+	cur, err := coll.Find(
+		context.Background(),
+		bson.M{
+			"label_format": "5dbc079183ff1a09242376e7",
+			"data.key":     "lb",
+		})
+	assert.NoError(t, err)
+	for cur.Next(ctx) {
+		var elem interface{}
+		err := cur.Decode(&elem)
+		assert.NoError(t, err)
+		t.Log(elem)
+	}
 }

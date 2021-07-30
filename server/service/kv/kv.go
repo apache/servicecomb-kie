@@ -20,11 +20,12 @@ package kv
 import (
 	"context"
 	"fmt"
+
+	"github.com/apache/servicecomb-kie/server/datasource"
+
 	"github.com/apache/servicecomb-kie/pkg/common"
 	"github.com/apache/servicecomb-kie/pkg/model"
 	"github.com/apache/servicecomb-kie/server/pubsub"
-	"github.com/apache/servicecomb-kie/server/service"
-	"github.com/apache/servicecomb-kie/server/service/mongo/session"
 	"github.com/go-chassis/cari/config"
 	"github.com/go-chassis/cari/pkg/errsvc"
 	"github.com/go-chassis/foundation/validator"
@@ -33,24 +34,24 @@ import (
 )
 
 func ListKV(ctx context.Context, request *model.ListKVRequest) (int64, *model.KVResponse, *errsvc.Error) {
-	opts := []service.FindOption{
-		service.WithKey(request.Key),
-		service.WithLabels(request.Labels),
-		service.WithOffset(request.Offset),
-		service.WithLimit(request.Limit),
+	opts := []datasource.FindOption{
+		datasource.WithKey(request.Key),
+		datasource.WithLabels(request.Labels),
+		datasource.WithOffset(request.Offset),
+		datasource.WithLimit(request.Limit),
 	}
 	m := request.Match
 	if m == common.PatternExact {
-		opts = append(opts, service.WithExactLabels())
+		opts = append(opts, datasource.WithExactLabels())
 	}
 	if request.Status != "" {
-		opts = append(opts, service.WithStatus(request.Status))
+		opts = append(opts, datasource.WithStatus(request.Status))
 	}
-	rev, err := service.RevisionService.GetRevision(ctx, request.Domain)
+	rev, err := datasource.GetBroker().GetRevisionDao().GetRevision(ctx, request.Domain)
 	if err != nil {
 		return rev, nil, config.NewError(config.ErrInternal, err.Error())
 	}
-	kv, err := service.KVService.List(ctx, request.Domain, request.Project, opts...)
+	kv, err := datasource.GetBroker().GetKVDao().List(ctx, request.Domain, request.Project, opts...)
 	if err != nil {
 		openlog.Error("common: " + err.Error())
 		return rev, nil, config.NewError(config.ErrInternal, common.MsgDBError)
@@ -75,10 +76,10 @@ func Post(ctx context.Context, kv *model.KVDoc) (*model.KVDoc, *errsvc.Error) {
 		openlog.Error(err.Error())
 		return nil, config.NewError(config.ErrInternal, "quota check failed")
 	}
-	kv, err = service.KVService.Create(ctx, kv)
+	kv, err = datasource.GetBroker().GetKVDao().Create(ctx, kv)
 	if err != nil {
 		openlog.Error(fmt.Sprintf("post err:%s", err.Error()))
-		if err == session.ErrKVAlreadyExists {
+		if err == datasource.ErrKVAlreadyExists {
 			return nil, config.NewError(config.ErrRecordAlreadyExists, err.Error())
 		}
 		return nil, config.NewError(config.ErrInternal, "create kv failed")

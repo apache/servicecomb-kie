@@ -18,11 +18,12 @@
 package v1_test
 
 import (
+	"net/http"
+	"testing"
+
 	v1 "github.com/apache/servicecomb-kie/server/resource/v1"
 	"github.com/emicklei/go-restful"
 	"github.com/stretchr/testify/assert"
-	"net/http"
-	"testing"
 )
 
 func TestGetLabels(t *testing.T) {

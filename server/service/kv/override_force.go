@@ -20,8 +20,9 @@ package kv
 import (
 	"context"
 	"fmt"
+
 	"github.com/apache/servicecomb-kie/pkg/model"
-	"github.com/apache/servicecomb-kie/server/service"
+	"github.com/apache/servicecomb-kie/server/datasource"
 	"github.com/go-chassis/cari/config"
 	"github.com/go-chassis/cari/pkg/errsvc"
 	"github.com/go-chassis/openlog"
@@ -62,7 +63,7 @@ func (f *Force) Execute(ctx context.Context, kv *model.KVDoc) (*model.KVDoc, *er
 		Project: input.Project,
 		Domain:  input.Domain,
 	}
-	kv, updateErr := service.KVService.Update(ctx, kvReq)
+	kv, updateErr := datasource.GetBroker().GetKVDao().Update(ctx, kvReq)
 	if updateErr != nil {
 		openlog.Error(fmt.Sprintf("update record [key: %s, labels: %s] failed", input.Key, input.Labels))
 		return input, config.NewError(config.ErrInternal, updateErr.Error())

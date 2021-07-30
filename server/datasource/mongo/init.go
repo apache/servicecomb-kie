@@ -18,20 +18,34 @@
 package mongo
 
 import (
-	"github.com/apache/servicecomb-kie/server/service"
-	"github.com/apache/servicecomb-kie/server/service/mongo/counter"
-	"github.com/apache/servicecomb-kie/server/service/mongo/history"
-	"github.com/apache/servicecomb-kie/server/service/mongo/kv"
-	"github.com/apache/servicecomb-kie/server/service/mongo/session"
-	"github.com/apache/servicecomb-kie/server/service/mongo/track"
+	"github.com/apache/servicecomb-kie/server/datasource"
+	"github.com/apache/servicecomb-kie/server/datasource/mongo/counter"
+	"github.com/apache/servicecomb-kie/server/datasource/mongo/history"
+	"github.com/apache/servicecomb-kie/server/datasource/mongo/kv"
+	"github.com/apache/servicecomb-kie/server/datasource/mongo/session"
+	"github.com/apache/servicecomb-kie/server/datasource/mongo/track"
 	"github.com/go-chassis/openlog"
 )
 
-func init() {
+type Broker struct {
+}
+
+func NewFrom(c *datasource.Config) (datasource.Broker, error) {
 	openlog.Info("use mongodb as storage")
-	service.DBInit = session.Init
-	service.KVService = &kv.Service{}
-	service.HistoryService = &history.Service{}
-	service.TrackService = &track.Service{}
-	service.RevisionService = &counter.Service{}
+	return &Broker{}, session.Init(c)
+}
+func (*Broker) GetRevisionDao() datasource.RevisionDao {
+	return &counter.Service{}
+}
+func (*Broker) GetKVDao() datasource.KVDao {
+	return &kv.Service{}
+}
+func (*Broker) GetHistoryDao() datasource.HistoryDao {
+	return &history.Service{}
+}
+func (*Broker) GetTrackDao() datasource.TrackDao {
+	return &track.Service{}
+}
+func init() {
+	datasource.RegisterPlugin("mongo", NewFrom)
 }

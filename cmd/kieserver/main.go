@@ -23,13 +23,15 @@ import (
 	"github.com/apache/servicecomb-kie/server"
 	"github.com/apache/servicecomb-kie/server/command"
 	"github.com/go-chassis/openlog"
+
 	//custom handlers
 	_ "github.com/apache/servicecomb-kie/server/handler"
 	_ "github.com/go-chassis/go-chassis/v2/middleware/jwt"
 	_ "github.com/go-chassis/go-chassis/v2/middleware/monitoring"
 	_ "github.com/go-chassis/go-chassis/v2/middleware/ratelimiter"
+
 	//storage
-	_ "github.com/apache/servicecomb-kie/server/service/mongo"
+	_ "github.com/apache/servicecomb-kie/server/datasource/mongo"
 	//quota management
 	_ "github.com/apache/servicecomb-kie/server/plugin/qms"
 	//noop cipher

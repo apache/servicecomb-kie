@@ -24,21 +24,22 @@ import (
 	"crypto/x509"
 	"errors"
 	"fmt"
-	"github.com/apache/servicecomb-kie/pkg/cipherutil"
-	"github.com/apache/servicecomb-kie/pkg/model"
-	"github.com/go-chassis/openlog"
-	"go.mongodb.org/mongo-driver/bson"
-	"go.mongodb.org/mongo-driver/bson/bsoncodec"
-	"go.mongodb.org/mongo-driver/mongo/options"
-	"gopkg.in/mgo.v2"
 	"io/ioutil"
 	"reflect"
 	"strings"
 	"sync"
 	"time"
 
-	"github.com/apache/servicecomb-kie/server/config"
+	"github.com/apache/servicecomb-kie/pkg/cipherutil"
+	"github.com/apache/servicecomb-kie/pkg/model"
+	"github.com/apache/servicecomb-kie/server/datasource"
+	"github.com/go-chassis/openlog"
+
+	"go.mongodb.org/mongo-driver/bson"
+	"go.mongodb.org/mongo-driver/bson/bsoncodec"
 	"go.mongodb.org/mongo-driver/mongo"
+	"go.mongodb.org/mongo-driver/mongo/options"
+	"gopkg.in/mgo.v2"
 )
 
 //const for db name and collection name
@@ -51,16 +52,14 @@ const (
 	CollectionPollingDetail = "polling_detail"
 	CollectionCounter       = "counter"
 	CollectionView          = "view"
-	DefaultTimeout          = 5 * time.Second
-	DefaultValueType        = "text"
 )
 
 //db errors
 var (
-	ErrMissingDomain   = errors.New("domain info missing, illegal access")
-	ErrMissingProject  = errors.New("project info missing, illegal access")
-	ErrLabelNotExists  = errors.New("labels does not exits")
-	ErrTooMany         = errors.New("key with labels should be only one")
+	ErrMissingDomain  = errors.New("domain info missing, illegal access")
+	ErrMissingProject = errors.New("project info missing, illegal access")
+	ErrLabelNotExists = errors.New("labels does not exits")
+
 	ErrKeyMustNotEmpty = errors.New("must supply key if you want to get exact one result")
 
 	ErrIDIsNil         = errors.New("id is empty")
@@ -85,36 +84,24 @@ var client *mongo.Client
 var once sync.Once
 var db *mongo.Database
 
-//Timeout db operation time out
-var Timeout time.Duration
-
 //Init prepare params
-func Init() error {
+func Init(c *datasource.Config) error {
 	var err error
-	if config.GetDB().Timeout != "" {
-		Timeout, err = time.ParseDuration(config.GetDB().Timeout)
-		if err != nil {
-			return errors.New("timeout setting invalid:" + config.GetDB().Timeout)
-		}
-	}
-	if Timeout == 0 {
-		Timeout = DefaultTimeout
-	}
 	once.Do(func() {
 		sc, _ := bsoncodec.NewStructCodec(bsoncodec.DefaultStructTagParser)
 		reg := bson.NewRegistryBuilder().
 			RegisterTypeEncoder(reflect.TypeOf(model.LabelDoc{}), sc).
 			RegisterTypeEncoder(reflect.TypeOf(model.KVDoc{}), sc).
 			Build()
-		uri := cipherutil.TryDecrypt(config.GetDB().URI)
+		uri := cipherutil.TryDecrypt(c.URI)
 		clientOps := []*options.ClientOptions{options.Client().ApplyURI(uri)}
-		if config.GetDB().SSLEnabled {
-			if config.GetDB().RootCA == "" {
+		if c.SSLEnabled {
+			if c.RootCA == "" {
 				openlog.Error(ErrRootCAMissing.Error())
 				return
 			}
 			pool := x509.NewCertPool()
-			caCert, err := ioutil.ReadFile(config.GetDB().RootCA)
+			caCert, err := ioutil.ReadFile(c.RootCA)
 			if err != nil {
 				openlog.Error(fmt.Sprintf("read ca cert file %s failed", caCert))
 				return
@@ -123,7 +110,7 @@ func Init() error {
 			// #nosec
 			tc := &tls.Config{
 				RootCAs:            pool,
-				InsecureSkipVerify: !config.GetDB().VerifyPeer,
+				InsecureSkipVerify: !c.VerifyPeer,
 			}
 			clientOps = append(clientOps, options.Client().SetTLSConfig(tc))
 			openlog.Info("enabled ssl communication to mongodb")
@@ -147,7 +134,7 @@ func Init() error {
 		})
 
 	})
-	EnsureDB()
+	EnsureDB(c)
 	return nil
 }
 
@@ -202,8 +189,8 @@ func GetColInfo(ctx context.Context, name string) (*CollectionInfo, error) {
 }
 
 //EnsureDB build mongo db schema
-func EnsureDB() {
-	session := OpenSession()
+func EnsureDB(c *datasource.Config) {
+	session := OpenSession(c)
 	defer session.Close()
 	session.SetMode(mgo.Primary, true)
 
@@ -218,17 +205,11 @@ func EnsureDB() {
 	ensureKVLongPolling(session)
 }
 
-func OpenSession() *mgo.Session {
-	var timeout time.Duration
+func OpenSession(c *datasource.Config) *mgo.Session {
+	timeout := c.Timeout
 	var uri string
 	var err error
-	if config.GetDB().Timeout != "" {
-		timeout, err = time.ParseDuration(config.GetDB().Timeout)
-		if err != nil {
-			openlog.Fatal("invalid timeout :" + err.Error())
-		}
-	}
-	uri = cipherutil.TryDecrypt(config.GetDB().URI)
+	uri = cipherutil.TryDecrypt(c.URI)
 	session, err := mgo.DialWithTimeout(uri, timeout)
 	if err != nil {
 		openlog.Warn("can not dial db, retry once:" + err.Error())
