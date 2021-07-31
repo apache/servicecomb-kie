@@ -21,13 +21,14 @@ package v1
 import (
 	"encoding/json"
 	"fmt"
-	kvsvc "github.com/apache/servicecomb-kie/server/service/kv"
 	"net/http"
+
+	"github.com/apache/servicecomb-kie/server/datasource"
+	kvsvc "github.com/apache/servicecomb-kie/server/service/kv"
 
 	"github.com/apache/servicecomb-kie/pkg/common"
 	"github.com/apache/servicecomb-kie/pkg/model"
 	"github.com/apache/servicecomb-kie/server/pubsub"
-	"github.com/apache/servicecomb-kie/server/service"
 	goRestful "github.com/emicklei/go-restful"
 	"github.com/go-chassis/cari/config"
 	"github.com/go-chassis/foundation/validator"
@@ -104,7 +105,7 @@ func (r *KVResource) Put(rctx *restful.Context) {
 		WriteErrResponse(rctx, config.ErrInvalidParams, err.Error())
 		return
 	}
-	kv, err := service.KVService.Update(rctx.Ctx, kvReq)
+	kv, err := datasource.GetBroker().GetKVDao().Update(rctx.Ctx, kvReq)
 	if err != nil {
 		openlog.Error(fmt.Sprintf("put [%s] err:%s", kvID, err.Error()))
 		WriteErrResponse(rctx, config.ErrInternal, "update kv failed")
@@ -141,10 +142,10 @@ func (r *KVResource) Get(rctx *restful.Context) {
 		WriteErrResponse(rctx, config.ErrInvalidParams, err.Error())
 		return
 	}
-	kv, err := service.KVService.Get(rctx.Ctx, request)
+	kv, err := datasource.GetBroker().GetKVDao().Get(rctx.Ctx, request)
 	if err != nil {
 		openlog.Error("kv_resource: " + err.Error())
-		if err == service.ErrKeyNotExists {
+		if err == datasource.ErrKeyNotExists {
 			WriteErrResponse(rctx, config.ErrRecordNotExists, err.Error())
 			return
 		}
@@ -261,13 +262,13 @@ func (r *KVResource) Delete(rctx *restful.Context) {
 		WriteErrResponse(rctx, config.ErrInvalidParams, err.Error())
 		return
 	}
-	kv, err := service.KVService.FindOneAndDelete(rctx.Ctx, kvID, domain, project)
+	kv, err := datasource.GetBroker().GetKVDao().FindOneAndDelete(rctx.Ctx, kvID, domain, project)
 	if err != nil {
 		openlog.Error("delete failed, ", openlog.WithTags(openlog.Tags{
 			"kvID":  kvID,
 			"error": err.Error(),
 		}))
-		if err == service.ErrKeyNotExists {
+		if err == datasource.ErrKeyNotExists {
 			WriteErrResponse(rctx, config.ErrRecordNotExists, err.Error())
 			return
 		}
@@ -301,9 +302,9 @@ func (r *KVResource) DeleteList(rctx *restful.Context) {
 		WriteErrResponse(rctx, config.ErrInvalidParams, err.Error())
 		return
 	}
-	kvs, err := service.KVService.FindManyAndDelete(rctx.Ctx, b.IDs, domain, project)
+	kvs, err := datasource.GetBroker().GetKVDao().FindManyAndDelete(rctx.Ctx, b.IDs, domain, project)
 	if err != nil {
-		if err == service.ErrKeyNotExists {
+		if err == datasource.ErrKeyNotExists {
 			rctx.WriteHeader(http.StatusNoContent)
 			return
 		}

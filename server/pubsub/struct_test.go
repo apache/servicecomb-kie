@@ -19,8 +19,9 @@ package pubsub_test
 
 import (
 	"encoding/json"
-	"github.com/apache/servicecomb-kie/server/pubsub"
 	"testing"
+
+	"github.com/apache/servicecomb-kie/server/pubsub"
 )
 
 func TestTopic_String(t *testing.T) {

@@ -29,9 +29,10 @@ type Config struct {
 	AdvertiseAddr  string
 }
 
-//DB is yaml file struct to set mongodb config
+//DB is yaml file struct to set persistent config
 type DB struct {
 	URI        string `yaml:"uri"`
+	Kind       string `yaml:"kind"`
 	PoolSize   int    `yaml:"poolSize"`
 	SSLEnabled bool   `yaml:"sslEnabled"`
 	RootCA     string `yaml:"rootCAFile"`

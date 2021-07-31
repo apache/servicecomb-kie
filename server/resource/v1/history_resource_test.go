@@ -20,22 +20,23 @@ import (
 	"context"
 	"encoding/json"
 	"fmt"
-	common2 "github.com/apache/servicecomb-kie/pkg/common"
 	"io/ioutil"
 	"net/http"
 	"net/http/httptest"
 	"testing"
 
+	common2 "github.com/apache/servicecomb-kie/pkg/common"
+	"github.com/apache/servicecomb-kie/server/datasource"
+
 	"github.com/apache/servicecomb-kie/pkg/model"
 	handler2 "github.com/apache/servicecomb-kie/server/handler"
 	v1 "github.com/apache/servicecomb-kie/server/resource/v1"
-	"github.com/apache/servicecomb-kie/server/service"
 	"github.com/go-chassis/go-chassis/v2/core/common"
 	"github.com/go-chassis/go-chassis/v2/core/handler"
 	"github.com/go-chassis/go-chassis/v2/server/restful/restfultest"
 	"github.com/stretchr/testify/assert"
 
-	_ "github.com/apache/servicecomb-kie/server/service/mongo"
+	_ "github.com/apache/servicecomb-kie/server/datasource/mongo"
 )
 
 func TestHistoryResource_GetRevisions(t *testing.T) {
@@ -49,7 +50,7 @@ func TestHistoryResource_GetRevisions(t *testing.T) {
 		Domain:  "default",
 		Project: "history_test",
 	}
-	kv, err := service.KVService.Create(context.Background(), kv)
+	kv, err := datasource.GetBroker().GetKVDao().Create(context.Background(), kv)
 	assert.NoError(t, err)
 	path := fmt.Sprintf("/v1/history_test/kie/revision/%s", kv.ID)
 	r, _ := http.NewRequest("GET", path, nil)
@@ -75,7 +76,7 @@ func TestHistoryResource_GetRevisions(t *testing.T) {
 			Project: "history_test",
 			Status:  kv.Status,
 		}
-		kv, err = service.KVService.Update(context.Background(), updateKv)
+		kv, err = datasource.GetBroker().GetKVDao().Update(context.Background(), updateKv)
 		assert.NoError(t, err)
 		path := fmt.Sprintf("/v1/history_test/kie/revision/%s", kv.ID)
 		r, _ := http.NewRequest("GET", path, nil)

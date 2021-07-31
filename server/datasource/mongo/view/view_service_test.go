@@ -20,24 +20,27 @@ package view_test
 import (
 	"context"
 	"encoding/json"
+	"testing"
+	"time"
+
 	common2 "github.com/apache/servicecomb-kie/pkg/common"
 	"github.com/apache/servicecomb-kie/pkg/model"
-	"github.com/apache/servicecomb-kie/server/config"
-	"github.com/apache/servicecomb-kie/server/service"
-	"github.com/apache/servicecomb-kie/server/service/mongo/kv"
-	"github.com/apache/servicecomb-kie/server/service/mongo/session"
-	"github.com/apache/servicecomb-kie/server/service/mongo/view"
+	"github.com/apache/servicecomb-kie/server/datasource"
+	"github.com/apache/servicecomb-kie/server/datasource/mongo/kv"
+	"github.com/apache/servicecomb-kie/server/datasource/mongo/session"
+	"github.com/apache/servicecomb-kie/server/datasource/mongo/view"
 	_ "github.com/apache/servicecomb-kie/test"
 	"github.com/stretchr/testify/assert"
 	"go.mongodb.org/mongo-driver/bson"
 	"go.mongodb.org/mongo-driver/mongo"
-	"testing"
 )
 
 func TestGet(t *testing.T) {
 	var err error
-	config.Configurations = &config.Config{DB: config.DB{URI: "mongodb://kie:123@127.0.0.1:27017/kie"}}
-	err = session.Init()
+	err = session.Init(&datasource.Config{
+		URI:     "mongodb://kie:123@127.0.0.1:27017/kie",
+		Timeout: 10 * time.Second,
+	})
 	assert.NoError(t, err)
 	kvsvc := &kv.Service{}
 	t.Run("put view data", func(t *testing.T) {
@@ -89,14 +92,14 @@ func TestGet(t *testing.T) {
 			Display: "timeout_config",
 			Project: "view_test",
 			Domain:  "default",
-		}, service.WithKey("timeout"))
+		}, datasource.WithKey("timeout"))
 		assert.NoError(t, err)
 		assert.NotEmpty(t, view1.ID)
 		view2, err := svc.Create(context.TODO(), &model.ViewDoc{
 			Display: "mall_config",
 			Project: "view_test",
 			Domain:  "default",
-		}, service.WithLabels(map[string]string{
+		}, datasource.WithLabels(map[string]string{
 			"app": "mall",
 		}))
 		assert.NoError(t, err)

@@ -18,18 +18,19 @@
 package handler
 
 import (
+	v1 "github.com/apache/servicecomb-kie/server/resource/v1"
+	"net/http"
+	"strings"
+	"time"
+
 	"github.com/apache/servicecomb-kie/pkg/common"
 	"github.com/apache/servicecomb-kie/pkg/iputil"
 	"github.com/apache/servicecomb-kie/pkg/model"
-	"github.com/apache/servicecomb-kie/server/resource/v1"
-	"github.com/apache/servicecomb-kie/server/service"
+	"github.com/apache/servicecomb-kie/server/datasource"
 	"github.com/emicklei/go-restful"
 	"github.com/go-chassis/go-chassis/v2/core/handler"
 	"github.com/go-chassis/go-chassis/v2/core/invocation"
 	"github.com/go-chassis/openlog"
-	"net/http"
-	"strings"
-	"time"
 )
 
 //const of noop auth handler
@@ -86,7 +87,7 @@ func (h *TrackHandler) Handle(chain *handler.Chain, inv *invocation.Invocation, 
 			"wait":     wait,
 			"labels":   req.QueryParameter("label"),
 		}
-		_, err := service.TrackService.CreateOrUpdate(inv.Ctx, data)
+		_, err := datasource.GetBroker().GetTrackDao().CreateOrUpdate(inv.Ctx, data)
 		if err != nil {
 			openlog.Warn("record polling detail failed:" + err.Error())
 			cb(ir)

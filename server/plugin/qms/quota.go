@@ -19,7 +19,8 @@ package qms
 
 import (
 	"context"
-	"github.com/apache/servicecomb-kie/server/service"
+
+	"github.com/apache/servicecomb-kie/server/datasource"
 	"github.com/go-chassis/go-archaius"
 	"github.com/go-chassis/go-chassis/v2/pkg/backends/quota"
 	"github.com/go-chassis/openlog"
@@ -39,7 +40,7 @@ type BuildInManager struct {
 //GetQuotas get usage and quota
 func (m *BuildInManager) GetQuotas(serviceName, domain string) ([]*quota.Quota, error) {
 	max := archaius.GetInt64(QuotaConfigKey, DefaultQuota)
-	total, err := service.KVService.Total(context.TODO(), domain)
+	total, err := datasource.GetBroker().GetKVDao().Total(context.TODO(), domain)
 	if err != nil {
 		openlog.Error("find quotas failed: " + err.Error())
 		return nil, err

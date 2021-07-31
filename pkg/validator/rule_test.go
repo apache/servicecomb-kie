@@ -1,9 +1,10 @@
 package validator_test
 
 import (
-	"github.com/go-chassis/foundation/validator"
 	"strings"
 	"testing"
+
+	"github.com/go-chassis/foundation/validator"
 
 	"github.com/apache/servicecomb-kie/pkg/model"
 	validsvc "github.com/apache/servicecomb-kie/pkg/validator"

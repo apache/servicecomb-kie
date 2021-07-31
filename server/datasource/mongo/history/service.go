@@ -15,28 +15,31 @@
  * limitations under the License.
  */
 
-package counter_test
+package history
 
 import (
-	_ "github.com/apache/servicecomb-kie/test"
-
 	"context"
-	"github.com/apache/servicecomb-kie/server/config"
-	"github.com/apache/servicecomb-kie/server/service/mongo/counter"
-	"github.com/apache/servicecomb-kie/server/service/mongo/session"
-	"github.com/stretchr/testify/assert"
-	"testing"
+
+	"github.com/apache/servicecomb-kie/pkg/model"
+	"github.com/apache/servicecomb-kie/server/datasource"
+	"go.mongodb.org/mongo-driver/bson"
+	"go.mongodb.org/mongo-driver/bson/primitive"
 )
 
-func TestIncreaseAndGetRevision(t *testing.T) {
-	var err error
-	config.Configurations = &config.Config{DB: config.DB{URI: "mongodb://kie:123@127.0.0.1:27017/kie"}}
-	err = session.Init()
-	assert.NoError(t, err)
-	s := &counter.Service{}
-	n, _ := s.GetRevision(context.TODO(), "default")
-	t.Log(n)
+//Service is the implementation
+type Service struct {
+}
 
-	next, _ := counter.ApplyRevision(context.TODO(), "default")
-	assert.Equal(t, n+1, next)
+//GetHistory get all history by label id
+func (s *Service) GetHistory(ctx context.Context, kvID string, options ...datasource.FindOption) (*model.KVResponse, error) {
+	var filter primitive.M
+	opts := datasource.FindOptions{}
+	for _, o := range options {
+		o(&opts)
+	}
+	filter = bson.M{
+		"id": kvID,
+	}
+
+	return getHistoryByKeyID(ctx, filter, opts.Offset, opts.Limit)
 }

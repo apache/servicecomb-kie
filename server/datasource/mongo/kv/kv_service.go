@@ -19,11 +19,11 @@ package kv
 
 import (
 	"context"
+
 	"github.com/apache/servicecomb-kie/pkg/model"
 	"github.com/apache/servicecomb-kie/pkg/stringutil"
 	"github.com/apache/servicecomb-kie/pkg/util"
-	"github.com/apache/servicecomb-kie/server/service"
-	"github.com/apache/servicecomb-kie/server/service/mongo/session"
+	"github.com/apache/servicecomb-kie/server/datasource"
 	"github.com/go-chassis/openlog"
 )
 
@@ -41,22 +41,19 @@ type Service struct {
 
 //Create will create a key value record
 func (s *Service) Create(ctx context.Context, kv *model.KVDoc) (*model.KVDoc, error) {
-	ctx, cancel := context.WithTimeout(ctx, session.Timeout)
-	defer cancel()
-
 	if kv.Labels == nil {
 		kv.Labels = map[string]string{}
 	}
 	//check whether the project has certain labels or not
 	kv.LabelFormat = stringutil.FormatMap(kv.Labels)
 	if kv.ValueType == "" {
-		kv.ValueType = session.DefaultValueType
+		kv.ValueType = datasource.DefaultValueType
 	}
-	_, err := s.Exist(ctx, kv.Domain, kv.Key, kv.Project, service.WithLabelFormat(kv.LabelFormat))
+	_, err := s.Exist(ctx, kv.Domain, kv.Key, kv.Project, datasource.WithLabelFormat(kv.LabelFormat))
 	if err == nil {
-		return nil, session.ErrKVAlreadyExists
+		return nil, datasource.ErrKVAlreadyExists
 	}
-	if err != service.ErrKeyNotExists {
+	if err != datasource.ErrKeyNotExists {
 		openlog.Error(err.Error())
 		return nil, err
 	}
@@ -71,9 +68,6 @@ func (s *Service) Create(ctx context.Context, kv *model.KVDoc) (*model.KVDoc, er
 
 //Update will update a key value record
 func (s *Service) Update(ctx context.Context, kv *model.UpdateKVRequest) (*model.KVDoc, error) {
-	ctx, cancel := context.WithTimeout(ctx, session.Timeout)
-	defer cancel()
-
 	getRequest := &model.GetKVRequest{
 		Domain:  kv.Domain,
 		Project: kv.Project,
@@ -99,18 +93,15 @@ func (s *Service) Update(ctx context.Context, kv *model.UpdateKVRequest) (*model
 }
 
 //Exist supports you query a key value by label map or labels id
-func (s *Service) Exist(ctx context.Context, domain, key string, project string, options ...service.FindOption) (*model.KVDoc, error) {
-	ctx, cancel := context.WithTimeout(ctx, session.Timeout)
-	defer cancel()
-
-	opts := service.FindOptions{}
+func (s *Service) Exist(ctx context.Context, domain, key string, project string, options ...datasource.FindOption) (*model.KVDoc, error) {
+	opts := datasource.FindOptions{}
 	for _, o := range options {
 		o(&opts)
 	}
 	if opts.LabelFormat != "" {
 		kvs, err := findKVByLabel(ctx, domain, opts.LabelFormat, key, project)
 		if err != nil {
-			if err != service.ErrKeyNotExists {
+			if err != datasource.ErrKeyNotExists {
 				openlog.Error(err.Error())
 			}
 			return nil, err
@@ -118,15 +109,15 @@ func (s *Service) Exist(ctx context.Context, domain, key string, project string,
 		return kvs[0], nil
 	}
 	kvs, err := s.List(ctx, domain, project,
-		service.WithExactLabels(),
-		service.WithLabels(opts.Labels),
-		service.WithKey(key))
+		datasource.WithExactLabels(),
+		datasource.WithLabels(opts.Labels),
+		datasource.WithKey(key))
 	if err != nil {
 		openlog.Error("check kv exist: " + err.Error())
 		return nil, err
 	}
 	if len(kvs.Data) != 1 {
-		return nil, session.ErrTooMany
+		return nil, datasource.ErrTooMany
 	}
 
 	return kvs.Data[0], nil
@@ -136,21 +127,17 @@ func (s *Service) Exist(ctx context.Context, domain, key string, project string,
 //FindOneAndDelete deletes one kv by id and return the deleted kv as these appeared before deletion
 //domain=tenant
 func (s *Service) FindOneAndDelete(ctx context.Context, kvID string, domain string, project string) (*model.KVDoc, error) {
-	ctx, cancel := context.WithTimeout(ctx, session.Timeout)
-	defer cancel()
 	return findOneKVAndDelete(ctx, kvID, project, domain)
 }
 
 //FindManyAndDelete deletes multiple kvs and return the deleted kv list as these appeared before deletion
 func (s *Service) FindManyAndDelete(ctx context.Context, kvIDs []string, domain string, project string) ([]*model.KVDoc, error) {
-	ctx, cancel := context.WithTimeout(ctx, session.Timeout)
-	defer cancel()
 	return findKVsAndDelete(ctx, kvIDs, project, domain)
 }
 
 //List get kv list by key and criteria
-func (s *Service) List(ctx context.Context, domain, project string, options ...service.FindOption) (*model.KVResponse, error) {
-	opts := service.NewDefaultFindOpts()
+func (s *Service) List(ctx context.Context, domain, project string, options ...datasource.FindOption) (*model.KVResponse, error) {
+	opts := datasource.NewDefaultFindOpts()
 	for _, o := range options {
 		o(&opts)
 	}
@@ -187,7 +174,5 @@ func (s *Service) Get(ctx context.Context, request *model.GetKVRequest) (*model.
 
 //Total return kv record number
 func (s *Service) Total(ctx context.Context, domain string) (int64, error) {
-	ctx, cancel := context.WithTimeout(ctx, session.Timeout)
-	defer cancel()
 	return total(ctx, domain)
 }

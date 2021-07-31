@@ -19,12 +19,13 @@ package pubsub
 
 import (
 	"encoding/json"
+	"sync"
+
 	"github.com/apache/servicecomb-kie/pkg/stringutil"
 	"github.com/apache/servicecomb-kie/server/config"
 	"github.com/go-chassis/openlog"
 	"github.com/hashicorp/serf/cmd/serf/command/agent"
 	"github.com/hashicorp/serf/serf"
-	"sync"
 )
 
 var once sync.Once

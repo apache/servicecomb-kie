@@ -19,9 +19,10 @@ package track
 
 import (
 	"context"
+
 	"github.com/apache/servicecomb-kie/pkg/model"
-	"github.com/apache/servicecomb-kie/server/service"
-	"github.com/apache/servicecomb-kie/server/service/mongo/session"
+	"github.com/apache/servicecomb-kie/server/datasource"
+	"github.com/apache/servicecomb-kie/server/datasource/mongo/session"
 	"github.com/go-chassis/openlog"
 	uuid "github.com/satori/go.uuid"
 	"go.mongodb.org/mongo-driver/bson"
@@ -90,7 +91,7 @@ func Get(ctx context.Context, detail *model.PollingDetail) ([]*model.PollingDeta
 		records = append(records, curRecord)
 	}
 	if len(records) == 0 {
-		return nil, service.ErrRecordNotExists
+		return nil, datasource.ErrRecordNotExists
 	}
 	return records, nil
 }

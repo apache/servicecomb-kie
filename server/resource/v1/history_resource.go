@@ -18,11 +18,12 @@
 package v1
 
 import (
+	"net/http"
+
 	"github.com/apache/servicecomb-kie/pkg/common"
 	"github.com/apache/servicecomb-kie/pkg/model"
-	"github.com/apache/servicecomb-kie/server/service"
+	"github.com/apache/servicecomb-kie/server/datasource"
 	"github.com/go-chassis/cari/config"
-	"net/http"
 
 	goRestful "github.com/emicklei/go-restful"
 	"github.com/go-chassis/go-chassis/v2/server/restful"
@@ -49,11 +50,11 @@ func (r *HistoryResource) GetRevisions(context *restful.Context) {
 		WriteErrResponse(context, config.ErrRequiredRecordId, "kv_id must not be empty")
 		return
 	}
-	revisions, err := service.HistoryService.GetHistory(context.Ctx, kvID,
-		service.WithOffset(offset),
-		service.WithLimit(limit))
+	revisions, err := datasource.GetBroker().GetHistoryDao().GetHistory(context.Ctx, kvID,
+		datasource.WithOffset(offset),
+		datasource.WithLimit(limit))
 	if err != nil {
-		if err == service.ErrRevisionNotExist {
+		if err == datasource.ErrRevisionNotExist {
 			WriteErrResponse(context, config.ErrRecordNotExists, err.Error())
 			return
 		}
@@ -99,9 +100,9 @@ func (r *HistoryResource) GetPollingData(context *restful.Context) {
 		return
 	}
 	query.Domain = domain
-	records, err := service.TrackService.GetPollingDetail(context.Ctx, query)
+	records, err := datasource.GetBroker().GetTrackDao().GetPollingDetail(context.Ctx, query)
 	if err != nil {
-		if err == service.ErrRecordNotExists {
+		if err == datasource.ErrRecordNotExists {
 			WriteErrResponse(context, config.ErrRecordNotExists, err.Error())
 			return
 		}

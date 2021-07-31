@@ -18,9 +18,10 @@
 package stringutil_test
 
 import (
+	"testing"
+
 	"github.com/apache/servicecomb-kie/pkg/stringutil"
 	"github.com/stretchr/testify/assert"
-	"testing"
 )
 
 func TestFormat(t *testing.T) {

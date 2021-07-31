@@ -15,30 +15,24 @@
  * limitations under the License.
  */
 
-package history
+package track
 
 import (
 	"context"
+
 	"github.com/apache/servicecomb-kie/pkg/model"
-	"github.com/apache/servicecomb-kie/server/service"
-	"go.mongodb.org/mongo-driver/bson"
-	"go.mongodb.org/mongo-driver/bson/primitive"
 )
 
 //Service is the implementation
 type Service struct {
 }
 
-//GetHistory get all history by label id
-func (s *Service) GetHistory(ctx context.Context, kvID string, options ...service.FindOption) (*model.KVResponse, error) {
-	var filter primitive.M
-	opts := service.FindOptions{}
-	for _, o := range options {
-		o(&opts)
-	}
-	filter = bson.M{
-		"id": kvID,
-	}
+//CreateOrUpdate create or update a track data
+func (s *Service) CreateOrUpdate(ctx context.Context, detail *model.PollingDetail) (*model.PollingDetail, error) {
+	return CreateOrUpdate(ctx, detail)
+}
 
-	return getHistoryByKeyID(ctx, filter, opts.Offset, opts.Limit)
+//GetPollingDetail get a track data
+func (s *Service) GetPollingDetail(ctx context.Context, detail *model.PollingDetail) ([]*model.PollingDetail, error) {
+	return Get(ctx, detail)
 }

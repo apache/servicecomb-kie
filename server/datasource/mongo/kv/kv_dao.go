@@ -24,11 +24,12 @@ import (
 	"strings"
 	"time"
 
+	"github.com/apache/servicecomb-kie/server/datasource"
+
 	"github.com/apache/servicecomb-kie/pkg/model"
-	"github.com/apache/servicecomb-kie/server/service"
-	"github.com/apache/servicecomb-kie/server/service/mongo/counter"
-	"github.com/apache/servicecomb-kie/server/service/mongo/history"
-	"github.com/apache/servicecomb-kie/server/service/mongo/session"
+	"github.com/apache/servicecomb-kie/server/datasource/mongo/counter"
+	"github.com/apache/servicecomb-kie/server/datasource/mongo/history"
+	"github.com/apache/servicecomb-kie/server/datasource/mongo/session"
 	"github.com/go-chassis/openlog"
 	uuid "github.com/satori/go.uuid"
 	"go.mongodb.org/mongo-driver/bson"
@@ -117,7 +118,7 @@ func getValue(str string) string {
 	return res[len(res)-1]
 }
 
-func findKV(ctx context.Context, domain string, project string, opts service.FindOptions) (*mongo.Cursor, int, error) {
+func findKV(ctx context.Context, domain string, project string, opts datasource.FindOptions) (*mongo.Cursor, int, error) {
 	collection := session.GetDB().Collection(session.CollectionKV)
 	ctx, cancel := context.WithTimeout(ctx, opts.Timeout)
 	defer cancel()
@@ -175,7 +176,7 @@ func findOneKey(ctx context.Context, filter bson.M) ([]*model.KVDoc, error) {
 	sr := collection.FindOne(ctx, filter)
 	if sr.Err() != nil {
 		if sr.Err() == mongo.ErrNoDocuments {
-			return nil, service.ErrKeyNotExists
+			return nil, datasource.ErrKeyNotExists
 		}
 		return nil, sr.Err()
 	}
@@ -194,7 +195,7 @@ func findOneKVAndDelete(ctx context.Context, kvID, project, domain string) (*mod
 	sr := collection.FindOneAndDelete(ctx, bson.M{"id": kvID, "project": project, "domain": domain})
 	if sr.Err() != nil {
 		if sr.Err() == mongo.ErrNoDocuments {
-			return nil, service.ErrKeyNotExists
+			return nil, datasource.ErrKeyNotExists
 		}
 		return nil, sr.Err()
 	}
@@ -224,7 +225,7 @@ func findKVsAndDelete(ctx context.Context, kvIDs []string, project, domain strin
 		{Key: "domain", Value: domain}}
 	kvs, err := findKeys(ctx, filter, false)
 	if err != nil {
-		if err != service.ErrKeyNotExists {
+		if err != datasource.ErrKeyNotExists {
 			openlog.Error("find Keys error: " + err.Error())
 		}
 		return nil, err
@@ -256,9 +257,7 @@ func findKeys(ctx context.Context, filter interface{}, withoutLabel bool) ([]*mo
 	cur, err := collection.Find(ctx, filter)
 	if err != nil {
 		if err.Error() == context.DeadlineExceeded.Error() {
-			openlog.Error("find kvs failed, dead line exceeded", openlog.WithTags(openlog.Tags{
-				"timeout": session.Timeout,
-			}))
+			openlog.Error("find kvs failed: " + err.Error())
 			return nil, fmt.Errorf("can not find keys due to timout")
 		}
 		return nil, err
@@ -281,7 +280,7 @@ func findKeys(ctx context.Context, filter interface{}, withoutLabel bool) ([]*mo
 
 	}
 	if len(kvs) == 0 {
-		return nil, service.ErrKeyNotExists
+		return nil, datasource.ErrKeyNotExists
 	}
 	return kvs, nil
 }
