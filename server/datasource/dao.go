@@ -70,21 +70,24 @@ func GetBroker() Broker {
 type KVDao interface {
 	//below 3 methods is usually for admin console
 	Create(ctx context.Context, kv *model.KVDoc) (*model.KVDoc, error)
-	Update(ctx context.Context, kv *model.UpdateKVRequest) (*model.KVDoc, error)
-	List(ctx context.Context, domain, project string, options ...FindOption) (*model.KVResponse, error)
+	Update(ctx context.Context, kv *model.KVDoc) error
+	List(ctx context.Context, project, domain string, options ...FindOption) (*model.KVResponse, error)
 	//FindOneAndDelete deletes one kv by id and return the deleted kv as these appeared before deletion
-	FindOneAndDelete(ctx context.Context, kvID string, domain, project string) (*model.KVDoc, error)
+	FindOneAndDelete(ctx context.Context, kvID string, project, domain string) (*model.KVDoc, error)
 	//FindManyAndDelete deletes multiple kvs and return the deleted kv list as these appeared before deletion
-	FindManyAndDelete(ctx context.Context, kvIDs []string, domain, project string) ([]*model.KVDoc, error)
+	FindManyAndDelete(ctx context.Context, kvIDs []string, project, domain string) ([]*model.KVDoc, int64, error)
 	//Get return kv by id
-	Get(ctx context.Context, request *model.GetKVRequest) (*model.KVDoc, error)
+	Get(ctx context.Context, req *model.GetKVRequest) (*model.KVDoc, error)
+	Exist(ctx context.Context, key, project, domain string, options ...FindOption) (bool, error)
 	//KVDao is a resource of kie, this api should return kv resource number by domain id
 	Total(ctx context.Context, domain string) (int64, error)
 }
 
-//HistoryDao provide api of HistoryDao entity
+//HistoryDao provide api of History entity
 type HistoryDao interface {
-	GetHistory(ctx context.Context, keyID string, options ...FindOption) (*model.KVResponse, error)
+	AddHistory(ctx context.Context, kv *model.KVDoc) error
+	GetHistory(ctx context.Context, keyID, project, domain string, options ...FindOption) (*model.KVResponse, error)
+	DelayDeletionTime(ctx context.Context, kvIDs []string, project, domain string) error
 }
 
 //TrackDao provide api of Track entity
@@ -96,6 +99,7 @@ type TrackDao interface {
 //RevisionDao is global revision number management
 type RevisionDao interface {
 	GetRevision(ctx context.Context, domain string) (int64, error)
+	ApplyRevision(ctx context.Context, domain string) (int64, error)
 }
 
 //ViewDao create update and get view data
@@ -141,4 +145,11 @@ func Init(c config.DB) error {
 	}
 	openlog.Info(fmt.Sprintf("use %s as storage", c.Kind))
 	return nil
+}
+
+//ClearPart remove domain and project of kv
+func ClearPart(kv *model.KVDoc) {
+	kv.Domain = ""
+	kv.Project = ""
+	kv.LabelFormat = ""
 }

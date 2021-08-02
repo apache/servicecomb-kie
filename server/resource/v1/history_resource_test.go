@@ -20,13 +20,13 @@ import (
 	"context"
 	"encoding/json"
 	"fmt"
+	kvsvc "github.com/apache/servicecomb-kie/server/service/kv"
 	"io/ioutil"
 	"net/http"
 	"net/http/httptest"
 	"testing"
 
 	common2 "github.com/apache/servicecomb-kie/pkg/common"
-	"github.com/apache/servicecomb-kie/server/datasource"
 
 	"github.com/apache/servicecomb-kie/pkg/model"
 	handler2 "github.com/apache/servicecomb-kie/server/handler"
@@ -50,21 +50,21 @@ func TestHistoryResource_GetRevisions(t *testing.T) {
 		Domain:  "default",
 		Project: "history_test",
 	}
-	kv, err := datasource.GetBroker().GetKVDao().Create(context.Background(), kv)
-	assert.NoError(t, err)
+	kv, err := kvsvc.Create(context.Background(), kv)
+	assert.Nil(t, err)
 	path := fmt.Sprintf("/v1/history_test/kie/revision/%s", kv.ID)
 	r, _ := http.NewRequest("GET", path, nil)
 	revision := &v1.HistoryResource{}
 	chain, _ := handler.GetChain(common.Provider, "")
-	c, err := restfultest.New(revision, chain)
-	assert.NoError(t, err)
+	c, err2 := restfultest.New(revision, chain)
+	assert.NoError(t, err2)
 	resp := httptest.NewRecorder()
 	c.ServeHTTP(resp, r)
-	body, err := ioutil.ReadAll(resp.Body)
-	assert.NoError(t, err)
+	body, err2 := ioutil.ReadAll(resp.Body)
+	assert.NoError(t, err2)
 	var data model.KVResponse
-	err = json.Unmarshal(body, &data)
-	assert.NoError(t, err)
+	err2 = json.Unmarshal(body, &data)
+	assert.NoError(t, err2)
 	before := len(data.Data)
 	assert.GreaterOrEqual(t, before, 1)
 
@@ -76,8 +76,8 @@ func TestHistoryResource_GetRevisions(t *testing.T) {
 			Project: "history_test",
 			Status:  kv.Status,
 		}
-		kv, err = datasource.GetBroker().GetKVDao().Update(context.Background(), updateKv)
-		assert.NoError(t, err)
+		kv, err2 = kvsvc.Update(context.Background(), updateKv)
+		assert.NoError(t, err2)
 		path := fmt.Sprintf("/v1/history_test/kie/revision/%s", kv.ID)
 		r, _ := http.NewRequest("GET", path, nil)
 		revision := &v1.HistoryResource{}

@@ -20,40 +20,31 @@ package kv
 import (
 	"context"
 	"fmt"
+	"github.com/apache/servicecomb-kie/pkg/util"
 	"regexp"
 	"strings"
-	"time"
-
-	"github.com/apache/servicecomb-kie/server/datasource"
 
 	"github.com/apache/servicecomb-kie/pkg/model"
-	"github.com/apache/servicecomb-kie/server/datasource/mongo/counter"
-	"github.com/apache/servicecomb-kie/server/datasource/mongo/history"
+	"github.com/apache/servicecomb-kie/server/datasource"
 	"github.com/apache/servicecomb-kie/server/datasource/mongo/session"
 	"github.com/go-chassis/openlog"
-	uuid "github.com/satori/go.uuid"
 	"go.mongodb.org/mongo-driver/bson"
 	"go.mongodb.org/mongo-driver/mongo"
 	"go.mongodb.org/mongo-driver/mongo/options"
 )
 
-//createKey get latest revision from history
-//and increase revision of label
-//and insert key
-func createKey(ctx context.Context, kv *model.KVDoc) (*model.KVDoc, error) {
-	collection := session.GetDB().Collection(session.CollectionKV)
+const (
+	MsgFindKvFailed    = "find kv failed, deadline exceeded"
+	FmtErrFindKvFailed = "can not find kv in %s"
+)
+
+//Dao operate data in mongodb
+type Dao struct {
+}
+
+func (s *Dao) Create(ctx context.Context, kv *model.KVDoc) (*model.KVDoc, error) {
 	var err error
-	kv.ID = uuid.NewV4().String()
-	revision, err := counter.ApplyRevision(ctx, kv.Domain)
-	if err != nil {
-		openlog.Error(err.Error())
-		return nil, err
-	}
-	kv.UpdateRevision = revision
-	kv.CreateRevision = revision
-	now := time.Now().Unix()
-	kv.CreateTime = now
-	kv.UpdateTime = now
+	collection := session.GetDB().Collection(session.CollectionKV)
 	_, err = collection.InsertOne(ctx, kv)
 	if err != nil {
 		openlog.Error("create error", openlog.WithTags(openlog.Tags{
@@ -62,28 +53,14 @@ func createKey(ctx context.Context, kv *model.KVDoc) (*model.KVDoc, error) {
 		}))
 		return nil, err
 	}
-	err = history.AddHistory(ctx, kv)
-	if err != nil {
-		openlog.Warn(
-			fmt.Sprintf("can not updateKeyValue version for [%s] [%s] in [%s]",
-				kv.Key, kv.Labels, kv.Domain))
-	}
-	openlog.Debug(fmt.Sprintf("create %s with labels %s value [%s]", kv.Key, kv.Labels, kv.Value))
 
 	return kv, nil
-
 }
 
-//updateKeyValue update key value and add new revision
-func updateKeyValue(ctx context.Context, kv *model.KVDoc) error {
-	var err error
-	kv.UpdateTime = time.Now().Unix()
-	kv.UpdateRevision, err = counter.ApplyRevision(ctx, kv.Domain)
-	if err != nil {
-		return err
-	}
+//Update update key value
+func (s *Dao) Update(ctx context.Context, kv *model.KVDoc) error {
 	collection := session.GetDB().Collection(session.CollectionKV)
-	ur, err := collection.UpdateOne(ctx, bson.M{"key": kv.Key, "label_format": kv.LabelFormat}, bson.D{
+	_, err := collection.UpdateOne(ctx, bson.M{"key": kv.Key, "label_format": kv.LabelFormat}, bson.D{
 		{Key: "$set", Value: bson.D{
 			{Key: "value", Value: kv.Value},
 			{Key: "status", Value: kv.Status},
@@ -95,18 +72,6 @@ func updateKeyValue(ctx context.Context, kv *model.KVDoc) error {
 	if err != nil {
 		return err
 	}
-	openlog.Debug(
-		fmt.Sprintf("updateKeyValue %s with labels %s value [%s] %d ",
-			kv.Key, kv.Labels, kv.Value, ur.ModifiedCount))
-	err = history.AddHistory(ctx, kv)
-	if err != nil {
-		openlog.Error(
-			fmt.Sprintf("can not add revision for [%s] [%s] in [%s],err: %s",
-				kv.Key, kv.Labels, kv.Domain, err))
-	}
-	openlog.Debug(
-		fmt.Sprintf("add history %s with labels %s value [%s] %d ",
-			kv.Key, kv.Labels, kv.Value, ur.ModifiedCount))
 	return nil
 
 }
@@ -189,8 +154,42 @@ func findOneKey(ctx context.Context, filter bson.M) ([]*model.KVDoc, error) {
 	return []*model.KVDoc{curKV}, nil
 }
 
-//findOneKVAndDelete deletes one kv by id and return the deleted kv as these appeared before deletion
-func findOneKVAndDelete(ctx context.Context, kvID, project, domain string) (*model.KVDoc, error) {
+//Exist supports you query a key value by label map or labels id
+func (s *Dao) Exist(ctx context.Context, key, project, domain string, options ...datasource.FindOption) (bool, error) {
+	opts := datasource.FindOptions{}
+	for _, o := range options {
+		o(&opts)
+	}
+	if opts.LabelFormat != "" {
+		_, err := findKVByLabel(ctx, domain, opts.LabelFormat, key, project)
+		if err != nil {
+			if err == datasource.ErrKeyNotExists {
+				return false, nil
+			}
+			openlog.Error(err.Error())
+			return false, err
+		}
+		return true, nil
+	}
+	kvs, err := s.List(ctx, domain, project,
+		datasource.WithExactLabels(),
+		datasource.WithLabels(opts.Labels),
+		datasource.WithKey(key))
+	if err != nil {
+		openlog.Error("check kv exist: " + err.Error())
+		return false, err
+	}
+	if len(kvs.Data) != 1 {
+		return false, datasource.ErrTooMany
+	}
+
+	return true, nil
+
+}
+
+//FindOneAndDelete deletes one kv by id and return the deleted kv as these appeared before deletion
+//domain=tenant
+func (s *Dao) FindOneAndDelete(ctx context.Context, kvID, project, domain string) (*model.KVDoc, error) {
 	collection := session.GetDB().Collection(session.CollectionKV)
 	sr := collection.FindOneAndDelete(ctx, bson.M{"id": kvID, "project": project, "domain": domain})
 	if sr.Err() != nil {
@@ -199,17 +198,8 @@ func findOneKVAndDelete(ctx context.Context, kvID, project, domain string) (*mod
 		}
 		return nil, sr.Err()
 	}
-	openlog.Info(fmt.Sprintf("delete success,kvID=%s", kvID))
-	if _, err := counter.ApplyRevision(ctx, domain); err != nil {
-		openlog.Error(fmt.Sprintf("the kv [%s] is deleted, but increase revision failed: [%s]", kvID, err))
-		return nil, err
-	}
-	err := history.AddDeleteTime(ctx, []string{kvID}, project, domain)
-	if err != nil {
-		openlog.Error(fmt.Sprintf("add delete time to [%s] failed : [%s]", kvID, err))
-	}
 	curKV := &model.KVDoc{}
-	err = sr.Decode(curKV)
+	err := sr.Decode(curKV)
 	if err != nil {
 		openlog.Error("decode error: " + err.Error())
 		return nil, err
@@ -217,8 +207,8 @@ func findOneKVAndDelete(ctx context.Context, kvID, project, domain string) (*mod
 	return curKV, nil
 }
 
-//findKVsAndDelete deletes multiple kvs and return the deleted kv list as these appeared before deletion
-func findKVsAndDelete(ctx context.Context, kvIDs []string, project, domain string) ([]*model.KVDoc, error) {
+//FindManyAndDelete deletes multiple kvs and return the deleted kv list as these appeared before deletion
+func (s *Dao) FindManyAndDelete(ctx context.Context, kvIDs []string, project, domain string) ([]*model.KVDoc, int64, error) {
 	filter := bson.D{
 		{Key: "id", Value: bson.M{"$in": kvIDs}},
 		{Key: "project", Value: project},
@@ -228,28 +218,16 @@ func findKVsAndDelete(ctx context.Context, kvIDs []string, project, domain strin
 		if err != datasource.ErrKeyNotExists {
 			openlog.Error("find Keys error: " + err.Error())
 		}
-		return nil, err
+		return nil, 0, err
 	}
 	collection := session.GetDB().Collection(session.CollectionKV)
 	dr, err := collection.DeleteMany(ctx, filter)
 	if err != nil {
 		openlog.Error(fmt.Sprintf("delete kvs [%v] failed : [%v]", kvIDs, err))
-		return nil, err
+		return nil, 0, err
 	}
-	if int64(len(kvs)) != dr.DeletedCount {
-		openlog.Warn(fmt.Sprintf("The count of found and the count of deleted are not equal, found %d, deleted %d", len(kvs), dr.DeletedCount))
-	} else {
-		openlog.Info(fmt.Sprintf("deleted %d kvs, their ids are %v", dr.DeletedCount, kvIDs))
-	}
-	if _, err := counter.ApplyRevision(ctx, domain); err != nil {
-		openlog.Error(fmt.Sprintf("kvs [%v] are deleted, but increase revision failed: [%v]", kvIDs, err))
-		return nil, err
-	}
-	err = history.AddDeleteTime(ctx, kvIDs, project, domain)
-	if err != nil {
-		openlog.Error(fmt.Sprintf("add delete time to kvs [%s] failed : [%s]", kvIDs, err))
-	}
-	return kvs, nil
+
+	return kvs, dr.DeletedCount, nil
 }
 
 func findKeys(ctx context.Context, filter interface{}, withoutLabel bool) ([]*model.KVDoc, error) {
@@ -298,9 +276,9 @@ func findKVByLabel(ctx context.Context, domain, labelFormat, key string, project
 
 }
 
-//findKVDocByID get kvs by kv id
-func findKVDocByID(ctx context.Context, domain, project, kvID string) (*model.KVDoc, error) {
-	filter := bson.M{"id": kvID, "domain": domain, "project": project}
+//Get get kv by kv id
+func (s *Dao) Get(ctx context.Context, req *model.GetKVRequest) (*model.KVDoc, error) {
+	filter := bson.M{"id": req.ID, "domain": req.Domain, "project": req.Project}
 	kvs, err := findOneKey(ctx, filter)
 	if err != nil {
 		openlog.Error(err.Error())
@@ -309,7 +287,7 @@ func findKVDocByID(ctx context.Context, domain, project, kvID string) (*model.KV
 	return kvs[0], nil
 }
 
-func total(ctx context.Context, domain string) (int64, error) {
+func (s *Dao) Total(ctx context.Context, domain string) (int64, error) {
 	collection := session.GetDB().Collection(session.CollectionKV)
 	filter := bson.M{"domain": domain}
 	total, err := collection.CountDocuments(ctx, filter)
@@ -318,4 +296,36 @@ func total(ctx context.Context, domain string) (int64, error) {
 		return 0, err
 	}
 	return total, err
+}
+
+//List get kv list by key and criteria
+func (s *Dao) List(ctx context.Context, project, domain string, options ...datasource.FindOption) (*model.KVResponse, error) {
+	opts := datasource.NewDefaultFindOpts()
+	for _, o := range options {
+		o(&opts)
+	}
+	cur, total, err := findKV(ctx, domain, project, opts)
+	if err != nil {
+		return nil, err
+	}
+	defer cur.Close(ctx)
+	result := &model.KVResponse{
+		Data: []*model.KVDoc{},
+	}
+	for cur.Next(ctx) {
+		curKV := &model.KVDoc{}
+		if err := cur.Decode(curKV); err != nil {
+			openlog.Error("decode to KVs error: " + err.Error())
+			return nil, err
+		}
+		if opts.ExactLabels {
+			if !util.IsEquivalentLabel(opts.Labels, curKV.Labels) {
+				continue
+			}
+		}
+		datasource.ClearPart(curKV)
+		result.Data = append(result.Data, curKV)
+	}
+	result.Total = total
+	return result, nil
 }

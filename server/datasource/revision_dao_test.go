@@ -29,6 +29,6 @@ import (
 
 func TestIncreaseAndGetRevision(t *testing.T) {
 	dao := datasource.GetBroker().GetRevisionDao()
-	_, err := dao.GetRevision(context.TODO(), domain)
+	_, err := dao.GetRevision(context.TODO(), "default")
 	assert.NoError(t, err)
 }

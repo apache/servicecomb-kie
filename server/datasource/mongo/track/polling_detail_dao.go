@@ -29,9 +29,13 @@ import (
 	"go.mongodb.org/mongo-driver/mongo"
 )
 
+//Dao is the implementation
+type Dao struct {
+}
+
 //CreateOrUpdate create a record or update exist record
-//If revision and session_id is exist: update else:insert
-func CreateOrUpdate(ctx context.Context, detail *model.PollingDetail) (*model.PollingDetail, error) {
+//If revision and session_id exists then update else insert
+func (s *Dao) CreateOrUpdate(ctx context.Context, detail *model.PollingDetail) (*model.PollingDetail, error) {
 	collection := session.GetDB().Collection(session.CollectionPollingDetail)
 	queryFilter := bson.M{"revision": detail.Revision, "domain": detail.Domain, "session_id": detail.SessionID}
 	res := collection.FindOne(ctx, queryFilter)
@@ -54,7 +58,7 @@ func CreateOrUpdate(ctx context.Context, detail *model.PollingDetail) (*model.Po
 }
 
 //Get is to get a track data
-func Get(ctx context.Context, detail *model.PollingDetail) ([]*model.PollingDetail, error) {
+func (s *Dao) GetPollingDetail(ctx context.Context, detail *model.PollingDetail) ([]*model.PollingDetail, error) {
 	collection := session.GetDB().Collection(session.CollectionPollingDetail)
 	queryFilter := bson.M{"domain": detail.Domain}
 	if detail.SessionID != "" {

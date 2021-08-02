@@ -20,6 +20,7 @@ package history
 import (
 	"context"
 	"fmt"
+	"go.mongodb.org/mongo-driver/bson/primitive"
 	"time"
 
 	"github.com/apache/servicecomb-kie/server/datasource"
@@ -35,6 +36,26 @@ import (
 const (
 	maxHistoryNum = 100
 )
+
+//Dao is the implementation
+type Dao struct {
+}
+
+//GetHistory get all history by label id
+func (s *Dao) GetHistory(ctx context.Context, kvID, project, domain string, options ...datasource.FindOption) (*model.KVResponse, error) {
+	var filter primitive.M
+	opts := datasource.FindOptions{}
+	for _, o := range options {
+		o(&opts)
+	}
+	filter = bson.M{
+		"id":      kvID,
+		"domain":  domain,
+		"project": project,
+	}
+
+	return getHistoryByKeyID(ctx, filter, opts.Offset, opts.Limit)
+}
 
 func getHistoryByKeyID(ctx context.Context, filter bson.M, offset, limit int64) (*model.KVResponse, error) {
 	collection := session.GetDB().Collection(session.CollectionKVRevision)
@@ -78,7 +99,7 @@ func getHistoryByKeyID(ctx context.Context, filter bson.M, offset, limit int64) 
 }
 
 //AddHistory add kv history
-func AddHistory(ctx context.Context, kv *model.KVDoc) error {
+func (s *Dao) AddHistory(ctx context.Context, kv *model.KVDoc) error {
 	collection := session.GetDB().Collection(session.CollectionKVRevision)
 	_, err := collection.InsertOne(ctx, kv)
 	if err != nil {
@@ -93,9 +114,9 @@ func AddHistory(ctx context.Context, kv *model.KVDoc) error {
 	return nil
 }
 
-//AddDeleteTime add delete time to all revisions of the kv,
+//DelayDeletionTime add delete time to all revisions of the kv,
 //thus these revisions will be automatically deleted by TTL index.
-func AddDeleteTime(ctx context.Context, kvIDs []string, project, domain string) error {
+func (s *Dao) DelayDeletionTime(ctx context.Context, kvIDs []string, project, domain string) error {
 	collection := session.GetDB().Collection(session.CollectionKVRevision)
 	now := time.Now()
 	filter := bson.D{

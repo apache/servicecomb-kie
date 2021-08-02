@@ -19,6 +19,7 @@ package datasource_test
 
 import (
 	"context"
+	kvsvc "github.com/apache/servicecomb-kie/server/service/kv"
 	"testing"
 
 	common2 "github.com/apache/servicecomb-kie/pkg/common"
@@ -30,7 +31,7 @@ import (
 )
 
 func TestGetHistory(t *testing.T) {
-	kv, err := kvdao.Create(context.TODO(), &model.KVDoc{
+	kv, err := kvsvc.Create(context.TODO(), &model.KVDoc{
 		Key:    "history",
 		Value:  "2s",
 		Status: common2.StatusEnabled,
@@ -38,13 +39,13 @@ func TestGetHistory(t *testing.T) {
 			"app":     "mall",
 			"service": "cart",
 		},
-		Domain:  domain,
-		Project: project,
+		Domain:  "default",
+		Project: "kv-test",
 	})
-	assert.NoError(t, err)
+	assert.Nil(t, err)
 	assert.NotEmpty(t, kv.ID)
 	t.Run("after create kv, should has history", func(t *testing.T) {
-		h, err := datasource.GetBroker().GetHistoryDao().GetHistory(context.TODO(), kv.ID)
+		h, err := datasource.GetBroker().GetHistoryDao().GetHistory(context.TODO(), kv.ID, "kv-test", "default")
 		assert.NoError(t, err)
 		assert.GreaterOrEqual(t, h.Total, 1)
 	})

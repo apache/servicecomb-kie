@@ -35,16 +35,16 @@ func NewFrom(c *datasource.Config) (datasource.Broker, error) {
 	return &Broker{}, session.Init(c)
 }
 func (*Broker) GetRevisionDao() datasource.RevisionDao {
-	return &counter.Service{}
+	return &counter.Dao{}
 }
 func (*Broker) GetKVDao() datasource.KVDao {
-	return &kv.Service{}
+	return &kv.Dao{}
 }
 func (*Broker) GetHistoryDao() datasource.HistoryDao {
-	return &history.Service{}
+	return &history.Dao{}
 }
 func (*Broker) GetTrackDao() datasource.TrackDao {
-	return &track.Service{}
+	return &track.Dao{}
 }
 func init() {
 	datasource.RegisterPlugin("mongo", NewFrom)

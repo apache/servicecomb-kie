@@ -22,7 +22,6 @@ import (
 	"fmt"
 
 	"github.com/apache/servicecomb-kie/pkg/model"
-	"github.com/apache/servicecomb-kie/server/datasource"
 	"github.com/go-chassis/cari/config"
 	"github.com/go-chassis/cari/pkg/errsvc"
 	"github.com/go-chassis/openlog"
@@ -37,7 +36,7 @@ type Force struct {
 
 func (f *Force) Execute(ctx context.Context, kv *model.KVDoc) (*model.KVDoc, *errsvc.Error) {
 	input := kv
-	kv, err := Post(ctx, kv)
+	kv, err := Create(ctx, kv)
 	if err == nil {
 		return kv, nil
 	}
@@ -63,7 +62,7 @@ func (f *Force) Execute(ctx context.Context, kv *model.KVDoc) (*model.KVDoc, *er
 		Project: input.Project,
 		Domain:  input.Domain,
 	}
-	kv, updateErr := datasource.GetBroker().GetKVDao().Update(ctx, kvReq)
+	kv, updateErr := Update(ctx, kvReq)
 	if updateErr != nil {
 		openlog.Error(fmt.Sprintf("update record [key: %s, labels: %s] failed", input.Key, input.Labels))
 		return input, config.NewError(config.ErrInternal, updateErr.Error())

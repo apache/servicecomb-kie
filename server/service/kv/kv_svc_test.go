@@ -15,11 +15,13 @@
  * limitations under the License.
  */
 
-package datasource_test
+package kv_test
 
 import (
 	"github.com/apache/servicecomb-kie/server/datasource"
+	kvsvc "github.com/apache/servicecomb-kie/server/service/kv"
 	_ "github.com/apache/servicecomb-kie/test"
+	"github.com/go-chassis/cari/config"
 
 	"context"
 	"testing"
@@ -34,7 +36,6 @@ import (
 var project = "kv-test"
 var domain = "default"
 var id string
-var kvdao = datasource.GetBroker().GetKVDao()
 
 func init() {
 	log.Init(log.Config{
@@ -48,7 +49,7 @@ func init() {
 
 func TestService_CreateOrUpdate(t *testing.T) {
 	t.Run("put kv timeout,with labels app and service", func(t *testing.T) {
-		kv, err := kvdao.Create(context.TODO(), &model.KVDoc{
+		kv, err := kvsvc.Create(context.TODO(), &model.KVDoc{
 			Key:    "timeout",
 			Value:  "2s",
 			Status: common2.StatusEnabled,
@@ -59,11 +60,11 @@ func TestService_CreateOrUpdate(t *testing.T) {
 			Domain:  domain,
 			Project: project,
 		})
-		assert.NoError(t, err)
+		assert.Nil(t, err)
 		assert.NotEmpty(t, kv.ID)
 	})
 	t.Run("put kv timeout,with labels app, service and version", func(t *testing.T) {
-		kv, err := kvdao.Create(context.TODO(), &model.KVDoc{
+		kv, err := kvsvc.Create(context.TODO(), &model.KVDoc{
 			Key:    "timeout",
 			Value:  "2s",
 			Status: common2.StatusEnabled,
@@ -75,18 +76,18 @@ func TestService_CreateOrUpdate(t *testing.T) {
 			Domain:  domain,
 			Project: project,
 		})
-		oid, err := kvdao.Get(context.TODO(), &model.GetKVRequest{
+		oid, err2 := kvsvc.Get(context.TODO(), &model.GetKVRequest{
 			Domain:  domain,
 			Project: project,
 			ID:      kv.ID,
 		})
-		assert.NoError(t, err)
+		assert.NoError(t, err2)
 		assert.NotEmpty(t, kv.ID)
-		assert.NoError(t, err)
+		assert.Nil(t, err)
 		assert.NotEmpty(t, oid)
 	})
 	t.Run("put kv timeout,with labels app,and update value", func(t *testing.T) {
-		beforeKV, err := kvdao.Create(context.Background(), &model.KVDoc{
+		beforeKV, err := kvsvc.Create(context.Background(), &model.KVDoc{
 			Key:    "timeout",
 			Value:  "1s",
 			Status: common2.StatusEnabled,
@@ -96,27 +97,27 @@ func TestService_CreateOrUpdate(t *testing.T) {
 			Domain:  domain,
 			Project: project,
 		})
-		assert.NoError(t, err)
-		afterKV, err := kvdao.Update(context.Background(), &model.UpdateKVRequest{
+		assert.Nil(t, err)
+		_, err2 := kvsvc.Update(context.Background(), &model.UpdateKVRequest{
 			ID:      beforeKV.ID,
 			Value:   "3s",
 			Domain:  domain,
 			Project: project,
 		})
-		assert.Equal(t, "3s", afterKV.Value)
-		savedKV, err := kvdao.Get(context.TODO(), &model.GetKVRequest{
+		assert.NoError(t, err2)
+		savedKV, err2 := kvsvc.Get(context.TODO(), &model.GetKVRequest{
 			Domain:  domain,
 			Project: project,
-			ID:      afterKV.ID,
+			ID:      beforeKV.ID,
 		})
-		assert.NoError(t, err)
-		assert.Equal(t, afterKV.Value, savedKV.Value)
+		assert.NoError(t, err2)
+		assert.Equal(t, "3s", savedKV.Value)
 	})
 }
 
 func TestService_Create(t *testing.T) {
 	t.Run("create kv timeout,with labels app and service", func(t *testing.T) {
-		result, err := kvdao.Create(context.TODO(), &model.KVDoc{
+		result, err := kvsvc.Create(context.TODO(), &model.KVDoc{
 			Key:    "timeout",
 			Value:  "2s",
 			Status: common2.StatusEnabled,
@@ -127,13 +128,13 @@ func TestService_Create(t *testing.T) {
 			Domain:  domain,
 			Project: project,
 		})
-		assert.NoError(t, err)
+		assert.Nil(t, err)
 		assert.NotEmpty(t, result.ID)
 		assert.Equal(t, "2s", result.Value)
 		id = result.ID
 	})
 	t.Run("create the same kv", func(t *testing.T) {
-		_, err := kvdao.Create(context.TODO(), &model.KVDoc{
+		_, err := kvsvc.Create(context.TODO(), &model.KVDoc{
 			Key:    "timeout",
 			Value:  "2s",
 			Status: common2.StatusEnabled,
@@ -144,14 +145,15 @@ func TestService_Create(t *testing.T) {
 			Domain:  domain,
 			Project: project,
 		})
-		assert.EqualError(t, err, datasource.ErrKVAlreadyExists.Error())
+		assert.EqualError(t, err,
+			config.NewError(config.ErrRecordAlreadyExists, datasource.ErrKVAlreadyExists.Error()).Error())
 	})
 	t.Run("list the kv", func(t *testing.T) {
-		res, err := kvdao.List(context.TODO(), domain, project,
+		res, err := kvsvc.List(context.TODO(), project, domain,
 			datasource.WithKey("wildcard(time*1)"))
 		assert.NoError(t, err)
 		assert.Equal(t, 0, len(res.Data))
-		res, err = kvdao.List(context.TODO(), domain, project,
+		res, err = kvsvc.List(context.TODO(), project, domain,
 			datasource.WithKey("wildcard(time*t)"))
 		assert.NoError(t, err)
 		assert.NotEqual(t, 0, len(res.Data))
@@ -160,20 +162,19 @@ func TestService_Create(t *testing.T) {
 
 func TestService_Update(t *testing.T) {
 	t.Run("update kv by kvID", func(t *testing.T) {
-		result, err := kvdao.Update(context.TODO(), &model.UpdateKVRequest{
+		_, err := kvsvc.Update(context.TODO(), &model.UpdateKVRequest{
 			ID:      id,
 			Value:   "3s",
 			Domain:  domain,
 			Project: project,
 		})
 		assert.NoError(t, err)
-		assert.Equal(t, "3s", result.Value)
 	})
 }
 
 func TestService_Delete(t *testing.T) {
 	t.Run("delete kv by kvID", func(t *testing.T) {
-		_, err := kvdao.FindOneAndDelete(context.TODO(), id, domain, project)
+		_, err := kvsvc.FindOneAndDelete(context.TODO(), id, project, domain)
 		assert.NoError(t, err)
 	})
 }

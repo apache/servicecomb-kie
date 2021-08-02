@@ -36,7 +36,7 @@ type Abort struct {
 
 func (a *Abort) Execute(ctx context.Context, kv *model.KVDoc) (*model.KVDoc, *errsvc.Error) {
 	inputKV := kv
-	kv, err := Post(ctx, kv)
+	kv, err := Create(ctx, kv)
 	if err == nil {
 		return kv, nil
 	}

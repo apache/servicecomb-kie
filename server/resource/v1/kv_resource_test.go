@@ -173,7 +173,6 @@ func TestKVResource_List(t *testing.T) {
 		err = json.Unmarshal(body, result)
 		assert.NoError(t, err)
 		assert.Equal(t, 3, len(result.Data))
-
 	})
 	var rev string
 	t.Run("list kv by service label, exact match,should return 2 kv", func(t *testing.T) {
