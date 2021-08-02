@@ -29,12 +29,12 @@ import (
 
 const revision = "revision_counter"
 
-//Service is the implementation
-type Service struct {
+//Dao is the implementation
+type Dao struct {
 }
 
 //GetRevision return current revision number
-func (s *Service) GetRevision(ctx context.Context, domain string) (int64, error) {
+func (s *Dao) GetRevision(ctx context.Context, domain string) (int64, error) {
 	collection := session.GetDB().Collection(session.CollectionCounter)
 	filter := bson.M{"name": revision, "domain": domain}
 	cur, err := collection.Find(ctx, filter)
@@ -58,7 +58,7 @@ func (s *Service) GetRevision(ctx context.Context, domain string) (int64, error)
 }
 
 //ApplyRevision increase revision number and return modified value
-func ApplyRevision(ctx context.Context, domain string) (int64, error) {
+func (s *Dao) ApplyRevision(ctx context.Context, domain string) (int64, error) {
 	collection := session.GetDB().Collection(session.CollectionCounter)
 	filter := bson.M{"name": revision, "domain": domain}
 	sr := collection.FindOneAndUpdate(ctx, filter,

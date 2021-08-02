@@ -74,7 +74,7 @@ func (r *KVResource) Post(rctx *restful.Context) {
 	}
 	kv.Domain = ReadDomain(rctx.Ctx)
 	kv.Project = rctx.ReadPathParameter(common.PathParameterProject)
-	kv, postErr := kvsvc.Post(rctx.Ctx, kv)
+	kv, postErr := kvsvc.Create(rctx.Ctx, kv)
 	if postErr != nil {
 		WriteErrResponse(rctx, postErr.Code, postErr.Message)
 		return
@@ -105,7 +105,7 @@ func (r *KVResource) Put(rctx *restful.Context) {
 		WriteErrResponse(rctx, config.ErrInvalidParams, err.Error())
 		return
 	}
-	kv, err := datasource.GetBroker().GetKVDao().Update(rctx.Ctx, kvReq)
+	kv, err := kvsvc.Update(rctx.Ctx, kvReq)
 	if err != nil {
 		openlog.Error(fmt.Sprintf("put [%s] err:%s", kvID, err.Error()))
 		WriteErrResponse(rctx, config.ErrInternal, "update kv failed")
@@ -142,7 +142,7 @@ func (r *KVResource) Get(rctx *restful.Context) {
 		WriteErrResponse(rctx, config.ErrInvalidParams, err.Error())
 		return
 	}
-	kv, err := datasource.GetBroker().GetKVDao().Get(rctx.Ctx, request)
+	kv, err := kvsvc.Get(rctx.Ctx, request)
 	if err != nil {
 		openlog.Error("kv_resource: " + err.Error())
 		if err == datasource.ErrKeyNotExists {
@@ -262,7 +262,7 @@ func (r *KVResource) Delete(rctx *restful.Context) {
 		WriteErrResponse(rctx, config.ErrInvalidParams, err.Error())
 		return
 	}
-	kv, err := datasource.GetBroker().GetKVDao().FindOneAndDelete(rctx.Ctx, kvID, domain, project)
+	kv, err := kvsvc.FindOneAndDelete(rctx.Ctx, kvID, project, domain)
 	if err != nil {
 		openlog.Error("delete failed, ", openlog.WithTags(openlog.Tags{
 			"kvID":  kvID,
@@ -302,7 +302,7 @@ func (r *KVResource) DeleteList(rctx *restful.Context) {
 		WriteErrResponse(rctx, config.ErrInvalidParams, err.Error())
 		return
 	}
-	kvs, err := datasource.GetBroker().GetKVDao().FindManyAndDelete(rctx.Ctx, b.IDs, domain, project)
+	kvs, err := kvsvc.FindManyAndDelete(rctx.Ctx, b.IDs, project, domain)
 	if err != nil {
 		if err == datasource.ErrKeyNotExists {
 			rctx.WriteHeader(http.StatusNoContent)

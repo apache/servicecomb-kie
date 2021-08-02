@@ -51,6 +51,8 @@ func (r *HistoryResource) GetRevisions(context *restful.Context) {
 		return
 	}
 	revisions, err := datasource.GetBroker().GetHistoryDao().GetHistory(context.Ctx, kvID,
+		context.ReadPathParameter(common.PathParameterProject),
+		ReadDomain(context.Ctx),
 		datasource.WithOffset(offset),
 		datasource.WithLimit(limit))
 	if err != nil {
