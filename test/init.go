@@ -28,14 +28,25 @@ import (
 	_ "github.com/apache/servicecomb-kie/server/datasource/mongo"
 )
 
+var uri string
+var kind string
+
 func init() {
+	err := archaius.Init(archaius.WithENVSource(),
+		archaius.WithMemorySource())
+	if err != nil {
+		panic(err)
+	}
+	kind := archaius.GetString("TEST_DB_KIND", "mongo")
+	uri := archaius.GetString("TEST_DB_URI", "mongodb://kie:123@127.0.0.1:27017/kie")
 	archaius.Init(archaius.WithMemorySource())
 	archaius.Set("servicecomb.cipher.plugin", "default")
 	cipher.Init()
 	validator.Init()
-	err := datasource.Init(config.DB{
-		URI:     "mongodb://kie:123@127.0.0.1:27017/kie",
+	err = datasource.Init(config.DB{
+		URI:     uri,
 		Timeout: "10s",
+		Kind:    kind,
 	})
 	if err != nil {
 		panic(err)

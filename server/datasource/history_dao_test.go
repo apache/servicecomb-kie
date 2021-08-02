@@ -15,43 +15,38 @@
  * limitations under the License.
  */
 
-package history_test
+package datasource_test
 
 import (
 	"context"
-	"time"
-
-	"github.com/apache/servicecomb-kie/server/datasource"
-
 	"testing"
 
-	"github.com/apache/servicecomb-kie/server/datasource/mongo/session"
+	common2 "github.com/apache/servicecomb-kie/pkg/common"
+	"github.com/apache/servicecomb-kie/pkg/model"
+	"github.com/apache/servicecomb-kie/server/datasource"
+
 	_ "github.com/apache/servicecomb-kie/test"
 	"github.com/stretchr/testify/assert"
-	"go.mongodb.org/mongo-driver/bson"
 )
 
-func init() {
-	session.Init(&datasource.Config{
-		URI:     "mongodb://kie:123@127.0.0.1:27017/kie",
-		Timeout: 10 * time.Second,
+func TestGetHistory(t *testing.T) {
+	kv, err := kvdao.Create(context.TODO(), &model.KVDoc{
+		Key:    "history",
+		Value:  "2s",
+		Status: common2.StatusEnabled,
+		Labels: map[string]string{
+			"app":     "mall",
+			"service": "cart",
+		},
+		Domain:  domain,
+		Project: project,
 	})
-}
-
-func TestAddHistory(t *testing.T) {
-	ctx := context.Background()
-	coll := session.GetDB().Collection("label_revision")
-	cur, err := coll.Find(
-		context.Background(),
-		bson.M{
-			"label_format": "5dbc079183ff1a09242376e7",
-			"data.key":     "lb",
-		})
 	assert.NoError(t, err)
-	for cur.Next(ctx) {
-		var elem interface{}
-		err := cur.Decode(&elem)
+	assert.NotEmpty(t, kv.ID)
+	t.Run("after create kv, should has history", func(t *testing.T) {
+		h, err := datasource.GetBroker().GetHistoryDao().GetHistory(context.TODO(), kv.ID)
 		assert.NoError(t, err)
-		t.Log(elem)
-	}
+		assert.GreaterOrEqual(t, h.Total, 1)
+	})
+
 }
