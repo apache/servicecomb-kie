@@ -70,10 +70,6 @@ func init() {
 	if err != nil {
 		panic(err)
 	}
-	err = archaius.Init(archaius.WithENVSource(), archaius.WithMemorySource())
-	if err != nil {
-		panic(err)
-	}
 }
 func TestKVResource_Post(t *testing.T) {
 	t.Run("post kv, label is invalid, should return err", func(t *testing.T) {

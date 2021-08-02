@@ -15,33 +15,20 @@
  * limitations under the License.
  */
 
-package counter_test
+package datasource_test
 
 import (
-	"time"
-
 	"github.com/apache/servicecomb-kie/server/datasource"
 	_ "github.com/apache/servicecomb-kie/test"
 
 	"context"
 	"testing"
 
-	"github.com/apache/servicecomb-kie/server/datasource/mongo/counter"
-	"github.com/apache/servicecomb-kie/server/datasource/mongo/session"
 	"github.com/stretchr/testify/assert"
 )
 
 func TestIncreaseAndGetRevision(t *testing.T) {
-	var err error
-	err = session.Init(&datasource.Config{
-		URI:     "mongodb://kie:123@127.0.0.1:27017/kie",
-		Timeout: 10 * time.Second,
-	})
+	dao := datasource.GetBroker().GetRevisionDao()
+	_, err := dao.GetRevision(context.TODO(), domain)
 	assert.NoError(t, err)
-	s := &counter.Service{}
-	n, _ := s.GetRevision(context.TODO(), "default")
-	t.Log(n)
-
-	next, _ := counter.ApplyRevision(context.TODO(), "default")
-	assert.Equal(t, n+1, next)
 }

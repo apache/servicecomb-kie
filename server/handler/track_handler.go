@@ -18,10 +18,11 @@
 package handler
 
 import (
-	v1 "github.com/apache/servicecomb-kie/server/resource/v1"
 	"net/http"
 	"strings"
 	"time"
+
+	v1 "github.com/apache/servicecomb-kie/server/resource/v1"
 
 	"github.com/apache/servicecomb-kie/pkg/common"
 	"github.com/apache/servicecomb-kie/pkg/iputil"

@@ -17,3 +17,25 @@ jobs:
         with:
           version: v1.29
           args: --skip-dirs=examples,test --skip-files=.*_test.go$
+  static-checks:
+    runs-on: ubuntu-latest
+    env:
+      GO111MODULE: on
+    steps:
+      - name: Checkout Source
+        uses: actions/checkout@v2
+      - name: Fmt
+        run: |
+          bash scripts/ci/formatChecker.sh
+      - name: Misspell
+        run: |
+          go get -u github.com/client9/misspell/cmd/misspell
+          bash scripts/ci/formatChecker.sh
+      - name: Lint
+        run: |
+          go get -u golang.org/x/lint/golint
+          bash scripts/ci/goLintChecker.sh
+      - name: Cyclo
+        run: |
+          go get github.com/fzipp/gocyclo
+          bash scripts/ci/goCycloChecker.sh

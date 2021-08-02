@@ -87,7 +87,7 @@ type HistoryDao interface {
 	GetHistory(ctx context.Context, keyID string, options ...FindOption) (*model.KVResponse, error)
 }
 
-//TrackDao provide api of TrackDao entity
+//TrackDao provide api of Track entity
 type TrackDao interface {
 	CreateOrUpdate(ctx context.Context, detail *model.PollingDetail) (*model.PollingDetail, error)
 	GetPollingDetail(ctx context.Context, detail *model.PollingDetail) ([]*model.PollingDetail, error)
