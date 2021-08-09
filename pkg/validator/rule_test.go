@@ -157,6 +157,23 @@ func TestValidate(t *testing.T) {
 	}
 	assert.Error(t, validator.Validate(kvDoc))
 
+	kvDoc = &model.KVDoc{Project: "a", Domain: "a",
+		Key:       "a",
+		ValueType: "123",
+		Value:     "a",
+		Labels:    map[string]string{"a": "a"},
+	}
+	err := validator.Validate(kvDoc)
+	assert.Error(t, err, "validate failed, field: KVDoc.ValueType, rule: ^$|^(ini|json|text|yaml|properties|xml)$")
+
+	kvDoc = &model.KVDoc{Project: "a", Domain: "a",
+		Key:       "a",
+		ValueType: "xml",
+		Value:     "a",
+		Labels:    map[string]string{"a": "a"},
+	}
+	assert.NoError(t, validator.Validate(kvDoc))
+
 	ListKVRe := &model.ListKVRequest{Project: "a", Domain: "a",
 		Key: "beginWith(a)",
 	}

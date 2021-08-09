@@ -35,7 +35,7 @@ var customRules = []*validator.RegexValidateRule{
 	validator.NewRegexRule(key, commonNameRegexString),
 	validator.NewRegexRule("getKey", getKeyRegexString),
 	validator.NewRegexRule("commonName", commonNameRegexString),
-	validator.NewRegexRule("valueType", `^$|^(ini|json|text|yaml|properties)$`),
+	validator.NewRegexRule("valueType", `^$|^(ini|json|text|yaml|properties|xml)$`),
 	validator.NewRegexRule("kvStatus", `^$|^(enabled|disabled)$`),
 	validator.NewRegexRule("value", allCharString), //ASCII, 2M
 	validator.NewRegexRule("labelK", labelKeyRegexString),
