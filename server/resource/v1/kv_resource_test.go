@@ -681,9 +681,8 @@ func TestKVResource_PutAndGet(t *testing.T) {
 
 		archaius.Set(qms.QuotaConfigKey, 2)
 		j, _ := json.Marshal(&model.KVDoc{
-			Key:    "reached_quota",
-			Value:  "1",
-			Labels: map[string]string{"a": "a"},
+			Key:   "reached_quota",
+			Value: "1",
 		})
 		r, _ := http.NewRequest("POST", "/v1/kv_test/kie/kv", bytes.NewBuffer(j))
 		r.Header.Set("Content-Type", "application/json")
