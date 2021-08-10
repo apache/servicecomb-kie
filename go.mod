@@ -1,16 +1,18 @@
 module github.com/apache/servicecomb-kie
 
 require (
+	github.com/coreos/etcd v3.3.25+incompatible
 	github.com/emicklei/go-restful v2.12.0+incompatible
-	github.com/go-chassis/cari v0.4.1-0.20210619062801-7681f1cfc0e5
-	github.com/go-chassis/foundation v0.3.1-0.20210602072914-a580bed505d0
+	github.com/go-chassis/cari v0.5.0
+	github.com/go-chassis/foundation v0.3.1-0.20210806081520-3bd92d1ef787
 	github.com/go-chassis/go-archaius v1.5.2-0.20210301074935-e4694f6b077b
-	github.com/go-chassis/go-chassis/v2 v2.1.2-0.20210308033545-985e98e20637
-	github.com/go-chassis/openlog v1.1.2
+	github.com/go-chassis/go-chassis/v2 v2.2.1-0.20210810140748-7274d2228000
+	github.com/go-chassis/openlog v1.1.3
 	github.com/go-chassis/seclog v1.3.0
 	github.com/hashicorp/serf v0.9.5
+	github.com/little-cui/etcdadpt v0.1.0
 	github.com/satori/go.uuid v1.2.0
-	github.com/stretchr/testify v1.6.1
+	github.com/stretchr/testify v1.7.0
 	github.com/urfave/cli v1.22.4
 	go.mongodb.org/mongo-driver v1.4.6
 	gopkg.in/mgo.v2 v2.0.0-20190816093944-a6b53ec6cb22

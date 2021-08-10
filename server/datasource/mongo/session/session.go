@@ -20,11 +20,7 @@ package session
 
 import (
 	"context"
-	"crypto/tls"
-	"crypto/x509"
 	"errors"
-	"fmt"
-	"io/ioutil"
 	"reflect"
 	"strings"
 	"sync"
@@ -33,6 +29,7 @@ import (
 	"github.com/apache/servicecomb-kie/pkg/cipherutil"
 	"github.com/apache/servicecomb-kie/pkg/model"
 	"github.com/apache/servicecomb-kie/server/datasource"
+	"github.com/apache/servicecomb-kie/server/datasource/tlsutil"
 	"github.com/go-chassis/openlog"
 
 	"go.mongodb.org/mongo-driver/bson"
@@ -62,9 +59,8 @@ var (
 
 	ErrKeyMustNotEmpty = errors.New("must supply key if you want to get exact one result")
 
-	ErrIDIsNil       = errors.New("id is empty")
-	ErrKeyIsNil      = errors.New("key must not be empty")
-	ErrRootCAMissing = errors.New("rootCAFile is empty in config file")
+	ErrIDIsNil  = errors.New("id is empty")
+	ErrKeyIsNil = errors.New("key must not be empty")
 
 	ErrViewCreation = errors.New("can not create view")
 	ErrViewUpdate   = errors.New("can not update view")
@@ -95,21 +91,9 @@ func Init(c *datasource.Config) error {
 		uri := cipherutil.TryDecrypt(c.URI)
 		clientOps := []*options.ClientOptions{options.Client().ApplyURI(uri)}
 		if c.SSLEnabled {
-			if c.RootCA == "" {
-				openlog.Error(ErrRootCAMissing.Error())
-				return
-			}
-			pool := x509.NewCertPool()
-			caCert, err := ioutil.ReadFile(c.RootCA)
+			tc, err := tlsutil.Config(c)
 			if err != nil {
-				openlog.Error(fmt.Sprintf("read ca cert file %s failed", caCert))
 				return
-			}
-			pool.AppendCertsFromPEM(caCert)
-			// #nosec
-			tc := &tls.Config{
-				RootCAs:            pool,
-				InsecureSkipVerify: !c.VerifyPeer,
 			}
 			clientOps = append(clientOps, options.Client().SetTLSConfig(tc))
 			openlog.Info("enabled ssl communication to mongodb")

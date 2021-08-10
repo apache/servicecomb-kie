@@ -15,35 +15,37 @@
  * limitations under the License.
  */
 
-package main
+package tlsutil
 
 import (
-	"os"
+	"crypto/tls"
+	"crypto/x509"
+	"errors"
+	"fmt"
+	"io/ioutil"
 
-	"github.com/apache/servicecomb-kie/server"
-	"github.com/apache/servicecomb-kie/server/command"
+	"github.com/apache/servicecomb-kie/server/datasource"
 	"github.com/go-chassis/openlog"
-
-	//custom handlers
-	_ "github.com/apache/servicecomb-kie/server/handler"
-	_ "github.com/go-chassis/go-chassis/v2/middleware/jwt"
-	_ "github.com/go-chassis/go-chassis/v2/middleware/monitoring"
-	_ "github.com/go-chassis/go-chassis/v2/middleware/ratelimiter"
-
-	//storage
-	_ "github.com/apache/servicecomb-kie/server/datasource/etcd"
-	_ "github.com/apache/servicecomb-kie/server/datasource/mongo"
-
-	//quota management
-	_ "github.com/apache/servicecomb-kie/server/plugin/qms"
-	//noop cipher
-	_ "github.com/go-chassis/go-chassis/v2/security/cipher/plugins/plain"
 )
 
-func main() {
-	if err := command.ParseConfig(os.Args); err != nil {
-		openlog.Fatal(err.Error())
-	}
+var ErrRootCAMissing = errors.New("rootCAFile is empty in config file")
 
-	server.Run()
+func Config(c *datasource.Config) (*tls.Config, error) {
+	if c.RootCA == "" {
+		openlog.Error(ErrRootCAMissing.Error())
+		return nil, ErrRootCAMissing
+	}
+	pool := x509.NewCertPool()
+	caCert, err := ioutil.ReadFile(c.RootCA)
+	if err != nil {
+		openlog.Error(fmt.Sprintf("read ca cert file %s failed", caCert))
+		return nil, err
+	}
+	pool.AppendCertsFromPEM(caCert)
+	// #nosec
+	tc := &tls.Config{
+		RootCAs:            pool,
+		InsecureSkipVerify: !c.VerifyPeer,
+	}
+	return tc, nil
 }

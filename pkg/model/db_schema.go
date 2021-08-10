@@ -63,6 +63,7 @@ type PollingDetail struct {
 	SessionID    string                 `json:"session_id,omitempty" bson:"session_id," yaml:"session_id,omitempty"`
 	SessionGroup string                 `json:"session_group,omitempty" bson:"session_group," yaml:"session_group,omitempty"`
 	Domain       string                 `json:"domain,omitempty" yaml:"domain,omitempty"`
+	Project      string                 `json:"project,omitempty" yaml:"project,omitempty"`
 	PollingData  map[string]interface{} `json:"polling_data,omitempty" yaml:"polling_data,omitempty"`
 	Revision     string                 `json:"revision,omitempty" yaml:"revision,omitempty"`
 	IP           string                 `json:"ip,omitempty" yaml:"ip,omitempty"`

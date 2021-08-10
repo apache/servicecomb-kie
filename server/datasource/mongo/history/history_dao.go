@@ -20,21 +20,15 @@ package history
 import (
 	"context"
 	"fmt"
-	"go.mongodb.org/mongo-driver/bson/primitive"
 	"time"
 
-	"github.com/apache/servicecomb-kie/server/datasource"
-
 	"github.com/apache/servicecomb-kie/pkg/model"
+	"github.com/apache/servicecomb-kie/server/datasource"
 	"github.com/apache/servicecomb-kie/server/datasource/mongo/session"
 	"github.com/go-chassis/openlog"
 	"go.mongodb.org/mongo-driver/bson"
+	"go.mongodb.org/mongo-driver/bson/primitive"
 	"go.mongodb.org/mongo-driver/mongo/options"
-)
-
-//const of history
-const (
-	maxHistoryNum = 100
 )
 
 //Dao is the implementation
@@ -144,13 +138,13 @@ func historyRotate(ctx context.Context, kvID, project, domain string) error {
 	if err != nil {
 		return err
 	}
-	if curTotal <= maxHistoryNum {
+	if curTotal <= datasource.MaxHistoryNum {
 		return nil
 	}
 	opt := options.Find().SetSort(map[string]interface{}{
 		"update_revision": 1,
 	})
-	opt = opt.SetLimit(curTotal - maxHistoryNum)
+	opt = opt.SetLimit(curTotal - datasource.MaxHistoryNum)
 	cur, err := collection.Find(ctx, filter, opt)
 	if err != nil {
 		return err

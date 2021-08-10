@@ -20,11 +20,11 @@ package kv
 import (
 	"context"
 	"fmt"
-	"github.com/apache/servicecomb-kie/pkg/util"
 	"regexp"
 	"strings"
 
 	"github.com/apache/servicecomb-kie/pkg/model"
+	"github.com/apache/servicecomb-kie/pkg/util"
 	"github.com/apache/servicecomb-kie/server/datasource"
 	"github.com/apache/servicecomb-kie/server/datasource/mongo/session"
 	"github.com/go-chassis/openlog"
@@ -287,9 +287,9 @@ func (s *Dao) Get(ctx context.Context, req *model.GetKVRequest) (*model.KVDoc, e
 	return kvs[0], nil
 }
 
-func (s *Dao) Total(ctx context.Context, domain string) (int64, error) {
+func (s *Dao) Total(ctx context.Context, project, domain string) (int64, error) {
 	collection := session.GetDB().Collection(session.CollectionKV)
-	filter := bson.M{"domain": domain}
+	filter := bson.M{"domain": domain, "project": project}
 	total, err := collection.CountDocuments(ctx, filter)
 	if err != nil {
 		openlog.Error("find total number: " + err.Error())

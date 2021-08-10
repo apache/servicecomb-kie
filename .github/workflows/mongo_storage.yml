@@ -20,4 +20,4 @@ jobs:
         sleep 20
         export TEST_DB_KIND=mongo
         export TEST_DB_URI=mongodb://kie:123@127.0.0.1:27017/kie
-        go test $(go list ./... |  grep -v third_party | grep -v examples) -cover -covermode atomic -coverprofile coverage.out
+        go test $(go list ./... | grep -v etcd |  grep -v third_party | grep -v examples) -cover -covermode atomic -coverprofile coverage.out

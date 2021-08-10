@@ -45,6 +45,7 @@ var (
 
 const (
 	DefaultValueType = "text"
+	MaxHistoryNum    = 100
 )
 
 //New init db session
@@ -68,7 +69,7 @@ func GetBroker() Broker {
 
 //KVDao provide api of KV entity
 type KVDao interface {
-	//below 3 methods is usually for admin console
+	// Create Update List are usually for admin console
 	Create(ctx context.Context, kv *model.KVDoc) (*model.KVDoc, error)
 	Update(ctx context.Context, kv *model.KVDoc) error
 	List(ctx context.Context, project, domain string, options ...FindOption) (*model.KVResponse, error)
@@ -79,8 +80,8 @@ type KVDao interface {
 	//Get return kv by id
 	Get(ctx context.Context, req *model.GetKVRequest) (*model.KVDoc, error)
 	Exist(ctx context.Context, key, project, domain string, options ...FindOption) (bool, error)
-	//KVDao is a resource of kie, this api should return kv resource number by domain id
-	Total(ctx context.Context, domain string) (int64, error)
+	// Total should return kv resource number by domain id and project id
+	Total(ctx context.Context, project, domain string) (int64, error)
 }
 
 //HistoryDao provide api of History entity
