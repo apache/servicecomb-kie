@@ -172,7 +172,7 @@ func TestKVResource_Post(t *testing.T) {
 		c.ServeHTTP(resp, r)
 		assert.Equal(t, http.StatusOK, resp.Result().StatusCode)
 	})
-	t.Run("post kv, labels is nil, should return err", func(t *testing.T) {
+	t.Run("post kv, labels is nil, should success", func(t *testing.T) {
 		kv := &model.KVDoc{
 			Key:   "no labels",
 			Value: "without labels",
@@ -184,7 +184,7 @@ func TestKVResource_Post(t *testing.T) {
 		c, _ := restfultest.New(kvr, nil)
 		resp := httptest.NewRecorder()
 		c.ServeHTTP(resp, r)
-		assert.Equal(t, http.StatusBadRequest, resp.Result().StatusCode)
+		assert.Equal(t, http.StatusOK, resp.Result().StatusCode)
 	})
 	t.Run("post kv, has one label, key of label is a empty string, should return err", func(t *testing.T) {
 		kv := &model.KVDoc{
@@ -681,9 +681,8 @@ func TestKVResource_PutAndGet(t *testing.T) {
 
 		archaius.Set(qms.QuotaConfigKey, 2)
 		j, _ := json.Marshal(&model.KVDoc{
-			Key:    "reached_quota",
-			Value:  "1",
-			Labels: map[string]string{"a": "a"},
+			Key:   "reached_quota",
+			Value: "1",
 		})
 		r, _ := http.NewRequest("POST", "/v1/test/kie/kv", bytes.NewBuffer(j))
 		r.Header.Set("Content-Type", "application/json")

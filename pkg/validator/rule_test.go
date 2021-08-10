@@ -22,46 +22,34 @@ var string128 = string32 + string32 + string32 + string32
 
 func TestValidate(t *testing.T) {
 	kvDoc := &model.KVDoc{Project: "a", Domain: "a",
-		Key:    "a",
-		Value:  "a",
-		Labels: map[string]string{"a": "a"},
+		Key:   "a",
+		Value: "a",
 	}
 	assert.NoError(t, validator.Validate(kvDoc))
 
 	kvDoc = &model.KVDoc{Project: "a", Domain: "a",
-		Key:    "a",
-		Value:  "",
-		Labels: map[string]string{"a": "a"},
+		Key:   "a",
+		Value: "",
 	}
 	assert.NoError(t, validator.Validate(kvDoc))
-
-	kvDoc = &model.KVDoc{Project: "a", Domain: "a",
-		Key:    "a",
-		Value:  "a",
-		Labels: nil,
-	}
-	assert.Error(t, validator.Validate(kvDoc))
 }
 
 func TestKey(t *testing.T) {
 	kvDoc := &model.KVDoc{Project: "a", Domain: "a",
-		Key:    "",
-		Value:  "a",
-		Labels: map[string]string{"a": "a"},
+		Key:   "",
+		Value: "a",
 	}
 	assert.Error(t, validator.Validate(kvDoc))
 
 	kvDoc = &model.KVDoc{Project: "a", Domain: "a",
-		Key:    "a#",
-		Value:  "a",
-		Labels: map[string]string{"a": "a"},
+		Key:   "a#",
+		Value: "a",
 	}
 	assert.Error(t, validator.Validate(kvDoc))
 
 	kvDoc = &model.KVDoc{Project: "a", Domain: "a",
-		Key:    string128 + "a",
-		Value:  "a",
-		Labels: map[string]string{"a": "a"},
+		Key:   string128 + "a",
+		Value: "a",
 	}
 	assert.Error(t, validator.Validate(kvDoc))
 
@@ -85,9 +73,23 @@ func TestLabels(t *testing.T) {
 	kvDoc := &model.KVDoc{Project: "a", Domain: "a",
 		Key:    "a",
 		Value:  "a",
-		Labels: map[string]string{},
+		Labels: nil,
+	}
+	assert.NoError(t, validator.Validate(kvDoc))
+
+	kvDoc = &model.KVDoc{Project: "a", Domain: "a",
+		Key:    "a",
+		Value:  "a",
+		Labels: map[string]string{"": ""},
 	}
 	assert.Error(t, validator.Validate(kvDoc))
+
+	kvDoc = &model.KVDoc{Project: "a", Domain: "a",
+		Key:    "a",
+		Value:  "a",
+		Labels: map[string]string{"a": "a"},
+	}
+	assert.NoError(t, validator.Validate(kvDoc))
 
 	kvDoc = &model.KVDoc{Project: "a", Domain: "a",
 		Key:    "a",
@@ -159,7 +161,6 @@ func TestValueType(t *testing.T) {
 		Key:       "a",
 		Value:     "a",
 		ValueType: "text",
-		Labels:    map[string]string{"a": "a"},
 	}
 	assert.NoError(t, validator.Validate(kvDoc))
 
@@ -167,7 +168,6 @@ func TestValueType(t *testing.T) {
 		Key:       "a",
 		Value:     "a",
 		ValueType: "",
-		Labels:    map[string]string{"a": "a"},
 	}
 	assert.NoError(t, validator.Validate(kvDoc))
 
@@ -175,7 +175,6 @@ func TestValueType(t *testing.T) {
 		Key:       "a",
 		Value:     "a",
 		ValueType: "a",
-		Labels:    map[string]string{"a": "a"},
 	}
 	assert.Error(t, validator.Validate(kvDoc))
 }
@@ -185,7 +184,6 @@ func TestStatus(t *testing.T) {
 		Key:    "a",
 		Value:  "a",
 		Status: "",
-		Labels: map[string]string{"a": "a"},
 	}
 	assert.NoError(t, validator.Validate(kvDoc))
 
@@ -193,7 +191,6 @@ func TestStatus(t *testing.T) {
 		Key:    "a",
 		Value:  "a",
 		Status: "enabled",
-		Labels: map[string]string{"a": "a"},
 	}
 	assert.NoError(t, validator.Validate(kvDoc))
 
@@ -201,7 +198,6 @@ func TestStatus(t *testing.T) {
 		Key:    "a",
 		Value:  "a",
 		Status: "a",
-		Labels: map[string]string{"a": "a"},
 	}
 	assert.Error(t, validator.Validate(kvDoc))
 }
