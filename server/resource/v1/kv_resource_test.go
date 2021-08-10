@@ -156,6 +156,66 @@ func TestKVResource_Post(t *testing.T) {
 		assert.NoError(t, err)
 		assert.NotEmpty(t, data.ID)
 	})
+	t.Run("post kv, value type is xml, should success", func(t *testing.T) {
+		kv := &model.KVDoc{
+			Key:       "xml",
+			Value:     "a",
+			ValueType: "xml",
+			Labels:    map[string]string{"a": "a"},
+		}
+		j, _ := json.Marshal(kv)
+		r, _ := http.NewRequest("POST", "/v1/kv_test/kie/kv", bytes.NewBuffer(j))
+		r.Header.Set("Content-Type", "application/json")
+		kvr := &v1.KVResource{}
+		c, _ := restfultest.New(kvr, nil)
+		resp := httptest.NewRecorder()
+		c.ServeHTTP(resp, r)
+		assert.Equal(t, http.StatusOK, resp.Result().StatusCode)
+	})
+	t.Run("post kv, labels is nil, should return err", func(t *testing.T) {
+		kv := &model.KVDoc{
+			Key:   "no labels",
+			Value: "without labels",
+		}
+		j, _ := json.Marshal(kv)
+		r, _ := http.NewRequest("POST", "/v1/kv_test/kie/kv", bytes.NewBuffer(j))
+		r.Header.Set("Content-Type", "application/json")
+		kvr := &v1.KVResource{}
+		c, _ := restfultest.New(kvr, nil)
+		resp := httptest.NewRecorder()
+		c.ServeHTTP(resp, r)
+		assert.Equal(t, http.StatusBadRequest, resp.Result().StatusCode)
+	})
+	t.Run("post kv, has one label, key of label is a empty string, should return err", func(t *testing.T) {
+		kv := &model.KVDoc{
+			Key:    "no labels",
+			Value:  "without labels",
+			Labels: map[string]string{"": "a"},
+		}
+		j, _ := json.Marshal(kv)
+		r, _ := http.NewRequest("POST", "/v1/kv_test/kie/kv", bytes.NewBuffer(j))
+		r.Header.Set("Content-Type", "application/json")
+		kvr := &v1.KVResource{}
+		c, _ := restfultest.New(kvr, nil)
+		resp := httptest.NewRecorder()
+		c.ServeHTTP(resp, r)
+		assert.Equal(t, http.StatusBadRequest, resp.Result().StatusCode)
+	})
+	t.Run("post kv, has one label, value of label is a empty string, should return err", func(t *testing.T) {
+		kv := &model.KVDoc{
+			Key:    "no labels",
+			Value:  "without labels",
+			Labels: map[string]string{"a": ""},
+		}
+		j, _ := json.Marshal(kv)
+		r, _ := http.NewRequest("POST", "/v1/kv_test/kie/kv", bytes.NewBuffer(j))
+		r.Header.Set("Content-Type", "application/json")
+		kvr := &v1.KVResource{}
+		c, _ := restfultest.New(kvr, nil)
+		resp := httptest.NewRecorder()
+		c.ServeHTTP(resp, r)
+		assert.Equal(t, http.StatusBadRequest, resp.Result().StatusCode)
+	})
 }
 func TestKVResource_List(t *testing.T) {
 	t.Run("list kv by service label, should return 3 kvs", func(t *testing.T) {

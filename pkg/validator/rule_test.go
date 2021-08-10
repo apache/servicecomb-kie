@@ -17,95 +17,91 @@ func init() {
 	}
 }
 
+var string32 = "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa" //32
+var string128 = string32 + string32 + string32 + string32
+
 func TestValidate(t *testing.T) {
-	string32 := "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa" //32
-	string128 := string32 + string32 + string32 + string32
-
 	kvDoc := &model.KVDoc{Project: "a", Domain: "a",
-		Key:   "a",
-		Value: "a",
-	}
-	assert.NoError(t, validator.Validate(kvDoc))
-
-	kvDoc = &model.KVDoc{Project: "a", Domain: "a",
-		Key:   "",
-		Value: "a",
-	}
-	assert.Error(t, validator.Validate(kvDoc))
-
-	kvDoc = &model.KVDoc{Project: "a", Domain: "a",
-		Key:   "a#",
-		Value: "a",
-	}
-	assert.Error(t, validator.Validate(kvDoc))
-
-	kvDoc = &model.KVDoc{Project: "a", Domain: "a",
-		Key:   string128 + "a",
-		Value: "a",
-	}
-	assert.Error(t, validator.Validate(kvDoc))
-
-	kvDoc = &model.KVDoc{Project: "a", Domain: "a",
-		Key:   "a",
-		Value: "",
-	}
-	assert.NoError(t, validator.Validate(kvDoc))
-
-	kvDoc = &model.KVDoc{Project: "a", Domain: "a",
-		Key:       "a",
-		Value:     "a",
-		ValueType: "",
-	}
-	assert.NoError(t, validator.Validate(kvDoc))
-
-	kvDoc = &model.KVDoc{Project: "a", Domain: "a",
-		Key:       "a",
-		Value:     "a",
-		ValueType: "text",
-	}
-	assert.NoError(t, validator.Validate(kvDoc))
-
-	kvDoc = &model.KVDoc{Project: "a", Domain: "a",
-		Key:       "a",
-		Value:     "a",
-		ValueType: "a",
-	}
-	assert.Error(t, validator.Validate(kvDoc))
-
-	kvDoc = &model.KVDoc{Project: "a", Domain: "a",
 		Key:    "a",
 		Value:  "a",
-		Status: "",
+		Labels: map[string]string{"a": "a"},
 	}
 	assert.NoError(t, validator.Validate(kvDoc))
 
 	kvDoc = &model.KVDoc{Project: "a", Domain: "a",
 		Key:    "a",
-		Value:  "a",
-		Status: "enabled",
+		Value:  "",
+		Labels: map[string]string{"a": "a"},
 	}
 	assert.NoError(t, validator.Validate(kvDoc))
-
-	kvDoc = &model.KVDoc{Project: "a", Domain: "a",
-		Key:    "a",
-		Value:  "a",
-		Status: "a",
-	}
-	assert.Error(t, validator.Validate(kvDoc))
 
 	kvDoc = &model.KVDoc{Project: "a", Domain: "a",
 		Key:    "a",
 		Value:  "a",
 		Labels: nil,
 	}
-	assert.NoError(t, validator.Validate(kvDoc))
+	assert.Error(t, validator.Validate(kvDoc))
+}
+
+func TestKey(t *testing.T) {
+	kvDoc := &model.KVDoc{Project: "a", Domain: "a",
+		Key:    "",
+		Value:  "a",
+		Labels: map[string]string{"a": "a"},
+	}
+	assert.Error(t, validator.Validate(kvDoc))
+
+	kvDoc = &model.KVDoc{Project: "a", Domain: "a",
+		Key:    "a#",
+		Value:  "a",
+		Labels: map[string]string{"a": "a"},
+	}
+	assert.Error(t, validator.Validate(kvDoc))
+
+	kvDoc = &model.KVDoc{Project: "a", Domain: "a",
+		Key:    string128 + "a",
+		Value:  "a",
+		Labels: map[string]string{"a": "a"},
+	}
+	assert.Error(t, validator.Validate(kvDoc))
+
+	ListKVRe := &model.ListKVRequest{Project: "a", Domain: "a",
+		Key: "beginWith(a)",
+	}
+	assert.NoError(t, validator.Validate(ListKVRe))
+
+	ListKVRe = &model.ListKVRequest{Project: "a", Domain: "a",
+		Key: "beginW(a)",
+	}
+	assert.Error(t, validator.Validate(ListKVRe))
+
+	ListKVRe = &model.ListKVRequest{Project: "a", Domain: "a",
+		Key: "beginW()",
+	}
+	assert.Error(t, validator.Validate(ListKVRe))
+}
+
+func TestLabels(t *testing.T) {
+	kvDoc := &model.KVDoc{Project: "a", Domain: "a",
+		Key:    "a",
+		Value:  "a",
+		Labels: map[string]string{},
+	}
+	assert.Error(t, validator.Validate(kvDoc))
 
 	kvDoc = &model.KVDoc{Project: "a", Domain: "a",
 		Key:    "a",
 		Value:  "a",
-		Labels: map[string]string{"a": "a"},
+		Labels: map[string]string{"a": ""},
 	}
-	assert.NoError(t, validator.Validate(kvDoc))
+	assert.Error(t, validator.Validate(kvDoc))
+
+	kvDoc = &model.KVDoc{Project: "a", Domain: "a",
+		Key:    "a",
+		Value:  "a",
+		Labels: map[string]string{"": "a"},
+	}
+	assert.Error(t, validator.Validate(kvDoc))
 
 	kvDoc = &model.KVDoc{Project: "a", Domain: "a",
 		Key:   "a",
@@ -156,36 +152,56 @@ func TestValidate(t *testing.T) {
 		Labels: map[string]string{string32 + "a": "a"},
 	}
 	assert.Error(t, validator.Validate(kvDoc))
+}
 
-	kvDoc = &model.KVDoc{Project: "a", Domain: "a",
+func TestValueType(t *testing.T) {
+	kvDoc := &model.KVDoc{Project: "a", Domain: "a",
 		Key:       "a",
-		ValueType: "123",
 		Value:     "a",
-		Labels:    map[string]string{"a": "a"},
-	}
-	err := validator.Validate(kvDoc)
-	assert.Error(t, err, "validate failed, field: KVDoc.ValueType, rule: ^$|^(ini|json|text|yaml|properties|xml)$")
-
-	kvDoc = &model.KVDoc{Project: "a", Domain: "a",
-		Key:       "a",
-		ValueType: "xml",
-		Value:     "a",
+		ValueType: "text",
 		Labels:    map[string]string{"a": "a"},
 	}
 	assert.NoError(t, validator.Validate(kvDoc))
 
-	ListKVRe := &model.ListKVRequest{Project: "a", Domain: "a",
-		Key: "beginWith(a)",
+	kvDoc = &model.KVDoc{Project: "a", Domain: "a",
+		Key:       "a",
+		Value:     "a",
+		ValueType: "",
+		Labels:    map[string]string{"a": "a"},
 	}
-	assert.NoError(t, validator.Validate(ListKVRe))
+	assert.NoError(t, validator.Validate(kvDoc))
 
-	ListKVRe = &model.ListKVRequest{Project: "a", Domain: "a",
-		Key: "beginW(a)",
+	kvDoc = &model.KVDoc{Project: "a", Domain: "a",
+		Key:       "a",
+		Value:     "a",
+		ValueType: "a",
+		Labels:    map[string]string{"a": "a"},
 	}
-	assert.Error(t, validator.Validate(ListKVRe))
+	assert.Error(t, validator.Validate(kvDoc))
+}
 
-	ListKVRe = &model.ListKVRequest{Project: "a", Domain: "a",
-		Key: "beginW()",
+func TestStatus(t *testing.T) {
+	kvDoc := &model.KVDoc{Project: "a", Domain: "a",
+		Key:    "a",
+		Value:  "a",
+		Status: "",
+		Labels: map[string]string{"a": "a"},
 	}
-	assert.Error(t, validator.Validate(ListKVRe))
+	assert.NoError(t, validator.Validate(kvDoc))
+
+	kvDoc = &model.KVDoc{Project: "a", Domain: "a",
+		Key:    "a",
+		Value:  "a",
+		Status: "enabled",
+		Labels: map[string]string{"a": "a"},
+	}
+	assert.NoError(t, validator.Validate(kvDoc))
+
+	kvDoc = &model.KVDoc{Project: "a", Domain: "a",
+		Key:    "a",
+		Value:  "a",
+		Status: "a",
+		Labels: map[string]string{"a": "a"},
+	}
+	assert.Error(t, validator.Validate(kvDoc))
 }
