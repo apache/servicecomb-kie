@@ -44,8 +44,8 @@ type KVDoc struct {
 	CreateTime     int64  `json:"create_time,omitempty" bson:"create_time," yaml:"create_time,omitempty"`
 	UpdateTime     int64  `json:"update_time,omitempty" bson:"update_time," yaml:"update_time,omitempty"`
 
-	Labels map[string]string `json:"labels,omitempty" yaml:"labels,omitempty" validate:"max=6,dive,keys,labelK,endkeys,labelV"` //redundant
-	Domain string            `json:"domain,omitempty" yaml:"domain,omitempty" validate:"min=1,max=256,commonName"`              //redundant
+	Labels map[string]string `json:"labels,omitempty" yaml:"labels,omitempty" validate:"min=1,max=6,dive,keys,labelK,endkeys,labelV"` //redundant
+	Domain string            `json:"domain,omitempty" yaml:"domain,omitempty" validate:"min=1,max=256,commonName"`                    //redundant
 }
 
 //ViewDoc is db struct, it saves user's custom view name and criteria
