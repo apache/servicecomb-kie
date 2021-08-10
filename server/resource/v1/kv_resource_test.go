@@ -174,8 +174,8 @@ func TestKVResource_Post(t *testing.T) {
 	})
 	t.Run("post kv, labels is nil, should success", func(t *testing.T) {
 		kv := &model.KVDoc{
-			Key:   "no labels",
-			Value: "without labels",
+			Key:   "no_labels",
+			Value: "without_labels",
 		}
 		j, _ := json.Marshal(kv)
 		r, _ := http.NewRequest("POST", "/v1/kv_test/kie/kv", bytes.NewBuffer(j))
