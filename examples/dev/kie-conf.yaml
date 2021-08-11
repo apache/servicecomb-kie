@@ -1,10 +1,11 @@
 db:
+  # kind can be mongo, etcd, embedded_etcd
+  kind: mongo
+  # uri is the db endpoints list
+  #   kind=mongo, then is the mongodb cluster's uri, e.g. mongodb://127.0.0.1:27017/kie
+  #   kind=etcd, then is the  remote etcd server's advertise-client-urls, e.g. http://127.0.0.1:2379
+  #   kind=embedded_etcd, then is the embedded etcd server's advertise-peer-urls, e.g. default=http://127.0.0.1:2380
   uri: mongodb://kie:123@127.0.0.1:27017/kie
-  kind: mongodb
-  #uri: 127.0.0.1:2379
-  #kind: etcd
-  #uri: default=http://127.0.0.1:2380
-  #kind: embedded_etcd
   poolSize: 10
   timeout: 5m
   sslEnabled: false

@@ -31,13 +31,16 @@ type Config struct {
 
 //DB is yaml file struct to set persistent config
 type DB struct {
-	URI        string `yaml:"uri"`
-	Kind       string `yaml:"kind"`
-	PoolSize   int    `yaml:"poolSize"`
-	SSLEnabled bool   `yaml:"sslEnabled"`
-	RootCA     string `yaml:"rootCAFile"`
-	Timeout    string `yaml:"timeout"`
-	VerifyPeer bool   `yaml:"verifyPeer"`
+	URI         string `yaml:"uri"`
+	Kind        string `yaml:"kind"`
+	PoolSize    int    `yaml:"poolSize"`
+	SSLEnabled  bool   `yaml:"sslEnabled"`
+	RootCA      string `yaml:"rootCAFile"`
+	CertFile    string `yaml:"certFile"`
+	KeyFile     string `yaml:"keyFile"`
+	CertPwdFile string `yaml:"certPwdFile"`
+	Timeout     string `yaml:"timeout"`
+	VerifyPeer  bool   `yaml:"verifyPeer"`
 }
 
 //RBAC is rbac config

@@ -135,11 +135,14 @@ func Init(c config.DB) error {
 		timeout = DefaultTimeout
 	}
 	dbc := &Config{
-		URI:        c.URI,
-		PoolSize:   c.PoolSize,
-		SSLEnabled: c.SSLEnabled,
-		RootCA:     c.RootCA,
-		Timeout:    timeout,
+		URI:         c.URI,
+		PoolSize:    c.PoolSize,
+		SSLEnabled:  c.SSLEnabled,
+		RootCA:      c.RootCA,
+		CertFile:    c.CertFile,
+		CertPwdFile: c.CertPwdFile,
+		KeyFile:     c.KeyFile,
+		Timeout:     timeout,
 	}
 	if b, err = f(dbc); err != nil {
 		return err
