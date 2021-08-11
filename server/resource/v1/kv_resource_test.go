@@ -46,6 +46,13 @@ import (
 	_ "github.com/apache/servicecomb-kie/test"
 )
 
+var string32 = "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa" //32
+var string128 = string32 + string32 + string32 + string32
+var string1024 = string128 + string128 + string128 + string128 + string128 + string128 + string128 + string128
+var string8192 = string1024 + string1024 + string1024 + string1024 + string1024 + string1024 + string1024 + string1024
+var string65536 = string8192 + string8192 + string8192 + string8192 + string8192 + string8192 + string8192 + string8192
+var string131072 = string65536 + string65536
+
 func init() {
 	log.Init(log.Config{
 		Writers:       []string{"stdout"},
@@ -206,6 +213,41 @@ func TestKVResource_Post(t *testing.T) {
 			Key:    "no labels",
 			Value:  "without labels",
 			Labels: map[string]string{"a": ""},
+		}
+		j, _ := json.Marshal(kv)
+		r, _ := http.NewRequest("POST", "/v1/kv_test/kie/kv", bytes.NewBuffer(j))
+		r.Header.Set("Content-Type", "application/json")
+		kvr := &v1.KVResource{}
+		c, _ := restfultest.New(kvr, nil)
+		resp := httptest.NewRecorder()
+		c.ServeHTTP(resp, r)
+		assert.Equal(t, http.StatusBadRequest, resp.Result().StatusCode)
+	})
+	t.Run("post kv, value.size() = 131072, should success", func(t *testing.T) {
+		kv := &model.KVDoc{
+			Key:   "value-max-size",
+			Value: string131072,
+		}
+		j, _ := json.Marshal(kv)
+		r, _ := http.NewRequest("POST", "/v1/kv_test/kie/kv", bytes.NewBuffer(j))
+		r.Header.Set("Content-Type", "application/json")
+		kvr := &v1.KVResource{}
+		c, _ := restfultest.New(kvr, nil)
+		resp := httptest.NewRecorder()
+		c.ServeHTTP(resp, r)
+		assert.Equal(t, http.StatusOK, resp.Result().StatusCode)
+
+		body, err := ioutil.ReadAll(resp.Body)
+		assert.NoError(t, err)
+		data := &model.KVDoc{}
+		err = json.Unmarshal(body, data)
+		assert.NoError(t, err)
+		assert.Equal(t, 131072, len(data.Value))
+	})
+	t.Run("post kv, value.size() = 131073, should return err", func(t *testing.T) {
+		kv := &model.KVDoc{
+			Key:   "value-max-size",
+			Value: string131072 + "a",
 		}
 		j, _ := json.Marshal(kv)
 		r, _ := http.NewRequest("POST", "/v1/kv_test/kie/kv", bytes.NewBuffer(j))
