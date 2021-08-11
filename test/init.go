@@ -23,13 +23,18 @@ import (
 	"github.com/apache/servicecomb-kie/server/datasource"
 	"github.com/go-chassis/go-archaius"
 	"github.com/go-chassis/go-chassis/v2/security/cipher"
-	_ "github.com/go-chassis/go-chassis/v2/security/cipher/plugins/plain"
 
+	_ "github.com/apache/servicecomb-kie/server/datasource/etcd"
 	_ "github.com/apache/servicecomb-kie/server/datasource/mongo"
+	_ "github.com/go-chassis/go-chassis/v2/security/cipher/plugins/plain"
+	_ "github.com/little-cui/etcdadpt/embedded"
+	_ "github.com/little-cui/etcdadpt/remote"
 )
 
-var uri string
-var kind string
+var (
+	uri  string
+	kind string
+)
 
 func init() {
 	err := archaius.Init(archaius.WithENVSource(),
@@ -43,6 +48,7 @@ func init() {
 	archaius.Set("servicecomb.cipher.plugin", "default")
 	cipher.Init()
 	validator.Init()
+	config.Configurations.DB.Kind = kind
 	err = datasource.Init(config.DB{
 		URI:     uri,
 		Timeout: "10s",

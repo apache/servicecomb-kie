@@ -624,7 +624,7 @@ func TestKVResource_PutAndGet(t *testing.T) {
 			Key:   "reached_quota",
 			Value: "1",
 		})
-		r, _ := http.NewRequest("POST", "/v1/test/kie/kv", bytes.NewBuffer(j))
+		r, _ := http.NewRequest("POST", "/v1/kv_test/kie/kv", bytes.NewBuffer(j))
 		r.Header.Set("Content-Type", "application/json")
 		kvr := &v1.KVResource{}
 		c, _ := restfultest.New(kvr, nil)

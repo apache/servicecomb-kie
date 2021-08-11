@@ -102,6 +102,7 @@ func (r *HistoryResource) GetPollingData(context *restful.Context) {
 		return
 	}
 	query.Domain = domain
+	query.Project = context.ReadPathParameter(common.PathParameterProject)
 	records, err := datasource.GetBroker().GetTrackDao().GetPollingDetail(context.Ctx, query)
 	if err != nil {
 		if err == datasource.ErrRecordNotExists {

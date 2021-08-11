@@ -76,6 +76,7 @@ func (h *TrackHandler) Handle(chain *handler.Chain, inv *invocation.Invocation, 
 		data.SessionGroup = req.HeaderParameter(v1.HeaderSessionGroup)
 		data.UserAgent = req.HeaderParameter(v1.HeaderUserAgent)
 		data.Domain = v1.ReadDomain(req.Request.Context())
+		data.Project = req.PathParameter(common.PathParameterProject)
 		data.IP = iputil.ClientIP(req.Request)
 		data.ResponseBody = req.Attribute(common.RespBodyContextKey).([]*model.KVDoc)
 		data.ResponseCode = ir.Status

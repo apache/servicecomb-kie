@@ -27,3 +27,17 @@ func IsEquivalentLabel(x, y map[string]string) bool {
 	}
 	return reflect.DeepEqual(x, y)
 }
+
+// IsContainLabel compares whether x contain y
+func IsContainLabel(x, y map[string]string) bool {
+	if len(x) < len(y) {
+		return false
+	}
+	for yK, yV := range y {
+		if xV, ok := x[yK]; ok && xV == yV {
+			continue
+		}
+		return false
+	}
+	return true
+}

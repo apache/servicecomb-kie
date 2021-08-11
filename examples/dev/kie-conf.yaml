@@ -1,8 +1,12 @@
 db:
   uri: mongodb://kie:123@127.0.0.1:27017/kie
-  type: mongodb
+  kind: mongodb
+  #uri: 127.0.0.1:2379
+  #kind: etcd
+  #uri: default=http://127.0.0.1:2380
+  #kind: embedded_etcd
   poolSize: 10
-  timeout:  5m
+  timeout: 5m
   sslEnabled: false
   rootCAFile: /opt/kie/ca.crt
 rbac:

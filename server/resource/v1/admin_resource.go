@@ -67,7 +67,7 @@ func (r *AdminResource) HealthCheck(context *restful.Context) {
 	resp.Revision = strconv.FormatInt(latest, 10)
 	resp.Version = runtime.Version
 	resp.Timestamp = time.Now().Unix()
-	total, err := datasource.GetBroker().GetKVDao().Total(context.Ctx, domain)
+	total, err := datasource.GetBroker().GetKVDao().Total(context.Ctx, "", domain)
 	if err != nil {
 		WriteErrResponse(context, config.ErrInternal, err.Error())
 		return
