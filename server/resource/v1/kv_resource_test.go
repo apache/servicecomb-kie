@@ -223,7 +223,7 @@ func TestKVResource_Post(t *testing.T) {
 		c.ServeHTTP(resp, r)
 		assert.Equal(t, http.StatusBadRequest, resp.Result().StatusCode)
 	})
-	t.Run("post kv, value.size() = 131072, should success", func(t *testing.T) {
+	t.Run("post kv, length of value is 131072, should success", func(t *testing.T) {
 		kv := &model.KVDoc{
 			Key:   "value-max-size",
 			Value: string131072,
@@ -244,7 +244,7 @@ func TestKVResource_Post(t *testing.T) {
 		assert.NoError(t, err)
 		assert.Equal(t, 131072, len(data.Value))
 	})
-	t.Run("post kv, value.size() = 131073, should return err", func(t *testing.T) {
+	t.Run("post kv, length of value is 131073, should return err", func(t *testing.T) {
 		kv := &model.KVDoc{
 			Key:   "value-max-size",
 			Value: string131072 + "a",
