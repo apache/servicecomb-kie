@@ -21,6 +21,7 @@ import (
 	"crypto/tls"
 	"fmt"
 
+	// support embedded etcd
 	_ "github.com/little-cui/etcdadpt/embedded"
 	_ "github.com/little-cui/etcdadpt/remote"
 

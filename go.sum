@@ -178,6 +178,8 @@ github.com/go-chassis/foundation v0.3.1-0.20210602072914-a580bed505d0 h1:bWvRZc0
 github.com/go-chassis/foundation v0.3.1-0.20210602072914-a580bed505d0/go.mod h1:6NsIUaHghTFRGfCBcZN011zl196F6OR5QvD9N+P4oWU=
 github.com/go-chassis/foundation v0.3.1-0.20210806081520-3bd92d1ef787 h1:XWbUjex+ge+rnmSeNumU+oRewcscXWLvcfGNFEtlK0o=
 github.com/go-chassis/foundation v0.3.1-0.20210806081520-3bd92d1ef787/go.mod h1:6NsIUaHghTFRGfCBcZN011zl196F6OR5QvD9N+P4oWU=
+github.com/go-chassis/foundation v0.3.1-0.20210811025651-7f4d2b2b906c h1:6ooUyysnayGgoJHV++NLEcnnnXzsw3ud4VydjISGBqI=
+github.com/go-chassis/foundation v0.3.1-0.20210811025651-7f4d2b2b906c/go.mod h1:6NsIUaHghTFRGfCBcZN011zl196F6OR5QvD9N+P4oWU=
 github.com/go-chassis/go-archaius v1.3.6-0.20201210061741-7450779aaeb8/go.mod h1:j8vJX5c455N0cN5rzeC1dm9T5kyOI8ZvIjaSJ+rZjwc=
 github.com/go-chassis/go-archaius v1.4.0/go.mod h1:j8vJX5c455N0cN5rzeC1dm9T5kyOI8ZvIjaSJ+rZjwc=
 github.com/go-chassis/go-archaius v1.5.0/go.mod h1:QPwvvtBxvwiC48rmydoAqxopqOr93RCQ6syWsIkXPXQ=

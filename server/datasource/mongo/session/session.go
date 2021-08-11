@@ -20,6 +20,7 @@ package session
 
 import (
 	"context"
+	"crypto/tls"
 	"errors"
 	"reflect"
 	"strings"
@@ -31,7 +32,6 @@ import (
 	"github.com/apache/servicecomb-kie/server/datasource"
 	"github.com/apache/servicecomb-kie/server/datasource/tlsutil"
 	"github.com/go-chassis/openlog"
-
 	"go.mongodb.org/mongo-driver/bson"
 	"go.mongodb.org/mongo-driver/bson/bsoncodec"
 	"go.mongodb.org/mongo-driver/mongo"
@@ -91,7 +91,8 @@ func Init(c *datasource.Config) error {
 		uri := cipherutil.TryDecrypt(c.URI)
 		clientOps := []*options.ClientOptions{options.Client().ApplyURI(uri)}
 		if c.SSLEnabled {
-			tc, err := tlsutil.Config(c)
+			var tc *tls.Config
+			tc, err = tlsutil.Config(c)
 			if err != nil {
 				return
 			}

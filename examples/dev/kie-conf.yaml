@@ -9,6 +9,9 @@ db:
   timeout: 5m
   sslEnabled: false
   rootCAFile: /opt/kie/ca.crt
+  certFile: /opt/kie/server.cer
+  keyFile: /opt/kie/server_key.pem
+  certPwdFile: /opt/kie/cert_pwd
 rbac:
   enabled: false
   rsaPublicKeyFile: ./examples/dev/public.key
