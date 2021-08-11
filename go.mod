@@ -4,7 +4,7 @@ require (
 	github.com/coreos/etcd v3.3.25+incompatible
 	github.com/emicklei/go-restful v2.12.0+incompatible
 	github.com/go-chassis/cari v0.5.0
-	github.com/go-chassis/foundation v0.3.1-0.20210806081520-3bd92d1ef787
+	github.com/go-chassis/foundation v0.3.1-0.20210811025651-7f4d2b2b906c
 	github.com/go-chassis/go-archaius v1.5.2-0.20210301074935-e4694f6b077b
 	github.com/go-chassis/go-chassis/v2 v2.2.1-0.20210810140748-7274d2228000
 	github.com/go-chassis/openlog v1.1.3
