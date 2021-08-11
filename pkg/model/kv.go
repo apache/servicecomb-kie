@@ -21,7 +21,7 @@ package model
 type KVRequest struct {
 	Key       string            `json:"key" yaml:"key"`
 	Value     string            `json:"value,omitempty" yaml:"value,omitempty"`
-	ValueType string            `json:"value_type,omitempty" bson:"value_type,omitempty" yaml:"value_type,omitempty"` //ini,json,text,yaml,properties
+	ValueType string            `json:"value_type,omitempty" bson:"value_type,omitempty" yaml:"value_type,omitempty"` //ini,json,text,yaml,properties,xml
 	Checker   string            `json:"check,omitempty" yaml:"check,omitempty"`                                       //python script
 	Labels    map[string]string `json:"labels,omitempty" yaml:"labels,omitempty"`                                     //redundant
 }
