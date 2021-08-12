@@ -8,10 +8,10 @@ db:
   poolSize: 10
   timeout: 5m
   sslEnabled: false
-  rootCAFile: /opt/kie/ca.crt
-  certFile: /opt/kie/server.cer
-  keyFile: /opt/kie/server_key.pem
-  certPwdFile: /opt/kie/cert_pwd
+  rootCAFile: ./ssl/trust.cer
+  certFile: ./ssl/server.cer
+  keyFile: ./ssl/server_key.pem
+  certPwdFile: ./ssl/cert_pwd
 rbac:
   enabled: false
   rsaPublicKeyFile: ./examples/dev/public.key

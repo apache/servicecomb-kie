@@ -10,7 +10,7 @@ require (
 	github.com/go-chassis/openlog v1.1.3
 	github.com/go-chassis/seclog v1.3.0
 	github.com/hashicorp/serf v0.9.5
-	github.com/little-cui/etcdadpt v0.1.0
+	github.com/little-cui/etcdadpt v0.1.1-0.20210812074633-41cdf7ebed00
 	github.com/satori/go.uuid v1.2.0
 	github.com/stretchr/testify v1.7.0
 	github.com/urfave/cli v1.22.4
