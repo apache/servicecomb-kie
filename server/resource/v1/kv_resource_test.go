@@ -46,6 +46,13 @@ import (
 	_ "github.com/apache/servicecomb-kie/test"
 )
 
+var string32 = "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa" //32
+var string128 = string32 + string32 + string32 + string32
+var string1024 = string128 + string128 + string128 + string128 + string128 + string128 + string128 + string128
+var string8192 = string1024 + string1024 + string1024 + string1024 + string1024 + string1024 + string1024 + string1024
+var string65536 = string8192 + string8192 + string8192 + string8192 + string8192 + string8192 + string8192 + string8192
+var string131072 = string65536 + string65536
+
 func init() {
 	log.Init(log.Config{
 		Writers:       []string{"stdout"},
@@ -188,8 +195,8 @@ func TestKVResource_Post(t *testing.T) {
 	})
 	t.Run("post kv, has one label, key of label is a empty string, should return err", func(t *testing.T) {
 		kv := &model.KVDoc{
-			Key:    "no labels",
-			Value:  "without labels",
+			Key:    "withoutKeyOfLabels",
+			Value:  "withoutKeyOfLabels",
 			Labels: map[string]string{"": "a"},
 		}
 		j, _ := json.Marshal(kv)
@@ -203,9 +210,44 @@ func TestKVResource_Post(t *testing.T) {
 	})
 	t.Run("post kv, has one label, value of label is a empty string, should return err", func(t *testing.T) {
 		kv := &model.KVDoc{
-			Key:    "no labels",
-			Value:  "without labels",
+			Key:    "withoutValueOfLabels",
+			Value:  "withoutValueOfLabels",
 			Labels: map[string]string{"a": ""},
+		}
+		j, _ := json.Marshal(kv)
+		r, _ := http.NewRequest("POST", "/v1/kv_test/kie/kv", bytes.NewBuffer(j))
+		r.Header.Set("Content-Type", "application/json")
+		kvr := &v1.KVResource{}
+		c, _ := restfultest.New(kvr, nil)
+		resp := httptest.NewRecorder()
+		c.ServeHTTP(resp, r)
+		assert.Equal(t, http.StatusBadRequest, resp.Result().StatusCode)
+	})
+	t.Run("post kv, length of value is 131072, should success", func(t *testing.T) {
+		kv := &model.KVDoc{
+			Key:   "postMaxValueOfKie",
+			Value: string131072,
+		}
+		j, _ := json.Marshal(kv)
+		r, _ := http.NewRequest("POST", "/v1/kv_test/kie/kv", bytes.NewBuffer(j))
+		r.Header.Set("Content-Type", "application/json")
+		kvr := &v1.KVResource{}
+		c, _ := restfultest.New(kvr, nil)
+		resp := httptest.NewRecorder()
+		c.ServeHTTP(resp, r)
+		assert.Equal(t, http.StatusOK, resp.Result().StatusCode)
+
+		body, err := ioutil.ReadAll(resp.Body)
+		assert.NoError(t, err)
+		data := &model.KVDoc{}
+		err = json.Unmarshal(body, data)
+		assert.NoError(t, err)
+		assert.Equal(t, 131072, len(data.Value))
+	})
+	t.Run("post kv, length of value is 131073, should return err", func(t *testing.T) {
+		kv := &model.KVDoc{
+			Key:   "postGreaterThanMaxValueOfKie",
+			Value: string131072 + "a",
 		}
 		j, _ := json.Marshal(kv)
 		r, _ := http.NewRequest("POST", "/v1/kv_test/kie/kv", bytes.NewBuffer(j))
@@ -599,6 +641,77 @@ func TestKVResource_Upload(t *testing.T) {
 		assert.Equal(t, 3, len(data.Failure))
 		assert.Equal(t, 1, len(data.Success))
 		assert.Equal(t, "2", data.Success[0].Value)
+	})
+	t.Run("test upload 2 configurations, the value of one of the two configurations is 128kb, should return 2 success", func(t *testing.T) {
+		input := new(v1.KVUploadBody)
+		input.Data = []*model.KVDoc{
+			{
+				Key:    "128kb",
+				Value:  string131072,
+				Labels: map[string]string{"2": "2"},
+			},
+			{
+				Key:    "64kb",
+				Value:  string65536,
+				Labels: map[string]string{"1": "1"},
+			},
+		}
+		j, _ := json.Marshal(input)
+		r, _ := http.NewRequest("POST", "/v1/kv_test/kie/file?override=force", bytes.NewBuffer(j))
+		r.Header.Set("Content-Type", "application/json")
+		kvr := &v1.KVResource{}
+		c, _ := restfultest.New(kvr, nil)
+		resp := httptest.NewRecorder()
+		c.ServeHTTP(resp, r)
+
+		body, err := ioutil.ReadAll(resp.Body)
+		assert.NoError(t, err)
+		data := &model.DocRespOfUpload{
+			Success: []*model.KVDoc{},
+			Failure: []*model.DocFailedOfUpload{},
+		}
+		err = json.Unmarshal(body, data)
+		assert.NoError(t, err)
+		assert.Equal(t, http.StatusOK, resp.Code)
+		assert.Equal(t, 0, len(data.Failure))
+		assert.Equal(t, 2, len(data.Success))
+		assert.Equal(t, 131072, len(data.Success[0].Value))
+		assert.Equal(t, 65536, len(data.Success[1].Value))
+	})
+	t.Run("test upload 2 configurations, one of the values is greater than 128kb, should return 1 success and 1 failure", func(t *testing.T) {
+		input := new(v1.KVUploadBody)
+		input.Data = []*model.KVDoc{
+			{
+				Key:    "uploadGreaterThanMaxValueOfKie",
+				Value:  string131072 + "a",
+				Labels: map[string]string{"2": "2"},
+			},
+			{
+				Key:    "1kb",
+				Value:  string1024,
+				Labels: map[string]string{"1": "1"},
+			},
+		}
+		j, _ := json.Marshal(input)
+		r, _ := http.NewRequest("POST", "/v1/kv_test/kie/file?override=force", bytes.NewBuffer(j))
+		r.Header.Set("Content-Type", "application/json")
+		kvr := &v1.KVResource{}
+		c, _ := restfultest.New(kvr, nil)
+		resp := httptest.NewRecorder()
+		c.ServeHTTP(resp, r)
+
+		body, err := ioutil.ReadAll(resp.Body)
+		assert.NoError(t, err)
+		data := &model.DocRespOfUpload{
+			Success: []*model.KVDoc{},
+			Failure: []*model.DocFailedOfUpload{},
+		}
+		err = json.Unmarshal(body, data)
+		assert.NoError(t, err)
+		assert.Equal(t, http.StatusOK, resp.Code)
+		assert.Equal(t, 1, len(data.Failure))
+		assert.Equal(t, 1, len(data.Success))
+		assert.Equal(t, "uploadGreaterThanMaxValueOfKie", data.Failure[0].Key)
 	})
 }
 func TestKVResource_PutAndGet(t *testing.T) {
