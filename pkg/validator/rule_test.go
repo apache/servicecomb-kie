@@ -112,7 +112,7 @@ func TestLabels(t *testing.T) {
 		Value:  "a",
 		Labels: map[string]string{"a": ""},
 	}
-	assert.Error(t, validator.Validate(kvDoc))
+	assert.NoError(t, validator.Validate(kvDoc))
 
 	kvDoc = &model.KVDoc{Project: "a", Domain: "a",
 		Key:    "a",
