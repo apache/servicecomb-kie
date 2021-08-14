@@ -208,7 +208,7 @@ func TestKVResource_Post(t *testing.T) {
 		c.ServeHTTP(resp, r)
 		assert.Equal(t, http.StatusBadRequest, resp.Result().StatusCode)
 	})
-	t.Run("post kv, has one label, value of label is a empty string, should return err", func(t *testing.T) {
+	t.Run("post kv, has one label, value of label is a empty string, should success", func(t *testing.T) {
 		kv := &model.KVDoc{
 			Key:    "withoutValueOfLabels",
 			Value:  "withoutValueOfLabels",
@@ -221,7 +221,14 @@ func TestKVResource_Post(t *testing.T) {
 		c, _ := restfultest.New(kvr, nil)
 		resp := httptest.NewRecorder()
 		c.ServeHTTP(resp, r)
-		assert.Equal(t, http.StatusBadRequest, resp.Result().StatusCode)
+		assert.Equal(t, http.StatusOK, resp.Result().StatusCode)
+
+		body, err := ioutil.ReadAll(resp.Body)
+		assert.NoError(t, err)
+		data := &model.KVDoc{}
+		err = json.Unmarshal(body, data)
+		assert.NoError(t, err)
+		assert.Equal(t, 0, len(data.Labels["a"]))
 	})
 	t.Run("post kv, length of value is 131072, should success", func(t *testing.T) {
 		kv := &model.KVDoc{
