@@ -113,7 +113,7 @@ type ViewDao interface {
 	GetContent(ctx context.Context, id, domain, project string, options ...FindOption) ([]*model.KVResponse, error)
 }
 
-const DefaultTimeout = 5 * time.Second
+const DefaultTimeout = 60 * time.Second
 
 func Init(c config.DB) error {
 	var err error
