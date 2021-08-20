@@ -21,8 +21,6 @@ import (
 	"context"
 	"testing"
 
-	_ "github.com/apache/servicecomb-kie/test"
-
 	"github.com/apache/servicecomb-kie/pkg/common"
 	"github.com/apache/servicecomb-kie/pkg/model"
 	"github.com/apache/servicecomb-kie/server/datasource"
@@ -30,10 +28,10 @@ import (
 	"github.com/stretchr/testify/assert"
 )
 
-func TestGetHistory(t *testing.T) {
+func TestList(t *testing.T) {
 	ctx := context.TODO()
-	kv, err := kvsvc.Create(ctx, &model.KVDoc{
-		Key:    "TestGetHistory",
+	kv1, err := kvsvc.Create(ctx, &model.KVDoc{
+		Key:    "TestList1",
 		Value:  "2s",
 		Status: common.StatusEnabled,
 		Labels: map[string]string{
@@ -41,39 +39,46 @@ func TestGetHistory(t *testing.T) {
 			"service": "cart",
 		},
 		Domain:  "default",
-		Project: "kv-test",
+		Project: "kv-list-test",
 	})
 	assert.Nil(t, err)
-	assert.NotEmpty(t, kv.ID)
-	defer kvsvc.FindOneAndDelete(ctx, kv.ID, "kv-test", "default")
+	assert.NotEmpty(t, kv1.ID)
+	defer kvsvc.FindOneAndDelete(ctx, kv1.ID, "kv-list-test", "default")
 
-	_, uErr := kvsvc.Update(ctx, &model.UpdateKVRequest{
-		ID:      kv.ID,
-		Value:   "3s",
+	kv2, err := kvsvc.Create(ctx, &model.KVDoc{
+		Key:    "TestList2",
+		Value:  "3s",
+		Status: common.StatusEnabled,
+		Labels: map[string]string{
+			"app":     "mall",
+			"service": "cart",
+		},
 		Domain:  "default",
-		Project: "kv-test",
+		Project: "kv-list-test",
 	})
-	assert.NoError(t, uErr)
+	assert.Nil(t, err)
+	assert.NotEmpty(t, kv2.ID)
+	defer kvsvc.FindOneAndDelete(ctx, kv2.ID, "kv-list-test", "default")
 
-	t.Run("after create kv, should has history", func(t *testing.T) {
-		h, err := datasource.GetBroker().GetHistoryDao().GetHistory(ctx, kv.ID, "kv-test", "default")
+	t.Run("after create kv, should list results", func(t *testing.T) {
+		h, err := datasource.GetBroker().GetKVDao().List(ctx, "kv-list-test", "default")
 		assert.NoError(t, err)
 		assert.Equal(t, 2, h.Total)
 		assert.Equal(t, 2, len(h.Data))
 	})
 	t.Run("test paging, should pass", func(t *testing.T) {
-		resp, err := datasource.GetBroker().GetHistoryDao().GetHistory(ctx, kv.ID, "kv-test", "default",
+		resp, err := datasource.GetBroker().GetKVDao().List(ctx, "kv-list-test", "default",
 			datasource.WithOffset(0), datasource.WithLimit(1))
 		assert.NoError(t, err)
 		assert.Equal(t, 2, resp.Total)
 		assert.Equal(t, 1, len(resp.Data))
-		assert.Equal(t, "3s", resp.Data[0].Value)
+		assert.Equal(t, "2s", resp.Data[0].Value)
 
-		resp, err = datasource.GetBroker().GetHistoryDao().GetHistory(ctx, kv.ID, "kv-test", "default",
+		resp, err = datasource.GetBroker().GetKVDao().List(ctx, "kv-list-test", "default",
 			datasource.WithOffset(1), datasource.WithLimit(1))
 		assert.NoError(t, err)
 		assert.Equal(t, 2, resp.Total)
 		assert.Equal(t, 1, len(resp.Data))
-		assert.Equal(t, "2s", resp.Data[0].Value)
+		assert.Equal(t, "3s", resp.Data[0].Value)
 	})
 }

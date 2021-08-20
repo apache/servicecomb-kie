@@ -39,7 +39,8 @@ func (s *Dao) GetHistory(ctx context.Context, kvID, project, domain string, opti
 	for _, o := range options {
 		o(&opts)
 	}
-	kvs, _, err := etcdadpt.List(ctx, key.HisList(domain, project, kvID), etcdadpt.WithOrderByCreate(), etcdadpt.WithDescendOrder())
+	kvs, _, err := etcdadpt.List(ctx, key.HisList(domain, project, kvID),
+		etcdadpt.WithOrderByCreate(), etcdadpt.WithDescendOrder())
 	if err != nil {
 		openlog.Error(err.Error())
 		return nil, err
@@ -52,11 +53,11 @@ func (s *Dao) GetHistory(ctx context.Context, kvID, project, domain string, opti
 
 func pagingResult(kvs []*mvccpb.KeyValue, offset, limit int64) []*model.KVDoc {
 	total := int64(len(kvs))
-	end := offset + limit
-	if offset != 0 && limit != 0 {
+	if limit != 0 {
 		if offset >= total {
 			return []*model.KVDoc{}
 		}
+		end := offset + limit
 		if end > total {
 			end = total
 		}

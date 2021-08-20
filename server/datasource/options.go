@@ -51,8 +51,10 @@ type FindOptions struct {
 	LabelFormat string
 	ClearLabel  bool
 	Timeout     time.Duration
-	Offset      int64
-	Limit       int64
+	// Offset the offset of the response, start at 0
+	Offset int64
+	// Limit the page size of the response, dot not paging if limit=0
+	Limit int64
 }
 
 //FindOption is functional option to find key value

@@ -18,16 +18,16 @@
 package kv_test
 
 import (
-	"github.com/apache/servicecomb-kie/server/datasource"
-	kvsvc "github.com/apache/servicecomb-kie/server/service/kv"
-	_ "github.com/apache/servicecomb-kie/test"
-	"github.com/go-chassis/cari/config"
-
 	"context"
 	"testing"
 
-	common2 "github.com/apache/servicecomb-kie/pkg/common"
+	_ "github.com/apache/servicecomb-kie/test"
+
+	"github.com/apache/servicecomb-kie/pkg/common"
 	"github.com/apache/servicecomb-kie/pkg/model"
+	"github.com/apache/servicecomb-kie/server/datasource"
+	kvsvc "github.com/apache/servicecomb-kie/server/service/kv"
+	"github.com/go-chassis/cari/config"
 	"github.com/go-chassis/openlog"
 	log "github.com/go-chassis/seclog"
 	"github.com/stretchr/testify/assert"
@@ -52,7 +52,7 @@ func TestService_CreateOrUpdate(t *testing.T) {
 		kv, err := kvsvc.Create(context.TODO(), &model.KVDoc{
 			Key:    "timeout",
 			Value:  "2s",
-			Status: common2.StatusEnabled,
+			Status: common.StatusEnabled,
 			Labels: map[string]string{
 				"app":     "mall",
 				"service": "cart",
@@ -67,7 +67,7 @@ func TestService_CreateOrUpdate(t *testing.T) {
 		kv, err := kvsvc.Create(context.TODO(), &model.KVDoc{
 			Key:    "timeout",
 			Value:  "2s",
-			Status: common2.StatusEnabled,
+			Status: common.StatusEnabled,
 			Labels: map[string]string{
 				"app":     "mall",
 				"service": "cart",
@@ -90,7 +90,7 @@ func TestService_CreateOrUpdate(t *testing.T) {
 		beforeKV, err := kvsvc.Create(context.Background(), &model.KVDoc{
 			Key:    "timeout",
 			Value:  "1s",
-			Status: common2.StatusEnabled,
+			Status: common.StatusEnabled,
 			Labels: map[string]string{
 				"app": "mall",
 			},
@@ -120,7 +120,7 @@ func TestService_Create(t *testing.T) {
 		result, err := kvsvc.Create(context.TODO(), &model.KVDoc{
 			Key:    "timeout",
 			Value:  "2s",
-			Status: common2.StatusEnabled,
+			Status: common.StatusEnabled,
 			Labels: map[string]string{
 				"app":     "mall",
 				"service": "utCart",
@@ -137,7 +137,7 @@ func TestService_Create(t *testing.T) {
 		_, err := kvsvc.Create(context.TODO(), &model.KVDoc{
 			Key:    "timeout",
 			Value:  "2s",
-			Status: common2.StatusEnabled,
+			Status: common.StatusEnabled,
 			Labels: map[string]string{
 				"app":     "mall",
 				"service": "utCart",

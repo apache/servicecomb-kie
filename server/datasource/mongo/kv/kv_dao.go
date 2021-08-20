@@ -107,7 +107,7 @@ func findKV(ctx context.Context, domain string, project string, opts datasource.
 		}
 	}
 	opt := options.Find()
-	if opts.Offset != 0 && opts.Limit != 0 {
+	if opts.Limit > 0 {
 		opt = opt.SetLimit(opts.Limit)
 		opt = opt.SetSkip(opts.Offset)
 	}
