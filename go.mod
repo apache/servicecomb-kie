@@ -1,7 +1,6 @@
 module github.com/apache/servicecomb-kie
 
 require (
-	github.com/coreos/etcd v3.3.25+incompatible
 	github.com/emicklei/go-restful v2.12.0+incompatible
 	github.com/go-chassis/cari v0.5.0
 	github.com/go-chassis/foundation v0.3.1-0.20210811025651-7f4d2b2b906c
@@ -10,7 +9,7 @@ require (
 	github.com/go-chassis/openlog v1.1.3
 	github.com/go-chassis/seclog v1.3.0
 	github.com/hashicorp/serf v0.9.5
-	github.com/little-cui/etcdadpt v0.1.2
+	github.com/little-cui/etcdadpt v0.1.3-0.20210823154416-06cac633709a
 	github.com/satori/go.uuid v1.2.0
 	github.com/stretchr/testify v1.7.0
 	github.com/urfave/cli v1.22.4

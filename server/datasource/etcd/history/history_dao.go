@@ -24,7 +24,6 @@ import (
 	"github.com/apache/servicecomb-kie/pkg/model"
 	"github.com/apache/servicecomb-kie/server/datasource"
 	"github.com/apache/servicecomb-kie/server/datasource/etcd/key"
-	"github.com/coreos/etcd/mvcc/mvccpb"
 	"github.com/go-chassis/openlog"
 	"github.com/little-cui/etcdadpt"
 )
@@ -39,29 +38,10 @@ func (s *Dao) GetHistory(ctx context.Context, kvID, project, domain string, opti
 	for _, o := range options {
 		o(&opts)
 	}
-	kvs, _, err := etcdadpt.List(ctx, key.HisList(domain, project, kvID),
-		etcdadpt.WithOrderByCreate(), etcdadpt.WithDescendOrder())
+	kvs, _, err := etcdadpt.List(ctx, key.HisList(domain, project, kvID))
 	if err != nil {
 		openlog.Error(err.Error())
 		return nil, err
-	}
-	return &model.KVResponse{
-		Data:  pagingResult(kvs, opts.Offset, opts.Limit),
-		Total: len(kvs),
-	}, nil
-}
-
-func pagingResult(kvs []*mvccpb.KeyValue, offset, limit int64) []*model.KVDoc {
-	total := int64(len(kvs))
-	if limit != 0 {
-		if offset >= total {
-			return []*model.KVDoc{}
-		}
-		end := offset + limit
-		if end > total {
-			end = total
-		}
-		kvs = kvs[offset:end]
 	}
 	histories := make([]*model.KVDoc, 0, len(kvs))
 	for _, kv := range kvs {
@@ -73,7 +53,28 @@ func pagingResult(kvs []*mvccpb.KeyValue, offset, limit int64) []*model.KVDoc {
 		}
 		histories = append(histories, &doc)
 	}
-	return histories
+	return &model.KVResponse{
+		Data:  pagingResult(histories, opts.Offset, opts.Limit),
+		Total: len(kvs),
+	}, nil
+}
+
+func pagingResult(histories []*model.KVDoc, offset, limit int64) []*model.KVDoc {
+	total := int64(len(histories))
+	if limit != 0 && offset >= total {
+		return []*model.KVDoc{}
+	}
+
+	datasource.ReverseByUpdateRev(histories)
+
+	if limit == 0 {
+		return histories
+	}
+	end := offset + limit
+	if end > total {
+		end = total
+	}
+	return histories[offset:end]
 }
 
 //AddHistory add kv history
@@ -88,7 +89,7 @@ func (s *Dao) AddHistory(ctx context.Context, kv *model.KVDoc) error {
 		openlog.Error(err.Error())
 		return err
 	}
-	err = historyRotate(ctx, kv.ID, kv.Project, kv.Domain)
+	err = s.historyRotate(ctx, kv.ID, kv.Project, kv.Domain)
 	if err != nil {
 		openlog.Error("history rotate err: " + err.Error())
 		return err
@@ -113,24 +114,25 @@ func (s *Dao) DelayDeletionTime(ctx context.Context, kvIDs []string, project, do
 }
 
 //historyRotate delete historical versions for a key that exceeds the limited number
-func historyRotate(ctx context.Context, kvID, project, domain string) error {
-	kvs, curTotal, err := etcdadpt.List(ctx, key.HisList(domain, project, kvID), etcdadpt.WithKeyOnly(),
-		etcdadpt.WithOrderByCreate(), etcdadpt.WithAscendOrder())
+func (s *Dao) historyRotate(ctx context.Context, kvID, project, domain string) error {
+	resp, err := s.GetHistory(ctx, kvID, project, domain)
 	if err != nil {
 		openlog.Error(err.Error())
 		return err
 	}
-	if curTotal <= datasource.MaxHistoryNum {
+	if resp.Total <= datasource.MaxHistoryNum {
 		return nil
 	}
-	kvs = kvs[:curTotal-datasource.MaxHistoryNum]
-	return deleteMany(ctx, kvs)
+	kvs := resp.Data
+	kvs = kvs[datasource.MaxHistoryNum:]
+	return DeleteMany(ctx, kvs)
 }
 
-func deleteMany(ctx context.Context, kvs []*mvccpb.KeyValue) error {
+func DeleteMany(ctx context.Context, kvs []*model.KVDoc) error {
 	var opts []etcdadpt.OpOptions
 	for _, kv := range kvs {
-		opts = append(opts, etcdadpt.OpDel(etcdadpt.WithKey(kv.Key)))
+		hisKey := key.His(kv.Domain, kv.Project, kv.ID, kv.UpdateRevision)
+		opts = append(opts, etcdadpt.OpDel(etcdadpt.WithStrKey(hisKey)))
 	}
 	_, err := etcdadpt.DeleteMany(ctx, opts...)
 	if err != nil {

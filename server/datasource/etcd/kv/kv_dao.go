@@ -216,14 +216,15 @@ func (s *Dao) List(ctx context.Context, project, domain string, options ...datas
 		return nil, err
 	}
 	// TODO may be OOM
-	kvs, _, err := etcdadpt.List(ctx, key.KVList(domain, project),
-		etcdadpt.WithOrderByCreate(), etcdadpt.WithAscendOrder())
+	kvs, total, err := etcdadpt.List(ctx, key.KVList(domain, project),
+		etcdadpt.WithOffset(opts.Offset), etcdadpt.WithLimit(opts.Limit))
 	if err != nil {
 		openlog.Error("list kv failed: " + err.Error())
 		return nil, err
 	}
 	result := &model.KVResponse{
-		Data: []*model.KVDoc{},
+		Total: int(total),
+		Data:  []*model.KVDoc{},
 	}
 	for _, kv := range kvs {
 		var doc model.KVDoc
@@ -238,13 +239,12 @@ func (s *Dao) List(ctx context.Context, project, domain string, options ...datas
 
 		datasource.ClearPart(&doc)
 		result.Data = append(result.Data, &doc)
-		result.Total++
 
 		if IsUniqueFind(opts) {
 			break
 		}
 	}
-	return pagingResult(result, opts), nil
+	return result, nil
 }
 
 func IsUniqueFind(opts datasource.FindOptions) bool {
@@ -274,23 +274,6 @@ func toRegex(opts datasource.FindOptions) (*regexp.Regexp, error) {
 		}
 	}
 	return regex, nil
-}
-
-func pagingResult(result *model.KVResponse, opts datasource.FindOptions) *model.KVResponse {
-	if opts.Limit == 0 {
-		return result
-	}
-	total := int64(result.Total)
-	if opts.Offset >= total {
-		result.Data = []*model.KVDoc{}
-		return result
-	}
-	end := opts.Offset + opts.Limit
-	if end > total {
-		end = total
-	}
-	result.Data = result.Data[opts.Offset:end]
-	return result
 }
 
 func filterMatch(doc *model.KVDoc, opts datasource.FindOptions, regex *regexp.Regexp) bool {

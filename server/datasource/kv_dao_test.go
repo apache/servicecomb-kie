@@ -60,25 +60,39 @@ func TestList(t *testing.T) {
 	assert.NotEmpty(t, kv2.ID)
 	defer kvsvc.FindOneAndDelete(ctx, kv2.ID, "kv-list-test", "default")
 
+	kv3, err := kvsvc.Create(ctx, &model.KVDoc{
+		Key:    "TestList3",
+		Value:  "4s",
+		Status: common.StatusEnabled,
+		Labels: map[string]string{
+			"app":     "mall",
+			"service": "cart",
+		},
+		Domain:  "default",
+		Project: "kv-list-test",
+	})
+	assert.Nil(t, err)
+	assert.NotEmpty(t, kv3.ID)
+	defer kvsvc.FindOneAndDelete(ctx, kv3.ID, "kv-list-test", "default")
+
 	t.Run("after create kv, should list results", func(t *testing.T) {
 		h, err := datasource.GetBroker().GetKVDao().List(ctx, "kv-list-test", "default")
 		assert.NoError(t, err)
-		assert.Equal(t, 2, h.Total)
-		assert.Equal(t, 2, len(h.Data))
+		assert.Equal(t, 3, h.Total)
+		assert.Equal(t, 3, len(h.Data))
 	})
+
 	t.Run("test paging, should pass", func(t *testing.T) {
 		resp, err := datasource.GetBroker().GetKVDao().List(ctx, "kv-list-test", "default",
-			datasource.WithOffset(0), datasource.WithLimit(1))
+			datasource.WithOffset(0), datasource.WithLimit(2))
 		assert.NoError(t, err)
-		assert.Equal(t, 2, resp.Total)
-		assert.Equal(t, 1, len(resp.Data))
-		assert.Equal(t, "2s", resp.Data[0].Value)
+		assert.Equal(t, 3, resp.Total)
+		assert.Equal(t, 2, len(resp.Data))
 
 		resp, err = datasource.GetBroker().GetKVDao().List(ctx, "kv-list-test", "default",
-			datasource.WithOffset(1), datasource.WithLimit(1))
+			datasource.WithOffset(2), datasource.WithLimit(2))
 		assert.NoError(t, err)
-		assert.Equal(t, 2, resp.Total)
+		assert.Equal(t, 3, resp.Total)
 		assert.Equal(t, 1, len(resp.Data))
-		assert.Equal(t, "3s", resp.Data[0].Value)
 	})
 }
