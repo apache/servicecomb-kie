@@ -545,6 +545,12 @@ github.com/little-cui/etcdadpt v0.1.1-0.20210812074633-41cdf7ebed00 h1:TwCL17fRB
 github.com/little-cui/etcdadpt v0.1.1-0.20210812074633-41cdf7ebed00/go.mod h1:gxgrmwRiKs5w5qKEt2d3QOpdrHACnBORzreniLoH0S0=
 github.com/little-cui/etcdadpt v0.1.1 h1:Y5y838f2Sud/mZMrHK/BWyj8a+GrzIHXX4ECuM9DlCY=
 github.com/little-cui/etcdadpt v0.1.1/go.mod h1:gxgrmwRiKs5w5qKEt2d3QOpdrHACnBORzreniLoH0S0=
+github.com/little-cui/etcdadpt v0.1.2-0.20210820084708-a2380f742015 h1:IyxLmdmVHxGngh77p8IBCpjGgABMpoKrYqQ97hw9z3k=
+github.com/little-cui/etcdadpt v0.1.2-0.20210820084708-a2380f742015/go.mod h1:gxgrmwRiKs5w5qKEt2d3QOpdrHACnBORzreniLoH0S0=
+github.com/little-cui/etcdadpt v0.1.2-0.20210820091322-8cd8a1f8f0b3 h1:YLOZfCzvHQidHP4ALmWkmHbuJQcMUfKuohrhCL4mfpg=
+github.com/little-cui/etcdadpt v0.1.2-0.20210820091322-8cd8a1f8f0b3/go.mod h1:gxgrmwRiKs5w5qKEt2d3QOpdrHACnBORzreniLoH0S0=
+github.com/little-cui/etcdadpt v0.1.2 h1:84P4OaIiqbL2biHPdbl59y9i7UyYX7YPMXsfeEa0Gec=
+github.com/little-cui/etcdadpt v0.1.2/go.mod h1:gxgrmwRiKs5w5qKEt2d3QOpdrHACnBORzreniLoH0S0=
 github.com/lyft/protoc-gen-validate v0.0.13 h1:KNt/RhmQTOLr7Aj8PsJ7mTronaFyx80mRTT9qF261dA=
 github.com/lyft/protoc-gen-validate v0.0.13/go.mod h1:XbGvPuh87YZc5TdIa2/I4pLk0QoUACkjt2znoq26NVQ=
 github.com/mailru/easyjson v0.0.0-20160728113105-d5b7844b561a h1:TpvdAwDAt1K4ANVOfcihouRdvP+MgAfDWwBuct4l6ZY=
