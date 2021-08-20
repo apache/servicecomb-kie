@@ -429,7 +429,7 @@ func TestKVResource_List(t *testing.T) {
 		assert.Equal(t, 1, len(result.Data))
 	})
 	t.Run("get one key, fuzzy match,should return 2 kv", func(t *testing.T) {
-		r, _ := http.NewRequest("GET", "/v1/kv_test/kie/kv?key=beginWith(time)", nil)
+		r, _ := http.NewRequest("GET", "/v1/kv_test/kie/kv?key=beginWith(TIME)", nil)
 		r.Header.Set("Content-Type", "application/json")
 		kvr := &v1.KVResource{}
 		c, err := restfultest.New(kvr, nil)
@@ -442,6 +442,49 @@ func TestKVResource_List(t *testing.T) {
 		err = json.Unmarshal(body, result)
 		assert.NoError(t, err)
 		assert.Equal(t, 2, len(result.Data))
+
+		r, _ = http.NewRequest("GET", "/v1/kv_test/kie/kv?key=beginWith(IME)", nil)
+		r.Header.Set("Content-Type", "application/json")
+		kvr = &v1.KVResource{}
+		c, err = restfultest.New(kvr, nil)
+		assert.NoError(t, err)
+		resp = httptest.NewRecorder()
+		c.ServeHTTP(resp, r)
+		body, err = ioutil.ReadAll(resp.Body)
+		assert.NoError(t, err)
+		result = &model.KVResponse{}
+		err = json.Unmarshal(body, result)
+		assert.NoError(t, err)
+		assert.Equal(t, 0, len(result.Data))
+	})
+	t.Run("get one key, wildcard match,should return 2 kv", func(t *testing.T) {
+		r, _ := http.NewRequest("GET", "/v1/kv_test/kie/kv?key=wildcard(*IME*)", nil)
+		r.Header.Set("Content-Type", "application/json")
+		kvr := &v1.KVResource{}
+		c, err := restfultest.New(kvr, nil)
+		assert.NoError(t, err)
+		resp := httptest.NewRecorder()
+		c.ServeHTTP(resp, r)
+		body, err := ioutil.ReadAll(resp.Body)
+		assert.NoError(t, err)
+		result := &model.KVResponse{}
+		err = json.Unmarshal(body, result)
+		assert.NoError(t, err)
+		assert.Equal(t, 2, len(result.Data))
+
+		r, _ = http.NewRequest("GET", "/v1/kv_test/kie/kv?key=wildcard(TIME)", nil)
+		r.Header.Set("Content-Type", "application/json")
+		kvr = &v1.KVResource{}
+		c, err = restfultest.New(kvr, nil)
+		assert.NoError(t, err)
+		resp = httptest.NewRecorder()
+		c.ServeHTTP(resp, r)
+		body, err = ioutil.ReadAll(resp.Body)
+		assert.NoError(t, err)
+		result = &model.KVResponse{}
+		err = json.Unmarshal(body, result)
+		assert.NoError(t, err)
+		assert.Equal(t, 0, len(result.Data))
 	})
 	t.Run("get one key by service label should return 2 kv,delete one", func(t *testing.T) {
 		r, _ := http.NewRequest("GET", "/v1/kv_test/kie/kv?key=timeout&label=service:utService", nil)

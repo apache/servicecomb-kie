@@ -94,11 +94,11 @@ func findKV(ctx context.Context, domain string, project string, opts datasource.
 		switch {
 		case strings.HasPrefix(opts.Key, "beginWith("):
 			value := strings.ReplaceAll(getValue(opts.Key), ".", "\\.")
-			filter["key"] = bson.M{"$regex": value, "$options": "$i"}
+			filter["key"] = bson.M{"$regex": "^" + value + ".*$", "$options": "$i"}
 		case strings.HasPrefix(opts.Key, "wildcard("):
 			value := strings.ReplaceAll(getValue(opts.Key), ".", "\\.")
 			value = strings.ReplaceAll(value, "*", ".*")
-			filter["key"] = bson.M{"$regex": value, "$options": "$i"}
+			filter["key"] = bson.M{"$regex": "^" + value + "$", "$options": "$i"}
 		}
 	}
 	if len(opts.Labels) != 0 {
