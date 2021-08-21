@@ -100,12 +100,20 @@ var (
 		DataType:  "string",
 		Name:      common.QueryParamKey,
 		ParamType: goRestful.QueryParameterKind,
+		Desc: "key support prefix matching syntax, e.g. beginWith(servicecomb.) means to filter KV staring with 'servicecomb.'. " +
+			"And support wildcard matching syntax, e.g. wildcard(*consumer*) means to filter KV include 'consumer'. " +
+			"In addition to the above syntax means to filter KV full matching the input 'key'",
 	}
 	DocQueryLabelParameters = &restful.Parameters{
 		DataType:  "string",
 		Name:      "label",
 		ParamType: goRestful.QueryParameterKind,
 		Desc:      "label pairs,for example &label=service:order&label=version:1.0.0",
+	}
+	DocQueryStatusParameters = &restful.Parameters{
+		DataType:  "string",
+		Name:      common.QueryParamStatus,
+		ParamType: goRestful.QueryParameterKind,
 	}
 	DocQueryLimitParameters = &restful.Parameters{
 		DataType:  "string",
