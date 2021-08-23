@@ -30,7 +30,7 @@ import (
 // const
 const (
 	ActionPut    = "put"
-	ActionDelete = "delete"
+	ActionDelete = "del"
 )
 
 //KVChangeEvent is event between kie nodes, and broadcast by serf
@@ -42,6 +42,10 @@ type KVChangeEvent struct {
 	Project  string
 }
 
+func (e *KVChangeEvent) String() string {
+	return strings.Join([]string{e.Key, e.Action, stringutil.FormatMap(e.Labels), e.DomainID, e.Project}, ";;")
+}
+
 //NewKVChangeEvent create a struct base on event payload
 func NewKVChangeEvent(payload []byte) (*KVChangeEvent, error) {
 	ke := &KVChangeEvent{}
@@ -51,7 +55,6 @@ func NewKVChangeEvent(payload []byte) (*KVChangeEvent, error) {
 
 //Topic can be subscribe
 type Topic struct {
-	Key          string            `json:"key,omitempty"`
 	Labels       map[string]string `json:"-"`
 	LabelsFormat string            `json:"labels,omitempty"`
 	DomainID     string            `json:"domainID,omitempty"`
@@ -92,11 +95,6 @@ func ParseTopicString(s string) (*Topic, error) {
 //update request labels or a subset of it.
 func (t *Topic) Match(event *KVChangeEvent) bool {
 	match := false
-	if t.Key != "" {
-		if t.Key == event.Key {
-			match = true
-		}
-	}
 	if t.MatchType == common.PatternExact {
 		if !util.IsEquivalentLabel(t.Labels, event.Labels) {
 			return false
@@ -116,8 +114,6 @@ func (t *Topic) Match(event *KVChangeEvent) bool {
 
 //Observer represents a client polling request
 type Observer struct {
-	UUID      string
-	RemoteIP  string
-	UserAgent string
-	Event     chan *KVChangeEvent
+	UUID  string
+	Event chan *KVChangeEvent
 }

@@ -26,7 +26,6 @@ import (
 
 func TestTopic_String(t *testing.T) {
 	topic := &pubsub.Topic{
-		Key: "test",
 		Labels: map[string]string{
 			"a": "b",
 			"c": "d",
@@ -44,14 +43,12 @@ func TestTopic_String(t *testing.T) {
 	t.Log(topic)
 	b, _ = json.Marshal(topic)
 	t.Log(string(b))
-	topic = &pubsub.Topic{
-		Key: "test",
-	}
+	topic = &pubsub.Topic{}
 	t.Log(topic)
 	b, _ = json.Marshal(topic)
 	t.Log(string(b))
 
-	mock := []byte(`{"key":"some_key","labels":"a=b::c=d","domainID":"2","project":"1"}`)
+	mock := []byte(`{"labels":"a=b::c=d","domainID":"2","project":"1"}`)
 	topic, _ = pubsub.ParseTopicString(string(mock))
 	t.Log(topic)
 }

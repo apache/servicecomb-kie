@@ -18,9 +18,10 @@
 package pubsub
 
 import (
-	"encoding/json"
 	"sync"
+	"time"
 
+	"encoding/json"
 	"github.com/apache/servicecomb-kie/pkg/stringutil"
 	"github.com/apache/servicecomb-kie/server/config"
 	"github.com/go-chassis/openlog"
@@ -33,7 +34,9 @@ var bus *Bus
 
 //const
 const (
-	EventKVChange = "kv-changed"
+	EventKVChange             = "kv-chg"
+	DefaultEventBatchSize     = 5000
+	DefaultEventBatchInterval = 500 * time.Millisecond
 )
 
 var mutexObservers sync.RWMutex
@@ -84,7 +87,13 @@ func Start() {
 		openlog.Fatal("can not sync key value change events to other kie nodes" + err.Error())
 	}
 	openlog.Info("kie message bus started")
-	bus.agent.RegisterEventHandler(&EventHandler{})
+	eh := &EventHandler{
+		BatchInterval: DefaultEventBatchInterval,
+		BatchSize:     DefaultEventBatchSize,
+		Immediate:     true,
+	}
+	go eh.RunFlushTask()
+	bus.agent.RegisterEventHandler(eh)
 }
 func join(addresses []string) error {
 	_, err := bus.agent.Join(addresses, false)
@@ -104,8 +113,8 @@ func Publish(event *KVChangeEvent) error {
 
 }
 
-//ObserveOnce observe key changes by (key or labels) or (key and labels)
-func ObserveOnce(o *Observer, topic *Topic) error {
+//AddObserver observe key changes by (key or labels) or (key and labels)
+func AddObserver(o *Observer, topic *Topic) error {
 	topic.LabelsFormat = stringutil.FormatMap(topic.Labels)
 	b, err := json.Marshal(topic)
 	if err != nil {
