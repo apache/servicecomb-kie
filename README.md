@@ -92,5 +92,5 @@ Bugs: [issues](https://issues.apache.org/jira/browse/SCB)
 See [Contribution guide](http://servicecomb.apache.org/developers/contributing) for details on submitting patches and the contribution workflow.
 
 ## Reporting Issues
-
+1
 See reporting bugs for details about reporting any issues.
