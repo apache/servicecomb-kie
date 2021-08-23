@@ -216,7 +216,8 @@ func (s *Dao) List(ctx context.Context, project, domain string, options ...datas
 		return nil, err
 	}
 	// TODO may be OOM
-	kvs, _, err := etcdadpt.List(ctx, key.KVList(domain, project))
+	kvs, _, err := etcdadpt.List(ctx, key.KVList(domain, project),
+		etcdadpt.WithOrderByCreate(), etcdadpt.WithAscendOrder())
 	if err != nil {
 		openlog.Error("list kv failed: " + err.Error())
 		return nil, err
@@ -276,7 +277,7 @@ func toRegex(opts datasource.FindOptions) (*regexp.Regexp, error) {
 }
 
 func pagingResult(result *model.KVResponse, opts datasource.FindOptions) *model.KVResponse {
-	if opts.Offset == 0 || opts.Limit == 0 {
+	if opts.Limit == 0 {
 		return result
 	}
 	total := int64(result.Total)

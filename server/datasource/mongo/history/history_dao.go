@@ -54,9 +54,9 @@ func (s *Dao) GetHistory(ctx context.Context, kvID, project, domain string, opti
 func getHistoryByKeyID(ctx context.Context, filter bson.M, offset, limit int64) (*model.KVResponse, error) {
 	collection := session.GetDB().Collection(session.CollectionKVRevision)
 	opt := options.Find().SetSort(map[string]interface{}{
-		"revision": -1,
+		"update_revision": -1,
 	})
-	if offset != 0 && limit != 0 {
+	if limit > 0 {
 		opt = opt.SetLimit(limit)
 		opt = opt.SetSkip(offset)
 	}
