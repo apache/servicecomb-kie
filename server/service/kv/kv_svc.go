@@ -22,21 +22,25 @@ import (
 	"fmt"
 	"time"
 
+	"github.com/apache/servicecomb-kie/pkg/common"
+	"github.com/apache/servicecomb-kie/pkg/concurrency"
+	"github.com/apache/servicecomb-kie/pkg/model"
+	"github.com/apache/servicecomb-kie/pkg/stringutil"
+	"github.com/apache/servicecomb-kie/server/datasource"
+	"github.com/apache/servicecomb-kie/server/pubsub"
 	"github.com/go-chassis/cari/config"
 	"github.com/go-chassis/cari/pkg/errsvc"
 	"github.com/go-chassis/foundation/validator"
 	"github.com/go-chassis/go-chassis/v2/pkg/backends/quota"
 	"github.com/go-chassis/openlog"
 	uuid "github.com/satori/go.uuid"
-
-	"github.com/apache/servicecomb-kie/pkg/common"
-	"github.com/apache/servicecomb-kie/pkg/model"
-	"github.com/apache/servicecomb-kie/pkg/stringutil"
-	"github.com/apache/servicecomb-kie/server/datasource"
-	"github.com/apache/servicecomb-kie/server/pubsub"
 )
 
+var sema = concurrency.NewSemaphore(concurrency.DefaultConcurrency)
+
 func ListKV(ctx context.Context, request *model.ListKVRequest) (int64, *model.KVResponse, *errsvc.Error) {
+	sema.Acquire()
+	defer sema.Release()
 	opts := []datasource.FindOption{
 		datasource.WithKey(request.Key),
 		datasource.WithLabels(request.Labels),

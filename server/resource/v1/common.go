@@ -21,9 +21,11 @@ import (
 	"context"
 	"encoding/json"
 	"errors"
+	uuid "github.com/satori/go.uuid"
 	"net/http"
 	"strconv"
 	"strings"
+	"sync"
 	"time"
 
 	"github.com/apache/servicecomb-kie/server/datasource"
@@ -38,7 +40,6 @@ import (
 	"github.com/go-chassis/cari/config"
 	"github.com/go-chassis/go-chassis/v2/server/restful"
 	"github.com/go-chassis/openlog"
-	uuid "github.com/satori/go.uuid"
 	"gopkg.in/yaml.v2"
 )
 
@@ -51,6 +52,15 @@ const (
 
 	FmtReadRequestError = "decode request body failed: %v"
 )
+
+var observers = sync.Pool{
+	New: func() interface{} {
+		return &pubsub.Observer{
+			UUID:  uuid.NewV4().String(),
+			Event: make(chan *pubsub.KVChangeEvent, 1),
+		}
+	},
+}
 
 //err
 var (
@@ -177,19 +187,15 @@ func getMatchPattern(rctx *restful.Context) string {
 	}
 	return m
 }
-func eventHappened(rctx *restful.Context, waitStr string, topic *pubsub.Topic) (bool, error) {
+func eventHappened(waitStr string, topic *pubsub.Topic) (bool, error) {
 	d, err := time.ParseDuration(waitStr)
 	if err != nil || d > common.MaxWait {
 		return false, errors.New(common.MsgInvalidWait)
 	}
 	happened := true
-	o := &pubsub.Observer{
-		UUID:      uuid.NewV4().String(),
-		RemoteIP:  rctx.ReadRequest().RemoteAddr, //TODO x forward ip
-		UserAgent: rctx.ReadHeader(HeaderUserAgent),
-		Event:     make(chan *pubsub.KVChangeEvent, 1),
-	}
-	err = pubsub.ObserveOnce(o, topic)
+	o := observers.Get().(*pubsub.Observer)
+	defer observers.Put(o)
+	err = pubsub.AddObserver(o, topic)
 	if err != nil {
 		return false, errors.New("observe once failed: " + err.Error())
 	}

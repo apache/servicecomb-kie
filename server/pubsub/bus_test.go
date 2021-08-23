@@ -34,8 +34,7 @@ func TestInit(t *testing.T) {
 		UUID:  uuid.NewV4().String(),
 		Event: make(chan *pubsub.KVChangeEvent, 1),
 	}
-	_ = pubsub.ObserveOnce(o, &pubsub.Topic{
-		Key:      "some_key",
+	_ = pubsub.AddObserver(o, &pubsub.Topic{
 		Project:  "1",
 		DomainID: "2",
 		Labels: map[string]string{

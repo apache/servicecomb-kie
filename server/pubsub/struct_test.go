@@ -26,7 +26,6 @@ import (
 
 func TestTopic_String(t *testing.T) {
 	topic := &pubsub.Topic{
-		Key: "test",
 		Labels: map[string]string{
 			"a": "b",
 			"c": "d",
@@ -44,9 +43,7 @@ func TestTopic_String(t *testing.T) {
 	t.Log(topic)
 	b, _ = json.Marshal(topic)
 	t.Log(string(b))
-	topic = &pubsub.Topic{
-		Key: "test",
-	}
+	topic = &pubsub.Topic{}
 	t.Log(topic)
 	b, _ = json.Marshal(topic)
 	t.Log(string(b))
