@@ -201,21 +201,14 @@ func returnData(rctx *restful.Context, request *model.ListKVRequest) {
 			queryAndResponse(rctx, request)
 			return
 		}
-		changed, err := eventHappened(rctx, wait, &pubsub.Topic{
-			Labels:    request.Labels,
-			Project:   request.Project,
-			MatchType: request.Match,
-			DomainID:  request.Domain,
-		})
-		if err != nil {
-			WriteErrResponse(rctx, config.ErrObserveEvent, err.Error())
+		if !isLegalWaitRequest(rctx, request) {
 			return
 		}
-		if changed {
-			queryAndResponse(rctx, request)
+		if watch(rctx, request, wait) {
 			return
 		}
 		rctx.WriteHeader(http.StatusNotModified)
+		return
 	} else {
 		revised, err := isRevised(rctx.Ctx, revStr, request.Domain)
 		if err != nil {
@@ -230,18 +223,10 @@ func returnData(rctx *restful.Context, request *model.ListKVRequest) {
 			queryAndResponse(rctx, request)
 			return
 		} else if wait != "" {
-			changed, err := eventHappened(rctx, wait, &pubsub.Topic{
-				Labels:    request.Labels,
-				Project:   request.Project,
-				MatchType: request.Match,
-				DomainID:  request.Domain,
-			})
-			if err != nil {
-				WriteErrResponse(rctx, config.ErrObserveEvent, err.Error())
+			if !isLegalWaitRequest(rctx, request) {
 				return
 			}
-			if changed {
-				queryAndResponse(rctx, request)
+			if watch(rctx, request, wait) {
 				return
 			}
 			rctx.WriteHeader(http.StatusNotModified)
@@ -250,6 +235,30 @@ func returnData(rctx *restful.Context, request *model.ListKVRequest) {
 			rctx.WriteHeader(http.StatusNotModified)
 		}
 	}
+}
+func isLegalWaitRequest(rctx *restful.Context, request *model.ListKVRequest) bool {
+	if request.Key != "" {
+		WriteErrResponse(rctx, config.ErrInvalidParams, "can not accept key params, when using wait")
+		return false
+	}
+	return true
+}
+func watch(rctx *restful.Context, request *model.ListKVRequest, wait string) bool {
+	changed, err := eventHappened(wait, &pubsub.Topic{
+		Labels:    request.Labels,
+		Project:   request.Project,
+		MatchType: request.Match,
+		DomainID:  request.Domain,
+	})
+	if err != nil {
+		WriteErrResponse(rctx, config.ErrObserveEvent, err.Error())
+		return true
+	}
+	if changed {
+		queryAndResponse(rctx, request)
+		return true
+	}
+	return false
 }
 
 //Delete deletes one kv by id

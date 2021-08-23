@@ -42,8 +42,8 @@ func init() {
 	if err != nil {
 		panic(err)
 	}
-	kind := archaius.GetString("TEST_DB_KIND", "mongo")
-	uri := archaius.GetString("TEST_DB_URI", "mongodb://kie:123@127.0.0.1:27017/kie")
+	kind := archaius.GetString("TEST_DB_KIND", "etcd")
+	uri := archaius.GetString("TEST_DB_URI", "http://127.0.0.1:2379")
 	archaius.Init(archaius.WithMemorySource())
 	archaius.Set("servicecomb.cipher.plugin", "default")
 	cipher.Init()

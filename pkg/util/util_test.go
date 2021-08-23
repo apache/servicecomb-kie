@@ -42,3 +42,17 @@ func TestIsEquivalentLabel(t *testing.T) {
 	assert.Equal(t, util.IsEquivalentLabel(m3, m4), true)
 	assert.Equal(t, util.IsEquivalentLabel(m3, m5), false)
 }
+func BenchmarkIsEquivalentLabel(b *testing.B) {
+	m1 := map[string]string{
+		"foo": "bar",
+		"a":   "b",
+	}
+	m2 := map[string]string{
+		"foo": "bar",
+		"c":   "d",
+		"s":   "d",
+	}
+	for i := 0; i < b.N; i++ {
+		util.IsEquivalentLabel(m1, m2)
+	}
+}

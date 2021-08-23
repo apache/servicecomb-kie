@@ -1,7 +1,7 @@
 swagger: '2.0'
 info:
-  title: ''
-  version: ''
+  title: 'servicecomb-kie'
+  version: 'v1'
 basePath: /
 paths:
   /v1/health:
