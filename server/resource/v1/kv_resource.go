@@ -414,8 +414,8 @@ func (r *KVResource) URLPatterns() []restful.Route {
 			ResourceFunc: r.List,
 			FuncDesc:     "list key values by labels and key",
 			Parameters: []*restful.Parameters{
-				DocPathProject, DocQueryKeyParameters, DocQueryLabelParameters, DocQueryWait, DocQueryMatch, DocQueryRev,
-				DocQueryLimitParameters, DocQueryOffsetParameters,
+				DocPathProject, DocQueryKeyParameters, DocQueryStatusParameters, DocQueryLabelParameters,
+				DocQueryWait, DocQueryMatch, DocQueryRev, DocQueryLimitParameters, DocQueryOffsetParameters,
 			},
 			Returns: []*restful.Returns{
 				{
