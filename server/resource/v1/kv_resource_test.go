@@ -361,7 +361,7 @@ func TestKVResource_List(t *testing.T) {
 		t.Log(duration)
 	})
 	t.Run("list kv by service label offset, should return 1kv", func(t *testing.T) {
-		r, _ := http.NewRequest("GET", "/v1/kv_test/kie/kv?label=service:utService&offset=1&limit=1", nil)
+		r, _ := http.NewRequest("GET", "/v1/kv_test/kie/kv?label=service:utService&offset=0&limit=1", nil)
 		r.Header.Set("Content-Type", "application/json")
 		kvr := &v1.KVResource{}
 		c, err := restfultest.New(kvr, nil)

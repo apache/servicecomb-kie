@@ -1,7 +1,6 @@
 module github.com/apache/servicecomb-kie
 
 require (
-	github.com/coreos/etcd v3.3.25+incompatible
 	github.com/emicklei/go-restful v2.12.0+incompatible
 	github.com/go-chassis/cari v0.5.0
 	github.com/go-chassis/foundation v0.3.1-0.20210811025651-7f4d2b2b906c

@@ -61,6 +61,7 @@ func TestGetHistory(t *testing.T) {
 		assert.Equal(t, 2, h.Total)
 		assert.Equal(t, 2, len(h.Data))
 	})
+
 	t.Run("test paging, should pass", func(t *testing.T) {
 		resp, err := datasource.GetBroker().GetHistoryDao().GetHistory(ctx, kv.ID, "kv-test", "default",
 			datasource.WithOffset(0), datasource.WithLimit(1))

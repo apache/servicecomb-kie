@@ -216,8 +216,7 @@ func (s *Dao) List(ctx context.Context, project, domain string, options ...datas
 		return nil, err
 	}
 	// TODO may be OOM
-	kvs, _, err := etcdadpt.List(ctx, key.KVList(domain, project),
-		etcdadpt.WithOrderByCreate(), etcdadpt.WithAscendOrder())
+	kvs, _, err := etcdadpt.List(ctx, key.KVList(domain, project))
 	if err != nil {
 		openlog.Error("list kv failed: " + err.Error())
 		return nil, err
