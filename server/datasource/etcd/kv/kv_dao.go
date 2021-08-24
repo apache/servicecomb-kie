@@ -251,26 +251,24 @@ func IsUniqueFind(opts datasource.FindOptions) bool {
 }
 
 func toRegex(opts datasource.FindOptions) (*regexp.Regexp, error) {
-	var (
-		regex *regexp.Regexp
-		value string
-	)
-	if opts.Key != "" {
-		switch {
-		case strings.HasPrefix(opts.Key, "beginWith("):
-			value = "^" + strings.ReplaceAll(getValue(opts.Key), ".", "\\.") + ".*"
-		case strings.HasPrefix(opts.Key, "wildcard("):
-			value = strings.ReplaceAll(getValue(opts.Key), ".", "\\.")
-			value = strings.ReplaceAll(value, "*", ".*")
-		default:
-			value = "^" + strings.ReplaceAll(opts.Key, ".", "\\.") + "$"
-		}
-		var err error
-		regex, err = regexp.Compile(value)
-		if err != nil {
-			openlog.Error("invalid wildcard expr: " + err.Error())
-			return nil, err
-		}
+	var value string
+	if opts.Key == "" {
+		return nil, nil
+	}
+	switch {
+	case strings.HasPrefix(opts.Key, "beginWith("):
+		value = strings.ReplaceAll(getValue(opts.Key), ".", "\\.") + ".*"
+	case strings.HasPrefix(opts.Key, "wildcard("):
+		value = strings.ReplaceAll(getValue(opts.Key), ".", "\\.")
+		value = strings.ReplaceAll(value, "*", ".*")
+	default:
+		value = strings.ReplaceAll(opts.Key, ".", "\\.")
+	}
+	value = "(?i)^" + value + "$"
+	regex, err := regexp.Compile(value)
+	if err != nil {
+		openlog.Error("invalid wildcard expr: " + value + ", error: " + err.Error())
+		return nil, err
 	}
 	return regex, nil
 }
