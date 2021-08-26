@@ -106,7 +106,9 @@ func findKV(ctx context.Context, domain string, project string, opts datasource.
 			filter["labels."+k] = v
 		}
 	}
-	opt := options.Find()
+	opt := options.Find().SetSort(map[string]interface{}{
+		"update_revision": -1,
+	})
 	if opts.Limit > 0 {
 		opt = opt.SetLimit(opts.Limit)
 		opt = opt.SetSkip(opts.Offset)
