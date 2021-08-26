@@ -8,9 +8,9 @@ require (
 	github.com/go-chassis/go-chassis/v2 v2.2.1-0.20210810140748-7274d2228000
 	github.com/go-chassis/openlog v1.1.3
 	github.com/go-chassis/seclog v1.3.0
+	github.com/gofrs/uuid v4.0.0+incompatible
 	github.com/hashicorp/serf v0.9.5
 	github.com/little-cui/etcdadpt v0.1.2
-	github.com/satori/go.uuid v1.2.0
 	github.com/stretchr/testify v1.7.0
 	github.com/urfave/cli v1.22.4
 	go.mongodb.org/mongo-driver v1.4.6

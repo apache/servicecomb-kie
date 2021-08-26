@@ -26,6 +26,7 @@ import (
 
 	_ "github.com/apache/servicecomb-kie/server/datasource/etcd"
 	_ "github.com/apache/servicecomb-kie/server/datasource/mongo"
+	_ "github.com/apache/servicecomb-kie/server/pubsub/notifier"
 	_ "github.com/go-chassis/go-chassis/v2/security/cipher/plugins/plain"
 	_ "github.com/little-cui/etcdadpt/embedded"
 	_ "github.com/little-cui/etcdadpt/remote"

@@ -33,14 +33,12 @@ import (
 	"github.com/go-chassis/foundation/validator"
 	"github.com/go-chassis/go-chassis/v2/pkg/backends/quota"
 	"github.com/go-chassis/openlog"
-	"github.com/satori/go.uuid"
+	"github.com/gofrs/uuid"
 )
 
-var sema = concurrency.NewSemaphore(concurrency.DefaultConcurrency)
+var listSema = concurrency.NewSemaphore(concurrency.DefaultConcurrency)
 
 func ListKV(ctx context.Context, request *model.ListKVRequest) (int64, *model.KVResponse, *errsvc.Error) {
-	sema.Acquire()
-	defer sema.Release()
 	opts := []datasource.FindOption{
 		datasource.WithKey(request.Key),
 		datasource.WithLabels(request.Labels),
@@ -58,7 +56,7 @@ func ListKV(ctx context.Context, request *model.ListKVRequest) (int64, *model.KV
 	if err != nil {
 		return rev, nil, config.NewError(config.ErrInternal, err.Error())
 	}
-	kv, err := datasource.GetBroker().GetKVDao().List(ctx, request.Project, request.Domain, opts...)
+	kv, err := List(ctx, request.Project, request.Domain, opts...)
 	if err != nil {
 		openlog.Error("common: " + err.Error())
 		return rev, nil, config.NewError(config.ErrInternal, common.MsgDBError)
@@ -108,7 +106,11 @@ func Create(ctx context.Context, kv *model.KVDoc) (*model.KVDoc, *errsvc.Error) 
 		openlog.Error(err.Error())
 		return nil, config.NewError(config.ErrInternal, "create kv failed")
 	}
-	completeKV(kv, revision)
+	err = completeKV(kv, revision)
+	if err != nil {
+		openlog.Error(err.Error())
+		return nil, config.NewError(config.ErrInternal, "create kv failed")
+	}
 	kv, err = datasource.GetBroker().GetKVDao().Create(ctx, kv)
 	if err != nil {
 		openlog.Error(fmt.Sprintf("post err:%s", err.Error()))
@@ -125,13 +127,18 @@ func Create(ctx context.Context, kv *model.KVDoc) (*model.KVDoc, *errsvc.Error) 
 	return kv, nil
 }
 
-func completeKV(kv *model.KVDoc, revision int64) {
-	kv.ID = uuid.NewV4().String()
+func completeKV(kv *model.KVDoc, revision int64) error {
+	id, err := uuid.NewV4()
+	if err != nil {
+		return err
+	}
+	kv.ID = id.String()
 	kv.UpdateRevision = revision
 	kv.CreateRevision = revision
 	now := time.Now().Unix()
 	kv.CreateTime = now
 	kv.UpdateTime = now
+	return nil
 }
 
 func Upload(ctx context.Context, request *model.UploadKVRequest) *model.DocRespOfUpload {
@@ -282,5 +289,7 @@ func Get(ctx context.Context, req *model.GetKVRequest) (*model.KVDoc, error) {
 	return datasource.GetBroker().GetKVDao().Get(ctx, req)
 }
 func List(ctx context.Context, project, domain string, options ...datasource.FindOption) (*model.KVResponse, error) {
+	listSema.Acquire()
+	defer listSema.Release()
 	return datasource.GetBroker().GetKVDao().List(ctx, project, domain, options...)
 }

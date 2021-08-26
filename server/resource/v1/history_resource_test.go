@@ -20,11 +20,12 @@ import (
 	"context"
 	"encoding/json"
 	"fmt"
-	kvsvc "github.com/apache/servicecomb-kie/server/service/kv"
 	"io/ioutil"
 	"net/http"
 	"net/http/httptest"
 	"testing"
+
+	kvsvc "github.com/apache/servicecomb-kie/server/service/kv"
 
 	common2 "github.com/apache/servicecomb-kie/pkg/common"
 

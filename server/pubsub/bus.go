@@ -22,6 +22,7 @@ import (
 	"time"
 
 	"encoding/json"
+
 	"github.com/apache/servicecomb-kie/pkg/stringutil"
 	"github.com/apache/servicecomb-kie/server/config"
 	"github.com/go-chassis/openlog"
@@ -39,8 +40,11 @@ const (
 	DefaultEventBatchInterval = 500 * time.Millisecond
 )
 
-var mutexObservers sync.RWMutex
 var topics sync.Map
+
+func Topics() *sync.Map {
+	return &topics
+}
 
 //Bus is message bug
 type Bus struct {
@@ -87,12 +91,7 @@ func Start() {
 		openlog.Fatal("can not sync key value change events to other kie nodes" + err.Error())
 	}
 	openlog.Info("kie message bus started")
-	eh := &EventHandler{
-		BatchInterval: DefaultEventBatchInterval,
-		BatchSize:     DefaultEventBatchSize,
-		Immediate:     true,
-	}
-	go eh.RunFlushTask()
+	eh := &ClusterEventHandler{}
 	bus.agent.RegisterEventHandler(eh)
 }
 func join(addresses []string) error {
@@ -114,24 +113,23 @@ func Publish(event *KVChangeEvent) error {
 }
 
 //AddObserver observe key changes by (key or labels) or (key and labels)
-func AddObserver(o *Observer, topic *Topic) error {
+func AddObserver(o *Observer, topic *Topic) (string, error) {
 	topic.LabelsFormat = stringutil.FormatMap(topic.Labels)
 	b, err := json.Marshal(topic)
 	if err != nil {
-		return err
+		return "", err
 	}
 	t := string(b)
 	observers, ok := topics.Load(t)
 	if !ok {
-		topics.Store(t, map[string]*Observer{
-			o.UUID: o,
-		})
+		var observers = &sync.Map{}
+		observers.Store(o.UUID, o)
+		topics.Store(t, observers)
 		openlog.Info("new topic:" + t)
-		return nil
+		return t, nil
 	}
-	mutexObservers.Lock()
-	observers.(map[string]*Observer)[o.UUID] = o
-	mutexObservers.Unlock()
+	m := observers.(*sync.Map)
+	m.Store(o.UUID, o)
 	openlog.Debug("add new observer for topic:" + t)
-	return nil
+	return t, nil
 }

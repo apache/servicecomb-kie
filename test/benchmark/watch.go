@@ -14,7 +14,7 @@ import (
 var success int32
 var fail int32
 var total int32
-var clientNum = 10000
+var clientNum = 5000
 var wg = sync.WaitGroup{}
 var client = &http.Client{}
 var start time.Time
@@ -77,6 +77,5 @@ func watch(req *http.Request) error {
 		log.Println(res.Status)
 		return errors.New("not OK")
 	}
-
 	return nil
 }

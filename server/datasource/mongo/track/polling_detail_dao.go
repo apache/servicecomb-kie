@@ -24,7 +24,7 @@ import (
 	"github.com/apache/servicecomb-kie/server/datasource"
 	"github.com/apache/servicecomb-kie/server/datasource/mongo/session"
 	"github.com/go-chassis/openlog"
-	"github.com/satori/go.uuid"
+	"github.com/gofrs/uuid"
 	"go.mongodb.org/mongo-driver/bson"
 	"go.mongodb.org/mongo-driver/mongo"
 )
@@ -41,8 +41,12 @@ func (s *Dao) CreateOrUpdate(ctx context.Context, detail *model.PollingDetail) (
 	res := collection.FindOne(ctx, queryFilter)
 	if res.Err() != nil {
 		if res.Err() == mongo.ErrNoDocuments {
-			detail.ID = uuid.NewV4().String()
-			_, err := collection.InsertOne(ctx, detail)
+			id, err := uuid.NewV4()
+			if err != nil {
+				return nil, err
+			}
+			detail.ID = id.String()
+			_, err = collection.InsertOne(ctx, detail)
 			if err != nil {
 				return nil, err
 			}
