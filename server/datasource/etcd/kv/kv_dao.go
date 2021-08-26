@@ -274,6 +274,8 @@ func toRegex(opts datasource.FindOptions) (*regexp.Regexp, error) {
 }
 
 func pagingResult(result *model.KVResponse, opts datasource.FindOptions) *model.KVResponse {
+	datasource.ReverseByUpdateRev(result.Data)
+
 	if opts.Limit == 0 {
 		return result
 	}
