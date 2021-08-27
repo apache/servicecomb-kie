@@ -62,8 +62,8 @@ type Topic struct {
 	MatchType    string            `json:"match,omitempty"`
 }
 
-//ParseTopicString parse topic string to topic struct
-func ParseTopicString(s string) (*Topic, error) {
+//ParseTopic parse topic string to topic struct
+func ParseTopic(s string) (*Topic, error) {
 	t := &Topic{
 		Labels: make(map[string]string),
 	}

@@ -21,12 +21,14 @@ import (
 	"context"
 	"encoding/json"
 	"errors"
-	"github.com/satori/go.uuid"
 	"net/http"
 	"strconv"
 	"strings"
 	"sync"
 	"time"
+
+	"github.com/apache/servicecomb-kie/server/cache"
+	"github.com/gofrs/uuid"
 
 	"github.com/apache/servicecomb-kie/server/datasource"
 	kvsvc "github.com/apache/servicecomb-kie/server/service/kv"
@@ -55,8 +57,12 @@ const (
 
 var observers = sync.Pool{
 	New: func() interface{} {
+		id, err := uuid.NewV4()
+		if err != nil {
+			openlog.Error("can not gen uuid")
+		}
 		return &pubsub.Observer{
-			UUID:  uuid.NewV4().String(),
+			UUID:  id.String(),
 			Event: make(chan *pubsub.KVChangeEvent, 1),
 		}
 	},
@@ -187,24 +193,24 @@ func getMatchPattern(rctx *restful.Context) string {
 	}
 	return m
 }
-func eventHappened(waitStr string, topic *pubsub.Topic) (bool, error) {
+func eventHappened(waitStr string, topic *pubsub.Topic) (bool, string, error) {
 	d, err := time.ParseDuration(waitStr)
 	if err != nil || d > common.MaxWait {
-		return false, errors.New(common.MsgInvalidWait)
+		return false, "", errors.New(common.MsgInvalidWait)
 	}
 	happened := true
 	o := observers.Get().(*pubsub.Observer)
 	defer observers.Put(o)
-	err = pubsub.AddObserver(o, topic)
+	topicName, err := pubsub.AddObserver(o, topic)
 	if err != nil {
-		return false, errors.New("observe once failed: " + err.Error())
+		return false, "", errors.New("observe once failed: " + err.Error())
 	}
 	select {
 	case <-time.After(d):
 		happened = false
 	case <-o.Event:
 	}
-	return happened, nil
+	return happened, topicName, nil
 }
 
 // size from 1 to start
@@ -254,7 +260,19 @@ func checkDomainAndProject(domain, project string) error {
 	}
 	return nil
 }
-
+func queryFromCache(rctx *restful.Context, topic string) {
+	rev, kv, queryErr := cache.CachedKV().Read(topic)
+	if queryErr != nil {
+		WriteErrResponse(rctx, queryErr.Code, queryErr.Message)
+		return
+	}
+	rctx.ReadResponseWriter().Header().Set(common.HeaderRevision, strconv.FormatInt(rev, 10))
+	err := writeResponse(rctx, kv)
+	rctx.ReadRestfulRequest().SetAttribute(common.RespBodyContextKey, kv.Data)
+	if err != nil {
+		openlog.Error(err.Error())
+	}
+}
 func queryAndResponse(rctx *restful.Context, request *model.ListKVRequest) {
 	rev, kv, queryErr := kvsvc.ListKV(rctx.Ctx, request)
 	if queryErr != nil {

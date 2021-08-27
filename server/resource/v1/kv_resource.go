@@ -244,7 +244,7 @@ func isLegalWaitRequest(rctx *restful.Context, request *model.ListKVRequest) boo
 	return true
 }
 func watch(rctx *restful.Context, request *model.ListKVRequest, wait string) bool {
-	changed, err := eventHappened(wait, &pubsub.Topic{
+	changed, topic, err := eventHappened(wait, &pubsub.Topic{
 		Labels:    request.Labels,
 		Project:   request.Project,
 		MatchType: request.Match,
@@ -255,7 +255,7 @@ func watch(rctx *restful.Context, request *model.ListKVRequest, wait string) boo
 		return true
 	}
 	if changed {
-		queryAndResponse(rctx, request)
+		queryFromCache(rctx, topic)
 		return true
 	}
 	return false

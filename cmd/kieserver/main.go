@@ -38,6 +38,9 @@ import (
 	_ "github.com/apache/servicecomb-kie/server/plugin/qms"
 	//noop cipher
 	_ "github.com/go-chassis/go-chassis/v2/security/cipher/plugins/plain"
+
+	// event notifier
+	_ "github.com/apache/servicecomb-kie/server/pubsub/notifier"
 )
 
 func main() {

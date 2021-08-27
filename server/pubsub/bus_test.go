@@ -20,21 +20,23 @@ package pubsub_test
 import (
 	"testing"
 
+	_ "github.com/apache/servicecomb-kie/test"
+	"github.com/gofrs/uuid"
+
 	"github.com/apache/servicecomb-kie/server/config"
 	"github.com/apache/servicecomb-kie/server/pubsub"
-	"github.com/satori/go.uuid"
 )
 
 func TestInit(t *testing.T) {
 	config.Configurations = &config.Config{}
 	pubsub.Init()
 	pubsub.Start()
-
+	id, _ := uuid.NewV4()
 	o := &pubsub.Observer{
-		UUID:  uuid.NewV4().String(),
+		UUID:  id.String(),
 		Event: make(chan *pubsub.KVChangeEvent, 1),
 	}
-	_ = pubsub.AddObserver(o, &pubsub.Topic{
+	_, _ = pubsub.AddObserver(o, &pubsub.Topic{
 		Project:  "1",
 		DomainID: "2",
 		Labels: map[string]string{

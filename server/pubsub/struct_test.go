@@ -49,6 +49,6 @@ func TestTopic_String(t *testing.T) {
 	t.Log(string(b))
 
 	mock := []byte(`{"labels":"a=b::c=d","domainID":"2","project":"1"}`)
-	topic, _ = pubsub.ParseTopicString(string(mock))
+	topic, _ = pubsub.ParseTopic(string(mock))
 	t.Log(topic)
 }
