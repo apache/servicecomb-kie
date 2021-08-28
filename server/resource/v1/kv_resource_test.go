@@ -20,9 +20,11 @@ package v1_test
 import (
 	"bytes"
 	"encoding/json"
+	"fmt"
 	"io/ioutil"
 	"net/http"
 	"net/http/httptest"
+	"strconv"
 	"strings"
 	"sync"
 	"testing"
@@ -358,6 +360,20 @@ func TestKVResource_List(t *testing.T) {
 		time.Sleep(1 * time.Second)
 		t.Log(string(body))
 		assert.Equal(t, http.StatusNotModified, resp2.Result().StatusCode)
+	})
+	t.Run("list kv by service label, with wait and larger rev param,should return latest revision,no wait", func(t *testing.T) {
+		revNum, _ := strconv.ParseInt(rev, 10, 64)
+		r, _ := http.NewRequest("GET", "/v1/kv_test/kie/kv?label=service:utService&wait=1s&"+common2.QueryParamRev+fmt.Sprintf("=%d", revNum+100), nil)
+		r.Header.Set("Content-Type", "application/json")
+		kvr := &v1.KVResource{}
+		c, err := restfultest.New(kvr, nil)
+		assert.NoError(t, err)
+		resp := httptest.NewRecorder()
+		start := time.Now()
+		c.ServeHTTP(resp, r)
+		duration := time.Since(start)
+		t.Log(duration)
+		assert.Equal(t, http.StatusOK, resp.Result().StatusCode)
 	})
 	t.Run("list kv by service label, with wait param,will exceed 1s and return 304", func(t *testing.T) {
 		r, _ := http.NewRequest("GET", "/v1/kv_test/kie/kv?label=service:utService&wait=1s", nil)
