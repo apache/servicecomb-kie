@@ -181,13 +181,13 @@ func revNotMatch(ctx context.Context, revStr, domain string) (bool, error) {
 	if err != nil {
 		return false, err
 	}
-	if latest != rev {
-		if latest < rev {
-			openlog.Warn("the query rev larger then db rev: db may be restored")
-		}
-		return true, nil
+	if latest == rev {
+		return false, nil
 	}
-	return false, nil
+	if latest < rev {
+		openlog.Warn("the rev param is larger than db rev: db may be restored")
+	}
+	return true, nil
 }
 func getMatchPattern(rctx *restful.Context) string {
 	m := rctx.ReadQueryParameter(common.QueryParamMatch)
