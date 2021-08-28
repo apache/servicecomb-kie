@@ -172,7 +172,7 @@ func getLabels(rctx *restful.Context) (map[string]string, error) {
 	}
 	return labels, nil
 }
-func isRevised(ctx context.Context, revStr, domain string) (bool, error) {
+func revNotMatch(ctx context.Context, revStr, domain string) (bool, error) {
 	rev, err := strconv.ParseInt(revStr, 10, 64)
 	if err != nil {
 		return false, ErrInvalidRev
@@ -181,7 +181,10 @@ func isRevised(ctx context.Context, revStr, domain string) (bool, error) {
 	if err != nil {
 		return false, err
 	}
-	if latest > rev {
+	if latest != rev {
+		if latest < rev {
+			openlog.Warn("the query rev larger then db rev: db may be restored")
+		}
 		return true, nil
 	}
 	return false, nil

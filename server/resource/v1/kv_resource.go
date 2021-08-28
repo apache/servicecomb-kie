@@ -210,7 +210,7 @@ func returnData(rctx *restful.Context, request *model.ListKVRequest) {
 		rctx.WriteHeader(http.StatusNotModified)
 		return
 	} else {
-		revised, err := isRevised(rctx.Ctx, revStr, request.Domain)
+		revised, err := revNotMatch(rctx.Ctx, revStr, request.Domain)
 		if err != nil {
 			if err == ErrInvalidRev {
 				WriteErrResponse(rctx, config.ErrInvalidParams, err.Error())
