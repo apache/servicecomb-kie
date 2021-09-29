@@ -108,6 +108,10 @@ func (r *KVResource) Put(rctx *restful.Context) {
 	kv, err := kvsvc.Update(rctx.Ctx, kvReq)
 	if err != nil {
 		openlog.Error(fmt.Sprintf("put [%s] err:%s", kvID, err.Error()))
+		if err == datasource.ErrKeyNotExists {
+			WriteErrResponse(rctx, config.ErrRecordNotExists, err.Error())
+			return
+		}
 		WriteErrResponse(rctx, config.ErrInternal, "update kv failed")
 		return
 	}
