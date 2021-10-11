@@ -33,5 +33,4 @@ jobs:
         - name: UT for embedded etcd
           run: |
             export TEST_DB_KIND=embedded_etcd
-            export TEST_DB_URI=default=http://127.0.0.1:2380
             go test $(go list ./... | grep -v mongo | grep -v third_party | grep -v examples)
