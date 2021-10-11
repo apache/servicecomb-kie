@@ -88,6 +88,7 @@ func Init() {
 	})
 }
 
+// set serf advertiseAddr value
 func setSerfAdvertiseAddr(conf *serf.Config, advertiseAddr string) {
 	conf.MemberlistConfig.AdvertiseAddr = advertiseAddr
 }
