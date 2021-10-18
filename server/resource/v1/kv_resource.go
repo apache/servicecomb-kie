@@ -19,9 +19,11 @@
 package v1
 
 import (
+	"context"
 	"encoding/json"
 	"fmt"
 	"net/http"
+	"time"
 
 	"github.com/apache/servicecomb-kie/server/datasource"
 	kvsvc "github.com/apache/servicecomb-kie/server/service/kv"
@@ -200,6 +202,15 @@ func (r *KVResource) List(rctx *restful.Context) {
 func returnData(rctx *restful.Context, request *model.ListKVRequest) {
 	revStr := rctx.ReadQueryParameter(common.QueryParamRev)
 	wait := rctx.ReadQueryParameter(common.QueryParamWait)
+	if wait != "" {
+		duration, err := time.ParseDuration(wait)
+		if err != nil {
+			return
+		}
+		var cancel context.CancelFunc
+		rctx.Ctx, cancel = context.WithTimeout(rctx.Ctx, duration)
+		defer cancel()
+	}
 	if revStr == "" {
 		if wait == "" {
 			queryAndResponse(rctx, request)
