@@ -207,6 +207,7 @@ func returnData(rctx *restful.Context, request *model.ListKVRequest) {
 		if err != nil {
 			return
 		}
+
 		var cancel context.CancelFunc
 		rctx.Ctx, cancel = context.WithTimeout(rctx.Ctx, duration)
 		defer cancel()
