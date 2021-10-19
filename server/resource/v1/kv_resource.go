@@ -205,6 +205,7 @@ func returnData(rctx *restful.Context, request *model.ListKVRequest) {
 	if wait != "" {
 		duration, err := time.ParseDuration(wait)
 		if err != nil {
+			WriteErrResponse(rctx, config.ErrInvalidParams, err.Error())
 			return
 		}
 
