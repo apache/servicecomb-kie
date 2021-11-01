@@ -26,7 +26,6 @@ import (
 
 	//custom handlers
 	_ "github.com/apache/servicecomb-kie/server/handler"
-	_ "github.com/go-chassis/go-chassis/v2/middleware/jwt"
 	_ "github.com/go-chassis/go-chassis/v2/middleware/monitoring"
 	_ "github.com/go-chassis/go-chassis/v2/middleware/ratelimiter"
 
