@@ -28,7 +28,17 @@ const (
 	keyCounter = "counter"
 	keyHistory = "kv-history"
 	keyTrack   = "track"
+	sync       = "sync"
+	task       = "task"
 )
+
+func getSyncRootKey() string {
+	return split + sync
+}
+
+func TaskKey(domain, project, timestamp string) string {
+	return strings.Join([]string{getSyncRootKey(), task, domain, project, timestamp}, split)
+}
 
 func KV(domain, project, kvID string) string {
 	return strings.Join([]string{keyKV, domain, project, kvID}, split)

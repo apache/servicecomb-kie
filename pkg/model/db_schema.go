@@ -48,6 +48,15 @@ type KVDoc struct {
 	Domain string            `json:"domain,omitempty" yaml:"domain,omitempty" validate:"min=1,max=256,commonName"`              //redundant
 }
 
+// Task is db struct to store sync task
+type Task struct {
+	Action    string      `json:"action" bson:"action"`
+	DataType  string      `json:"data_type" bson:"data_type"`
+	Data      interface{} `json:"data" bson:"data"`
+	Timestamp string      `json:"timestamp" bson:"timestamp"`
+	Status    string      `json:"status" bson:"status"`
+}
+
 //ViewDoc is db struct, it saves user's custom view name and criteria
 type ViewDoc struct {
 	ID       string `json:"id,omitempty" bson:"id,omitempty" yaml:"id,omitempty" swag:"string"`

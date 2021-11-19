@@ -20,12 +20,14 @@ package kv
 import (
 	"context"
 	"fmt"
+	"strconv"
 	"time"
 
 	"github.com/apache/servicecomb-kie/pkg/common"
 	"github.com/apache/servicecomb-kie/pkg/concurrency"
 	"github.com/apache/servicecomb-kie/pkg/model"
 	"github.com/apache/servicecomb-kie/pkg/stringutil"
+	cfg "github.com/apache/servicecomb-kie/server/config"
 	"github.com/apache/servicecomb-kie/server/datasource"
 	"github.com/apache/servicecomb-kie/server/pubsub"
 	"github.com/go-chassis/cari/config"
@@ -111,10 +113,25 @@ func Create(ctx context.Context, kv *model.KVDoc) (*model.KVDoc, *errsvc.Error) 
 		openlog.Error(err.Error())
 		return nil, config.NewError(config.ErrInternal, "create kv failed")
 	}
-	kv, err = datasource.GetBroker().GetKVDao().Create(ctx, kv)
-	if err != nil {
-		openlog.Error(fmt.Sprintf("post err:%s", err.Error()))
-		return nil, config.NewError(config.ErrInternal, "create kv failed")
+	// open synchronization needs to write tasks to db
+	if cfg.GetDB().SyncEnable {
+		task := &model.Task{
+			Action:    "create",
+			DataType:  "config",
+			Data:      kv,
+			Timestamp: strconv.FormatInt(time.Now().Unix(), 10),
+		}
+		kv, err = datasource.GetBroker().GetKVDao().CreateWithTask(ctx, kv, task)
+		if err != nil {
+			openlog.Error(fmt.Sprintf("post err:%s", err.Error()))
+			return nil, config.NewError(config.ErrInternal, "create kv failed")
+		}
+	} else {
+		kv, err = datasource.GetBroker().GetKVDao().Create(ctx, kv)
+		if err != nil {
+			openlog.Error(fmt.Sprintf("post err:%s", err.Error()))
+			return nil, config.NewError(config.ErrInternal, "create kv failed")
+		}
 	}
 	err = datasource.GetBroker().GetHistoryDao().AddHistory(ctx, kv)
 	if err != nil {
@@ -228,9 +245,22 @@ func Update(ctx context.Context, kv *model.UpdateKVRequest) (*model.KVDoc, error
 	if err != nil {
 		return nil, err
 	}
-	err = datasource.GetBroker().GetKVDao().Update(ctx, oldKV)
-	if err != nil {
-		return nil, err
+	if cfg.GetDB().SyncEnable {
+		task := &model.Task{
+			Action:    "update",
+			DataType:  "config",
+			Data:      kv,
+			Timestamp: strconv.FormatInt(time.Now().Unix(), 10),
+		}
+		err = datasource.GetBroker().GetKVDao().UpdateWithTask(ctx, oldKV, task)
+		if err != nil {
+			return nil, err
+		}
+	} else {
+		err = datasource.GetBroker().GetKVDao().Update(ctx, oldKV)
+		if err != nil {
+			return nil, err
+		}
 	}
 	openlog.Info(
 		fmt.Sprintf("update %s with labels %s value [%s]",

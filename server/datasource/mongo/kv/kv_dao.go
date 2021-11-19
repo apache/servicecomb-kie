@@ -57,6 +57,64 @@ func (s *Dao) Create(ctx context.Context, kv *model.KVDoc) (*model.KVDoc, error)
 	return kv, nil
 }
 
+func (s *Dao) CreateWithTask(ctx context.Context, kv *model.KVDoc, task *model.Task) (*model.KVDoc, error) {
+	taskSession, err := session.GetDB().Client().StartSession()
+	if err != nil {
+		return nil, err
+	}
+	if err = taskSession.StartTransaction(); err != nil {
+		return nil, err
+	}
+	defer taskSession.EndSession(ctx)
+	if err = mongo.WithSession(ctx, taskSession, func(sessionContext mongo.SessionContext) error {
+		collection := session.GetDB().Collection(session.CollectionKV)
+		_, err = collection.InsertOne(sessionContext, kv)
+		if err != nil {
+			openlog.Error("create error", openlog.WithTags(openlog.Tags{
+				"err": err.Error(),
+				"kv":  kv,
+			}))
+			errAbort := taskSession.AbortTransaction(sessionContext)
+			if errAbort != nil {
+				openlog.Error("fail to abort transaction", openlog.WithTags(openlog.Tags{
+					"err": errAbort.Error(),
+					"kv":  kv,
+				}))
+			}
+			return err
+		}
+
+		collection = session.GetDB().Collection(session.CollectionTask)
+		_, err = collection.InsertOne(sessionContext, task)
+		if err != nil {
+			openlog.Error("create error", openlog.WithTags(openlog.Tags{
+				"err":  err.Error(),
+				"task": task,
+			}))
+			errAbort := taskSession.AbortTransaction(sessionContext)
+			if errAbort != nil {
+				openlog.Error("fail to abort transaction", openlog.WithTags(openlog.Tags{
+					"err":  errAbort.Error(),
+					"task": task,
+				}))
+			}
+			return err
+		}
+		if err = taskSession.CommitTransaction(sessionContext); err != nil {
+			return err
+		}
+		return nil
+	}); err != nil {
+		openlog.Error(err.Error())
+		return nil, err
+	}
+	return kv, nil
+}
+
+func (s *Dao) UpdateWithTask(ctx context.Context, kv *model.KVDoc, task *model.Task) error {
+	return nil
+}
+
 //Update update key value
 func (s *Dao) Update(ctx context.Context, kv *model.KVDoc) error {
 	collection := session.GetDB().Collection(session.CollectionKV)

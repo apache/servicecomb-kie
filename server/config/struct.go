@@ -41,6 +41,7 @@ type DB struct {
 	CertPwdFile string `yaml:"certPwdFile"`
 	Timeout     string `yaml:"timeout"`
 	VerifyPeer  bool   `yaml:"verifyPeer"`
+	SyncEnable  bool   `yaml:"syncEnabled"`
 }
 
 //RBAC is rbac config

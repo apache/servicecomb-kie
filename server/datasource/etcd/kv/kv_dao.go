@@ -59,6 +59,90 @@ func (s *Dao) Create(ctx context.Context, kv *model.KVDoc) (*model.KVDoc, error)
 	return kv, nil
 }
 
+// CreateWithTask is used to create with the task after synchronization is turned on
+func (s *Dao) CreateWithTask(ctx context.Context, kv *model.KVDoc, task *model.Task) (*model.KVDoc, error) {
+	kvBytes, err := json.Marshal(kv)
+	if err != nil {
+		openlog.Error("fail to marshal kv")
+		return nil, err
+	}
+	taskBytes, err := json.Marshal(task)
+	if err != nil {
+		openlog.Error("fail to marshal task ")
+		return nil, err
+	}
+	kvOpPut := etcdadpt.OpPut(etcdadpt.WithStrKey(key.KV(kv.Domain, kv.Project, kv.ID)), etcdadpt.WithValue(kvBytes))
+	taskOpPut := etcdadpt.OpPut(etcdadpt.WithStrKey(key.TaskKey(kv.Domain, kv.Project, task.Timestamp)), etcdadpt.WithValue(taskBytes))
+	kvOpCmp := etcdadpt.OpCmp(etcdadpt.CmpCreateRev(kvOpPut.Key), etcdadpt.CmpEqual, 0)
+	taskOpCmp := etcdadpt.OpCmp(etcdadpt.CmpCreateRev(taskOpPut.Key), etcdadpt.CmpEqual, 0)
+	resp, err := etcdadpt.Instance().TxnWithCmp(ctx, []etcdadpt.OpOptions{kvOpPut, taskOpPut}, []etcdadpt.CmpOptions{kvOpCmp, taskOpCmp}, nil)
+	if err != nil {
+		openlog.Error("create error", openlog.WithTags(openlog.Tags{
+			"err":  err.Error(),
+			"kv":   kv,
+			"task": task,
+		}))
+		return nil, err
+	}
+	if !resp.Succeeded {
+		openlog.Error("create error", openlog.WithTags(openlog.Tags{
+			"err":  datasource.ErrKVTaskAlreadyExists.Error(),
+			"kv":   kv,
+			"task": task,
+		}))
+		return nil, datasource.ErrKVTaskAlreadyExists
+	}
+	return kv, nil
+}
+
+func (s *Dao) UpdateWithTask(ctx context.Context, kv *model.KVDoc, task *model.Task) error {
+	keyKv := key.KV(kv.Domain, kv.Project, kv.ID)
+	resp, err := etcdadpt.Get(ctx, keyKv)
+	if err != nil {
+		openlog.Error(err.Error())
+		return err
+	}
+	if resp == nil {
+		return datasource.ErrRecordNotExists
+	}
+
+	var old model.KVDoc
+	err = json.Unmarshal(resp.Value, &old)
+	if err != nil {
+		openlog.Error(err.Error())
+		return err
+	}
+	old.LabelFormat = kv.LabelFormat
+	old.Value = kv.Value
+	old.Status = kv.Status
+	old.Checker = kv.Checker
+	old.UpdateTime = kv.UpdateTime
+	old.UpdateRevision = kv.UpdateRevision
+
+	kvBytes, err := json.Marshal(old)
+	if err != nil {
+		openlog.Error(err.Error())
+		return err
+	}
+
+	taskBytes, err := json.Marshal(task)
+	if err != nil {
+		openlog.Error(err.Error())
+		return err
+	}
+
+	kvOpPut := etcdadpt.OpPut(etcdadpt.WithStrKey(keyKv), etcdadpt.WithValue(kvBytes))
+	taskOpPut := etcdadpt.OpPut(etcdadpt.WithStrKey(key.TaskKey(kv.Domain, kv.Project, task.Timestamp)), etcdadpt.WithValue(taskBytes))
+	kvOpCmp := etcdadpt.OpCmp(etcdadpt.CmpCreateRev(kvOpPut.Key), etcdadpt.CmpEqual, 0)
+	taskOpCmp := etcdadpt.OpCmp(etcdadpt.CmpCreateRev(taskOpPut.Key), etcdadpt.CmpEqual, 0)
+	_, err = etcdadpt.Instance().TxnWithCmp(ctx, []etcdadpt.OpOptions{kvOpPut, taskOpPut}, []etcdadpt.CmpOptions{kvOpCmp, taskOpCmp}, nil)
+	if err != nil {
+		openlog.Error(err.Error())
+		return err
+	}
+	return nil
+}
+
 //Update update key value
 func (s *Dao) Update(ctx context.Context, kv *model.KVDoc) error {
 	keyKv := key.KV(kv.Domain, kv.Project, kv.ID)

@@ -46,6 +46,7 @@ func (*Broker) GetHistoryDao() datasource.HistoryDao {
 func (*Broker) GetTrackDao() datasource.TrackDao {
 	return &track.Dao{}
 }
+
 func init() {
 	datasource.RegisterPlugin("mongo", NewFrom)
 }

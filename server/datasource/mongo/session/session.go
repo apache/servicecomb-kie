@@ -49,6 +49,7 @@ const (
 	CollectionPollingDetail = "polling_detail"
 	CollectionCounter       = "counter"
 	CollectionView          = "view"
+	CollectionTask          = "task"
 )
 
 //db errors

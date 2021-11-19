@@ -35,12 +35,13 @@ var (
 )
 
 var (
-	ErrKeyNotExists     = errors.New("can not find any key value")
-	ErrRecordNotExists  = errors.New("can not find any polling data")
-	ErrRevisionNotExist = errors.New("revision does not exist")
-	ErrAliasNotGiven    = errors.New("label alias not given")
-	ErrKVAlreadyExists  = errors.New("kv already exists")
-	ErrTooMany          = errors.New("key with labels should be only one")
+	ErrKeyNotExists        = errors.New("can not find any key value")
+	ErrRecordNotExists     = errors.New("can not find any polling data")
+	ErrRevisionNotExist    = errors.New("revision does not exist")
+	ErrAliasNotGiven       = errors.New("label alias not given")
+	ErrKVAlreadyExists     = errors.New("kv already exists")
+	ErrKVTaskAlreadyExists = errors.New("kv or sync task already exists")
+	ErrTooMany             = errors.New("key with labels should be only one")
 )
 
 const (
@@ -73,6 +74,10 @@ type KVDao interface {
 	Create(ctx context.Context, kv *model.KVDoc) (*model.KVDoc, error)
 	Update(ctx context.Context, kv *model.KVDoc) error
 	List(ctx context.Context, project, domain string, options ...FindOption) (*model.KVResponse, error)
+
+	CreateWithTask(ctx context.Context, kv *model.KVDoc, task *model.Task) (*model.KVDoc, error)
+	UpdateWithTask(ctx context.Context, kv *model.KVDoc, task *model.Task) error
+
 	//FindOneAndDelete deletes one kv by id and return the deleted kv as these appeared before deletion
 	FindOneAndDelete(ctx context.Context, kvID string, project, domain string) (*model.KVDoc, error)
 	//FindManyAndDelete deletes multiple kvs and return the deleted kv list as these appeared before deletion
@@ -82,6 +87,12 @@ type KVDao interface {
 	Exist(ctx context.Context, key, project, domain string, options ...FindOption) (bool, error)
 	// Total should return kv resource number by domain id and project id
 	Total(ctx context.Context, project, domain string) (int64, error)
+}
+
+// TaskDao provide api of Task entity
+type TaskDao interface {
+	Create(ctx context.Context, task *model.Task, domain string, project string) (*model.Task, error)
+	Update(ctx context.Context, task *model.Task, domain string, project string) error
 }
 
 //HistoryDao provide api of History entity
