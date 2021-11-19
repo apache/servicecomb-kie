@@ -40,6 +40,29 @@ func NewDefaultFindOpts() FindOptions {
 	}
 }
 
+// NewDefaultWriteOptions return default options
+func NewDefaultWriteOptions() WriteOptions {
+	return WriteOptions{
+		SyncEnable: false,
+	}
+}
+
+// NewWriteOptions return options with write option
+func NewWriteOptions(option ...WriteOption) WriteOptions {
+	opt := WriteOptions{
+		SyncEnable: false,
+	}
+	for _, op := range option {
+		op(&opt)
+	}
+	return opt
+}
+
+// WriteOptions is option for create ,update and delete kv
+type WriteOptions struct {
+	SyncEnable bool
+}
+
 //FindOptions is option to find key value
 type FindOptions struct {
 	ExactLabels bool
@@ -57,8 +80,18 @@ type FindOptions struct {
 	Limit int64
 }
 
+// WriteOption is functional option to create, update and delete kv
+type WriteOption func(*WriteOptions)
+
 //FindOption is functional option to find key value
 type FindOption func(*FindOptions)
+
+// WithSync indicates that the synchronization function is on
+func WithSync(enabled bool) WriteOption {
+	return func(o *WriteOptions) {
+		o.SyncEnable = enabled
+	}
+}
 
 //WithExactLabels tell model service to return only one kv matches the labels
 func WithExactLabels() FindOption {

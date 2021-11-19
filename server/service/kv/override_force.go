@@ -21,10 +21,11 @@ import (
 	"context"
 	"fmt"
 
-	"github.com/apache/servicecomb-kie/pkg/model"
 	"github.com/go-chassis/cari/config"
 	"github.com/go-chassis/cari/pkg/errsvc"
 	"github.com/go-chassis/openlog"
+
+	"github.com/apache/servicecomb-kie/pkg/model"
 )
 
 func init() {

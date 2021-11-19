@@ -22,18 +22,20 @@ import (
 	"fmt"
 	"time"
 
-	"github.com/apache/servicecomb-kie/pkg/common"
-	"github.com/apache/servicecomb-kie/pkg/concurrency"
-	"github.com/apache/servicecomb-kie/pkg/model"
-	"github.com/apache/servicecomb-kie/pkg/stringutil"
-	"github.com/apache/servicecomb-kie/server/datasource"
-	"github.com/apache/servicecomb-kie/server/pubsub"
 	"github.com/go-chassis/cari/config"
 	"github.com/go-chassis/cari/pkg/errsvc"
 	"github.com/go-chassis/foundation/validator"
 	"github.com/go-chassis/go-chassis/v2/pkg/backends/quota"
 	"github.com/go-chassis/openlog"
 	"github.com/gofrs/uuid"
+
+	"github.com/apache/servicecomb-kie/pkg/common"
+	"github.com/apache/servicecomb-kie/pkg/concurrency"
+	"github.com/apache/servicecomb-kie/pkg/model"
+	"github.com/apache/servicecomb-kie/pkg/stringutil"
+	cfg "github.com/apache/servicecomb-kie/server/config"
+	"github.com/apache/servicecomb-kie/server/datasource"
+	"github.com/apache/servicecomb-kie/server/pubsub"
 )
 
 var listSema = concurrency.NewSemaphore(concurrency.DefaultConcurrency)
@@ -111,7 +113,7 @@ func Create(ctx context.Context, kv *model.KVDoc) (*model.KVDoc, *errsvc.Error) 
 		openlog.Error(err.Error())
 		return nil, config.NewError(config.ErrInternal, "create kv failed")
 	}
-	kv, err = datasource.GetBroker().GetKVDao().Create(ctx, kv)
+	kv, err = datasource.GetBroker().GetKVDao().Create(ctx, kv, datasource.WithSync(cfg.GetSync().Enabled))
 	if err != nil {
 		openlog.Error(fmt.Sprintf("post err:%s", err.Error()))
 		return nil, config.NewError(config.ErrInternal, "create kv failed")
@@ -228,7 +230,7 @@ func Update(ctx context.Context, kv *model.UpdateKVRequest) (*model.KVDoc, error
 	if err != nil {
 		return nil, err
 	}
-	err = datasource.GetBroker().GetKVDao().Update(ctx, oldKV)
+	err = datasource.GetBroker().GetKVDao().Update(ctx, oldKV, datasource.WithSync(cfg.GetSync().Enabled))
 	if err != nil {
 		return nil, err
 	}
@@ -250,7 +252,7 @@ func Update(ctx context.Context, kv *model.UpdateKVRequest) (*model.KVDoc, error
 }
 
 func FindOneAndDelete(ctx context.Context, kvID string, project, domain string) (*model.KVDoc, error) {
-	kv, err := datasource.GetBroker().GetKVDao().FindOneAndDelete(ctx, kvID, project, domain)
+	kv, err := datasource.GetBroker().GetKVDao().FindOneAndDelete(ctx, kvID, project, domain, datasource.WithSync(cfg.GetSync().Enabled))
 	if err != nil {
 		return nil, err
 	}
@@ -265,8 +267,12 @@ func FindOneAndDelete(ctx context.Context, kvID string, project, domain string) 
 	}
 	return kv, nil
 }
+
 func FindManyAndDelete(ctx context.Context, kvIDs []string, project, domain string) ([]*model.KVDoc, error) {
-	kvs, deleted, err := datasource.GetBroker().GetKVDao().FindManyAndDelete(ctx, kvIDs, project, domain)
+	var kvs []*model.KVDoc
+	var deleted int64
+	var err error
+	kvs, deleted, err = datasource.GetBroker().GetKVDao().FindManyAndDelete(ctx, kvIDs, project, domain, datasource.WithSync(cfg.GetSync().Enabled))
 	if err != nil {
 		return nil, err
 	}
@@ -285,9 +291,11 @@ func FindManyAndDelete(ctx context.Context, kvIDs []string, project, domain stri
 	}
 	return kvs, nil
 }
+
 func Get(ctx context.Context, req *model.GetKVRequest) (*model.KVDoc, error) {
 	return datasource.GetBroker().GetKVDao().Get(ctx, req)
 }
+
 func List(ctx context.Context, project, domain string, options ...datasource.FindOption) (*model.KVResponse, error) {
 	listSema.Acquire()
 	defer listSema.Release()

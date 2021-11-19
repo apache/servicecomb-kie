@@ -32,8 +32,14 @@ import (
 const sslRoot = "./../../../examples/dev/ssl/"
 
 func init() {
-	archaius.Init()
-	cipher.Init()
+	err := archaius.Init()
+	if err != nil {
+		panic(err)
+	}
+	err = cipher.Init()
+	if err != nil {
+		panic(err)
+	}
 }
 
 func TestConfig(t *testing.T) {

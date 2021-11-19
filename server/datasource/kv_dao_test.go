@@ -21,11 +21,12 @@ import (
 	"context"
 	"testing"
 
+	"github.com/stretchr/testify/assert"
+
 	"github.com/apache/servicecomb-kie/pkg/common"
 	"github.com/apache/servicecomb-kie/pkg/model"
 	"github.com/apache/servicecomb-kie/server/datasource"
 	kvsvc "github.com/apache/servicecomb-kie/server/service/kv"
-	"github.com/stretchr/testify/assert"
 )
 
 func TestList(t *testing.T) {
@@ -43,7 +44,6 @@ func TestList(t *testing.T) {
 	})
 	assert.Nil(t, err)
 	assert.NotEmpty(t, kv1.ID)
-	defer kvsvc.FindOneAndDelete(ctx, kv1.ID, "kv-list-test", "default")
 
 	kv2, err := kvsvc.Create(ctx, &model.KVDoc{
 		Key:    "TestList2",
@@ -58,7 +58,6 @@ func TestList(t *testing.T) {
 	})
 	assert.Nil(t, err)
 	assert.NotEmpty(t, kv2.ID)
-	defer kvsvc.FindOneAndDelete(ctx, kv2.ID, "kv-list-test", "default")
 
 	kv3, err := kvsvc.Create(ctx, &model.KVDoc{
 		Key:    "TestList3",
@@ -73,7 +72,6 @@ func TestList(t *testing.T) {
 	})
 	assert.Nil(t, err)
 	assert.NotEmpty(t, kv3.ID)
-	defer kvsvc.FindOneAndDelete(ctx, kv3.ID, "kv-list-test", "default")
 
 	t.Run("after create kv, should list results", func(t *testing.T) {
 		h, err := datasource.GetBroker().GetKVDao().List(ctx, "kv-list-test", "default")
@@ -95,4 +93,12 @@ func TestList(t *testing.T) {
 		assert.Equal(t, 3, resp.Total)
 		assert.Equal(t, 1, len(resp.Data))
 	})
+
+	// delete
+	_, delErr := kvsvc.FindOneAndDelete(ctx, kv1.ID, "kv-list-test", "default")
+	assert.NoError(t, delErr)
+	_, delErr = kvsvc.FindOneAndDelete(ctx, kv2.ID, "kv-list-test", "default")
+	assert.NoError(t, delErr)
+	_, delErr = kvsvc.FindOneAndDelete(ctx, kv3.ID, "kv-list-test", "default")
+	assert.NoError(t, delErr)
 }

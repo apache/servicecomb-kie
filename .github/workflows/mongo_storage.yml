@@ -13,11 +13,12 @@ jobs:
       uses: actions/checkout@v1
     - name: UT
       run: |
-        cd build
-        time bash build_docker.sh
-        cd ../
-        sudo docker-compose -f ./deployments/docker/docker-compose.yaml up -d
+        sudo docker-compose -f ./examples/dev/docker-compose.yaml up -d
         sleep 20
         export TEST_DB_KIND=mongo
         export TEST_DB_URI=mongodb://kie:123@127.0.0.1:27017/kie
         time go test -v $(go list ./... | grep -v etcd |  grep -v third_party | grep -v examples)
+    - name: Build kie images
+      run: |
+        cd build
+        time bash build_docker.sh

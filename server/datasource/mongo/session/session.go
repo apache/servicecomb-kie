@@ -27,16 +27,17 @@ import (
 	"sync"
 	"time"
 
-	"github.com/apache/servicecomb-kie/pkg/cipherutil"
-	"github.com/apache/servicecomb-kie/pkg/model"
-	"github.com/apache/servicecomb-kie/server/datasource"
-	"github.com/apache/servicecomb-kie/server/datasource/tlsutil"
 	"github.com/go-chassis/openlog"
 	"go.mongodb.org/mongo-driver/bson"
 	"go.mongodb.org/mongo-driver/bson/bsoncodec"
 	"go.mongodb.org/mongo-driver/mongo"
 	"go.mongodb.org/mongo-driver/mongo/options"
 	"gopkg.in/mgo.v2"
+
+	"github.com/apache/servicecomb-kie/pkg/cipherutil"
+	"github.com/apache/servicecomb-kie/pkg/model"
+	"github.com/apache/servicecomb-kie/server/datasource"
+	"github.com/apache/servicecomb-kie/server/datasource/tlsutil"
 )
 
 //const for db name and collection name
@@ -49,6 +50,8 @@ const (
 	CollectionPollingDetail = "polling_detail"
 	CollectionCounter       = "counter"
 	CollectionView          = "view"
+	CollectionTask          = "task"
+	CollectionTombstone     = "tombstone"
 )
 
 //db errors
@@ -187,6 +190,7 @@ func EnsureDB(c *datasource.Config) {
 	ensureView(session)
 
 	ensureKVLongPolling(session)
+
 }
 
 func OpenSession(c *datasource.Config) *mgo.Session {

@@ -14,22 +14,19 @@
 ## See the License for the specific language governing permissions and
 ## limitations under the License.
 ## ---------------------------------------------------------------------------
-version: '3.1'
+version: '3.3'
 services:
   mongo:
-    image: mongo:4.0
+    image: mongo:4.2
+    command: mongod --replSet my-replica-set --port 27017 --bind_ip_all
     ports:
       - 27017:27017
     environment:
+      MONGO_INITDB_DATABASE: kie
       MONGO_INITDB_ROOT_USERNAME: kie
       MONGO_INITDB_ROOT_PASSWORD: 123
-      MONGO_INITDB_DATABASE: kie
     volumes:
-      - ../../deployments/db.js:/docker-entrypoint-initdb.d/db.js:ro
-  mongo-express:
-    image: mongo-express
-    ports:
-      - 8081:8081
-    environment:
-      ME_CONFIG_MONGODB_ADMINUSERNAME: kie
-      ME_CONFIG_MONGODB_ADMINPASSWORD: 123
+      - ./db.js:/docker-entrypoint-initdb.d/db.js:ro
+    healthcheck:
+      test: test $$(echo "rs.initiate({_id:'my-replica-set',members:[{_id:0,host:\"127.0.0.1:27017\"}]}).ok || rs.status().ok" | mongo -u $${MONGO_INITDB_ROOT_USERNAME} -p $${MONGO_INITDB_ROOT_PASSWORD}  --port 27017 --quiet) -eq 1
+      interval: 10s
