@@ -59,7 +59,7 @@ func (s *Dao) Create(ctx context.Context, kv *model.KVDoc) (*model.KVDoc, error)
 	return kv, nil
 }
 
-// CreateWithTask is used to create with the task after synchronization is turned on
+// CreateWithTask is used to create a task when the configuration is created
 func (s *Dao) CreateWithTask(ctx context.Context, kv *model.KVDoc, task *model.Task) (*model.KVDoc, error) {
 	kvBytes, err := json.Marshal(kv)
 	if err != nil {
@@ -95,6 +95,7 @@ func (s *Dao) CreateWithTask(ctx context.Context, kv *model.KVDoc, task *model.T
 	return kv, nil
 }
 
+// UpdateWithTask is to create a task when the configuration is updated
 func (s *Dao) UpdateWithTask(ctx context.Context, kv *model.KVDoc, task *model.Task) error {
 	keyKv := key.KV(kv.Domain, kv.Project, kv.ID)
 	resp, err := etcdadpt.Get(ctx, keyKv)
@@ -133,9 +134,7 @@ func (s *Dao) UpdateWithTask(ctx context.Context, kv *model.KVDoc, task *model.T
 
 	kvOpPut := etcdadpt.OpPut(etcdadpt.WithStrKey(keyKv), etcdadpt.WithValue(kvBytes))
 	taskOpPut := etcdadpt.OpPut(etcdadpt.WithStrKey(key.TaskKey(kv.Domain, kv.Project, task.Timestamp)), etcdadpt.WithValue(taskBytes))
-	kvOpCmp := etcdadpt.OpCmp(etcdadpt.CmpCreateRev(kvOpPut.Key), etcdadpt.CmpEqual, 0)
-	taskOpCmp := etcdadpt.OpCmp(etcdadpt.CmpCreateRev(taskOpPut.Key), etcdadpt.CmpEqual, 0)
-	_, err = etcdadpt.Instance().TxnWithCmp(ctx, []etcdadpt.OpOptions{kvOpPut, taskOpPut}, []etcdadpt.CmpOptions{kvOpCmp, taskOpCmp}, nil)
+	_, err = etcdadpt.Instance().TxnWithCmp(ctx, []etcdadpt.OpOptions{kvOpPut, taskOpPut}, nil, nil)
 	if err != nil {
 		openlog.Error(err.Error())
 		return err

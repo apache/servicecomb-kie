@@ -57,16 +57,19 @@ func (s *Dao) Create(ctx context.Context, kv *model.KVDoc) (*model.KVDoc, error)
 	return kv, nil
 }
 
+// CreateWithTask is used to create a task when the configuration is created
 func (s *Dao) CreateWithTask(ctx context.Context, kv *model.KVDoc, task *model.Task) (*model.KVDoc, error) {
 	taskSession, err := session.GetDB().Client().StartSession()
 	if err != nil {
 		return nil, err
 	}
+	// Open transaction
 	if err = taskSession.StartTransaction(); err != nil {
 		return nil, err
 	}
 	defer taskSession.EndSession(ctx)
 	if err = mongo.WithSession(ctx, taskSession, func(sessionContext mongo.SessionContext) error {
+		// create kv
 		collection := session.GetDB().Collection(session.CollectionKV)
 		_, err = collection.InsertOne(sessionContext, kv)
 		if err != nil {
@@ -83,17 +86,17 @@ func (s *Dao) CreateWithTask(ctx context.Context, kv *model.KVDoc, task *model.T
 			}
 			return err
 		}
-
+		// create task
 		collection = session.GetDB().Collection(session.CollectionTask)
 		_, err = collection.InsertOne(sessionContext, task)
 		if err != nil {
-			openlog.Error("create error", openlog.WithTags(openlog.Tags{
+			openlog.Error("create task error", openlog.WithTags(openlog.Tags{
 				"err":  err.Error(),
 				"task": task,
 			}))
 			errAbort := taskSession.AbortTransaction(sessionContext)
 			if errAbort != nil {
-				openlog.Error("fail to abort transaction", openlog.WithTags(openlog.Tags{
+				openlog.Error("abort transaction", openlog.WithTags(openlog.Tags{
 					"err":  errAbort.Error(),
 					"task": task,
 				}))
@@ -111,7 +114,68 @@ func (s *Dao) CreateWithTask(ctx context.Context, kv *model.KVDoc, task *model.T
 	return kv, nil
 }
 
+// UpdateWithTask is to create a task when the configuration is updated
 func (s *Dao) UpdateWithTask(ctx context.Context, kv *model.KVDoc, task *model.Task) error {
+	taskSession, err := session.GetDB().Client().StartSession()
+	if err != nil {
+		return err
+	}
+	if err = taskSession.StartTransaction(); err != nil {
+		return err
+	}
+	defer taskSession.EndSession(ctx)
+	if err = mongo.WithSession(ctx, taskSession, func(sessionContext mongo.SessionContext) error {
+		// update kv
+		collection := session.GetDB().Collection(session.CollectionKV)
+		_, err = collection.UpdateOne(ctx, bson.M{"key": kv.Key, "label_format": kv.LabelFormat}, bson.D{
+			{Key: "$set", Value: bson.D{
+				{Key: "value", Value: kv.Value},
+				{Key: "status", Value: kv.Status},
+				{Key: "checker", Value: kv.Checker},
+				{Key: "update_time", Value: kv.UpdateTime},
+				{Key: "update_revision", Value: kv.UpdateRevision},
+			}},
+		})
+		if err != nil {
+			openlog.Error("update error", openlog.WithTags(openlog.Tags{
+				"err": err.Error(),
+				"kv":  kv,
+			}))
+			errAbort := taskSession.AbortTransaction(sessionContext)
+			if errAbort != nil {
+				openlog.Error("abort transaction", openlog.WithTags(openlog.Tags{
+					"err": errAbort.Error(),
+					"kv":  kv,
+				}))
+			}
+			return err
+		}
+		// create task
+		collection = session.GetDB().Collection(session.CollectionTask)
+		_, err = collection.InsertOne(sessionContext, task)
+		if err != nil {
+			openlog.Error("create task error", openlog.WithTags(openlog.Tags{
+				"err":  err.Error(),
+				"task": task,
+			}))
+			errAbort := taskSession.AbortTransaction(sessionContext)
+			if errAbort != nil {
+				openlog.Error("abort transaction", openlog.WithTags(openlog.Tags{
+					"err":  errAbort.Error(),
+					"task": task,
+				}))
+			}
+			return err
+		}
+		// commit transaction
+		if err = taskSession.CommitTransaction(sessionContext); err != nil {
+			return err
+		}
+		return nil
+	}); err != nil {
+		openlog.Error(err.Error())
+		return err
+	}
 	return nil
 }
 
