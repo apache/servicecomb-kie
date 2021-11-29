@@ -43,12 +43,24 @@ func init() {
 	if err != nil {
 		panic(err)
 	}
-	kind := archaius.GetString("TEST_DB_KIND", "etcd")
-	uri := archaius.GetString("TEST_DB_URI", "http://127.0.0.1:2379")
-	archaius.Init(archaius.WithMemorySource())
-	archaius.Set("servicecomb.cipher.plugin", "default")
-	cipher.Init()
-	validator.Init()
+	kind = archaius.GetString("TEST_DB_KIND", "etcd")
+	uri = archaius.GetString("TEST_DB_URI", "http://127.0.0.1:2379")
+	err = archaius.Init(archaius.WithMemorySource())
+	if err != nil {
+		panic(err)
+	}
+	err = archaius.Set("servicecomb.cipher.plugin", "default")
+	if err != nil {
+		panic(err)
+	}
+	err = cipher.Init()
+	if err != nil {
+		panic(err)
+	}
+	err = validator.Init()
+	if err != nil {
+		panic(err)
+	}
 	config.Configurations.DB.Kind = kind
 	err = datasource.Init(config.DB{
 		URI:     uri,

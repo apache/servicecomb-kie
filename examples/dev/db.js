@@ -15,21 +15,15 @@
  * limitations under the License.
  */
 
-package datasource_test
-
-import (
-	_ "github.com/apache/servicecomb-kie/test"
-
-	"context"
-	"testing"
-
-	"github.com/stretchr/testify/assert"
-
-	"github.com/apache/servicecomb-kie/server/datasource"
-)
-
-func TestIncreaseAndGetRevision(t *testing.T) {
-	dao := datasource.GetBroker().GetRevisionDao()
-	_, err := dao.GetRevision(context.TODO(), "default")
-	assert.NoError(t, err)
-}
+db.createUser(
+    {
+        user: "kie",
+        pwd: "123",
+        roles: [
+            {
+                role: "readWrite",
+                db: "kie"
+            }
+        ]
+    }
+);

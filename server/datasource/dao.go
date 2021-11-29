@@ -24,9 +24,12 @@ import (
 	"fmt"
 	"time"
 
+	"github.com/go-chassis/cari/sync"
+	"github.com/go-chassis/openlog"
+	"github.com/gofrs/uuid"
+
 	"github.com/apache/servicecomb-kie/pkg/model"
 	"github.com/apache/servicecomb-kie/server/config"
-	"github.com/go-chassis/openlog"
 )
 
 var (
@@ -38,7 +41,6 @@ var (
 	ErrKeyNotExists     = errors.New("can not find any key value")
 	ErrRecordNotExists  = errors.New("can not find any polling data")
 	ErrRevisionNotExist = errors.New("revision does not exist")
-	ErrAliasNotGiven    = errors.New("label alias not given")
 	ErrKVAlreadyExists  = errors.New("kv already exists")
 	ErrTooMany          = errors.New("key with labels should be only one")
 )
@@ -46,6 +48,8 @@ var (
 const (
 	DefaultValueType = "text"
 	MaxHistoryNum    = 100
+
+	ConfigResource = "config"
 )
 
 //New init db session
@@ -70,13 +74,14 @@ func GetBroker() Broker {
 //KVDao provide api of KV entity
 type KVDao interface {
 	// Create Update List are usually for admin console
-	Create(ctx context.Context, kv *model.KVDoc) (*model.KVDoc, error)
-	Update(ctx context.Context, kv *model.KVDoc) error
+	Create(ctx context.Context, kv *model.KVDoc, options ...WriteOption) (*model.KVDoc, error)
+	Update(ctx context.Context, kv *model.KVDoc, options ...WriteOption) error
 	List(ctx context.Context, project, domain string, options ...FindOption) (*model.KVResponse, error)
 	//FindOneAndDelete deletes one kv by id and return the deleted kv as these appeared before deletion
-	FindOneAndDelete(ctx context.Context, kvID string, project, domain string) (*model.KVDoc, error)
+	FindOneAndDelete(ctx context.Context, kvID string, project, domain string, options ...WriteOption) (*model.KVDoc, error)
 	//FindManyAndDelete deletes multiple kvs and return the deleted kv list as these appeared before deletion
-	FindManyAndDelete(ctx context.Context, kvIDs []string, project, domain string) ([]*model.KVDoc, int64, error)
+	FindManyAndDelete(ctx context.Context, kvIDs []string, project, domain string, options ...WriteOption) ([]*model.KVDoc, int64, error)
+
 	//Get return kv by id
 	Get(ctx context.Context, req *model.GetKVRequest) (*model.KVDoc, error)
 	Exist(ctx context.Context, key, project, domain string, options ...FindOption) (bool, error)
@@ -156,4 +161,30 @@ func ClearPart(kv *model.KVDoc) {
 	kv.Domain = ""
 	kv.Project = ""
 	kv.LabelFormat = ""
+}
+
+// NewTask return task with action and datatype
+func NewTask(domain, project, action, dataType string) (*sync.Task, error) {
+	taskId, err := uuid.NewV4()
+	if err != nil {
+		return nil, err
+	}
+	return &sync.Task{
+		TaskID:    taskId.String(),
+		Action:    action,
+		DataType:  dataType,
+		Domain:    domain,
+		Project:   project,
+		Timestamp: time.Now().Unix(),
+	}, nil
+}
+
+// NewTombstone return tombstone with resourceType ,domain and project
+func NewTombstone(domain, project, resourceType string) *sync.Tombstone {
+	return &sync.Tombstone{
+		ResourceType: resourceType,
+		Domain:       domain,
+		Project:      project,
+		Timestamp:    time.Now().Unix(),
+	}
 }

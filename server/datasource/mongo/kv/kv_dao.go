@@ -23,14 +23,16 @@ import (
 	"regexp"
 	"strings"
 
-	"github.com/apache/servicecomb-kie/pkg/model"
-	"github.com/apache/servicecomb-kie/pkg/util"
-	"github.com/apache/servicecomb-kie/server/datasource"
-	"github.com/apache/servicecomb-kie/server/datasource/mongo/session"
+	"github.com/go-chassis/cari/sync"
 	"github.com/go-chassis/openlog"
 	"go.mongodb.org/mongo-driver/bson"
 	"go.mongodb.org/mongo-driver/mongo"
 	"go.mongodb.org/mongo-driver/mongo/options"
+
+	"github.com/apache/servicecomb-kie/pkg/model"
+	"github.com/apache/servicecomb-kie/pkg/util"
+	"github.com/apache/servicecomb-kie/server/datasource"
+	"github.com/apache/servicecomb-kie/server/datasource/mongo/session"
 )
 
 const (
@@ -42,10 +44,18 @@ const (
 type Dao struct {
 }
 
-func (s *Dao) Create(ctx context.Context, kv *model.KVDoc) (*model.KVDoc, error) {
-	var err error
+func (s *Dao) Create(ctx context.Context, kv *model.KVDoc, options ...datasource.WriteOption) (*model.KVDoc, error) {
+	opts := datasource.NewWriteOptions(options...)
+	if opts.SyncEnable {
+		// if syncEnable is true, will create kv with task
+		return txnCreate(ctx, kv)
+	}
+	return create(ctx, kv)
+}
+
+func create(ctx context.Context, kv *model.KVDoc) (*model.KVDoc, error) {
 	collection := session.GetDB().Collection(session.CollectionKV)
-	_, err = collection.InsertOne(ctx, kv)
+	_, err := collection.InsertOne(ctx, kv)
 	if err != nil {
 		openlog.Error("create error", openlog.WithTags(openlog.Tags{
 			"err": err.Error(),
@@ -53,12 +63,87 @@ func (s *Dao) Create(ctx context.Context, kv *model.KVDoc) (*model.KVDoc, error)
 		}))
 		return nil, err
 	}
+	return kv, nil
+}
 
+// txnCreate is to start transaction when creating KV, will create task in a transaction operation
+func txnCreate(ctx context.Context, kv *model.KVDoc) (*model.KVDoc, error) {
+	taskSession, err := session.GetDB().Client().StartSession()
+	if err != nil {
+		return nil, err
+	}
+	if err = taskSession.StartTransaction(); err != nil {
+		return nil, err
+	}
+	defer taskSession.EndSession(ctx)
+	if err = mongo.WithSession(ctx, taskSession, func(sessionContext mongo.SessionContext) error {
+		collection := session.GetDB().Collection(session.CollectionKV)
+		_, err = collection.InsertOne(sessionContext, kv)
+		if err != nil {
+			openlog.Error("create error", openlog.WithTags(openlog.Tags{
+				"err": err.Error(),
+				"kv":  kv,
+			}))
+			errAbort := taskSession.AbortTransaction(sessionContext)
+			if errAbort != nil {
+				openlog.Error("fail to abort transaction", openlog.WithTags(openlog.Tags{
+					"err": errAbort.Error(),
+					"kv":  kv,
+				}))
+			}
+			return err
+		}
+		task, err := datasource.NewTask(kv.Domain, kv.Project, sync.CreateAction, datasource.ConfigResource)
+		if err != nil {
+			openlog.Error("fail to create task" + err.Error())
+			errAbort := taskSession.AbortTransaction(sessionContext)
+			if errAbort != nil {
+				openlog.Error("fail to abort transaction", openlog.WithTags(openlog.Tags{
+					"err": errAbort.Error(),
+					"kv":  kv,
+				}))
+			}
+			return err
+		}
+		task.Data = kv
+		collection = session.GetDB().Collection(session.CollectionTask)
+		_, err = collection.InsertOne(sessionContext, task)
+		if err != nil {
+			openlog.Error("create task error", openlog.WithTags(openlog.Tags{
+				"err":  err.Error(),
+				"task": task,
+			}))
+			errAbort := taskSession.AbortTransaction(sessionContext)
+			if errAbort != nil {
+				openlog.Error("abort transaction", openlog.WithTags(openlog.Tags{
+					"err":  errAbort.Error(),
+					"task": task,
+				}))
+			}
+			return err
+		}
+		if err = taskSession.CommitTransaction(sessionContext); err != nil {
+			return err
+		}
+		return nil
+	}); err != nil {
+		openlog.Error(err.Error())
+		return nil, err
+	}
 	return kv, nil
 }
 
 //Update update key value
-func (s *Dao) Update(ctx context.Context, kv *model.KVDoc) error {
+func (s *Dao) Update(ctx context.Context, kv *model.KVDoc, options ...datasource.WriteOption) error {
+	opts := datasource.NewWriteOptions(options...)
+	// if syncEnable is true, will create kv with task
+	if opts.SyncEnable {
+		return txnUpdate(ctx, kv)
+	}
+	return update(ctx, kv)
+}
+
+func update(ctx context.Context, kv *model.KVDoc) error {
 	collection := session.GetDB().Collection(session.CollectionKV)
 	_, err := collection.UpdateOne(ctx, bson.M{"key": kv.Key, "label_format": kv.LabelFormat}, bson.D{
 		{Key: "$set", Value: bson.D{
@@ -73,7 +158,93 @@ func (s *Dao) Update(ctx context.Context, kv *model.KVDoc) error {
 		return err
 	}
 	return nil
+}
 
+// txnUpdate is to start transaction when updating kV, will create task in a transaction operation
+func txnUpdate(ctx context.Context, kv *model.KVDoc) error {
+	taskSession, err := session.GetDB().Client().StartSession()
+	if err != nil {
+		return err
+	}
+	if err = taskSession.StartTransaction(); err != nil {
+		return err
+	}
+	defer taskSession.EndSession(ctx)
+	if err = mongo.WithSession(ctx, taskSession, func(sessionContext mongo.SessionContext) error {
+		collection := session.GetDB().Collection(session.CollectionKV)
+		result := collection.FindOneAndUpdate(sessionContext, bson.M{"key": kv.Key, "label_format": kv.LabelFormat}, bson.D{
+			{Key: "$set", Value: bson.D{
+				{Key: "value", Value: kv.Value},
+				{Key: "status", Value: kv.Status},
+				{Key: "checker", Value: kv.Checker},
+				{Key: "update_time", Value: kv.UpdateTime},
+				{Key: "update_revision", Value: kv.UpdateRevision},
+			}},
+		})
+		if result.Err() != nil {
+			errAbort := taskSession.AbortTransaction(sessionContext)
+			if errAbort != nil {
+				openlog.Error("abort transaction", openlog.WithTags(openlog.Tags{
+					"err": errAbort.Error(),
+					"kv":  kv,
+				}))
+			}
+			if result.Err() == mongo.ErrNoDocuments {
+				return datasource.ErrKeyNotExists
+			}
+			return result.Err()
+		}
+		curKV := &model.KVDoc{}
+		err := result.Decode(curKV)
+		if err != nil {
+			errAbort := taskSession.AbortTransaction(sessionContext)
+			if errAbort != nil {
+				openlog.Error("abort transaction", openlog.WithTags(openlog.Tags{
+					"err": errAbort.Error(),
+					"kv":  kv,
+				}))
+			}
+			openlog.Error("decode error: " + err.Error())
+			return err
+		}
+		task, err := datasource.NewTask(kv.Domain, kv.Project, sync.UpdateAction, datasource.ConfigResource)
+		if err != nil {
+			openlog.Error("fail to create task" + err.Error())
+			errAbort := taskSession.AbortTransaction(sessionContext)
+			if errAbort != nil {
+				openlog.Error("abort transaction", openlog.WithTags(openlog.Tags{
+					"err": errAbort.Error(),
+					"kv":  kv,
+				}))
+			}
+			return err
+		}
+		task.Data = curKV
+		collection = session.GetDB().Collection(session.CollectionTask)
+		_, err = collection.InsertOne(sessionContext, task)
+		if err != nil {
+			openlog.Error("create task error", openlog.WithTags(openlog.Tags{
+				"err":  err.Error(),
+				"task": task,
+			}))
+			errAbort := taskSession.AbortTransaction(sessionContext)
+			if errAbort != nil {
+				openlog.Error("abort transaction", openlog.WithTags(openlog.Tags{
+					"err":  errAbort.Error(),
+					"task": task,
+				}))
+			}
+			return err
+		}
+		if err = taskSession.CommitTransaction(sessionContext); err != nil {
+			return err
+		}
+		return nil
+	}); err != nil {
+		openlog.Error(err.Error())
+		return err
+	}
+	return nil
 }
 
 //Extract key values
@@ -191,7 +362,17 @@ func (s *Dao) Exist(ctx context.Context, key, project, domain string, options ..
 
 //FindOneAndDelete deletes one kv by id and return the deleted kv as these appeared before deletion
 //domain=tenant
-func (s *Dao) FindOneAndDelete(ctx context.Context, kvID, project, domain string) (*model.KVDoc, error) {
+func (s *Dao) FindOneAndDelete(ctx context.Context, kvID, project, domain string, options ...datasource.WriteOption) (*model.KVDoc, error) {
+	opts := datasource.NewWriteOptions(options...)
+	if opts.SyncEnable {
+		// if syncEnable is ture, will delete kv, create task and create tombstone
+		return txnFindOneAndDelete(ctx, kvID, project, domain)
+	}
+	return findOneAndDelete(ctx, kvID, project, domain)
+}
+
+func findOneAndDelete(ctx context.Context, kvID, project, domain string) (*model.KVDoc, error) {
+	curKV := &model.KVDoc{}
 	collection := session.GetDB().Collection(session.CollectionKV)
 	sr := collection.FindOneAndDelete(ctx, bson.M{"id": kvID, "project": project, "domain": domain})
 	if sr.Err() != nil {
@@ -200,7 +381,6 @@ func (s *Dao) FindOneAndDelete(ctx context.Context, kvID, project, domain string
 		}
 		return nil, sr.Err()
 	}
-	curKV := &model.KVDoc{}
 	err := sr.Decode(curKV)
 	if err != nil {
 		openlog.Error("decode error: " + err.Error())
@@ -209,8 +389,117 @@ func (s *Dao) FindOneAndDelete(ctx context.Context, kvID, project, domain string
 	return curKV, nil
 }
 
+// txnFindOneAndDelete is to start transaction when delete KV, will create task and tombstone in a transaction operation
+func txnFindOneAndDelete(ctx context.Context, kvID, project, domain string) (*model.KVDoc, error) {
+	curKV := &model.KVDoc{}
+	taskSession, err := session.GetDB().Client().StartSession()
+	if err != nil {
+		openlog.Error("fail to start session" + err.Error())
+		return nil, err
+	}
+	if err = taskSession.StartTransaction(); err != nil {
+		openlog.Error("fail to start transaction" + err.Error())
+		return nil, err
+	}
+	defer taskSession.EndSession(ctx)
+	if err = mongo.WithSession(ctx, taskSession, func(sessionContext mongo.SessionContext) error {
+		collection := session.GetDB().Collection(session.CollectionKV)
+		sr := collection.FindOneAndDelete(sessionContext, bson.M{"id": kvID, "project": project, "domain": domain})
+		if sr.Err() != nil {
+			errAbort := taskSession.AbortTransaction(sessionContext)
+			if errAbort != nil {
+				openlog.Error("abort transaction", openlog.WithTags(openlog.Tags{
+					"err": errAbort.Error(),
+				}))
+				return errAbort
+			}
+			if sr.Err() == mongo.ErrNoDocuments {
+				openlog.Error(datasource.ErrKeyNotExists.Error())
+				return datasource.ErrKeyNotExists
+			}
+			return sr.Err()
+		}
+		err := sr.Decode(curKV)
+		if err != nil {
+			openlog.Error("decode error: " + err.Error())
+			errAbort := taskSession.AbortTransaction(sessionContext)
+			if errAbort != nil {
+				openlog.Error("abort transaction", openlog.WithTags(openlog.Tags{
+					"err": errAbort.Error(),
+				}))
+				return errAbort
+			}
+			return err
+		}
+		task, err := datasource.NewTask(domain, project, sync.DeleteAction, datasource.ConfigResource)
+		if err != nil {
+			openlog.Error("fail to create task" + err.Error())
+			errAbort := taskSession.AbortTransaction(sessionContext)
+			if errAbort != nil {
+				openlog.Error("abort transaction", openlog.WithTags(openlog.Tags{
+					"err": errAbort.Error(),
+				}))
+				return errAbort
+			}
+			return err
+		}
+		task.Data = curKV
+		collection = session.GetDB().Collection(session.CollectionTask)
+		_, err = collection.InsertOne(sessionContext, task)
+		if err != nil {
+			openlog.Error("create task error", openlog.WithTags(openlog.Tags{
+				"err":  err.Error(),
+				"task": task,
+			}))
+			errAbort := taskSession.AbortTransaction(sessionContext)
+			if errAbort != nil {
+				openlog.Error("abort transaction", openlog.WithTags(openlog.Tags{
+					"err":  errAbort.Error(),
+					"task": task,
+				}))
+			}
+			return err
+		}
+		tombstone := datasource.NewTombstone(domain, project, datasource.ConfigResource)
+		tombstone.ResourceID = curKV.Key + "/" + curKV.LabelFormat
+		collection = session.GetDB().Collection(session.CollectionTombstone)
+		_, err = collection.InsertOne(sessionContext, tombstone)
+		if err != nil {
+			openlog.Error("create tombstone error", openlog.WithTags(openlog.Tags{
+				"err":       err.Error(),
+				"tombstone": tombstone,
+			}))
+			errAbort := taskSession.AbortTransaction(sessionContext)
+			if errAbort != nil {
+				openlog.Error("abort transaction", openlog.WithTags(openlog.Tags{
+					"err":       errAbort.Error(),
+					"tombstone": tombstone,
+				}))
+			}
+			return err
+		}
+		if err = taskSession.CommitTransaction(sessionContext); err != nil {
+			return err
+		}
+		return nil
+	}); err != nil {
+		openlog.Error(err.Error())
+		return nil, err
+	}
+	return curKV, nil
+}
+
 //FindManyAndDelete deletes multiple kvs and return the deleted kv list as these appeared before deletion
-func (s *Dao) FindManyAndDelete(ctx context.Context, kvIDs []string, project, domain string) ([]*model.KVDoc, int64, error) {
+func (s *Dao) FindManyAndDelete(ctx context.Context, kvIDs []string, project, domain string, options ...datasource.WriteOption) ([]*model.KVDoc, int64, error) {
+	opts := datasource.NewWriteOptions(options...)
+	if opts.SyncEnable {
+		// if sync enable is true, will delete kvs, create tasks and tombstones
+		return txnFindManyAndDelete(ctx, kvIDs, project, domain)
+	}
+	return findManyAndDelete(ctx, kvIDs, project, domain)
+}
+
+func findManyAndDelete(ctx context.Context, kvIDs []string, project, domain string) ([]*model.KVDoc, int64, error) {
 	filter := bson.D{
 		{Key: "id", Value: bson.M{"$in": kvIDs}},
 		{Key: "project", Value: project},
@@ -228,8 +517,101 @@ func (s *Dao) FindManyAndDelete(ctx context.Context, kvIDs []string, project, do
 		openlog.Error(fmt.Sprintf("delete kvs [%v] failed : [%v]", kvIDs, err))
 		return nil, 0, err
 	}
-
 	return kvs, dr.DeletedCount, nil
+}
+
+// txnFindManyAndDelete is to start transaction when delete KVs, will create tasks and tombstones in a transaction operation
+func txnFindManyAndDelete(ctx context.Context, kvIDs []string, project, domain string) ([]*model.KVDoc, int64, error) {
+	filter := bson.D{
+		{Key: "id", Value: bson.M{"$in": kvIDs}},
+		{Key: "project", Value: project},
+		{Key: "domain", Value: domain}}
+	kvs, err := findKeys(ctx, filter, false)
+	if err != nil {
+		if err != datasource.ErrKeyNotExists {
+			openlog.Error("find Keys error: " + err.Error())
+		}
+		return nil, 0, err
+	}
+	var deletedCount int64
+	taskSession, err := session.GetDB().Client().StartSession()
+	if err != nil {
+		openlog.Error("fail to start session" + err.Error())
+		return nil, 0, err
+	}
+	if err = taskSession.StartTransaction(); err != nil {
+		openlog.Error("fail to start transaction" + err.Error())
+		return nil, 0, err
+	}
+	defer taskSession.EndSession(ctx)
+
+	if err = mongo.WithSession(ctx, taskSession, func(sessionContext mongo.SessionContext) error {
+		collection := session.GetDB().Collection(session.CollectionKV)
+		filter := bson.D{
+			{Key: "id", Value: bson.M{"$in": kvIDs}},
+			{Key: "project", Value: project},
+			{Key: "domain", Value: domain}}
+		dr, err := collection.DeleteMany(sessionContext, filter)
+		if err != nil {
+			errAbort := taskSession.AbortTransaction(sessionContext)
+			if errAbort != nil {
+				openlog.Error("abort transaction", openlog.WithTags(openlog.Tags{
+					"err": errAbort.Error(),
+				}))
+				return errAbort
+			}
+			openlog.Error(fmt.Sprintf("delete kvs [%v] failed : [%v]", kvIDs, err))
+			return err
+		}
+		deletedCount = dr.DeletedCount
+		tasksDoc := make([]interface{}, deletedCount)
+		tombstonesDoc := make([]interface{}, deletedCount)
+		for i := 0; i < int(deletedCount); i++ {
+			kv := kvs[i]
+			task, _ := datasource.NewTask(domain, project, sync.DeleteAction, datasource.ConfigResource)
+			task.Data = kv
+			tombstone := datasource.NewTombstone(domain, project, datasource.ConfigResource)
+			tombstone.ResourceID = kv.Key + "/" + kv.LabelFormat
+			tasksDoc[i] = task
+			tombstonesDoc[i] = tombstone
+		}
+		collection = session.GetDB().Collection(session.CollectionTask)
+		_, err = collection.InsertMany(sessionContext, tasksDoc)
+		if err != nil {
+			openlog.Error("create tasks error", openlog.WithTags(openlog.Tags{
+				"err": err.Error(),
+			}))
+			errAbort := taskSession.AbortTransaction(sessionContext)
+			if errAbort != nil {
+				openlog.Error("abort transaction", openlog.WithTags(openlog.Tags{
+					"err": errAbort.Error(),
+				}))
+			}
+			return err
+		}
+		collection = session.GetDB().Collection(session.CollectionTombstone)
+		_, err = collection.InsertMany(sessionContext, tombstonesDoc)
+		if err != nil {
+			openlog.Error("create tombstone error", openlog.WithTags(openlog.Tags{
+				"err": err.Error(),
+			}))
+			errAbort := taskSession.AbortTransaction(sessionContext)
+			if errAbort != nil {
+				openlog.Error("abort transaction", openlog.WithTags(openlog.Tags{
+					"err": errAbort.Error(),
+				}))
+			}
+			return err
+		}
+		if err = taskSession.CommitTransaction(sessionContext); err != nil {
+			return err
+		}
+		return nil
+	}); err != nil {
+		openlog.Error(err.Error())
+		return nil, 0, err
+	}
+	return kvs, deletedCount, nil
 }
 
 func findKeys(ctx context.Context, filter interface{}, withoutLabel bool) ([]*model.KVDoc, error) {

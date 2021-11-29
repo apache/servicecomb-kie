@@ -21,6 +21,7 @@ package config
 type Config struct {
 	DB   DB   `yaml:"db"`
 	RBAC RBAC `yaml:"rbac"`
+	Sync Sync `yaml:"sync"`
 	//config from cli
 	ConfigFile     string
 	NodeName       string
@@ -47,4 +48,9 @@ type DB struct {
 type RBAC struct {
 	Enabled    bool   `yaml:"enabled"`
 	PubKeyFile string `yaml:"rsaPublicKeyFile"`
+}
+
+// Sync is sync config
+type Sync struct {
+	Enabled bool `yaml:"enabled"`
 }

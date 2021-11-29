@@ -47,3 +47,8 @@ func GetDB() DB {
 func GetRBAC() RBAC {
 	return Configurations.RBAC
 }
+
+// GetSync return sync config
+func GetSync() Sync {
+	return Configurations.Sync
+}

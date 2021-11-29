@@ -25,17 +25,16 @@ import (
 	"net/http/httptest"
 	"testing"
 
-	kvsvc "github.com/apache/servicecomb-kie/server/service/kv"
-
-	common2 "github.com/apache/servicecomb-kie/pkg/common"
-
-	"github.com/apache/servicecomb-kie/pkg/model"
-	handler2 "github.com/apache/servicecomb-kie/server/handler"
-	v1 "github.com/apache/servicecomb-kie/server/resource/v1"
 	"github.com/go-chassis/go-chassis/v2/core/common"
 	"github.com/go-chassis/go-chassis/v2/core/handler"
 	"github.com/go-chassis/go-chassis/v2/server/restful/restfultest"
 	"github.com/stretchr/testify/assert"
+
+	common2 "github.com/apache/servicecomb-kie/pkg/common"
+	"github.com/apache/servicecomb-kie/pkg/model"
+	handler2 "github.com/apache/servicecomb-kie/server/handler"
+	v1 "github.com/apache/servicecomb-kie/server/resource/v1"
+	kvsvc "github.com/apache/servicecomb-kie/server/service/kv"
 
 	_ "github.com/apache/servicecomb-kie/server/datasource/mongo"
 )

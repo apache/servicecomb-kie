@@ -21,11 +21,12 @@ import (
 	"context"
 	"encoding/json"
 
+	"github.com/go-chassis/openlog"
+	"github.com/little-cui/etcdadpt"
+
 	"github.com/apache/servicecomb-kie/pkg/model"
 	"github.com/apache/servicecomb-kie/server/datasource"
 	"github.com/apache/servicecomb-kie/server/datasource/etcd/key"
-	"github.com/go-chassis/openlog"
-	"github.com/little-cui/etcdadpt"
 )
 
 //Dao is the implementation
