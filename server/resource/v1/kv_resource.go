@@ -272,7 +272,7 @@ func watch(rctx *restful.Context, request *model.ListKVRequest, wait string) boo
 		return true
 	}
 	if changed {
-		queryFromCache(rctx, topic)
+		QueryFromCache(rctx, topic)
 		return true
 	}
 	return false

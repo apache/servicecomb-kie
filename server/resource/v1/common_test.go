@@ -18,11 +18,16 @@
 package v1_test
 
 import (
+	"context"
 	"net/http"
+	"net/http/httptest"
 	"testing"
 
+	"github.com/apache/servicecomb-kie/pkg/common"
+	"github.com/apache/servicecomb-kie/pkg/model"
 	v1 "github.com/apache/servicecomb-kie/server/resource/v1"
-	"github.com/emicklei/go-restful"
+	goRestful "github.com/emicklei/go-restful"
+	"github.com/go-chassis/go-chassis/v2/server/restful"
 	"github.com/stretchr/testify/assert"
 )
 
@@ -31,7 +36,7 @@ func TestGetLabels(t *testing.T) {
 		"/kv?q=app:mall+service:payment&q=app:mall+service:payment+version:1.0.0",
 		nil)
 	assert.NoError(t, err)
-	c, err := v1.ReadLabelCombinations(restful.NewRequest(r))
+	c, err := v1.ReadLabelCombinations(goRestful.NewRequest(r))
 	assert.NoError(t, err)
 	assert.Equal(t, 2, len(c))
 
@@ -39,8 +44,23 @@ func TestGetLabels(t *testing.T) {
 		"/kv",
 		nil)
 	assert.NoError(t, err)
-	c, err = v1.ReadLabelCombinations(restful.NewRequest(r))
+	c, err = v1.ReadLabelCombinations(goRestful.NewRequest(r))
 	assert.NoError(t, err)
 	assert.Equal(t, 1, len(c))
 
+}
+
+func TestQueryFromCache(t *testing.T) {
+	r, _ := http.NewRequest("GET",
+		"/v1/kv_test/kie/kv?label=match:test&wait=10s&revision=100&match=exact",
+		nil)
+	ctx := &restful.Context{
+		Ctx:  context.TODO(),
+		Resp: goRestful.NewResponse(httptest.NewRecorder()),
+		Req:  goRestful.NewRequest(r),
+	}
+	topic := "service:utService"
+	v1.QueryFromCache(ctx, topic)
+	response := ctx.ReadRestfulRequest().Attribute(common.RespBodyContextKey).([]*model.KVDoc)
+	assert.Equal(t, 0, len(response))
 }

@@ -263,7 +263,7 @@ func checkDomainAndProject(domain, project string) error {
 	}
 	return nil
 }
-func queryFromCache(rctx *restful.Context, topic string) {
+func QueryFromCache(rctx *restful.Context, topic string) {
 	rev, kv, queryErr := cache.CachedKV().Read(topic)
 	if queryErr != nil {
 		WriteErrResponse(rctx, queryErr.Code, queryErr.Message)
@@ -271,8 +271,7 @@ func queryFromCache(rctx *restful.Context, topic string) {
 	}
 	if kv == nil {
 		kv = &model.KVResponse{
-			Total: 0,
-			Data:  []*model.KVDoc{},
+			Data: []*model.KVDoc{},
 		}
 	}
 	rctx.ReadResponseWriter().Header().Set(common.HeaderRevision, strconv.FormatInt(rev, 10))
