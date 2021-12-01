@@ -269,6 +269,12 @@ func queryFromCache(rctx *restful.Context, topic string) {
 		WriteErrResponse(rctx, queryErr.Code, queryErr.Message)
 		return
 	}
+	if kv == nil {
+		kv = &model.KVResponse{
+			Total: 0,
+			Data:  []*model.KVDoc{},
+		}
+	}
 	rctx.ReadResponseWriter().Header().Set(common.HeaderRevision, strconv.FormatInt(rev, 10))
 	err := writeResponse(rctx, kv)
 	rctx.ReadRestfulRequest().SetAttribute(common.RespBodyContextKey, kv.Data)
