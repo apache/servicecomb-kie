@@ -77,7 +77,7 @@ func Create(ctx context.Context, kv *model.KVDoc) (*model.KVDoc, *errsvc.Error) 
 	if err != nil {
 		return nil, config.NewError(config.ErrInvalidParams, err.Error())
 	}
-	err = quota.PreCreate("", kv.Domain, kv.Project, "", 1)
+	err = quota.PreCreate(kv.Domain, kv.Project, "", 1)
 	if err != nil {
 		if err == quota.ErrReached {
 			openlog.Error(fmt.Sprintf("can not create kv %s@%s, due to quota violation", kv.Key, kv.Project))
