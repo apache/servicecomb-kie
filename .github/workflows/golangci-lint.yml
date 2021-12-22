@@ -22,6 +22,11 @@ jobs:
     env:
       GO111MODULE: on
     steps:
+      - name: Set up Go
+        uses: actions/setup-go@v1
+        with:
+          go-version: 1.16
+        id: go
       - name: Checkout Source
         uses: actions/checkout@v2
       - name: Fmt

@@ -79,7 +79,7 @@ func txnCreate(ctx context.Context, kv *model.KVDoc) (bool, error) {
 		openlog.Error("fail to marshal kv " + err.Error())
 		return false, err
 	}
-	task, err := datasource.NewTask(kv.Domain, kv.Project, sync.CreateAction, datasource.ConfigResource)
+	task, err := sync.NewTask(kv.Domain, kv.Project, sync.CreateAction, datasource.ConfigResource)
 	if err != nil {
 		openlog.Error("fail to create task" + err.Error())
 		return false, err
@@ -148,7 +148,7 @@ func txnUpdate(ctx context.Context, kv *model.KVDoc) error {
 		openlog.Error(err.Error())
 		return err
 	}
-	task, err := datasource.NewTask(kv.Domain, kv.Project, sync.UpdateAction, datasource.ConfigResource)
+	task, err := sync.NewTask(kv.Domain, kv.Project, sync.UpdateAction, datasource.ConfigResource)
 	if err != nil {
 		openlog.Error("fail to create task" + err.Error())
 		return err
@@ -243,7 +243,7 @@ func txnFindOneAndDelete(ctx context.Context, kvID, project, domain string) (*mo
 		openlog.Error(err.Error())
 		return nil, err
 	}
-	task, err := datasource.NewTask(domain, project, sync.DeleteAction, datasource.ConfigResource)
+	task, err := sync.NewTask(domain, project, sync.DeleteAction, datasource.ConfigResource)
 	if err != nil {
 		openlog.Error("fail to create task" + err.Error())
 		return nil, err
@@ -254,9 +254,7 @@ func txnFindOneAndDelete(ctx context.Context, kvID, project, domain string) (*mo
 		openlog.Error("fail to marshal task" + err.Error())
 		return nil, err
 	}
-	tombstone := datasource.NewTombstone(domain, project, datasource.ConfigResource)
-	// use key and labelFormat as resourceID
-	tombstone.ResourceID = kvDoc.Key + "/" + kvDoc.LabelFormat
+	tombstone := sync.NewTombstone(domain, project, datasource.ConfigResource, datasource.TombstoneID(kvDoc))
 	tombstoneBytes, err := json.Marshal(tombstone)
 	if err != nil {
 		openlog.Error("fail to marshal tombstone" + err.Error())
@@ -353,7 +351,7 @@ func txnFindManyAndDelete(ctx context.Context, kvIDs []string, project, domain s
 		if kvDoc == nil {
 			continue
 		}
-		task, err := datasource.NewTask(domain, project, sync.DeleteAction, datasource.ConfigResource)
+		task, err := sync.NewTask(domain, project, sync.DeleteAction, datasource.ConfigResource)
 		if err != nil {
 			openlog.Error("fail to create task")
 			return nil, 0, err
@@ -361,8 +359,8 @@ func txnFindManyAndDelete(ctx context.Context, kvIDs []string, project, domain s
 		docs[successKVNum] = kvDoc
 		tasks[successKVNum] = task
 		tasks[successKVNum].Data = kvDoc
-		tombstones[successKVNum] = datasource.NewTombstone(domain, project, datasource.ConfigResource)
-		tombstones[successKVNum].ResourceID = kvDoc.Key + "/" + kvDoc.LabelFormat
+		tombstones[successKVNum] = sync.NewTombstone(domain, project, datasource.ConfigResource,
+			datasource.TombstoneID(kvDoc))
 		successKVNum++
 	}
 	if successKVNum == 0 {

@@ -11,7 +11,7 @@ follow steps to enable service center [RBAC](https://service-center.readthedocs.
 2.edit kie-conf.yaml
 ```ini
 db:
-  uri: mongodb://kie:123@127.0.0.1:27017/kie
+  uri: mongodb://kie:123@127.0.0.1:27017/servicecomb
   type: mongodb
 rbac:
   enabled: true

@@ -42,7 +42,7 @@ import (
 
 //const for db name and collection name
 const (
-	DBName = "kie"
+	DBName = "servicecomb"
 
 	CollectionLabel         = "label"
 	CollectionKV            = "kv"

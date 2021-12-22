@@ -22,7 +22,7 @@ db.createUser(
         roles: [
             {
                 role: "readWrite",
-                db: "kie"
+                db: "servicecomb"
             }
         ]
     }
