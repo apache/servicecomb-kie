@@ -24,9 +24,7 @@ import (
 	"fmt"
 	"time"
 
-	"github.com/go-chassis/cari/sync"
 	"github.com/go-chassis/openlog"
-	"github.com/gofrs/uuid"
 
 	"github.com/apache/servicecomb-kie/pkg/model"
 	"github.com/apache/servicecomb-kie/server/config"
@@ -163,28 +161,7 @@ func ClearPart(kv *model.KVDoc) {
 	kv.LabelFormat = ""
 }
 
-// NewTask return task with action and datatype
-func NewTask(domain, project, action, dataType string) (*sync.Task, error) {
-	taskId, err := uuid.NewV4()
-	if err != nil {
-		return nil, err
-	}
-	return &sync.Task{
-		TaskID:    taskId.String(),
-		Action:    action,
-		DataType:  dataType,
-		Domain:    domain,
-		Project:   project,
-		Timestamp: time.Now().Unix(),
-	}, nil
-}
-
-// NewTombstone return tombstone with resourceType ,domain and project
-func NewTombstone(domain, project, resourceType string) *sync.Tombstone {
-	return &sync.Tombstone{
-		ResourceType: resourceType,
-		Domain:       domain,
-		Project:      project,
-		Timestamp:    time.Now().Unix(),
-	}
+// TombstoneID return tombstone's resourceID, using key and labelFormat as resourceID
+func TombstoneID(kv *model.KVDoc) string {
+	return kv.Key + "/" + kv.LabelFormat
 }

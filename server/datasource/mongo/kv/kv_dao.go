@@ -93,7 +93,7 @@ func txnCreate(ctx context.Context, kv *model.KVDoc) (*model.KVDoc, error) {
 			}
 			return err
 		}
-		task, err := datasource.NewTask(kv.Domain, kv.Project, sync.CreateAction, datasource.ConfigResource)
+		task, err := sync.NewTask(kv.Domain, kv.Project, sync.CreateAction, datasource.ConfigResource)
 		if err != nil {
 			openlog.Error("fail to create task" + err.Error())
 			errAbort := taskSession.AbortTransaction(sessionContext)
@@ -207,7 +207,7 @@ func txnUpdate(ctx context.Context, kv *model.KVDoc) error {
 			openlog.Error("decode error: " + err.Error())
 			return err
 		}
-		task, err := datasource.NewTask(kv.Domain, kv.Project, sync.UpdateAction, datasource.ConfigResource)
+		task, err := sync.NewTask(kv.Domain, kv.Project, sync.UpdateAction, datasource.ConfigResource)
 		if err != nil {
 			openlog.Error("fail to create task" + err.Error())
 			errAbort := taskSession.AbortTransaction(sessionContext)
@@ -431,7 +431,7 @@ func txnFindOneAndDelete(ctx context.Context, kvID, project, domain string) (*mo
 			}
 			return err
 		}
-		task, err := datasource.NewTask(domain, project, sync.DeleteAction, datasource.ConfigResource)
+		task, err := sync.NewTask(domain, project, sync.DeleteAction, datasource.ConfigResource)
 		if err != nil {
 			openlog.Error("fail to create task" + err.Error())
 			errAbort := taskSession.AbortTransaction(sessionContext)
@@ -460,8 +460,7 @@ func txnFindOneAndDelete(ctx context.Context, kvID, project, domain string) (*mo
 			}
 			return err
 		}
-		tombstone := datasource.NewTombstone(domain, project, datasource.ConfigResource)
-		tombstone.ResourceID = curKV.Key + "/" + curKV.LabelFormat
+		tombstone := sync.NewTombstone(domain, project, datasource.ConfigResource, datasource.TombstoneID(curKV))
 		collection = session.GetDB().Collection(session.CollectionTombstone)
 		_, err = collection.InsertOne(sessionContext, tombstone)
 		if err != nil {
@@ -568,10 +567,9 @@ func txnFindManyAndDelete(ctx context.Context, kvIDs []string, project, domain s
 		tombstonesDoc := make([]interface{}, deletedCount)
 		for i := 0; i < int(deletedCount); i++ {
 			kv := kvs[i]
-			task, _ := datasource.NewTask(domain, project, sync.DeleteAction, datasource.ConfigResource)
+			task, _ := sync.NewTask(domain, project, sync.DeleteAction, datasource.ConfigResource)
 			task.Data = kv
-			tombstone := datasource.NewTombstone(domain, project, datasource.ConfigResource)
-			tombstone.ResourceID = kv.Key + "/" + kv.LabelFormat
+			tombstone := sync.NewTombstone(domain, project, datasource.ConfigResource, datasource.TombstoneID(kv))
 			tasksDoc[i] = task
 			tombstonesDoc[i] = tombstone
 		}

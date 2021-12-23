@@ -22,7 +22,7 @@ services:
     ports:
       - 27017:27017
     environment:
-      MONGO_INITDB_DATABASE: kie
+      MONGO_INITDB_DATABASE: servicecomb
       MONGO_INITDB_ROOT_USERNAME: kie
       MONGO_INITDB_ROOT_PASSWORD: 123
     volumes:

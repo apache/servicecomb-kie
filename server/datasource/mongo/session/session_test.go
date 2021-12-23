@@ -15,7 +15,7 @@ import (
 func TestGetColInfo(t *testing.T) {
 	var err error
 	err = session.Init(&datasource.Config{
-		URI:     "mongodb://kie:123@127.0.0.1:27017/kie",
+		URI:     "mongodb://kie:123@127.0.0.1:27017/servicecomb",
 		Timeout: 10 * time.Second,
 	})
 	assert.NoError(t, err)
