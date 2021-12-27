@@ -23,5 +23,6 @@ etc/ssl/
 tmp/
 conf/
 glide.lock
-
+main
+kieserver
 examples/dev/data/
