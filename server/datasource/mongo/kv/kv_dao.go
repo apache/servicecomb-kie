@@ -93,7 +93,7 @@ func txnCreate(ctx context.Context, kv *model.KVDoc) (*model.KVDoc, error) {
 			}
 			return err
 		}
-		task, err := sync.NewTask(kv.Domain, kv.Project, sync.CreateAction, datasource.ConfigResource)
+		task, err := sync.NewTask(kv.Domain, kv.Project, sync.CreateAction, datasource.ConfigResource, kv)
 		if err != nil {
 			openlog.Error("fail to create task" + err.Error())
 			errAbort := taskSession.AbortTransaction(sessionContext)
@@ -105,7 +105,6 @@ func txnCreate(ctx context.Context, kv *model.KVDoc) (*model.KVDoc, error) {
 			}
 			return err
 		}
-		task.Data = kv
 		collection = session.GetDB().Collection(session.CollectionTask)
 		_, err = collection.InsertOne(sessionContext, task)
 		if err != nil {
@@ -207,7 +206,7 @@ func txnUpdate(ctx context.Context, kv *model.KVDoc) error {
 			openlog.Error("decode error: " + err.Error())
 			return err
 		}
-		task, err := sync.NewTask(kv.Domain, kv.Project, sync.UpdateAction, datasource.ConfigResource)
+		task, err := sync.NewTask(kv.Domain, kv.Project, sync.UpdateAction, datasource.ConfigResource, curKV)
 		if err != nil {
 			openlog.Error("fail to create task" + err.Error())
 			errAbort := taskSession.AbortTransaction(sessionContext)
@@ -219,7 +218,6 @@ func txnUpdate(ctx context.Context, kv *model.KVDoc) error {
 			}
 			return err
 		}
-		task.Data = curKV
 		collection = session.GetDB().Collection(session.CollectionTask)
 		_, err = collection.InsertOne(sessionContext, task)
 		if err != nil {
@@ -431,7 +429,7 @@ func txnFindOneAndDelete(ctx context.Context, kvID, project, domain string) (*mo
 			}
 			return err
 		}
-		task, err := sync.NewTask(domain, project, sync.DeleteAction, datasource.ConfigResource)
+		task, err := sync.NewTask(domain, project, sync.DeleteAction, datasource.ConfigResource, curKV)
 		if err != nil {
 			openlog.Error("fail to create task" + err.Error())
 			errAbort := taskSession.AbortTransaction(sessionContext)
@@ -443,7 +441,6 @@ func txnFindOneAndDelete(ctx context.Context, kvID, project, domain string) (*mo
 			}
 			return err
 		}
-		task.Data = curKV
 		collection = session.GetDB().Collection(session.CollectionTask)
 		_, err = collection.InsertOne(sessionContext, task)
 		if err != nil {
@@ -567,8 +564,7 @@ func txnFindManyAndDelete(ctx context.Context, kvIDs []string, project, domain s
 		tombstonesDoc := make([]interface{}, deletedCount)
 		for i := 0; i < int(deletedCount); i++ {
 			kv := kvs[i]
-			task, _ := sync.NewTask(domain, project, sync.DeleteAction, datasource.ConfigResource)
-			task.Data = kv
+			task, _ := sync.NewTask(domain, project, sync.DeleteAction, datasource.ConfigResource, kv)
 			tombstone := sync.NewTombstone(domain, project, datasource.ConfigResource, datasource.TombstoneID(kv))
 			tasksDoc[i] = task
 			tombstonesDoc[i] = tombstone
