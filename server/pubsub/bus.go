@@ -23,7 +23,6 @@ import (
 
 	"encoding/json"
 
-	"github.com/apache/servicecomb-kie/pkg/stringutil"
 	"github.com/apache/servicecomb-kie/server/config"
 	"github.com/go-chassis/openlog"
 	"github.com/hashicorp/serf/cmd/serf/command/agent"
@@ -114,12 +113,10 @@ func Publish(event *KVChangeEvent) error {
 
 //AddObserver observe key changes by (key or labels) or (key and labels)
 func AddObserver(o *Observer, topic *Topic) (string, error) {
-	topic.LabelsFormat = stringutil.FormatMap(topic.Labels)
-	b, err := json.Marshal(topic)
+	t, err := topic.Encode()
 	if err != nil {
 		return "", err
 	}
-	t := string(b)
 	observers, ok := topics.Load(t)
 	if !ok {
 		var observers = &sync.Map{}

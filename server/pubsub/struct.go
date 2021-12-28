@@ -62,6 +62,15 @@ type Topic struct {
 	MatchType    string            `json:"match,omitempty"`
 }
 
+func (t *Topic) Encode() (string, error) {
+	t.LabelsFormat = stringutil.FormatMap(t.Labels)
+	b, err := json.Marshal(t)
+	if err != nil {
+		return "", err
+	}
+	return string(b), nil
+}
+
 //ParseTopic parse topic string to topic struct
 func ParseTopic(s string) (*Topic, error) {
 	t := &Topic{
