@@ -24,7 +24,6 @@ import (
 	"net/http"
 	"strconv"
 	"strings"
-	"sync"
 	"time"
 
 	"github.com/apache/servicecomb-kie/server/cache"
@@ -55,17 +54,16 @@ const (
 	FmtReadRequestError = "decode request body failed: %v"
 )
 
-var observers = sync.Pool{
-	New: func() interface{} {
-		id, err := uuid.NewV4()
-		if err != nil {
-			openlog.Error("can not gen uuid")
-		}
-		return &pubsub.Observer{
-			UUID:  id.String(),
-			Event: make(chan *pubsub.KVChangeEvent, 1),
-		}
-	},
+func NewObserver() (*pubsub.Observer, error) {
+	id, err := uuid.NewV4()
+	if err != nil {
+		openlog.Error("can not gen uuid")
+		return nil, err
+	}
+	return &pubsub.Observer{
+		UUID:  id.String(),
+		Event: make(chan *pubsub.KVChangeEvent, 1),
+	}, nil
 }
 
 //err
@@ -202,8 +200,11 @@ func eventHappened(waitStr string, topic *pubsub.Topic) (bool, string, error) {
 		return false, "", errors.New(common.MsgInvalidWait)
 	}
 	happened := true
-	o := observers.Get().(*pubsub.Observer)
-	defer observers.Put(o)
+	o, err := NewObserver()
+	if err != nil {
+		openlog.Error(err.Error())
+		return false, "", err
+	}
 	topicName, err := pubsub.AddObserver(o, topic)
 	if err != nil {
 		return false, "", errors.New("observe once failed: " + err.Error())
