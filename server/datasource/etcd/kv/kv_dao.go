@@ -79,19 +79,18 @@ func txnCreate(ctx context.Context, kv *model.KVDoc) (bool, error) {
 		openlog.Error("fail to marshal kv " + err.Error())
 		return false, err
 	}
-	task, err := sync.NewTask(kv.Domain, kv.Project, sync.CreateAction, datasource.ConfigResource)
+	task, err := sync.NewTask(kv.Domain, kv.Project, sync.CreateAction, datasource.ConfigResource, kv)
 	if err != nil {
 		openlog.Error("fail to create task" + err.Error())
 		return false, err
 	}
-	task.Data = kv
 	taskBytes, err := json.Marshal(task)
 	if err != nil {
 		openlog.Error("fail to marshal task ")
 		return false, err
 	}
 	kvOpPut := etcdadpt.OpPut(etcdadpt.WithStrKey(key.KV(kv.Domain, kv.Project, kv.ID)), etcdadpt.WithValue(kvBytes))
-	taskOpPut := etcdadpt.OpPut(etcdadpt.WithStrKey(key.TaskKey(kv.Domain, kv.Project, task.TaskID, task.Timestamp)), etcdadpt.WithValue(taskBytes))
+	taskOpPut := etcdadpt.OpPut(etcdadpt.WithStrKey(key.TaskKey(kv.Domain, kv.Project, task.ID, task.Timestamp)), etcdadpt.WithValue(taskBytes))
 	cmpOpts := []etcdadpt.CmpOptions{
 		etcdadpt.OpCmp(etcdadpt.CmpCreateRev(kvOpPut.Key), etcdadpt.CmpEqual, 0),
 		etcdadpt.OpCmp(etcdadpt.CmpCreateRev(taskOpPut.Key), etcdadpt.CmpEqual, 0),
@@ -148,19 +147,18 @@ func txnUpdate(ctx context.Context, kv *model.KVDoc) error {
 		openlog.Error(err.Error())
 		return err
 	}
-	task, err := sync.NewTask(kv.Domain, kv.Project, sync.UpdateAction, datasource.ConfigResource)
+	task, err := sync.NewTask(kv.Domain, kv.Project, sync.UpdateAction, datasource.ConfigResource, kv)
 	if err != nil {
 		openlog.Error("fail to create task" + err.Error())
 		return err
 	}
-	task.Data = kv
 	taskBytes, err := json.Marshal(task)
 	if err != nil {
 		openlog.Error(err.Error())
 		return err
 	}
 	kvOpPut := etcdadpt.OpPut(etcdadpt.WithStrKey(keyKV), etcdadpt.WithValue(kvBytes))
-	taskOpPut := etcdadpt.OpPut(etcdadpt.WithStrKey(key.TaskKey(kv.Domain, kv.Project, task.TaskID, task.Timestamp)), etcdadpt.WithValue(taskBytes))
+	taskOpPut := etcdadpt.OpPut(etcdadpt.WithStrKey(key.TaskKey(kv.Domain, kv.Project, task.ID, task.Timestamp)), etcdadpt.WithValue(taskBytes))
 	return etcdadpt.Txn(ctx, []etcdadpt.OpOptions{kvOpPut, taskOpPut})
 }
 
@@ -243,12 +241,11 @@ func txnFindOneAndDelete(ctx context.Context, kvID, project, domain string) (*mo
 		openlog.Error(err.Error())
 		return nil, err
 	}
-	task, err := sync.NewTask(domain, project, sync.DeleteAction, datasource.ConfigResource)
+	task, err := sync.NewTask(domain, project, sync.DeleteAction, datasource.ConfigResource, kvDoc)
 	if err != nil {
 		openlog.Error("fail to create task" + err.Error())
 		return nil, err
 	}
-	task.Data = kvDoc
 	taskBytes, err := json.Marshal(task)
 	if err != nil {
 		openlog.Error("fail to marshal task" + err.Error())
@@ -262,7 +259,7 @@ func txnFindOneAndDelete(ctx context.Context, kvID, project, domain string) (*mo
 	}
 	kvOpDel := etcdadpt.OpDel(etcdadpt.WithStrKey(kvKey))
 	taskOpPut := etcdadpt.OpPut(etcdadpt.WithStrKey(key.TaskKey(domain, project,
-		task.TaskID, task.Timestamp)), etcdadpt.WithValue(taskBytes))
+		task.ID, task.Timestamp)), etcdadpt.WithValue(taskBytes))
 	tombstoneOpPut := etcdadpt.OpPut(etcdadpt.WithStrKey(key.TombstoneKey(domain, project, tombstone.ResourceType, tombstone.ResourceID)), etcdadpt.WithValue(tombstoneBytes))
 	err = etcdadpt.Txn(ctx, []etcdadpt.OpOptions{kvOpDel, taskOpPut, tombstoneOpPut})
 	if err != nil {
@@ -351,14 +348,13 @@ func txnFindManyAndDelete(ctx context.Context, kvIDs []string, project, domain s
 		if kvDoc == nil {
 			continue
 		}
-		task, err := sync.NewTask(domain, project, sync.DeleteAction, datasource.ConfigResource)
+		task, err := sync.NewTask(domain, project, sync.DeleteAction, datasource.ConfigResource, kvDoc)
 		if err != nil {
 			openlog.Error("fail to create task")
 			return nil, 0, err
 		}
 		docs[successKVNum] = kvDoc
 		tasks[successKVNum] = task
-		tasks[successKVNum].Data = kvDoc
 		tombstones[successKVNum] = sync.NewTombstone(domain, project, datasource.ConfigResource,
 			datasource.TombstoneID(kvDoc))
 		successKVNum++
@@ -381,7 +377,7 @@ func txnFindManyAndDelete(ctx context.Context, kvIDs []string, project, domain s
 			return nil, 0, err
 		}
 		opOptions = append(opOptions, etcdadpt.OpPut(etcdadpt.WithStrKey(key.TaskKey(domain, project,
-			task.TaskID, task.Timestamp)), etcdadpt.WithValue(taskBytes)))
+			task.ID, task.Timestamp)), etcdadpt.WithValue(taskBytes)))
 	}
 	for _, tombstone := range tombstones {
 		tombstoneBytes, err := json.Marshal(tombstone)

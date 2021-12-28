@@ -2,7 +2,7 @@ module github.com/apache/servicecomb-kie
 
 require (
 	github.com/emicklei/go-restful v2.12.0+incompatible
-	github.com/go-chassis/cari v0.5.1-0.20211222030004-0bb606bff5c5
+	github.com/go-chassis/cari v0.5.1-0.20211227133501-53aa20cf7a44
 	github.com/go-chassis/foundation v0.3.1-0.20210811025651-7f4d2b2b906c
 	github.com/go-chassis/go-archaius v1.5.2-0.20210301074935-e4694f6b077b
 	github.com/go-chassis/go-chassis/v2 v2.3.1-0.20211217084436-360a6a6a0ef3
