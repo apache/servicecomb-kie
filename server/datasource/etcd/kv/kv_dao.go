@@ -91,11 +91,8 @@ func txnCreate(ctx context.Context, kv *model.KVDoc) (bool, error) {
 	}
 	kvOpPut := etcdadpt.OpPut(etcdadpt.WithStrKey(key.KV(kv.Domain, kv.Project, kv.ID)), etcdadpt.WithValue(kvBytes))
 	taskOpPut := etcdadpt.OpPut(etcdadpt.WithStrKey(key.TaskKey(kv.Domain, kv.Project, task.ID, task.Timestamp)), etcdadpt.WithValue(taskBytes))
-	cmpOpts := []etcdadpt.CmpOptions{
-		etcdadpt.OpCmp(etcdadpt.CmpCreateRev(kvOpPut.Key), etcdadpt.CmpEqual, 0),
-		etcdadpt.OpCmp(etcdadpt.CmpCreateRev(taskOpPut.Key), etcdadpt.CmpEqual, 0),
-	}
-	resp, err := etcdadpt.TxnWithCmp(ctx, []etcdadpt.OpOptions{kvOpPut, taskOpPut}, cmpOpts, nil)
+	resp, err := etcdadpt.TxnWithCmp(ctx, []etcdadpt.OpOptions{kvOpPut, taskOpPut},
+		etcdadpt.If(etcdadpt.NotExistKey(string(kvOpPut.Key)), etcdadpt.NotExistKey(string(taskOpPut.Key))), nil)
 	if err != nil {
 		return false, err
 	}
