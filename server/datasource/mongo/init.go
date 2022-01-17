@@ -18,6 +18,7 @@
 package mongo
 
 import (
+	"github.com/apache/servicecomb-kie/server/datasource/mongo/project"
 	"github.com/go-chassis/openlog"
 
 	"github.com/apache/servicecomb-kie/server/datasource"
@@ -46,6 +47,9 @@ func (*Broker) GetHistoryDao() datasource.HistoryDao {
 }
 func (*Broker) GetTrackDao() datasource.TrackDao {
 	return &track.Dao{}
+}
+func (*Broker) GetProjectDao() datasource.ProjectDao {
+	return &project.Dao{}
 }
 
 func init() {

@@ -33,6 +33,7 @@ func Run() {
 	chassis.RegisterSchema(common.ProtocolRest, &v1.KVResource{})
 	chassis.RegisterSchema(common.ProtocolRest, &v1.HistoryResource{})
 	chassis.RegisterSchema(common.ProtocolRest, &v1.AdminResource{})
+	chassis.RegisterSchema(common.ProtocolRest, &v1.ProjectResource{})
 	if err := chassis.Init(); err != nil {
 		openlog.Fatal(err.Error())
 	}

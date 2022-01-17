@@ -20,6 +20,7 @@ package etcd
 import (
 	"crypto/tls"
 	"fmt"
+	"github.com/apache/servicecomb-kie/server/datasource/etcd/project"
 
 	// support embedded etcd
 	_ "github.com/little-cui/etcdadpt/embedded"
@@ -68,6 +69,9 @@ func (*Broker) GetHistoryDao() datasource.HistoryDao {
 }
 func (*Broker) GetTrackDao() datasource.TrackDao {
 	return &track.Dao{}
+}
+func (*Broker) GetProjectDao() datasource.ProjectDao {
+	return &project.Dao{}
 }
 
 func init() {
