@@ -18,13 +18,14 @@
 package mongo
 
 import (
+	"github.com/go-chassis/openlog"
+
 	"github.com/apache/servicecomb-kie/server/datasource"
 	"github.com/apache/servicecomb-kie/server/datasource/mongo/counter"
 	"github.com/apache/servicecomb-kie/server/datasource/mongo/history"
 	"github.com/apache/servicecomb-kie/server/datasource/mongo/kv"
 	"github.com/apache/servicecomb-kie/server/datasource/mongo/session"
 	"github.com/apache/servicecomb-kie/server/datasource/mongo/track"
-	"github.com/go-chassis/openlog"
 )
 
 type Broker struct {
@@ -46,6 +47,7 @@ func (*Broker) GetHistoryDao() datasource.HistoryDao {
 func (*Broker) GetTrackDao() datasource.TrackDao {
 	return &track.Dao{}
 }
+
 func init() {
 	datasource.RegisterPlugin("mongo", NewFrom)
 }

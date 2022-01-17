@@ -23,11 +23,12 @@ import (
 
 	_ "github.com/apache/servicecomb-kie/test"
 
+	"github.com/stretchr/testify/assert"
+
 	"github.com/apache/servicecomb-kie/pkg/common"
 	"github.com/apache/servicecomb-kie/pkg/model"
 	"github.com/apache/servicecomb-kie/server/datasource"
 	kvsvc "github.com/apache/servicecomb-kie/server/service/kv"
-	"github.com/stretchr/testify/assert"
 )
 
 func TestGetHistory(t *testing.T) {
@@ -45,7 +46,6 @@ func TestGetHistory(t *testing.T) {
 	})
 	assert.Nil(t, err)
 	assert.NotEmpty(t, kv.ID)
-	defer kvsvc.FindOneAndDelete(ctx, kv.ID, "kv-test", "default")
 
 	_, uErr := kvsvc.Update(ctx, &model.UpdateKVRequest{
 		ID:      kv.ID,
@@ -77,4 +77,7 @@ func TestGetHistory(t *testing.T) {
 		assert.Equal(t, 1, len(resp.Data))
 		assert.Equal(t, "2s", resp.Data[0].Value)
 	})
+
+	_, delErr := kvsvc.FindOneAndDelete(ctx, kv.ID, "kv-test", "default")
+	assert.NoError(t, delErr)
 }

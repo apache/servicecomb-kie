@@ -68,7 +68,7 @@ EOM
 
 cat <<EOM > ${release_dir}/conf/kie-conf.yaml
 db:
-  uri: mongodb://root:root@127.0.0.1:27017/kie
+  uri: mongodb://root:root@127.0.0.1:27017/servicecomb
   type: mongodb
   poolSize: 10
   ssl: false

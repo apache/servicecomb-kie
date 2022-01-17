@@ -69,6 +69,7 @@ func (*Broker) GetHistoryDao() datasource.HistoryDao {
 func (*Broker) GetTrackDao() datasource.TrackDao {
 	return &track.Dao{}
 }
+
 func init() {
 	datasource.RegisterPlugin("etcd", NewFrom)
 	datasource.RegisterPlugin("embedded_etcd", NewFrom)

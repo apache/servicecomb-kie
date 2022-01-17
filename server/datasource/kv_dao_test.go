@@ -21,11 +21,17 @@ import (
 	"context"
 	"testing"
 
+	"github.com/stretchr/testify/assert"
+
 	"github.com/apache/servicecomb-kie/pkg/common"
 	"github.com/apache/servicecomb-kie/pkg/model"
+	"github.com/apache/servicecomb-kie/server/config"
 	"github.com/apache/servicecomb-kie/server/datasource"
 	kvsvc "github.com/apache/servicecomb-kie/server/service/kv"
-	"github.com/stretchr/testify/assert"
+	"github.com/apache/servicecomb-kie/test"
+	emodel "github.com/apache/servicecomb-service-center/eventbase/model"
+	"github.com/apache/servicecomb-service-center/eventbase/service/task"
+	"github.com/apache/servicecomb-service-center/eventbase/service/tombstone"
 )
 
 func TestList(t *testing.T) {
@@ -43,7 +49,6 @@ func TestList(t *testing.T) {
 	})
 	assert.Nil(t, err)
 	assert.NotEmpty(t, kv1.ID)
-	defer kvsvc.FindOneAndDelete(ctx, kv1.ID, "kv-list-test", "default")
 
 	kv2, err := kvsvc.Create(ctx, &model.KVDoc{
 		Key:    "TestList2",
@@ -58,7 +63,6 @@ func TestList(t *testing.T) {
 	})
 	assert.Nil(t, err)
 	assert.NotEmpty(t, kv2.ID)
-	defer kvsvc.FindOneAndDelete(ctx, kv2.ID, "kv-list-test", "default")
 
 	kv3, err := kvsvc.Create(ctx, &model.KVDoc{
 		Key:    "TestList3",
@@ -73,7 +77,6 @@ func TestList(t *testing.T) {
 	})
 	assert.Nil(t, err)
 	assert.NotEmpty(t, kv3.ID)
-	defer kvsvc.FindOneAndDelete(ctx, kv3.ID, "kv-list-test", "default")
 
 	t.Run("after create kv, should list results", func(t *testing.T) {
 		h, err := datasource.GetBroker().GetKVDao().List(ctx, "kv-list-test", "default")
@@ -95,4 +98,136 @@ func TestList(t *testing.T) {
 		assert.Equal(t, 3, resp.Total)
 		assert.Equal(t, 1, len(resp.Data))
 	})
+
+	// delete
+	_, delErr := kvsvc.FindOneAndDelete(ctx, kv1.ID, "kv-list-test", "default")
+	assert.NoError(t, delErr)
+	_, delErr = kvsvc.FindOneAndDelete(ctx, kv2.ID, "kv-list-test", "default")
+	assert.NoError(t, delErr)
+	_, delErr = kvsvc.FindOneAndDelete(ctx, kv3.ID, "kv-list-test", "default")
+	assert.NoError(t, delErr)
+}
+
+func TestWithSync(t *testing.T) {
+	if test.IsEmbeddedetcdMode() {
+		return
+	}
+	// set the sync enabled
+	config.Configurations.Sync.Enabled = true
+
+	t.Run("create kv with sync enabled", func(t *testing.T) {
+		t.Run("creating a kv will create a task should pass", func(t *testing.T) {
+			kv1, err := kvsvc.Create(context.Background(), &model.KVDoc{
+				Key:    "sync-create",
+				Value:  "2s",
+				Status: common.StatusEnabled,
+				Labels: map[string]string{
+					"app":     "sync-create",
+					"service": "sync-create",
+				},
+				Domain:  "default",
+				Project: "sync-create",
+			})
+			assert.Nil(t, err)
+			assert.NotEmpty(t, kv1.ID)
+
+			listReq := emodel.ListTaskRequest{
+				Domain:  "default",
+				Project: "sync-create",
+			}
+			_, tempErr := kvsvc.FindOneAndDelete(context.Background(), kv1.ID, "sync-create", "default")
+			assert.Nil(t, tempErr)
+			resp, tempErr := kvsvc.List(context.Background(), "sync-create", "default")
+			assert.Nil(t, tempErr)
+			assert.Equal(t, 0, resp.Total)
+			tasks, tempErr := task.List(context.Background(), &listReq)
+			assert.Nil(t, tempErr)
+			assert.Equal(t, 2, len(tasks))
+			tempErr = task.Delete(context.Background(), tasks...)
+			assert.Nil(t, tempErr)
+			tbListReq := emodel.ListTombstoneRequest{
+				Domain:       "default",
+				Project:      "sync-create",
+				ResourceType: datasource.ConfigResource,
+			}
+			tombstones, tempErr := tombstone.List(context.Background(), &tbListReq)
+			assert.Equal(t, 1, len(tombstones))
+			tempErr = tombstone.Delete(context.Background(), tombstones...)
+			assert.Nil(t, tempErr)
+		})
+	})
+
+	t.Run("update kv with sync enabled", func(t *testing.T) {
+		t.Run("creating two kvs and updating them will create four tasks should pass", func(t *testing.T) {
+			kv1, err := kvsvc.Create(context.Background(), &model.KVDoc{
+				Key:    "sync-update-one",
+				Value:  "2s",
+				Status: common.StatusEnabled,
+				Labels: map[string]string{
+					"app":     "sync-update",
+					"service": "sync-update",
+				},
+				Domain:  "default",
+				Project: "sync-update",
+			})
+			assert.Nil(t, err)
+			assert.NotEmpty(t, kv1.ID)
+			kv2, err := kvsvc.Create(context.Background(), &model.KVDoc{
+				Key:    "sync-update-two",
+				Value:  "2s",
+				Status: common.StatusEnabled,
+				Labels: map[string]string{
+					"app":     "sync-update",
+					"service": "sync-update",
+				},
+				Domain:  "default",
+				Project: "sync-update",
+			})
+			assert.Nil(t, err)
+			assert.NotEmpty(t, kv2.ID)
+			kv1, tmpErr := kvsvc.Update(context.Background(), &model.UpdateKVRequest{
+				ID:      kv1.ID,
+				Value:   "3s",
+				Domain:  "default",
+				Project: "sync-update",
+			})
+			assert.Nil(t, tmpErr)
+			assert.NotEmpty(t, kv1.ID)
+			kv2, tmpErr = kvsvc.Update(context.Background(), &model.UpdateKVRequest{
+				ID:      kv2.ID,
+				Value:   "3s",
+				Domain:  "default",
+				Project: "sync-update",
+			})
+			assert.Nil(t, tmpErr)
+			assert.NotEmpty(t, kv2.ID)
+			_, tempErr := kvsvc.FindManyAndDelete(context.Background(), []string{kv1.ID, kv2.ID}, "sync-update", "default")
+			assert.Nil(t, tempErr)
+			resp, tempErr := kvsvc.List(context.Background(), "sync-update", "default")
+			assert.Nil(t, tempErr)
+			assert.Equal(t, 0, resp.Total)
+			listReq := emodel.ListTaskRequest{
+				Domain:  "default",
+				Project: "sync-update",
+			}
+			tasks, tempErr := task.List(context.Background(), &listReq)
+			assert.Nil(t, tempErr)
+			assert.Equal(t, 6, len(tasks))
+			tempErr = task.Delete(context.Background(), tasks...)
+			assert.Nil(t, tempErr)
+			tbListReq := emodel.ListTombstoneRequest{
+				Domain:       "default",
+				Project:      "sync-update",
+				ResourceType: datasource.ConfigResource,
+			}
+			tombstones, tempErr := tombstone.List(context.Background(), &tbListReq)
+			assert.Equal(t, 2, len(tombstones))
+			tempErr = tombstone.Delete(context.Background(), tombstones...)
+			assert.Nil(t, tempErr)
+		})
+	})
+
+	// set the sync unable
+	config.Configurations.Sync.Enabled = false
+
 }

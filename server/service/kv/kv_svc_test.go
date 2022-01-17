@@ -23,14 +23,15 @@ import (
 
 	_ "github.com/apache/servicecomb-kie/test"
 
-	"github.com/apache/servicecomb-kie/pkg/common"
-	"github.com/apache/servicecomb-kie/pkg/model"
-	"github.com/apache/servicecomb-kie/server/datasource"
-	kvsvc "github.com/apache/servicecomb-kie/server/service/kv"
 	"github.com/go-chassis/cari/config"
 	"github.com/go-chassis/openlog"
 	log "github.com/go-chassis/seclog"
 	"github.com/stretchr/testify/assert"
+
+	"github.com/apache/servicecomb-kie/pkg/common"
+	"github.com/apache/servicecomb-kie/pkg/model"
+	"github.com/apache/servicecomb-kie/server/datasource"
+	kvsvc "github.com/apache/servicecomb-kie/server/service/kv"
 )
 
 var project = "kv-test"

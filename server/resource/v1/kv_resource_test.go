@@ -30,18 +30,19 @@ import (
 	"testing"
 	"time"
 
-	common2 "github.com/apache/servicecomb-kie/pkg/common"
-	"github.com/apache/servicecomb-kie/pkg/model"
-	"github.com/apache/servicecomb-kie/server/config"
-	"github.com/apache/servicecomb-kie/server/plugin/qms"
-	"github.com/apache/servicecomb-kie/server/pubsub"
-	v1 "github.com/apache/servicecomb-kie/server/resource/v1"
 	"github.com/go-chassis/go-archaius"
 	"github.com/go-chassis/go-chassis/v2/pkg/backends/quota"
 	"github.com/go-chassis/go-chassis/v2/server/restful/restfultest"
 	"github.com/go-chassis/openlog"
 	log "github.com/go-chassis/seclog"
 	"github.com/stretchr/testify/assert"
+
+	common2 "github.com/apache/servicecomb-kie/pkg/common"
+	"github.com/apache/servicecomb-kie/pkg/model"
+	"github.com/apache/servicecomb-kie/server/config"
+	"github.com/apache/servicecomb-kie/server/plugin/qms"
+	"github.com/apache/servicecomb-kie/server/pubsub"
+	v1 "github.com/apache/servicecomb-kie/server/resource/v1"
 
 	_ "github.com/apache/servicecomb-kie/server/datasource/mongo"
 	_ "github.com/apache/servicecomb-kie/server/plugin/qms"
@@ -869,7 +870,8 @@ func TestKVResource_PutAndGet(t *testing.T) {
 
 	t.Run("quota test, can not create new ", func(t *testing.T) {
 
-		archaius.Set(qms.QuotaConfigKey, 2)
+		err := archaius.Set(qms.QuotaConfigKey, 2)
+		assert.NoError(t, err)
 		j, _ := json.Marshal(&model.KVDoc{
 			Key:   "reached_quota",
 			Value: "1",

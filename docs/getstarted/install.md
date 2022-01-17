@@ -7,9 +7,9 @@ use the [db init script](https://github.com/apache/servicecomb-kie/blob/master/d
 
 ```shell script
 sudo docker run --name mongo -d \
-    -e "MONGO_INITDB_DATABASE=kie" \
-    -e "MONGO_INITDB_ROOT_USERNAME=root" \
-    -e "MONGO_INITDB_ROOT_PASSWORD=root" \
+    -e "MONGO_INITDB_DATABASE=servicecomb" \
+    -e "MONGO_INITDB_ROOT_USERNAME=kie" \
+    -e "MONGO_INITDB_ROOT_PASSWORD=123" \
     -p 27017:27017 \
     -v ./deployments/db.js:/docker-entrypoint-initdb.d/db.js:ro \
     mongo:4.0
@@ -21,8 +21,8 @@ Run kie server
 ```shell script
 sudo docker run --name kie-server -d \
     -e "MONGODB_ADDR=${MONGO_IP}:27017" \
-    -e "MONGODB_USER=root" \
-    -e "MONGODB_PWD=root" \
+    -e "MONGODB_USER=kie" \
+    -e "MONGODB_PWD=123" \
     -p 30110:30110 \
     servicecomb/kie
 ```

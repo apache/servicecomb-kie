@@ -37,12 +37,16 @@ const (
 type BuildInManager struct {
 }
 
-func (m *BuildInManager) GetQuota(service, domain, project, resource string) (*quota.Quota, error) {
+func (m *BuildInManager) SetLimit(domain, project, resourceType string, limit int64) error {
+	panic("implement me")
+}
+
+func (m *BuildInManager) GetQuota(domain, project, resource string) (*quota.Quota, error) {
 	panic("implement me")
 }
 
 //GetQuotas get usage and quota
-func (m *BuildInManager) GetQuotas(serviceName, domain, project string) ([]*quota.Quota, error) {
+func (m *BuildInManager) GetQuotas(domain, project string) ([]*quota.Quota, error) {
 	max := archaius.GetInt64(QuotaConfigKey, DefaultQuota)
 	total, err := datasource.GetBroker().GetKVDao().Total(context.TODO(), project, domain)
 	if err != nil {
@@ -56,12 +60,12 @@ func (m *BuildInManager) GetQuotas(serviceName, domain, project string) ([]*quot
 }
 
 //IncreaseUsed no use
-func (m *BuildInManager) IncreaseUsed(service, domain, project, resource string, used int64) error {
+func (m *BuildInManager) IncreaseUsed(domain, project, resource string, used int64) error {
 	return nil
 }
 
 //DecreaseUsed no use
-func (m *BuildInManager) DecreaseUsed(service, domain, project, resource string, used int64) error {
+func (m *BuildInManager) DecreaseUsed(domain, project, resource string, used int64) error {
 	return nil
 }
 func newQMS(opts quota.Options) (quota.Manager, error) {

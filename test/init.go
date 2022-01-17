@@ -18,15 +18,20 @@
 package test
 
 import (
+	"time"
+
 	"github.com/apache/servicecomb-kie/pkg/validator"
 	"github.com/apache/servicecomb-kie/server/config"
 	"github.com/apache/servicecomb-kie/server/datasource"
+	edatasource "github.com/apache/servicecomb-service-center/eventbase/datasource"
+	"github.com/go-chassis/cari/db"
 	"github.com/go-chassis/go-archaius"
 	"github.com/go-chassis/go-chassis/v2/security/cipher"
 
 	_ "github.com/apache/servicecomb-kie/server/datasource/etcd"
 	_ "github.com/apache/servicecomb-kie/server/datasource/mongo"
 	_ "github.com/apache/servicecomb-kie/server/pubsub/notifier"
+	_ "github.com/apache/servicecomb-service-center/eventbase/bootstrap"
 	_ "github.com/go-chassis/go-chassis/v2/security/cipher/plugins/plain"
 	_ "github.com/little-cui/etcdadpt/embedded"
 	_ "github.com/little-cui/etcdadpt/remote"
@@ -43,12 +48,24 @@ func init() {
 	if err != nil {
 		panic(err)
 	}
-	kind := archaius.GetString("TEST_DB_KIND", "etcd")
-	uri := archaius.GetString("TEST_DB_URI", "http://127.0.0.1:2379")
-	archaius.Init(archaius.WithMemorySource())
-	archaius.Set("servicecomb.cipher.plugin", "default")
-	cipher.Init()
-	validator.Init()
+	kind = archaius.GetString("TEST_DB_KIND", "etcd")
+	uri = archaius.GetString("TEST_DB_URI", "http://127.0.0.1:2379")
+	err = archaius.Init(archaius.WithMemorySource())
+	if err != nil {
+		panic(err)
+	}
+	err = archaius.Set("servicecomb.cipher.plugin", "default")
+	if err != nil {
+		panic(err)
+	}
+	err = cipher.Init()
+	if err != nil {
+		panic(err)
+	}
+	err = validator.Init()
+	if err != nil {
+		panic(err)
+	}
 	config.Configurations.DB.Kind = kind
 	err = datasource.Init(config.DB{
 		URI:     uri,
@@ -58,4 +75,19 @@ func init() {
 	if err != nil {
 		panic(err)
 	}
+	if kind != "embedded_etcd" {
+		eventbaseDBCfg := db.Config{
+			URI:     uri,
+			Kind:    kind,
+			Timeout: 10 * time.Second,
+		}
+		err = edatasource.Init(eventbaseDBCfg)
+		if err != nil {
+			panic(err)
+		}
+	}
+}
+
+func IsEmbeddedetcdMode() bool {
+	return kind == "embedded_etcd"
 }

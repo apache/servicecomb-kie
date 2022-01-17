@@ -28,7 +28,27 @@ const (
 	keyCounter = "counter"
 	keyHistory = "kv-history"
 	keyTrack   = "track"
+	syncer     = "syncer"
+	task       = "task"
+	tombstone  = "tombstone"
 )
+
+func getSyncRootKey() string {
+	return split + syncer + split + task
+}
+
+func getTombstoneRootKey() string {
+	return split + tombstone
+}
+
+func TaskKey(domain, project, taskID string, timestamp int64) string {
+	strTimestamp := strconv.FormatInt(timestamp, 10)
+	return strings.Join([]string{getSyncRootKey(), domain, project, strTimestamp, taskID}, split)
+}
+
+func TombstoneKey(domain, project, resourceType, resourceID string) string {
+	return strings.Join([]string{getTombstoneRootKey(), domain, project, resourceType, resourceID}, split)
+}
 
 func KV(domain, project, kvID string) string {
 	return strings.Join([]string{keyKV, domain, project, kvID}, split)
