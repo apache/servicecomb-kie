@@ -23,6 +23,7 @@ import (
 	"regexp"
 	"strings"
 
+	dmongo "github.com/go-chassis/cari/db/mongo"
 	"github.com/go-chassis/cari/sync"
 	"github.com/go-chassis/openlog"
 	"go.mongodb.org/mongo-driver/bson"
@@ -32,7 +33,7 @@ import (
 	"github.com/apache/servicecomb-kie/pkg/model"
 	"github.com/apache/servicecomb-kie/pkg/util"
 	"github.com/apache/servicecomb-kie/server/datasource"
-	"github.com/apache/servicecomb-kie/server/datasource/mongo/session"
+	mmodel "github.com/apache/servicecomb-kie/server/datasource/mongo/model"
 )
 
 const (
@@ -54,7 +55,7 @@ func (s *Dao) Create(ctx context.Context, kv *model.KVDoc, options ...datasource
 }
 
 func create(ctx context.Context, kv *model.KVDoc) (*model.KVDoc, error) {
-	collection := session.GetDB().Collection(session.CollectionKV)
+	collection := dmongo.GetClient().GetDB().Collection(mmodel.CollectionKV)
 	_, err := collection.InsertOne(ctx, kv)
 	if err != nil {
 		openlog.Error("create error", openlog.WithTags(openlog.Tags{
@@ -68,7 +69,7 @@ func create(ctx context.Context, kv *model.KVDoc) (*model.KVDoc, error) {
 
 // txnCreate is to start transaction when creating KV, will create task in a transaction operation
 func txnCreate(ctx context.Context, kv *model.KVDoc) (*model.KVDoc, error) {
-	taskSession, err := session.GetDB().Client().StartSession()
+	taskSession, err := dmongo.GetClient().GetDB().Client().StartSession()
 	if err != nil {
 		return nil, err
 	}
@@ -77,7 +78,7 @@ func txnCreate(ctx context.Context, kv *model.KVDoc) (*model.KVDoc, error) {
 	}
 	defer taskSession.EndSession(ctx)
 	if err = mongo.WithSession(ctx, taskSession, func(sessionContext mongo.SessionContext) error {
-		collection := session.GetDB().Collection(session.CollectionKV)
+		collection := dmongo.GetClient().GetDB().Collection(mmodel.CollectionKV)
 		_, err = collection.InsertOne(sessionContext, kv)
 		if err != nil {
 			openlog.Error("create error", openlog.WithTags(openlog.Tags{
@@ -105,7 +106,7 @@ func txnCreate(ctx context.Context, kv *model.KVDoc) (*model.KVDoc, error) {
 			}
 			return err
 		}
-		collection = session.GetDB().Collection(session.CollectionTask)
+		collection = dmongo.GetClient().GetDB().Collection(mmodel.CollectionTask)
 		_, err = collection.InsertOne(sessionContext, task)
 		if err != nil {
 			openlog.Error("create task error", openlog.WithTags(openlog.Tags{
@@ -143,7 +144,7 @@ func (s *Dao) Update(ctx context.Context, kv *model.KVDoc, options ...datasource
 }
 
 func update(ctx context.Context, kv *model.KVDoc) error {
-	collection := session.GetDB().Collection(session.CollectionKV)
+	collection := dmongo.GetClient().GetDB().Collection(mmodel.CollectionKV)
 	_, err := collection.UpdateOne(ctx, bson.M{"key": kv.Key, "label_format": kv.LabelFormat}, bson.D{
 		{Key: "$set", Value: bson.D{
 			{Key: "value", Value: kv.Value},
@@ -161,7 +162,7 @@ func update(ctx context.Context, kv *model.KVDoc) error {
 
 // txnUpdate is to start transaction when updating kV, will create task in a transaction operation
 func txnUpdate(ctx context.Context, kv *model.KVDoc) error {
-	taskSession, err := session.GetDB().Client().StartSession()
+	taskSession, err := dmongo.GetClient().GetDB().Client().StartSession()
 	if err != nil {
 		return err
 	}
@@ -170,7 +171,7 @@ func txnUpdate(ctx context.Context, kv *model.KVDoc) error {
 	}
 	defer taskSession.EndSession(ctx)
 	if err = mongo.WithSession(ctx, taskSession, func(sessionContext mongo.SessionContext) error {
-		collection := session.GetDB().Collection(session.CollectionKV)
+		collection := dmongo.GetClient().GetDB().Collection(mmodel.CollectionKV)
 		result := collection.FindOneAndUpdate(sessionContext, bson.M{"key": kv.Key, "label_format": kv.LabelFormat}, bson.D{
 			{Key: "$set", Value: bson.D{
 				{Key: "value", Value: kv.Value},
@@ -218,7 +219,7 @@ func txnUpdate(ctx context.Context, kv *model.KVDoc) error {
 			}
 			return err
 		}
-		collection = session.GetDB().Collection(session.CollectionTask)
+		collection = dmongo.GetClient().GetDB().Collection(mmodel.CollectionTask)
 		_, err = collection.InsertOne(sessionContext, task)
 		if err != nil {
 			openlog.Error("create task error", openlog.WithTags(openlog.Tags{
@@ -253,7 +254,7 @@ func getValue(str string) string {
 }
 
 func findKV(ctx context.Context, domain string, project string, opts datasource.FindOptions) (*mongo.Cursor, int, error) {
-	collection := session.GetDB().Collection(session.CollectionKV)
+	collection := dmongo.GetClient().GetDB().Collection(mmodel.CollectionKV)
 	ctx, cancel := context.WithTimeout(ctx, opts.Timeout)
 	defer cancel()
 
@@ -308,7 +309,7 @@ func findKV(ctx context.Context, domain string, project string, opts datasource.
 	return cur, int(curTotal), err
 }
 func findOneKey(ctx context.Context, filter bson.M) ([]*model.KVDoc, error) {
-	collection := session.GetDB().Collection(session.CollectionKV)
+	collection := dmongo.GetClient().GetDB().Collection(mmodel.CollectionKV)
 	sr := collection.FindOne(ctx, filter)
 	if sr.Err() != nil {
 		if sr.Err() == mongo.ErrNoDocuments {
@@ -371,7 +372,7 @@ func (s *Dao) FindOneAndDelete(ctx context.Context, kvID, project, domain string
 
 func findOneAndDelete(ctx context.Context, kvID, project, domain string) (*model.KVDoc, error) {
 	curKV := &model.KVDoc{}
-	collection := session.GetDB().Collection(session.CollectionKV)
+	collection := dmongo.GetClient().GetDB().Collection(mmodel.CollectionKV)
 	sr := collection.FindOneAndDelete(ctx, bson.M{"id": kvID, "project": project, "domain": domain})
 	if sr.Err() != nil {
 		if sr.Err() == mongo.ErrNoDocuments {
@@ -390,7 +391,7 @@ func findOneAndDelete(ctx context.Context, kvID, project, domain string) (*model
 // txnFindOneAndDelete is to start transaction when delete KV, will create task and tombstone in a transaction operation
 func txnFindOneAndDelete(ctx context.Context, kvID, project, domain string) (*model.KVDoc, error) {
 	curKV := &model.KVDoc{}
-	taskSession, err := session.GetDB().Client().StartSession()
+	taskSession, err := dmongo.GetClient().GetDB().Client().StartSession()
 	if err != nil {
 		openlog.Error("fail to start session" + err.Error())
 		return nil, err
@@ -401,7 +402,7 @@ func txnFindOneAndDelete(ctx context.Context, kvID, project, domain string) (*mo
 	}
 	defer taskSession.EndSession(ctx)
 	if err = mongo.WithSession(ctx, taskSession, func(sessionContext mongo.SessionContext) error {
-		collection := session.GetDB().Collection(session.CollectionKV)
+		collection := dmongo.GetClient().GetDB().Collection(mmodel.CollectionKV)
 		sr := collection.FindOneAndDelete(sessionContext, bson.M{"id": kvID, "project": project, "domain": domain})
 		if sr.Err() != nil {
 			errAbort := taskSession.AbortTransaction(sessionContext)
@@ -441,7 +442,7 @@ func txnFindOneAndDelete(ctx context.Context, kvID, project, domain string) (*mo
 			}
 			return err
 		}
-		collection = session.GetDB().Collection(session.CollectionTask)
+		collection = dmongo.GetClient().GetDB().Collection(mmodel.CollectionTask)
 		_, err = collection.InsertOne(sessionContext, task)
 		if err != nil {
 			openlog.Error("create task error", openlog.WithTags(openlog.Tags{
@@ -458,7 +459,7 @@ func txnFindOneAndDelete(ctx context.Context, kvID, project, domain string) (*mo
 			return err
 		}
 		tombstone := sync.NewTombstone(domain, project, datasource.ConfigResource, datasource.TombstoneID(curKV))
-		collection = session.GetDB().Collection(session.CollectionTombstone)
+		collection = dmongo.GetClient().GetDB().Collection(mmodel.CollectionTombstone)
 		_, err = collection.InsertOne(sessionContext, tombstone)
 		if err != nil {
 			openlog.Error("create tombstone error", openlog.WithTags(openlog.Tags{
@@ -507,7 +508,7 @@ func findManyAndDelete(ctx context.Context, kvIDs []string, project, domain stri
 		}
 		return nil, 0, err
 	}
-	collection := session.GetDB().Collection(session.CollectionKV)
+	collection := dmongo.GetClient().GetDB().Collection(mmodel.CollectionKV)
 	dr, err := collection.DeleteMany(ctx, filter)
 	if err != nil {
 		openlog.Error(fmt.Sprintf("delete kvs [%v] failed : [%v]", kvIDs, err))
@@ -530,7 +531,7 @@ func txnFindManyAndDelete(ctx context.Context, kvIDs []string, project, domain s
 		return nil, 0, err
 	}
 	var deletedCount int64
-	taskSession, err := session.GetDB().Client().StartSession()
+	taskSession, err := dmongo.GetClient().GetDB().Client().StartSession()
 	if err != nil {
 		openlog.Error("fail to start session" + err.Error())
 		return nil, 0, err
@@ -542,7 +543,7 @@ func txnFindManyAndDelete(ctx context.Context, kvIDs []string, project, domain s
 	defer taskSession.EndSession(ctx)
 
 	if err = mongo.WithSession(ctx, taskSession, func(sessionContext mongo.SessionContext) error {
-		collection := session.GetDB().Collection(session.CollectionKV)
+		collection := dmongo.GetClient().GetDB().Collection(mmodel.CollectionKV)
 		filter := bson.D{
 			{Key: "id", Value: bson.M{"$in": kvIDs}},
 			{Key: "project", Value: project},
@@ -569,7 +570,7 @@ func txnFindManyAndDelete(ctx context.Context, kvIDs []string, project, domain s
 			tasksDoc[i] = task
 			tombstonesDoc[i] = tombstone
 		}
-		collection = session.GetDB().Collection(session.CollectionTask)
+		collection = dmongo.GetClient().GetDB().Collection(mmodel.CollectionTask)
 		_, err = collection.InsertMany(sessionContext, tasksDoc)
 		if err != nil {
 			openlog.Error("create tasks error", openlog.WithTags(openlog.Tags{
@@ -583,7 +584,7 @@ func txnFindManyAndDelete(ctx context.Context, kvIDs []string, project, domain s
 			}
 			return err
 		}
-		collection = session.GetDB().Collection(session.CollectionTombstone)
+		collection = dmongo.GetClient().GetDB().Collection(mmodel.CollectionTombstone)
 		_, err = collection.InsertMany(sessionContext, tombstonesDoc)
 		if err != nil {
 			openlog.Error("create tombstone error", openlog.WithTags(openlog.Tags{
@@ -609,7 +610,7 @@ func txnFindManyAndDelete(ctx context.Context, kvIDs []string, project, domain s
 }
 
 func findKeys(ctx context.Context, filter interface{}, withoutLabel bool) ([]*model.KVDoc, error) {
-	collection := session.GetDB().Collection(session.CollectionKV)
+	collection := dmongo.GetClient().GetDB().Collection(mmodel.CollectionKV)
 	cur, err := collection.Find(ctx, filter)
 	if err != nil {
 		if err.Error() == context.DeadlineExceeded.Error() {
@@ -666,7 +667,7 @@ func (s *Dao) Get(ctx context.Context, req *model.GetKVRequest) (*model.KVDoc, e
 }
 
 func (s *Dao) Total(ctx context.Context, project, domain string) (int64, error) {
-	collection := session.GetDB().Collection(session.CollectionKV)
+	collection := dmongo.GetClient().GetDB().Collection(mmodel.CollectionKV)
 	filter := bson.M{"domain": domain, "project": project}
 	total, err := collection.CountDocuments(ctx, filter)
 	if err != nil {

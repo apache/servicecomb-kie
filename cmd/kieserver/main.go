@@ -29,6 +29,9 @@ import (
 	_ "github.com/go-chassis/go-chassis/v2/middleware/monitoring"
 	_ "github.com/go-chassis/go-chassis/v2/middleware/ratelimiter"
 
+	// cari db
+	_ "github.com/go-chassis/cari/db/bootstrap"
+
 	//storage
 	_ "github.com/apache/servicecomb-kie/server/datasource/etcd"
 	_ "github.com/apache/servicecomb-kie/server/datasource/mongo"
