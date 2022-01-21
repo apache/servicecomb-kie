@@ -22,6 +22,7 @@ import (
 	"fmt"
 	"time"
 
+	"github.com/go-chassis/cari/db/mongo"
 	"github.com/go-chassis/openlog"
 	"go.mongodb.org/mongo-driver/bson"
 	"go.mongodb.org/mongo-driver/bson/primitive"
@@ -29,7 +30,7 @@ import (
 
 	"github.com/apache/servicecomb-kie/pkg/model"
 	"github.com/apache/servicecomb-kie/server/datasource"
-	"github.com/apache/servicecomb-kie/server/datasource/mongo/session"
+	mmodel "github.com/apache/servicecomb-kie/server/datasource/mongo/model"
 )
 
 //Dao is the implementation
@@ -53,7 +54,7 @@ func (s *Dao) GetHistory(ctx context.Context, kvID, project, domain string, opti
 }
 
 func getHistoryByKeyID(ctx context.Context, filter bson.M, offset, limit int64) (*model.KVResponse, error) {
-	collection := session.GetDB().Collection(session.CollectionKVRevision)
+	collection := mongo.GetClient().GetDB().Collection(mmodel.CollectionKVRevision)
 	opt := options.Find().SetSort(map[string]interface{}{
 		"update_revision": -1,
 	})
@@ -95,7 +96,7 @@ func getHistoryByKeyID(ctx context.Context, filter bson.M, offset, limit int64) 
 
 //AddHistory add kv history
 func (s *Dao) AddHistory(ctx context.Context, kv *model.KVDoc) error {
-	collection := session.GetDB().Collection(session.CollectionKVRevision)
+	collection := mongo.GetClient().GetDB().Collection(mmodel.CollectionKVRevision)
 	_, err := collection.InsertOne(ctx, kv)
 	if err != nil {
 		openlog.Error(err.Error())
@@ -112,7 +113,7 @@ func (s *Dao) AddHistory(ctx context.Context, kv *model.KVDoc) error {
 //DelayDeletionTime add delete time to all revisions of the kv,
 //thus these revisions will be automatically deleted by TTL index.
 func (s *Dao) DelayDeletionTime(ctx context.Context, kvIDs []string, project, domain string) error {
-	collection := session.GetDB().Collection(session.CollectionKVRevision)
+	collection := mongo.GetClient().GetDB().Collection(mmodel.CollectionKVRevision)
 	now := time.Now()
 	filter := bson.D{
 		{Key: "id", Value: bson.M{"$in": kvIDs}},
@@ -134,7 +135,7 @@ func (s *Dao) DelayDeletionTime(ctx context.Context, kvIDs []string, project, do
 //historyRotate delete historical versions for a key that exceeds the limited number
 func historyRotate(ctx context.Context, kvID, project, domain string) error {
 	filter := bson.M{"id": kvID, "domain": domain, "project": project}
-	collection := session.GetDB().Collection(session.CollectionKVRevision)
+	collection := mongo.GetClient().GetDB().Collection(mmodel.CollectionKVRevision)
 	curTotal, err := collection.CountDocuments(ctx, filter)
 	if err != nil {
 		return err

@@ -1,9 +1,9 @@
 module github.com/apache/servicecomb-kie
 
 require (
-	github.com/apache/servicecomb-service-center/eventbase v0.0.0-20211230015739-512a9cc7b4cd
+	github.com/apache/servicecomb-service-center/eventbase v0.0.0-20220120070230-26997eb876ca
 	github.com/emicklei/go-restful v2.12.0+incompatible
-	github.com/go-chassis/cari v0.5.1-0.20211229072151-7fa40d0919c6
+	github.com/go-chassis/cari v0.5.1-0.20220119150556-8ae374a2649d
 	github.com/go-chassis/foundation v0.4.0
 	github.com/go-chassis/go-archaius v1.5.2-0.20210301074935-e4694f6b077b
 	github.com/go-chassis/go-chassis/v2 v2.3.1-0.20211217084436-360a6a6a0ef3
@@ -11,11 +11,10 @@ require (
 	github.com/go-chassis/seclog v1.3.1-0.20210917082355-52c40864f240
 	github.com/gofrs/uuid v4.0.0+incompatible
 	github.com/hashicorp/serf v0.9.5
-	github.com/little-cui/etcdadpt v0.3.1
+	github.com/little-cui/etcdadpt v0.3.2
 	github.com/stretchr/testify v1.7.0
 	github.com/urfave/cli v1.22.4
 	go.mongodb.org/mongo-driver v1.4.6
-	gopkg.in/mgo.v2 v2.0.0-20190816093944-a6b53ec6cb22
 	gopkg.in/yaml.v2 v2.4.0
 )
 

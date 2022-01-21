@@ -20,13 +20,15 @@ package track
 import (
 	"context"
 
-	"github.com/apache/servicecomb-kie/pkg/model"
-	"github.com/apache/servicecomb-kie/server/datasource"
-	"github.com/apache/servicecomb-kie/server/datasource/mongo/session"
+	dmongo "github.com/go-chassis/cari/db/mongo"
 	"github.com/go-chassis/openlog"
 	"github.com/gofrs/uuid"
 	"go.mongodb.org/mongo-driver/bson"
 	"go.mongodb.org/mongo-driver/mongo"
+
+	"github.com/apache/servicecomb-kie/pkg/model"
+	"github.com/apache/servicecomb-kie/server/datasource"
+	mmodel "github.com/apache/servicecomb-kie/server/datasource/mongo/model"
 )
 
 //Dao is the implementation
@@ -36,7 +38,7 @@ type Dao struct {
 //CreateOrUpdate create a record or update exist record
 //If revision and session_id exists then update else insert
 func (s *Dao) CreateOrUpdate(ctx context.Context, detail *model.PollingDetail) (*model.PollingDetail, error) {
-	collection := session.GetDB().Collection(session.CollectionPollingDetail)
+	collection := dmongo.GetClient().GetDB().Collection(mmodel.CollectionPollingDetail)
 	queryFilter := bson.M{"revision": detail.Revision, "domain": detail.Domain, "session_id": detail.SessionID}
 	res := collection.FindOne(ctx, queryFilter)
 	if res.Err() != nil {
@@ -63,7 +65,7 @@ func (s *Dao) CreateOrUpdate(ctx context.Context, detail *model.PollingDetail) (
 
 //Get is to get a track data
 func (s *Dao) GetPollingDetail(ctx context.Context, detail *model.PollingDetail) ([]*model.PollingDetail, error) {
-	collection := session.GetDB().Collection(session.CollectionPollingDetail)
+	collection := dmongo.GetClient().GetDB().Collection(mmodel.CollectionPollingDetail)
 	queryFilter := bson.M{"domain": detail.Domain}
 	if detail.SessionID != "" {
 		queryFilter["session_id"] = detail.SessionID
