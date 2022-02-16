@@ -3,7 +3,7 @@ module github.com/apache/servicecomb-kie
 require (
 	github.com/apache/servicecomb-service-center/eventbase v0.0.0-20220120070230-26997eb876ca
 	github.com/emicklei/go-restful v2.12.0+incompatible
-	github.com/go-chassis/cari v0.5.1-0.20220119150556-8ae374a2649d
+	github.com/go-chassis/cari v0.5.1-0.20220216075429-46c79de3311f
 	github.com/go-chassis/foundation v0.4.0
 	github.com/go-chassis/go-archaius v1.5.2-0.20210301074935-e4694f6b077b
 	github.com/go-chassis/go-chassis/v2 v2.3.1-0.20211217084436-360a6a6a0ef3
