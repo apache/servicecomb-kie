@@ -35,7 +35,6 @@ import (
 
 	"github.com/apache/servicecomb-kie/pkg/common"
 	"github.com/apache/servicecomb-kie/pkg/model"
-	"github.com/apache/servicecomb-kie/server/datasource/mongo/session"
 	"github.com/apache/servicecomb-kie/server/pubsub"
 	goRestful "github.com/emicklei/go-restful"
 	"github.com/go-chassis/cari/config"
@@ -69,6 +68,10 @@ func NewObserver() (*pubsub.Observer, error) {
 //err
 var (
 	ErrInvalidRev = errors.New(common.MsgInvalidRev)
+
+	ErrMissingDomain  = errors.New("domain info missing, illegal access")
+	ErrMissingProject = errors.New("project info missing, illegal access")
+	ErrIDIsNil        = errors.New("id is empty")
 )
 
 //ReadClaims get auth info
@@ -242,7 +245,7 @@ func checkPagination(offsetStr, limitStr string) (int64, int64, error) {
 
 func validateGet(domain, project, kvID string) error {
 	if kvID == "" {
-		return session.ErrIDIsNil
+		return ErrIDIsNil
 	}
 	return checkDomainAndProject(domain, project)
 }
@@ -257,10 +260,10 @@ func validateDeleteList(domain, project string) error {
 
 func checkDomainAndProject(domain, project string) error {
 	if domain == "" {
-		return session.ErrMissingDomain
+		return ErrMissingDomain
 	}
 	if project == "" {
-		return session.ErrMissingProject
+		return ErrMissingProject
 	}
 	return nil
 }

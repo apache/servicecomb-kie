@@ -21,10 +21,12 @@ import (
 	"context"
 	"errors"
 
-	"github.com/apache/servicecomb-kie/server/datasource/mongo/session"
+	"github.com/go-chassis/cari/db/mongo"
 	"github.com/go-chassis/openlog"
 	"go.mongodb.org/mongo-driver/bson"
 	"go.mongodb.org/mongo-driver/mongo/options"
+
+	"github.com/apache/servicecomb-kie/server/datasource/mongo/model"
 )
 
 const revision = "revision_counter"
@@ -35,7 +37,7 @@ type Dao struct {
 
 //GetRevision return current revision number
 func (s *Dao) GetRevision(ctx context.Context, domain string) (int64, error) {
-	collection := session.GetDB().Collection(session.CollectionCounter)
+	collection := mongo.GetClient().GetDB().Collection(model.CollectionCounter)
 	filter := bson.M{"name": revision, "domain": domain}
 	cur, err := collection.Find(ctx, filter)
 	if err != nil {
@@ -59,7 +61,7 @@ func (s *Dao) GetRevision(ctx context.Context, domain string) (int64, error) {
 
 //ApplyRevision increase revision number and return modified value
 func (s *Dao) ApplyRevision(ctx context.Context, domain string) (int64, error) {
-	collection := session.GetDB().Collection(session.CollectionCounter)
+	collection := mongo.GetClient().GetDB().Collection(model.CollectionCounter)
 	filter := bson.M{"name": revision, "domain": domain}
 	sr := collection.FindOneAndUpdate(ctx, filter,
 		bson.D{

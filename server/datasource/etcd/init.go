@@ -22,9 +22,9 @@ import (
 	"fmt"
 	"github.com/apache/servicecomb-kie/server/datasource/etcd/project"
 
-	// support embedded etcd
-	_ "github.com/little-cui/etcdadpt/embedded"
-	_ "github.com/little-cui/etcdadpt/remote"
+	"github.com/go-chassis/cari/db"
+	dconfig "github.com/go-chassis/cari/db/config"
+	"github.com/go-chassis/openlog"
 
 	"github.com/apache/servicecomb-kie/server/config"
 	"github.com/apache/servicecomb-kie/server/datasource"
@@ -33,8 +33,6 @@ import (
 	"github.com/apache/servicecomb-kie/server/datasource/etcd/kv"
 	"github.com/apache/servicecomb-kie/server/datasource/etcd/track"
 	"github.com/apache/servicecomb-kie/server/datasource/tlsutil"
-	"github.com/go-chassis/openlog"
-	"github.com/little-cui/etcdadpt"
 )
 
 type Broker struct {
@@ -51,11 +49,13 @@ func NewFrom(c *datasource.Config) (datasource.Broker, error) {
 			return nil, err
 		}
 	}
-	return &Broker{}, etcdadpt.Init(etcdadpt.Config{
-		Kind:             kind,
-		ClusterAddresses: c.URI,
-		SslEnabled:       c.SSLEnabled,
-		TLSConfig:        tlsConfig,
+	return &Broker{}, db.Init(&dconfig.Config{
+		Kind:       kind,
+		URI:        c.URI,
+		PoolSize:   c.PoolSize,
+		SSLEnabled: c.SSLEnabled,
+		TLSConfig:  tlsConfig,
+		Timeout:    c.Timeout,
 	})
 }
 func (*Broker) GetRevisionDao() datasource.RevisionDao {

@@ -49,11 +49,18 @@ func ParseConfig(args []string) (err error) {
 			Usage:       "kie use this ip port to join a kie cluster, example: --peer-addr=10.1.1.10:5000",
 			Destination: &config.Configurations.PeerAddr,
 			EnvVar:      "PEER_ADDR",
-		}, cli.StringFlag{
+		},
+		cli.StringFlag{
 			Name:        "listen-peer-addr",
 			Usage:       "listen on ip port, kie receive events example: --listen-peer-addr=10.1.1.10:5000",
 			Destination: &config.Configurations.ListenPeerAddr,
 			EnvVar:      "LISTEN_PEER_ADDR",
+		},
+		cli.StringFlag{
+			Name:        "advertise-addr",
+			Usage:       "kie advertise addr, kie advertise addr example: --advertise-addr=10.1.1.10:5000",
+			Destination: &config.Configurations.AdvertiseAddr,
+			EnvVar:      "ADVERTISE_ADDR",
 		},
 	}
 	app.Action = func(c *cli.Context) error {

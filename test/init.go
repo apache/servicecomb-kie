@@ -18,23 +18,21 @@
 package test
 
 import (
-	"time"
+	"github.com/go-chassis/go-archaius"
+	"github.com/go-chassis/go-chassis/v2/security/cipher"
 
 	"github.com/apache/servicecomb-kie/pkg/validator"
 	"github.com/apache/servicecomb-kie/server/config"
 	"github.com/apache/servicecomb-kie/server/datasource"
 	edatasource "github.com/apache/servicecomb-service-center/eventbase/datasource"
-	"github.com/go-chassis/cari/db"
-	"github.com/go-chassis/go-archaius"
-	"github.com/go-chassis/go-chassis/v2/security/cipher"
+
+	_ "github.com/go-chassis/cari/db/bootstrap"
 
 	_ "github.com/apache/servicecomb-kie/server/datasource/etcd"
 	_ "github.com/apache/servicecomb-kie/server/datasource/mongo"
 	_ "github.com/apache/servicecomb-kie/server/pubsub/notifier"
 	_ "github.com/apache/servicecomb-service-center/eventbase/bootstrap"
 	_ "github.com/go-chassis/go-chassis/v2/security/cipher/plugins/plain"
-	_ "github.com/little-cui/etcdadpt/embedded"
-	_ "github.com/little-cui/etcdadpt/remote"
 )
 
 var (
@@ -75,16 +73,9 @@ func init() {
 	if err != nil {
 		panic(err)
 	}
-	if kind != "embedded_etcd" {
-		eventbaseDBCfg := db.Config{
-			URI:     uri,
-			Kind:    kind,
-			Timeout: 10 * time.Second,
-		}
-		err = edatasource.Init(eventbaseDBCfg)
-		if err != nil {
-			panic(err)
-		}
+	err = edatasource.Init(kind)
+	if err != nil {
+		panic(err)
 	}
 }
 
