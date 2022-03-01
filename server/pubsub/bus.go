@@ -18,6 +18,7 @@
 package pubsub
 
 import (
+	"strings"
 	"sync"
 	"time"
 
@@ -54,13 +55,16 @@ type Bus struct {
 func Init() {
 	once.Do(func() {
 		ac := agent.DefaultConfig()
+		sc := serf.DefaultConfig()
+		setSerfAdvertiseAddr(sc, ac.BindAddr)
 		if config.Configurations.ListenPeerAddr != "" {
 			ac.BindAddr = config.Configurations.ListenPeerAddr
 		}
 		if config.Configurations.AdvertiseAddr != "" {
 			ac.AdvertiseAddr = config.Configurations.AdvertiseAddr
+			serfAdvertiseAddr := strings.Split(config.Configurations.AdvertiseAddr, ":")
+			setSerfAdvertiseAddr(sc, serfAdvertiseAddr[0])
 		}
-		sc := serf.DefaultConfig()
 		if config.Configurations.NodeName != "" {
 			sc.NodeName = config.Configurations.NodeName
 		}
@@ -81,6 +85,11 @@ func Init() {
 			}
 		}
 	})
+}
+
+// set serf advertiseAddr value
+func setSerfAdvertiseAddr(conf *serf.Config, advertiseAddr string) {
+	conf.MemberlistConfig.AdvertiseAddr = advertiseAddr
 }
 
 //Start start serf agent

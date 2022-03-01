@@ -20,13 +20,13 @@ package project
 import (
 	"context"
 	"fmt"
-	"strings"
-
 	"github.com/apache/servicecomb-kie/pkg/model"
 	"github.com/apache/servicecomb-kie/server/datasource"
-	"github.com/apache/servicecomb-kie/server/datasource/mongo/session"
+	mmodel "github.com/apache/servicecomb-kie/server/datasource/mongo/model"
+	"github.com/go-chassis/cari/db/mongo"
 	"github.com/go-chassis/openlog"
 	"go.mongodb.org/mongo-driver/bson"
+	"strings"
 )
 
 const (
@@ -40,7 +40,7 @@ type Dao struct {
 
 //Total get projects total counts by domain
 func (s *Dao) Total(ctx context.Context, domain string) (int64, error) {
-	collection := session.GetDB().Collection(session.CollectionKV)
+	collection := mongo.GetClient().GetDB().Collection(mmodel.CollectionKV)
 	filter := bson.M{"domain": domain}
 	total, err := collection.CountDocuments(ctx, filter)
 	if err != nil {
@@ -72,7 +72,7 @@ func (s *Dao) List(ctx context.Context, domain string, options ...datasource.Fin
 }
 
 func findProjects(ctx context.Context, domain string, opts datasource.FindOptions) ([]interface{}, int, error) {
-	collection := session.GetDB().Collection(session.CollectionKV)
+	collection := mongo.GetClient().GetDB().Collection(mmodel.CollectionKV)
 	ctx, cancel := context.WithTimeout(ctx, opts.Timeout)
 	defer cancel()
 
