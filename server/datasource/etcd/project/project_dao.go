@@ -19,6 +19,7 @@ package project
 
 import (
 	"context"
+	"errors"
 
 	"github.com/apache/servicecomb-kie/pkg/model"
 	"github.com/apache/servicecomb-kie/server/datasource"
@@ -31,11 +32,11 @@ type Dao struct {
 //Total get projects total counts by domain
 func (s *Dao) Total(ctx context.Context, domain string) (int64, error) {
 	// TODO etcd needs to be done
-	return 0, nil
+	return 0, errors.New("can not list project,etcd not support yet")
 }
 
 //List get projects list by domain and name
 func (s *Dao) List(ctx context.Context, domain string, options ...datasource.FindOption) (*model.ProjectResponse, error) {
 	// TODO etcd needs to be done
-	return nil, nil
+	return nil, errors.New("can not list project,etcd not support yet")
 }
