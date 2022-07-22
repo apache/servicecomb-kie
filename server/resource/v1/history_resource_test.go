@@ -25,18 +25,17 @@ import (
 	"net/http/httptest"
 	"testing"
 
-	"github.com/go-chassis/go-chassis/v2/core/common"
-	"github.com/go-chassis/go-chassis/v2/core/handler"
-	"github.com/go-chassis/go-chassis/v2/server/restful/restfultest"
-	"github.com/stretchr/testify/assert"
+	_ "github.com/apache/servicecomb-kie/test"
 
 	common2 "github.com/apache/servicecomb-kie/pkg/common"
 	"github.com/apache/servicecomb-kie/pkg/model"
 	handler2 "github.com/apache/servicecomb-kie/server/handler"
 	v1 "github.com/apache/servicecomb-kie/server/resource/v1"
 	kvsvc "github.com/apache/servicecomb-kie/server/service/kv"
-
-	_ "github.com/apache/servicecomb-kie/server/datasource/mongo"
+	"github.com/go-chassis/go-chassis/v2/core/common"
+	"github.com/go-chassis/go-chassis/v2/core/handler"
+	"github.com/go-chassis/go-chassis/v2/server/restful/restfultest"
+	"github.com/stretchr/testify/assert"
 )
 
 func TestHistoryResource_GetRevisions(t *testing.T) {
@@ -92,7 +91,6 @@ func TestHistoryResource_GetRevisions(t *testing.T) {
 		err = json.Unmarshal(body, &data)
 		assert.Equal(t, before+1, len(data.Data))
 	})
-
 }
 
 func TestHistoryResource_GetPollingData(t *testing.T) {
@@ -129,5 +127,4 @@ func TestHistoryResource_GetPollingData(t *testing.T) {
 		assert.NoError(t, err)
 		assert.NotEmpty(t, result.Data)
 	})
-
 }

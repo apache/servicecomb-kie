@@ -30,23 +30,15 @@ import (
 	"testing"
 	"time"
 
-	"github.com/go-chassis/go-archaius"
-	"github.com/go-chassis/go-chassis/v2/pkg/backends/quota"
-	"github.com/go-chassis/go-chassis/v2/server/restful/restfultest"
-	"github.com/go-chassis/openlog"
-	log "github.com/go-chassis/seclog"
-	"github.com/stretchr/testify/assert"
+	_ "github.com/apache/servicecomb-kie/test"
 
 	common2 "github.com/apache/servicecomb-kie/pkg/common"
 	"github.com/apache/servicecomb-kie/pkg/model"
-	"github.com/apache/servicecomb-kie/server/config"
 	"github.com/apache/servicecomb-kie/server/plugin/qms"
-	"github.com/apache/servicecomb-kie/server/pubsub"
 	v1 "github.com/apache/servicecomb-kie/server/resource/v1"
-
-	_ "github.com/apache/servicecomb-kie/server/datasource/mongo"
-	_ "github.com/apache/servicecomb-kie/server/plugin/qms"
-	_ "github.com/apache/servicecomb-kie/test"
+	"github.com/go-chassis/go-archaius"
+	"github.com/go-chassis/go-chassis/v2/server/restful/restfultest"
+	"github.com/stretchr/testify/assert"
 )
 
 var string32 = "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa" //32
@@ -56,31 +48,6 @@ var string8192 = string1024 + string1024 + string1024 + string1024 + string1024 
 var string65536 = string8192 + string8192 + string8192 + string8192 + string8192 + string8192 + string8192 + string8192
 var string131072 = string65536 + string65536
 
-func init() {
-	log.Init(log.Config{
-		Writers:       []string{"stdout"},
-		LoggerLevel:   "DEBUG",
-		LogFormatText: false,
-	})
-	logger := log.NewLogger("ut")
-	openlog.SetLogger(logger)
-	//for UT
-	config.Configurations = &config.Config{
-		DB:             config.DB{},
-		ListenPeerAddr: "127.0.0.1:4000",
-		AdvertiseAddr:  "127.0.0.1:4000",
-	}
-
-	pubsub.Init()
-	pubsub.Start()
-
-	err := quota.Init(quota.Options{
-		Plugin: "build-in",
-	})
-	if err != nil {
-		panic(err)
-	}
-}
 func TestKVResource_Post(t *testing.T) {
 	t.Run("post kv, label is invalid, should return err", func(t *testing.T) {
 		kv := &model.KVDoc{

@@ -58,7 +58,7 @@ func ParseConfig(args []string) (err error) {
 		},
 		cli.StringFlag{
 			Name:        "advertise-addr",
-			Usage:       "kie advertise addr, kie advertise addr example: --advertise-addr=10.1.1.10:5000",
+			Usage:       "advertise host port to other members, example: --advertise-addr=kie.svc.cluster.local:5000",
 			Destination: &config.Configurations.AdvertiseAddr,
 			EnvVar:      "ADVERTISE_ADDR",
 		},
