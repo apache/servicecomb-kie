@@ -57,18 +57,16 @@ func Init() {
 	once.Do(func() {
 		ac := agent.DefaultConfig()
 		sc := serf.DefaultConfig()
+		scmc := sc.MemberlistConfig
 		listenPeerAddr := config.Configurations.ListenPeerAddr
-		advertiseAddr := config.Configurations.AdvertiseAddr
-		memberConfig := sc.MemberlistConfig
 		if listenPeerAddr != "" {
 			ac.BindAddr = listenPeerAddr
-			memberConfig.BindAddr, memberConfig.BindPort = splitHostPort(listenPeerAddr,
-				memberConfig.BindAddr, memberConfig.BindPort)
+			scmc.BindAddr, scmc.BindPort = splitHostPort(listenPeerAddr, scmc.BindAddr, scmc.BindPort)
 		}
+		advertiseAddr := config.Configurations.AdvertiseAddr
 		if advertiseAddr != "" {
 			ac.AdvertiseAddr = advertiseAddr
-			memberConfig.AdvertiseAddr, memberConfig.AdvertisePort = splitHostPort(advertiseAddr,
-				memberConfig.AdvertiseAddr, memberConfig.AdvertisePort)
+			scmc.AdvertiseAddr, scmc.AdvertisePort = splitHostPort(advertiseAddr, scmc.AdvertiseAddr, scmc.AdvertisePort)
 		}
 		if config.Configurations.NodeName != "" {
 			sc.NodeName = config.Configurations.NodeName
@@ -80,14 +78,6 @@ func Init() {
 		}
 		bus = &Bus{
 			agent: a,
-		}
-		if config.Configurations.PeerAddr != "" {
-			err := join([]string{config.Configurations.PeerAddr})
-			if err != nil {
-				openlog.Fatal("lost event message")
-			} else {
-				openlog.Info("join kie node:" + config.Configurations.PeerAddr)
-			}
 		}
 	})
 }
@@ -117,6 +107,15 @@ func Start() {
 	openlog.Info("kie message bus started")
 	eh := &ClusterEventHandler{}
 	bus.agent.RegisterEventHandler(eh)
+
+	if config.Configurations.PeerAddr != "" {
+		err := join([]string{config.Configurations.PeerAddr})
+		if err != nil {
+			openlog.Fatal("lost event message")
+		} else {
+			openlog.Info("join kie node:" + config.Configurations.PeerAddr)
+		}
+	}
 }
 func join(addresses []string) error {
 	_, err := bus.agent.Join(addresses, false)
