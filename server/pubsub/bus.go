@@ -57,17 +57,19 @@ func Init() {
 	once.Do(func() {
 		ac := agent.DefaultConfig()
 		sc := serf.DefaultConfig()
-		if config.Configurations.ListenPeerAddr != "" {
-			ac.BindAddr = config.Configurations.ListenPeerAddr
-		}
-		if config.Configurations.AdvertiseAddr != "" {
-			ac.AdvertiseAddr = config.Configurations.AdvertiseAddr
-		}
+		listenPeerAddr := config.Configurations.ListenPeerAddr
+		advertiseAddr := config.Configurations.AdvertiseAddr
 		memberConfig := sc.MemberlistConfig
-		memberConfig.BindAddr, memberConfig.BindPort = splitHostPort(ac.BindAddr,
-			memberConfig.BindAddr, memberConfig.BindPort)
-		memberConfig.AdvertiseAddr, memberConfig.AdvertisePort = splitHostPort(ac.AdvertiseAddr,
-			memberConfig.AdvertiseAddr, memberConfig.AdvertisePort)
+		if listenPeerAddr != "" {
+			ac.BindAddr = listenPeerAddr
+			memberConfig.BindAddr, memberConfig.BindPort = splitHostPort(listenPeerAddr,
+				memberConfig.BindAddr, memberConfig.BindPort)
+		}
+		if advertiseAddr != "" {
+			ac.AdvertiseAddr = advertiseAddr
+			memberConfig.AdvertiseAddr, memberConfig.AdvertisePort = splitHostPort(advertiseAddr,
+				memberConfig.AdvertiseAddr, memberConfig.AdvertisePort)
+		}
 		if config.Configurations.NodeName != "" {
 			sc.NodeName = config.Configurations.NodeName
 		}
