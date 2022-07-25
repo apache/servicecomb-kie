@@ -17,12 +17,9 @@ func init() {
 	}
 }
 
-var string32 = "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa" //32
-var string128 = string32 + string32 + string32 + string32
-var string1024 = string128 + string128 + string128 + string128 + string128 + string128 + string128 + string128
-var string8192 = string1024 + string1024 + string1024 + string1024 + string1024 + string1024 + string1024 + string1024
-var string65536 = string8192 + string8192 + string8192 + string8192 + string8192 + string8192 + string8192 + string8192
-var string131072 = string65536 + string65536
+var string32 = strings.Repeat("a", 32)
+var string2048 = strings.Repeat("a", 2048)
+var string131072 = strings.Repeat("a", 131072)
 
 func TestValidate(t *testing.T) {
 	kvDoc := &model.KVDoc{Project: "a", Domain: "a",
@@ -64,7 +61,7 @@ func TestKey(t *testing.T) {
 	assert.Error(t, validator.Validate(kvDoc))
 
 	kvDoc = &model.KVDoc{Project: "a", Domain: "a",
-		Key:   string128 + "a",
+		Key:   string2048 + "a",
 		Value: "a",
 	}
 	assert.Error(t, validator.Validate(kvDoc))

@@ -33,7 +33,7 @@ type LabelDoc struct {
 type KVDoc struct {
 	ID             string `json:"id,omitempty" bson:"id,omitempty" yaml:"id,omitempty" swag:"string"`
 	LabelFormat    string `json:"label_format,omitempty" bson:"label_format,omitempty" yaml:"label_format,omitempty"`
-	Key            string `json:"key" yaml:"key" validate:"min=1,max=128,key"`
+	Key            string `json:"key" yaml:"key" validate:"min=1,max=2048,key"`
 	Value          string `json:"value" yaml:"value" validate:"max=131072,value"`                                                    //128K
 	ValueType      string `json:"value_type,omitempty" bson:"value_type,omitempty" yaml:"value_type,omitempty" validate:"valueType"` //ini,json,text,yaml,properties,xml
 	Checker        string `json:"check,omitempty" yaml:"check,omitempty" validate:"max=1048576,check"`                               //python script
