@@ -226,31 +226,30 @@ func returnData(rctx *restful.Context, request *model.ListKVRequest) {
 		}
 		rctx.WriteHeader(http.StatusNotModified)
 		return
+	}
+	revised, err := revNotMatch(rctx.Ctx, revStr, request.Domain)
+	if err != nil {
+		if err == ErrInvalidRev {
+			WriteErrResponse(rctx, config.ErrInvalidParams, err.Error())
+			return
+		}
+		WriteErrResponse(rctx, config.ErrInternal, err.Error())
+		return
+	}
+	if revised {
+		queryAndResponse(rctx, request)
+		return
+	} else if wait != "" {
+		if !isLegalWaitRequest(rctx, request) {
+			return
+		}
+		if watch(rctx, request, wait) {
+			return
+		}
+		rctx.WriteHeader(http.StatusNotModified)
+		return
 	} else {
-		revised, err := revNotMatch(rctx.Ctx, revStr, request.Domain)
-		if err != nil {
-			if err == ErrInvalidRev {
-				WriteErrResponse(rctx, config.ErrInvalidParams, err.Error())
-				return
-			}
-			WriteErrResponse(rctx, config.ErrInternal, err.Error())
-			return
-		}
-		if revised {
-			queryAndResponse(rctx, request)
-			return
-		} else if wait != "" {
-			if !isLegalWaitRequest(rctx, request) {
-				return
-			}
-			if watch(rctx, request, wait) {
-				return
-			}
-			rctx.WriteHeader(http.StatusNotModified)
-			return
-		} else {
-			rctx.WriteHeader(http.StatusNotModified)
-		}
+		rctx.WriteHeader(http.StatusNotModified)
 	}
 }
 func isLegalWaitRequest(rctx *restful.Context, request *model.ListKVRequest) bool {

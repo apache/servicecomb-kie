@@ -18,11 +18,12 @@
 package pubsub
 
 import (
-	"strings"
+	"encoding/json"
+	"fmt"
+	"net"
+	"strconv"
 	"sync"
 	"time"
-
-	"encoding/json"
 
 	"github.com/apache/servicecomb-kie/server/config"
 	"github.com/go-chassis/openlog"
@@ -56,15 +57,17 @@ func Init() {
 	once.Do(func() {
 		ac := agent.DefaultConfig()
 		sc := serf.DefaultConfig()
-		setSerfAdvertiseAddr(sc, ac.BindAddr)
 		if config.Configurations.ListenPeerAddr != "" {
 			ac.BindAddr = config.Configurations.ListenPeerAddr
 		}
 		if config.Configurations.AdvertiseAddr != "" {
 			ac.AdvertiseAddr = config.Configurations.AdvertiseAddr
-			serfAdvertiseAddr := strings.Split(config.Configurations.AdvertiseAddr, ":")
-			setSerfAdvertiseAddr(sc, serfAdvertiseAddr[0])
 		}
+		memberConfig := sc.MemberlistConfig
+		memberConfig.BindAddr, memberConfig.BindPort = splitHostPort(ac.BindAddr,
+			memberConfig.BindAddr, memberConfig.BindPort)
+		memberConfig.AdvertiseAddr, memberConfig.AdvertisePort = splitHostPort(ac.AdvertiseAddr,
+			memberConfig.AdvertiseAddr, memberConfig.AdvertisePort)
 		if config.Configurations.NodeName != "" {
 			sc.NodeName = config.Configurations.NodeName
 		}
@@ -87,9 +90,20 @@ func Init() {
 	})
 }
 
-// set serf advertiseAddr value
-func setSerfAdvertiseAddr(conf *serf.Config, advertiseAddr string) {
-	conf.MemberlistConfig.AdvertiseAddr = advertiseAddr
+// splitHostPort split input string to host port
+func splitHostPort(advertiseAddr string, defaultHost string, defaultPort int) (string, int) {
+	if len(advertiseAddr) == 0 {
+		return defaultHost, defaultPort
+	}
+	host, port, err := net.SplitHostPort(advertiseAddr)
+	if err != nil {
+		openlog.Fatal(fmt.Sprintf("split string[%s] to host:port failed", advertiseAddr))
+	}
+	p, err := strconv.Atoi(port)
+	if err != nil {
+		openlog.Fatal(fmt.Sprintf("invalid port in string[%s]", advertiseAddr))
+	}
+	return host, p
 }
 
 //Start start serf agent

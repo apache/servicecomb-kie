@@ -25,6 +25,8 @@ import (
 	"net/http/httptest"
 	"testing"
 
+	_ "github.com/apache/servicecomb-kie/test"
+
 	"github.com/apache/servicecomb-kie/pkg/model"
 	v1 "github.com/apache/servicecomb-kie/server/resource/v1"
 	"github.com/go-chassis/go-chassis/v2/server/restful/restfultest"

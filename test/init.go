@@ -18,21 +18,26 @@
 package test
 
 import (
-	"github.com/go-chassis/go-archaius"
-	"github.com/go-chassis/go-chassis/v2/security/cipher"
-
-	"github.com/apache/servicecomb-kie/pkg/validator"
-	"github.com/apache/servicecomb-kie/server/config"
-	"github.com/apache/servicecomb-kie/server/datasource"
-	edatasource "github.com/apache/servicecomb-service-center/eventbase/datasource"
+	"fmt"
+	"math/rand"
 
 	_ "github.com/go-chassis/cari/db/bootstrap"
 
 	_ "github.com/apache/servicecomb-kie/server/datasource/etcd"
 	_ "github.com/apache/servicecomb-kie/server/datasource/mongo"
+	_ "github.com/apache/servicecomb-kie/server/plugin/qms"
 	_ "github.com/apache/servicecomb-kie/server/pubsub/notifier"
 	_ "github.com/apache/servicecomb-service-center/eventbase/bootstrap"
 	_ "github.com/go-chassis/go-chassis/v2/security/cipher/plugins/plain"
+
+	"github.com/apache/servicecomb-kie/pkg/validator"
+	"github.com/apache/servicecomb-kie/server/config"
+	"github.com/apache/servicecomb-kie/server/datasource"
+	"github.com/apache/servicecomb-kie/server/pubsub"
+	edatasource "github.com/apache/servicecomb-service-center/eventbase/datasource"
+	"github.com/go-chassis/go-archaius"
+	"github.com/go-chassis/go-chassis/v2/pkg/backends/quota"
+	"github.com/go-chassis/go-chassis/v2/security/cipher"
 )
 
 var (
@@ -77,6 +82,32 @@ func init() {
 	if err != nil {
 		panic(err)
 	}
+
+	//for UT
+	addr := randomListenAddress()
+	config.Configurations = &config.Config{
+		DB:             config.DB{},
+		ListenPeerAddr: addr,
+		AdvertiseAddr:  addr,
+	}
+
+	pubsub.Init()
+	pubsub.Start()
+
+	err = quota.Init(quota.Options{
+		Plugin: "build-in",
+	})
+	if err != nil {
+		panic(err)
+	}
+}
+
+func randomListenAddress() string {
+	min := 4000
+	step := 1000
+	port := min + rand.Intn(step)
+	addr := fmt.Sprintf("127.0.0.1:%d", port)
+	return addr
 }
 
 func IsEmbeddedetcdMode() bool {

@@ -21,16 +21,12 @@ import (
 	"testing"
 
 	_ "github.com/apache/servicecomb-kie/test"
-	"github.com/gofrs/uuid"
 
-	"github.com/apache/servicecomb-kie/server/config"
 	"github.com/apache/servicecomb-kie/server/pubsub"
+	"github.com/gofrs/uuid"
 )
 
 func TestInit(t *testing.T) {
-	config.Configurations = &config.Config{}
-	pubsub.Init()
-	pubsub.Start()
 	id, _ := uuid.NewV4()
 	o := &pubsub.Observer{
 		UUID:  id.String(),

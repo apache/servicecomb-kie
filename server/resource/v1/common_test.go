@@ -21,6 +21,8 @@ import (
 	"net/http"
 	"testing"
 
+	_ "github.com/apache/servicecomb-kie/test"
+
 	v1 "github.com/apache/servicecomb-kie/server/resource/v1"
 	"github.com/emicklei/go-restful"
 	"github.com/stretchr/testify/assert"
@@ -42,5 +44,4 @@ func TestGetLabels(t *testing.T) {
 	c, err = v1.ReadLabelCombinations(restful.NewRequest(r))
 	assert.NoError(t, err)
 	assert.Equal(t, 1, len(c))
-
 }
