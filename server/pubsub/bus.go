@@ -57,17 +57,17 @@ func Init() {
 	once.Do(func() {
 		ac := agent.DefaultConfig()
 		sc := serf.DefaultConfig()
-		if config.Configurations.ListenPeerAddr != "" {
-			ac.BindAddr = config.Configurations.ListenPeerAddr
+		scmc := sc.MemberlistConfig
+		listenPeerAddr := config.Configurations.ListenPeerAddr
+		if listenPeerAddr != "" {
+			ac.BindAddr = listenPeerAddr
+			scmc.BindAddr, scmc.BindPort = splitHostPort(listenPeerAddr, scmc.BindAddr, scmc.BindPort)
 		}
-		if config.Configurations.AdvertiseAddr != "" {
-			ac.AdvertiseAddr = config.Configurations.AdvertiseAddr
+		advertiseAddr := config.Configurations.AdvertiseAddr
+		if advertiseAddr != "" {
+			ac.AdvertiseAddr = advertiseAddr
+			scmc.AdvertiseAddr, scmc.AdvertisePort = splitHostPort(advertiseAddr, scmc.AdvertiseAddr, scmc.AdvertisePort)
 		}
-		memberConfig := sc.MemberlistConfig
-		memberConfig.BindAddr, memberConfig.BindPort = splitHostPort(ac.BindAddr,
-			memberConfig.BindAddr, memberConfig.BindPort)
-		memberConfig.AdvertiseAddr, memberConfig.AdvertisePort = splitHostPort(ac.AdvertiseAddr,
-			memberConfig.AdvertiseAddr, memberConfig.AdvertisePort)
 		if config.Configurations.NodeName != "" {
 			sc.NodeName = config.Configurations.NodeName
 		}
@@ -78,14 +78,6 @@ func Init() {
 		}
 		bus = &Bus{
 			agent: a,
-		}
-		if config.Configurations.PeerAddr != "" {
-			err := join([]string{config.Configurations.PeerAddr})
-			if err != nil {
-				openlog.Fatal("lost event message")
-			} else {
-				openlog.Info("join kie node:" + config.Configurations.PeerAddr)
-			}
 		}
 	})
 }
@@ -115,6 +107,15 @@ func Start() {
 	openlog.Info("kie message bus started")
 	eh := &ClusterEventHandler{}
 	bus.agent.RegisterEventHandler(eh)
+
+	if config.Configurations.PeerAddr != "" {
+		err := join([]string{config.Configurations.PeerAddr})
+		if err != nil {
+			openlog.Fatal("lost event message")
+		} else {
+			openlog.Info("join kie node:" + config.Configurations.PeerAddr)
+		}
+	}
 }
 func join(addresses []string) error {
 	_, err := bus.agent.Join(addresses, false)
