@@ -63,6 +63,7 @@ type Broker interface {
 	GetHistoryDao() HistoryDao
 	GetTrackDao() TrackDao
 	GetKVDao() KVDao
+	GetProjectDao() ProjectDao
 }
 
 func GetBroker() Broker {
@@ -85,6 +86,11 @@ type KVDao interface {
 	Exist(ctx context.Context, key, project, domain string, options ...FindOption) (bool, error)
 	// Total should return kv resource number by domain id and project id
 	Total(ctx context.Context, project, domain string) (int64, error)
+}
+
+type ProjectDao interface {
+	List(ctx context.Context, domain string, options ...FindOption) (*model.ProjectResponse, error)
+	Total(ctx context.Context, domain string) (int64, error)
 }
 
 //HistoryDao provide api of History entity

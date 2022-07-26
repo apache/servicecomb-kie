@@ -90,6 +90,19 @@ type GetKVRequest struct {
 	ID      string `json:"id,omitempty" bson:"id,omitempty" yaml:"id,omitempty" swag:"string" validate:"uuid"`
 }
 
+// ListProjectRequest contains project list request params
+type ListProjectRequest struct {
+	Domain  string `json:"domaListProjectRequestin,omitempty" yaml:"domain,omitempty" validate:"min=1,max=256,commonName"` //redundant
+	Project string `json:"project,omitempty" yaml:"project,omitempty"`
+	Offset  int64  `validate:"min=0"`
+	Limit   int64  `validate:"min=0,max=100"`
+}
+
+//ProjectDoc is database struct to store projects
+type ProjectDoc struct {
+	Project string `json:"project,omitempty" bson:"project,omitempty" yaml:"project,omitempty" validate:"min=1,max=256,commonName"`
+}
+
 // ListKVRequest contains kv list request params
 type ListKVRequest struct {
 	Project string            `json:"project,omitempty" yaml:"project,omitempty" validate:"min=1,max=256,commonName"`

@@ -21,7 +21,15 @@ import (
 	"context"
 	"crypto/tls"
 	"fmt"
-
+	"github.com/apache/servicecomb-kie/server/config"
+	"github.com/apache/servicecomb-kie/server/datasource"
+	"github.com/apache/servicecomb-kie/server/datasource/mongo/counter"
+	"github.com/apache/servicecomb-kie/server/datasource/mongo/history"
+	"github.com/apache/servicecomb-kie/server/datasource/mongo/kv"
+	"github.com/apache/servicecomb-kie/server/datasource/mongo/model"
+	"github.com/apache/servicecomb-kie/server/datasource/mongo/project"
+	"github.com/apache/servicecomb-kie/server/datasource/mongo/track"
+	"github.com/apache/servicecomb-kie/server/datasource/tlsutil"
 	"github.com/go-chassis/cari/db"
 	dconfig "github.com/go-chassis/cari/db/config"
 	dmongo "github.com/go-chassis/cari/db/mongo"
@@ -30,15 +38,6 @@ import (
 	"go.mongodb.org/mongo-driver/mongo"
 	"go.mongodb.org/mongo-driver/mongo/options"
 	"go.mongodb.org/mongo-driver/x/bsonx"
-
-	"github.com/apache/servicecomb-kie/server/config"
-	"github.com/apache/servicecomb-kie/server/datasource"
-	"github.com/apache/servicecomb-kie/server/datasource/mongo/counter"
-	"github.com/apache/servicecomb-kie/server/datasource/mongo/history"
-	"github.com/apache/servicecomb-kie/server/datasource/mongo/kv"
-	"github.com/apache/servicecomb-kie/server/datasource/mongo/model"
-	"github.com/apache/servicecomb-kie/server/datasource/mongo/track"
-	"github.com/apache/servicecomb-kie/server/datasource/tlsutil"
 )
 
 type Broker struct {
@@ -83,6 +82,9 @@ func (*Broker) GetHistoryDao() datasource.HistoryDao {
 }
 func (*Broker) GetTrackDao() datasource.TrackDao {
 	return &track.Dao{}
+}
+func (*Broker) GetProjectDao() datasource.ProjectDao {
+	return &project.Dao{}
 }
 
 func ensureDB() error {

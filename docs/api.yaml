@@ -9,8 +9,7 @@ paths:
       summary: health check return version and revision
       operationId: HealthCheck
       consumes:
-        - application/json
-        - text/yaml
+        - '*/*'
       produces:
         - application/json
         - text/yaml
@@ -19,6 +18,35 @@ paths:
           description: ''
           schema:
             $ref: '#/definitions/DocHealthCheck'
+  '/v1/project':
+    get:
+      summary: list projects
+      operationId: Project
+      parameters:
+        - name: project
+          in: query
+          required: false
+          type: string
+        - name: limit
+          in: query
+          description: pagination
+          type: string
+        - name: offset
+          in: query
+          description: pagination
+          type: string
+      consumes:
+        - '*/*'
+      produces:
+        - application/json
+        - text/yaml
+      responses:
+        '200':
+          description: ''
+          schema:
+            $ref: '#/definitions/DocResponseGetProject'
+        '304':
+          description: empty body
   '/v1/{project}/kie/kv':
     get:
       summary: list key values by labels and key
@@ -285,6 +313,16 @@ definitions:
         format: int64
       version:
         type: string
+  DocResponseGetProject:
+    type: object
+    properties:
+      total:
+        type: integer
+        format: int64
+      data:
+        type: array
+        items:
+          type: string
   DocResponseGetKey:
     type: object
     properties:

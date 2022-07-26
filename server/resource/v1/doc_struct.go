@@ -127,7 +127,7 @@ var (
 		ParamType: goRestful.QueryParameterKind,
 		Desc:      "pagination",
 	}
-	//polling data
+	// DocQuerySessionIDParameters polling data
 	DocQuerySessionIDParameters = &restful.Parameters{
 		DataType:  "string",
 		Name:      common.QueryParamSessionID,
@@ -151,6 +151,12 @@ var (
 		Name:      common.QueryParamUserAgent,
 		ParamType: goRestful.QueryParameterKind,
 		Desc:      "user agent of the call",
+	}
+	DocQueryProjectParameters = &restful.Parameters{
+		DataType:  "string",
+		Name:      common.QueryParameterProject,
+		ParamType: goRestful.QueryParameterKind,
+		Desc:      "project name of the call",
 	}
 )
 

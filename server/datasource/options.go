@@ -67,6 +67,7 @@ type WriteOptions struct {
 type FindOptions struct {
 	ExactLabels bool
 	Status      string
+	Project     string
 	Depth       int
 	ID          string
 	Key         string
@@ -85,6 +86,13 @@ type WriteOption func(*WriteOptions)
 
 //FindOption is functional option to find key value
 type FindOption func(*FindOptions)
+
+//WithProject find by project
+func WithProject(project string) FindOption {
+	return func(o *FindOptions) {
+		o.Project = project
+	}
+}
 
 // WithSync indicates that the synchronization function is on
 func WithSync(enabled bool) WriteOption {
