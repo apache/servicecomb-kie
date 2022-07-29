@@ -66,6 +66,30 @@ func TestKey(t *testing.T) {
 	}
 	assert.Error(t, validator.Validate(kvDoc))
 
+	kvDoc = &model.KVDoc{Project: "a", Domain: "a",
+		Key:   "zZ12.-_:",
+		Value: "zZ12.-_:",
+	}
+	assert.NoError(t, validator.Validate(kvDoc))
+
+	kvDoc = &model.KVDoc{Project: "a", Domain: "a",
+		Key:   "...zZ12.-_:",
+		Value: "......asdfakdjlkaj;eje#$@%$RE$5zZ12.-_:",
+	}
+	assert.NoError(t, validator.Validate(kvDoc))
+
+	kvDoc = &model.KVDoc{Project: "a", Domain: "a",
+		Key:   "_...zZ12.-_:",
+		Value: "adslfjkla",
+	}
+	assert.NoError(t, validator.Validate(kvDoc))
+
+	kvDoc = &model.KVDoc{Project: "a", Domain: "a",
+		Key:   "-_...zZ12.-_:",
+		Value: "adslfjkla",
+	}
+	assert.NoError(t, validator.Validate(kvDoc))
+
 	ListKVRe := &model.ListKVRequest{Project: "a", Domain: "a",
 		Key: "beginWith(a)",
 	}

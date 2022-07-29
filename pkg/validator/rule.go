@@ -21,6 +21,7 @@ import "github.com/go-chassis/foundation/validator"
 
 const (
 	key                   = "key"
+	keyRegex              = `^[a-zA-Z0-9._:-]+$`
 	commonNameRegexString = `^[a-zA-Z0-9]*$|^[a-zA-Z0-9][a-zA-Z0-9_\-.]*[a-zA-Z0-9]$`
 	labelKeyRegexString   = `^[a-zA-Z0-9]{1,32}$|^[a-zA-Z0-9][a-zA-Z0-9_\-.]{1,30}[a-zA-Z0-9]$`
 	labelValueRegexString = `^[a-zA-Z0-9]{0,160}$|^[a-zA-Z0-9][a-zA-Z0-9_\-.]{0,158}[a-zA-Z0-9]$`
@@ -32,7 +33,7 @@ const (
 // custom validate rules
 // please use different tag names from third party tags
 var customRules = []*validator.RegexValidateRule{
-	validator.NewRegexRule(key, commonNameRegexString),
+	validator.NewRegexRule(key, keyRegex),
 	validator.NewRegexRule("getKey", getKeyRegexString),
 	validator.NewRegexRule("commonName", commonNameRegexString),
 	validator.NewRegexRule("valueType", `^$|^(ini|json|text|yaml|properties|xml)$`),
