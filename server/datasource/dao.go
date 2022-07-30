@@ -22,12 +22,10 @@ import (
 	"context"
 	"errors"
 	"fmt"
-	"time"
 
 	"github.com/go-chassis/openlog"
 
 	"github.com/apache/servicecomb-kie/pkg/model"
-	"github.com/apache/servicecomb-kie/server/config"
 )
 
 var (
@@ -116,41 +114,17 @@ type ViewDao interface {
 	GetContent(ctx context.Context, id, domain, project string, options ...FindOption) ([]*model.KVResponse, error)
 }
 
-const DefaultTimeout = 60 * time.Second
-
-func Init(c config.DB) error {
+func Init(kind string) error {
 	var err error
-	if c.Kind == "" {
-		c.Kind = "mongo"
-	}
-	f, ok := plugins[c.Kind]
+	f, ok := plugins[kind]
 	if !ok {
-		return fmt.Errorf("do not support %s", c.Kind)
+		return fmt.Errorf("do not support '%s'", kind)
 	}
-	var timeout time.Duration
-	if c.Timeout != "" {
-		timeout, err = time.ParseDuration(c.Timeout)
-		if err != nil {
-			return errors.New("timeout setting invalid:" + c.Timeout)
-		}
-	}
-	if timeout == 0 {
-		timeout = DefaultTimeout
-	}
-	dbc := &Config{
-		URI:         c.URI,
-		PoolSize:    c.PoolSize,
-		SSLEnabled:  c.SSLEnabled,
-		RootCA:      c.RootCA,
-		CertFile:    c.CertFile,
-		CertPwdFile: c.CertPwdFile,
-		KeyFile:     c.KeyFile,
-		Timeout:     timeout,
-	}
+	dbc := &Config{}
 	if b, err = f(dbc); err != nil {
 		return err
 	}
-	openlog.Info(fmt.Sprintf("use %s as storage", c.Kind))
+	openlog.Info(fmt.Sprintf("use %s as storage", kind))
 	return nil
 }
 

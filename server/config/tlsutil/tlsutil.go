@@ -23,7 +23,7 @@ import (
 	"io/ioutil"
 
 	"github.com/apache/servicecomb-kie/pkg/cipherutil"
-	"github.com/apache/servicecomb-kie/server/datasource"
+	"github.com/apache/servicecomb-kie/server/config"
 	"github.com/go-chassis/foundation/stringutil"
 	"github.com/go-chassis/foundation/tlsutil"
 	"github.com/go-chassis/openlog"
@@ -31,7 +31,7 @@ import (
 
 var ErrRootCAMissing = errors.New("rootCAFile is empty in config file")
 
-func Config(c *datasource.Config) (*tls.Config, error) {
+func Config(c *config.TLS) (*tls.Config, error) {
 	var password string
 	if c.CertPwdFile != "" {
 		pwdBytes, err := ioutil.ReadFile(c.CertPwdFile)

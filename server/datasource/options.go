@@ -21,16 +21,9 @@ import (
 	"time"
 )
 
+const DefaultTimeout = 60 * time.Second
+
 type Config struct {
-	URI         string        `yaml:"uri"`
-	PoolSize    int           `yaml:"poolSize"`
-	SSLEnabled  bool          `yaml:"sslEnabled"`
-	VerifyPeer  bool          `yaml:"verifyPeer"`
-	RootCA      string        `yaml:"rootCAFile"`
-	CertFile    string        `yaml:"certFile"`
-	KeyFile     string        `yaml:"keyFile"`
-	CertPwdFile string        `yaml:"certPwdFile"`
-	Timeout     time.Duration `yaml:"timeout"`
 }
 
 //NewDefaultFindOpts return default options

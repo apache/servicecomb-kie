@@ -30,18 +30,22 @@ type Config struct {
 	AdvertiseAddr  string
 }
 
-//DB is yaml file struct to set persistent config
-type DB struct {
-	URI         string `yaml:"uri"`
-	Kind        string `yaml:"kind"`
-	PoolSize    int    `yaml:"poolSize"`
+type TLS struct {
 	SSLEnabled  bool   `yaml:"sslEnabled"`
 	RootCA      string `yaml:"rootCAFile"`
 	CertFile    string `yaml:"certFile"`
 	KeyFile     string `yaml:"keyFile"`
 	CertPwdFile string `yaml:"certPwdFile"`
-	Timeout     string `yaml:"timeout"`
 	VerifyPeer  bool   `yaml:"verifyPeer"`
+}
+
+//DB is yaml file struct to set persistent config
+type DB struct {
+	TLS      `yaml:",inline" json:",inline"`
+	URI      string `yaml:"uri" json:"uri,omitempty"`
+	Kind     string `yaml:"kind" json:"kind,omitempty"`
+	PoolSize int    `yaml:"poolSize" json:"pool_size,omitempty"`
+	Timeout  string `yaml:"timeout" json:"timeout,omitempty"`
 }
 
 //RBAC is rbac config

@@ -19,58 +19,31 @@ package mongo
 
 import (
 	"context"
-	"crypto/tls"
-	"fmt"
 
-	"github.com/go-chassis/cari/db"
-	dconfig "github.com/go-chassis/cari/db/config"
 	dmongo "github.com/go-chassis/cari/db/mongo"
-	"github.com/go-chassis/openlog"
 	"go.mongodb.org/mongo-driver/bson"
 	"go.mongodb.org/mongo-driver/mongo"
 	"go.mongodb.org/mongo-driver/mongo/options"
 	"go.mongodb.org/mongo-driver/x/bsonx"
 
-	"github.com/apache/servicecomb-kie/server/config"
 	"github.com/apache/servicecomb-kie/server/datasource"
 	"github.com/apache/servicecomb-kie/server/datasource/mongo/counter"
 	"github.com/apache/servicecomb-kie/server/datasource/mongo/history"
 	"github.com/apache/servicecomb-kie/server/datasource/mongo/kv"
 	"github.com/apache/servicecomb-kie/server/datasource/mongo/model"
 	"github.com/apache/servicecomb-kie/server/datasource/mongo/track"
-	"github.com/apache/servicecomb-kie/server/datasource/tlsutil"
 )
 
 type Broker struct {
 }
 
 func NewFrom(c *datasource.Config) (datasource.Broker, error) {
-	kind := config.GetDB().Kind
-	openlog.Info(fmt.Sprintf("use %s as storage", kind))
-	var tlsConfig *tls.Config
-	if c.SSLEnabled {
-		var err error
-		tlsConfig, err = tlsutil.Config(c)
-		if err != nil {
-			return nil, err
-		}
-	}
 	broker := Broker{}
-	err := db.Init(&dconfig.Config{
-		Kind:       kind,
-		URI:        c.URI,
-		PoolSize:   c.PoolSize,
-		SSLEnabled: c.SSLEnabled,
-		TLSConfig:  tlsConfig,
-		Timeout:    c.Timeout,
-	})
+	err := ensureDB()
 	if err != nil {
 		return nil, err
 	}
-	if err = ensureDB(); err != nil {
-		return nil, err
-	}
-	return &broker, err
+	return &broker, nil
 }
 func (*Broker) GetRevisionDao() datasource.RevisionDao {
 	return &counter.Dao{}

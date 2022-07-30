@@ -21,6 +21,7 @@ import (
 	"fmt"
 	"math/rand"
 
+	"github.com/apache/servicecomb-kie/server/db"
 	_ "github.com/go-chassis/cari/db/bootstrap"
 
 	_ "github.com/apache/servicecomb-kie/server/datasource/etcd"
@@ -69,12 +70,15 @@ func init() {
 	if err != nil {
 		panic(err)
 	}
-	config.Configurations.DB.Kind = kind
-	err = datasource.Init(config.DB{
+	err = db.Init(config.DB{
 		URI:     uri,
 		Timeout: "10s",
 		Kind:    kind,
 	})
+	if err != nil {
+		panic(err)
+	}
+	err = datasource.Init(kind)
 	if err != nil {
 		panic(err)
 	}
