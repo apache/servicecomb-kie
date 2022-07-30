@@ -22,8 +22,8 @@ import (
 
 	_ "github.com/go-chassis/go-chassis/v2/security/cipher/plugins/plain"
 
-	"github.com/apache/servicecomb-kie/server/datasource"
-	"github.com/apache/servicecomb-kie/server/datasource/tlsutil"
+	"github.com/apache/servicecomb-kie/server/config"
+	"github.com/apache/servicecomb-kie/server/config/tlsutil"
 	"github.com/go-chassis/go-archaius"
 	"github.com/go-chassis/go-chassis/v2/security/cipher"
 	"github.com/stretchr/testify/assert"
@@ -44,7 +44,7 @@ func init() {
 
 func TestConfig(t *testing.T) {
 	t.Run("normal scene, should return ok", func(t *testing.T) {
-		cfg, err := tlsutil.Config(&datasource.Config{
+		cfg, err := tlsutil.Config(&config.TLS{
 			RootCA:      sslRoot + "trust.cer",
 			CertFile:    sslRoot + "server.cer",
 			KeyFile:     sslRoot + "server_key.pem",
@@ -55,12 +55,12 @@ func TestConfig(t *testing.T) {
 		assert.NotNil(t, cfg)
 	})
 	t.Run("without ca file, should return false", func(t *testing.T) {
-		cfg, err := tlsutil.Config(&datasource.Config{})
+		cfg, err := tlsutil.Config(&config.TLS{})
 		assert.ErrorIs(t, tlsutil.ErrRootCAMissing, err)
 		assert.Nil(t, cfg)
 	})
 	t.Run("set not exist pwd file, should return false", func(t *testing.T) {
-		cfg, err := tlsutil.Config(&datasource.Config{
+		cfg, err := tlsutil.Config(&config.TLS{
 			RootCA:      sslRoot + "trust.cer",
 			CertFile:    sslRoot + "server.cer",
 			KeyFile:     sslRoot + "server_key.pem",

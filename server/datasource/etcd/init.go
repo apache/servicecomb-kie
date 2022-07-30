@@ -18,44 +18,18 @@
 package etcd
 
 import (
-	"crypto/tls"
-	"fmt"
-
-	"github.com/go-chassis/cari/db"
-	dconfig "github.com/go-chassis/cari/db/config"
-	"github.com/go-chassis/openlog"
-
-	"github.com/apache/servicecomb-kie/server/config"
 	"github.com/apache/servicecomb-kie/server/datasource"
 	"github.com/apache/servicecomb-kie/server/datasource/etcd/counter"
 	"github.com/apache/servicecomb-kie/server/datasource/etcd/history"
 	"github.com/apache/servicecomb-kie/server/datasource/etcd/kv"
 	"github.com/apache/servicecomb-kie/server/datasource/etcd/track"
-	"github.com/apache/servicecomb-kie/server/datasource/tlsutil"
 )
 
 type Broker struct {
 }
 
 func NewFrom(c *datasource.Config) (datasource.Broker, error) {
-	kind := config.GetDB().Kind
-	openlog.Info(fmt.Sprintf("use %s as storage", kind))
-	var tlsConfig *tls.Config
-	if c.SSLEnabled {
-		var err error
-		tlsConfig, err = tlsutil.Config(c)
-		if err != nil {
-			return nil, err
-		}
-	}
-	return &Broker{}, db.Init(&dconfig.Config{
-		Kind:       kind,
-		URI:        c.URI,
-		PoolSize:   c.PoolSize,
-		SSLEnabled: c.SSLEnabled,
-		TLSConfig:  tlsConfig,
-		Timeout:    c.Timeout,
-	})
+	return &Broker{}, nil
 }
 func (*Broker) GetRevisionDao() datasource.RevisionDao {
 	return &counter.Dao{}
