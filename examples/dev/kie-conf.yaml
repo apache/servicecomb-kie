@@ -19,4 +19,4 @@ db:
 #  rsaPublicKeyFile: ./examples/dev/public.key
 sync:
   # turn on the synchronization switch related operations will be written to the task in the db
-  enabled: true
+  enabled: false
