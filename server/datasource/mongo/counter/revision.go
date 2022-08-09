@@ -31,11 +31,11 @@ import (
 
 const revision = "revision_counter"
 
-//Dao is the implementation
+// Dao is the implementation
 type Dao struct {
 }
 
-//GetRevision return current revision number
+// GetRevision return current revision number
 func (s *Dao) GetRevision(ctx context.Context, domain string) (int64, error) {
 	collection := mongo.GetClient().GetDB().Collection(model.CollectionCounter)
 	filter := bson.M{"name": revision, "domain": domain}
@@ -59,7 +59,7 @@ func (s *Dao) GetRevision(ctx context.Context, domain string) (int64, error) {
 	return c.Count, nil
 }
 
-//ApplyRevision increase revision number and return modified value
+// ApplyRevision increase revision number and return modified value
 func (s *Dao) ApplyRevision(ctx context.Context, domain string) (int64, error) {
 	collection := mongo.GetClient().GetDB().Collection(model.CollectionCounter)
 	filter := bson.M{"name": revision, "domain": domain}

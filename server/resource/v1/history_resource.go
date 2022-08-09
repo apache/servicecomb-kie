@@ -30,11 +30,11 @@ import (
 	"github.com/go-chassis/openlog"
 )
 
-//HistoryResource TODO
+// HistoryResource TODO
 type HistoryResource struct {
 }
 
-//GetRevisions search key only by label
+// GetRevisions search key only by label
 func (r *HistoryResource) GetRevisions(context *restful.Context) {
 	var err error
 	kvID := context.ReadPathParameter(common.PathParamKVID)
@@ -69,7 +69,7 @@ func (r *HistoryResource) GetRevisions(context *restful.Context) {
 	}
 }
 
-//GetPollingData get the record of the get or list history
+// GetPollingData get the record of the get or list history
 func (r *HistoryResource) GetPollingData(context *restful.Context) {
 	query := &model.PollingDetail{}
 	sessionID := context.ReadQueryParameter(common.QueryParamSessionID)
@@ -121,7 +121,7 @@ func (r *HistoryResource) GetPollingData(context *restful.Context) {
 	}
 }
 
-//URLPatterns defined config operations
+// URLPatterns defined config operations
 func (r *HistoryResource) URLPatterns() []restful.Route {
 	return []restful.Route{
 		{

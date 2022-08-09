@@ -19,7 +19,7 @@ package model
 
 import "time"
 
-//LabelDoc is database struct to store labels
+// LabelDoc is database struct to store labels
 type LabelDoc struct {
 	ID      string            `json:"id,omitempty" bson:"id,omitempty" yaml:"id,omitempty" swag:"string"`
 	Labels  map[string]string `json:"labels,omitempty" yaml:"labels,omitempty"`
@@ -29,7 +29,7 @@ type LabelDoc struct {
 	Alias   string            `json:"alias,omitempty" yaml:"alias,omitempty"`
 }
 
-//KVDoc is database struct to store kv
+// KVDoc is database struct to store kv
 type KVDoc struct {
 	ID             string `json:"id,omitempty" bson:"id,omitempty" yaml:"id,omitempty" swag:"string"`
 	LabelFormat    string `json:"label_format,omitempty" bson:"label_format,omitempty" yaml:"label_format,omitempty"`
@@ -48,7 +48,7 @@ type KVDoc struct {
 	Domain string            `json:"domain,omitempty" yaml:"domain,omitempty" validate:"min=1,max=256,commonName"`              //redundant
 }
 
-//ViewDoc is db struct, it saves user's custom view name and criteria
+// ViewDoc is db struct, it saves user's custom view name and criteria
 type ViewDoc struct {
 	ID       string `json:"id,omitempty" bson:"id,omitempty" yaml:"id,omitempty" swag:"string"`
 	Display  string `json:"display,omitempty" yaml:"display,omitempty"`
@@ -57,7 +57,7 @@ type ViewDoc struct {
 	Criteria string `json:"criteria,omitempty" yaml:"criteria,omitempty"`
 }
 
-//PollingDetail is db struct, it record operation history
+// PollingDetail is db struct, it record operation history
 type PollingDetail struct {
 	ID           string                 `json:"id,omitempty" yaml:"id,omitempty"`
 	SessionID    string                 `json:"session_id,omitempty" bson:"session_id," yaml:"session_id,omitempty"`

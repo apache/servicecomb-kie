@@ -15,7 +15,7 @@
  * limitations under the License.
  */
 
-//Package v1 hold http rest v1 API
+// Package v1 hold http rest v1 API
 package v1
 
 import (
@@ -38,11 +38,11 @@ import (
 	kvsvc "github.com/apache/servicecomb-kie/server/service/kv"
 )
 
-//KVResource has API about kv operations
+// KVResource has API about kv operations
 type KVResource struct {
 }
 
-//Upload upload kvs
+// Upload upload kvs
 func (r *KVResource) Upload(rctx *restful.Context) {
 	if rctx.ReadQueryParameter(common.QueryParamOverride) == "" {
 		WriteErrResponse(rctx, config.ErrInvalidParams, "Query parameter 'override' is required")
@@ -66,7 +66,7 @@ func (r *KVResource) Upload(rctx *restful.Context) {
 	}
 }
 
-//Post create a kv
+// Post create a kv
 func (r *KVResource) Post(rctx *restful.Context) {
 	var err error
 	kv := new(model.KVDoc)
@@ -88,7 +88,7 @@ func (r *KVResource) Post(rctx *restful.Context) {
 	}
 }
 
-//Put update a kv
+// Put update a kv
 func (r *KVResource) Put(rctx *restful.Context) {
 	var err error
 	kvID := rctx.ReadPathParameter(common.PathParamKVID)
@@ -136,7 +136,7 @@ func (r *KVResource) Put(rctx *restful.Context) {
 
 }
 
-//Get search key by kv id
+// Get search key by kv id
 func (r *KVResource) Get(rctx *restful.Context) {
 	request := &model.GetKVRequest{
 		Project: rctx.ReadPathParameter(common.PathParameterProject),
@@ -166,7 +166,7 @@ func (r *KVResource) Get(rctx *restful.Context) {
 	}
 }
 
-//List response kv list
+// List response kv list
 func (r *KVResource) List(rctx *restful.Context) {
 	var err error
 	request := &model.ListKVRequest{
@@ -277,7 +277,7 @@ func watch(rctx *restful.Context, request *model.ListKVRequest, wait string) boo
 	return false
 }
 
-//Delete deletes one kv by id
+// Delete deletes one kv by id
 func (r *KVResource) Delete(rctx *restful.Context) {
 	project := rctx.ReadPathParameter(common.PathParameterProject)
 	domain := ReadDomain(rctx.Ctx)
@@ -313,7 +313,7 @@ func (r *KVResource) Delete(rctx *restful.Context) {
 	rctx.WriteHeader(http.StatusNoContent)
 }
 
-//DeleteList deletes multiple kvs by ids
+// DeleteList deletes multiple kvs by ids
 func (r *KVResource) DeleteList(rctx *restful.Context) {
 	project := rctx.ReadPathParameter(common.PathParameterProject)
 	domain := ReadDomain(rctx.Ctx)
@@ -355,7 +355,7 @@ func (r *KVResource) DeleteList(rctx *restful.Context) {
 	rctx.WriteHeader(http.StatusNoContent)
 }
 
-//URLPatterns defined config operations
+// URLPatterns defined config operations
 func (r *KVResource) URLPatterns() []restful.Route {
 	return []restful.Route{
 		{

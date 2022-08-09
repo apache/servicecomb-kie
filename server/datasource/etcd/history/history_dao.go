@@ -29,11 +29,11 @@ import (
 	"github.com/apache/servicecomb-kie/server/datasource/etcd/key"
 )
 
-//Dao is the implementation
+// Dao is the implementation
 type Dao struct {
 }
 
-//GetHistory get all history by label id
+// GetHistory get all history by label id
 func (s *Dao) GetHistory(ctx context.Context, kvID, project, domain string, options ...datasource.FindOption) (*model.KVResponse, error) {
 	opts := datasource.FindOptions{}
 	for _, o := range options {
@@ -78,7 +78,7 @@ func pagingResult(histories []*model.KVDoc, offset, limit int64) []*model.KVDoc 
 	return histories[offset:end]
 }
 
-//AddHistory add kv history
+// AddHistory add kv history
 func (s *Dao) AddHistory(ctx context.Context, kv *model.KVDoc) error {
 	bytes, err := json.Marshal(kv)
 	if err != nil {
@@ -98,8 +98,8 @@ func (s *Dao) AddHistory(ctx context.Context, kv *model.KVDoc) error {
 	return nil
 }
 
-//DelayDeletionTime add delete time to all revisions of the kv,
-//thus these revisions will be automatically deleted by TTL index.
+// DelayDeletionTime add delete time to all revisions of the kv,
+// thus these revisions will be automatically deleted by TTL index.
 // TODO support delay deletion
 func (s *Dao) DelayDeletionTime(ctx context.Context, kvIDs []string, project, domain string) error {
 	var opts []etcdadpt.OpOptions
@@ -114,7 +114,7 @@ func (s *Dao) DelayDeletionTime(ctx context.Context, kvIDs []string, project, do
 	return nil
 }
 
-//historyRotate delete historical versions for a key that exceeds the limited number
+// historyRotate delete historical versions for a key that exceeds the limited number
 func (s *Dao) historyRotate(ctx context.Context, kvID, project, domain string) error {
 	resp, err := s.GetHistory(ctx, kvID, project, domain)
 	if err != nil {

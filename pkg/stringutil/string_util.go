@@ -27,7 +27,7 @@ const (
 	LabelNone = "none"
 )
 
-//FormatMap format map to string
+// FormatMap format map to string
 func FormatMap(m map[string]string) string {
 	if len(m) == 0 {
 		return LabelNone

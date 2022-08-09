@@ -28,11 +28,11 @@ import (
 
 const revision = "revision_counter"
 
-//Dao is the implementation
+// Dao is the implementation
 type Dao struct {
 }
 
-//GetRevision return current revision number
+// GetRevision return current revision number
 func (s *Dao) GetRevision(ctx context.Context, domain string) (int64, error) {
 	kv, err := etcdadpt.Get(ctx, key.Counter(revision, domain))
 	if err != nil {
@@ -45,7 +45,7 @@ func (s *Dao) GetRevision(ctx context.Context, domain string) (int64, error) {
 	return kv.Version, nil
 }
 
-//ApplyRevision increase revision number and return modified value
+// ApplyRevision increase revision number and return modified value
 func (s *Dao) ApplyRevision(ctx context.Context, domain string) (int64, error) {
 	resp, err := etcdadpt.PutBytesAndGet(ctx, key.Counter(revision, domain), nil)
 	if err != nil {

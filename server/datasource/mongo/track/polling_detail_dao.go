@@ -31,12 +31,12 @@ import (
 	mmodel "github.com/apache/servicecomb-kie/server/datasource/mongo/model"
 )
 
-//Dao is the implementation
+// Dao is the implementation
 type Dao struct {
 }
 
-//CreateOrUpdate create a record or update exist record
-//If revision and session_id exists then update else insert
+// CreateOrUpdate create a record or update exist record
+// If revision and session_id exists then update else insert
 func (s *Dao) CreateOrUpdate(ctx context.Context, detail *model.PollingDetail) (*model.PollingDetail, error) {
 	collection := dmongo.GetClient().GetDB().Collection(mmodel.CollectionPollingDetail)
 	queryFilter := bson.M{"revision": detail.Revision, "domain": detail.Domain, "session_id": detail.SessionID}
@@ -63,7 +63,7 @@ func (s *Dao) CreateOrUpdate(ctx context.Context, detail *model.PollingDetail) (
 	return detail, nil
 }
 
-//Get is to get a track data
+// Get is to get a track data
 func (s *Dao) GetPollingDetail(ctx context.Context, detail *model.PollingDetail) ([]*model.PollingDetail, error) {
 	collection := dmongo.GetClient().GetDB().Collection(mmodel.CollectionPollingDetail)
 	queryFilter := bson.M{"domain": detail.Domain}

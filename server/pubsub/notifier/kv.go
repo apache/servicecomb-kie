@@ -13,7 +13,7 @@ import (
 	"github.com/hashicorp/serf/serf"
 )
 
-//KVHandler handler serf custom event, it is singleton
+// KVHandler handler serf custom event, it is singleton
 type KVHandler struct {
 	BatchSize          int
 	BatchInterval      time.Duration

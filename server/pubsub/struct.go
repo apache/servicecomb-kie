@@ -33,7 +33,7 @@ const (
 	ActionDelete = "del"
 )
 
-//KVChangeEvent is event between kie nodes, and broadcast by serf
+// KVChangeEvent is event between kie nodes, and broadcast by serf
 type KVChangeEvent struct {
 	Key      string
 	Action   string //include: put,delete
@@ -46,14 +46,14 @@ func (e *KVChangeEvent) String() string {
 	return strings.Join([]string{e.Key, e.Action, stringutil.FormatMap(e.Labels), e.DomainID, e.Project}, ";;")
 }
 
-//NewKVChangeEvent create a struct base on event payload
+// NewKVChangeEvent create a struct base on event payload
 func NewKVChangeEvent(payload []byte) (*KVChangeEvent, error) {
 	ke := &KVChangeEvent{}
 	err := json.Unmarshal(payload, ke)
 	return ke, err
 }
 
-//Topic can be subscribe
+// Topic can be subscribe
 type Topic struct {
 	Labels       map[string]string `json:"-"`
 	LabelsFormat string            `json:"labels,omitempty"`
@@ -71,7 +71,7 @@ func (t *Topic) Encode() (string, error) {
 	return string(b), nil
 }
 
-//ParseTopic parse topic string to topic struct
+// ParseTopic parse topic string to topic struct
 func ParseTopic(s string) (*Topic, error) {
 	t := &Topic{
 		Labels: make(map[string]string),
@@ -96,12 +96,12 @@ func ParseTopic(s string) (*Topic, error) {
 	return t, err
 }
 
-//Match compare event with topic
-//If the match type is set to exact in long pulling request, only update request with exactly
-//the same label of pulling request will match the request and will trigger an immediate return.
+// Match compare event with topic
+// If the match type is set to exact in long pulling request, only update request with exactly
+// the same label of pulling request will match the request and will trigger an immediate return.
 //
-//If the match type is not set, it will be matched when pulling request labels is equal to
-//update request labels or a subset of it.
+// If the match type is not set, it will be matched when pulling request labels is equal to
+// update request labels or a subset of it.
 func (t *Topic) Match(event *KVChangeEvent) bool {
 	match := false
 	if t.MatchType == common.PatternExact {
@@ -121,7 +121,7 @@ func (t *Topic) Match(event *KVChangeEvent) bool {
 	return match
 }
 
-//Observer represents a client polling request
+// Observer represents a client polling request
 type Observer struct {
 	UUID  string
 	Event chan *KVChangeEvent

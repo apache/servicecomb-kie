@@ -6,7 +6,7 @@ import (
 	"strings"
 )
 
-//ClientIP try to get ip from http header
+// ClientIP try to get ip from http header
 func ClientIP(r *http.Request) string {
 	xForwardedFor := r.Header.Get("X-Forwarded-For")
 	ip := strings.TrimSpace(strings.Split(xForwardedFor, ",")[0])

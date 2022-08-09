@@ -41,7 +41,7 @@ const (
 	FmtErrFindKvFailed = "can not find kv in %s"
 )
 
-//Dao operate data in mongodb
+// Dao operate data in mongodb
 type Dao struct {
 }
 
@@ -133,7 +133,7 @@ func txnCreate(ctx context.Context, kv *model.KVDoc) (*model.KVDoc, error) {
 	return kv, nil
 }
 
-//Update update key value
+// Update update key value
 func (s *Dao) Update(ctx context.Context, kv *model.KVDoc, options ...datasource.WriteOption) error {
 	opts := datasource.NewWriteOptions(options...)
 	// if syncEnable is true, will create kv with task
@@ -246,7 +246,7 @@ func txnUpdate(ctx context.Context, kv *model.KVDoc) error {
 	return nil
 }
 
-//Extract key values
+// Extract key values
 func getValue(str string) string {
 	rex := regexp.MustCompile(`\(([^)]+)\)`)
 	res := rex.FindStringSubmatch(str)
@@ -326,7 +326,7 @@ func findOneKey(ctx context.Context, filter bson.M) ([]*model.KVDoc, error) {
 	return []*model.KVDoc{curKV}, nil
 }
 
-//Exist supports you query a key value by label map or labels id
+// Exist supports you query a key value by label map or labels id
 func (s *Dao) Exist(ctx context.Context, key, project, domain string, options ...datasource.FindOption) (bool, error) {
 	opts := datasource.FindOptions{}
 	for _, o := range options {
@@ -359,8 +359,8 @@ func (s *Dao) Exist(ctx context.Context, key, project, domain string, options ..
 
 }
 
-//FindOneAndDelete deletes one kv by id and return the deleted kv as these appeared before deletion
-//domain=tenant
+// FindOneAndDelete deletes one kv by id and return the deleted kv as these appeared before deletion
+// domain=tenant
 func (s *Dao) FindOneAndDelete(ctx context.Context, kvID, project, domain string, options ...datasource.WriteOption) (*model.KVDoc, error) {
 	opts := datasource.NewWriteOptions(options...)
 	if opts.SyncEnable {
@@ -486,7 +486,7 @@ func txnFindOneAndDelete(ctx context.Context, kvID, project, domain string) (*mo
 	return curKV, nil
 }
 
-//FindManyAndDelete deletes multiple kvs and return the deleted kv list as these appeared before deletion
+// FindManyAndDelete deletes multiple kvs and return the deleted kv list as these appeared before deletion
 func (s *Dao) FindManyAndDelete(ctx context.Context, kvIDs []string, project, domain string, options ...datasource.WriteOption) ([]*model.KVDoc, int64, error) {
 	opts := datasource.NewWriteOptions(options...)
 	if opts.SyncEnable {
@@ -642,9 +642,9 @@ func findKeys(ctx context.Context, filter interface{}, withoutLabel bool) ([]*mo
 	return kvs, nil
 }
 
-//findKVByLabel get kvs by key and label
-//key can be empty, then it will return all key values
-//if key is given, will return 0-1 key value
+// findKVByLabel get kvs by key and label
+// key can be empty, then it will return all key values
+// if key is given, will return 0-1 key value
 func findKVByLabel(ctx context.Context, domain, labelFormat, key string, project string) ([]*model.KVDoc, error) {
 	filter := bson.M{"label_format": labelFormat, "domain": domain, "project": project}
 	if key != "" {
@@ -655,7 +655,7 @@ func findKVByLabel(ctx context.Context, domain, labelFormat, key string, project
 
 }
 
-//Get get kv by kv id
+// Get get kv by kv id
 func (s *Dao) Get(ctx context.Context, req *model.GetKVRequest) (*model.KVDoc, error) {
 	filter := bson.M{"id": req.ID, "domain": req.Domain, "project": req.Project}
 	kvs, err := findOneKey(ctx, filter)
@@ -677,7 +677,7 @@ func (s *Dao) Total(ctx context.Context, project, domain string) (int64, error) 
 	return total, err
 }
 
-//List get kv list by key and criteria
+// List get kv list by key and criteria
 func (s *Dao) List(ctx context.Context, project, domain string, options ...datasource.FindOption) (*model.KVResponse, error) {
 	opts := datasource.NewDefaultFindOpts()
 	for _, o := range options {

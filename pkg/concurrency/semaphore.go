@@ -7,12 +7,12 @@ const (
 	MaxConcurrency     = math.MaxUint16
 )
 
-//Semaphore ctl the max concurrency
+// Semaphore ctl the max concurrency
 type Semaphore struct {
 	tickets chan bool
 }
 
-//NewSemaphore accept concurrency number, not more than 65535
+// NewSemaphore accept concurrency number, not more than 65535
 func NewSemaphore(concurrency int) *Semaphore {
 	if concurrency >= math.MaxUint16 {
 		concurrency = MaxConcurrency
@@ -29,7 +29,7 @@ func (b *Semaphore) Acquire() {
 	<-b.tickets
 }
 
-//Release return back signal
+// Release return back signal
 func (b *Semaphore) Release() {
 	b.tickets <- true
 }

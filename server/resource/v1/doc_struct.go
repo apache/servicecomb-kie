@@ -25,7 +25,7 @@ import (
 	"github.com/go-chassis/go-chassis/v2/server/restful"
 )
 
-//swagger doc request header params
+// swagger doc request header params
 var (
 	DocHeaderDepth = &restful.Parameters{
 		DataType:  "string",
@@ -49,7 +49,7 @@ var (
 	}
 )
 
-//swagger doc response header params
+// swagger doc response header params
 var (
 	DocHeaderRevision = goRestful.Header{
 		Items: &goRestful.Items{
@@ -59,7 +59,7 @@ var (
 	}
 )
 
-//swagger doc query params
+// swagger doc query params
 var (
 	DocQueryCombination = &restful.Parameters{
 		DataType:  "string",
@@ -154,7 +154,7 @@ var (
 	}
 )
 
-//swagger doc path params
+// swagger doc path params
 var (
 	DocPathProject = &restful.Parameters{
 		DataType:  "string",
@@ -170,7 +170,7 @@ var (
 	}
 )
 
-//KVCreateBody is open api doc
+// KVCreateBody is open api doc
 type KVCreateBody struct {
 	Key       string            `json:"key"`
 	Labels    map[string]string `json:"labels"`
@@ -179,13 +179,13 @@ type KVCreateBody struct {
 	ValueType string            `json:"value_type"`
 }
 
-//KVUploadBody is open api doc
+// KVUploadBody is open api doc
 type KVUploadBody struct {
 	MetaData MetaData       `json:"metadata"`
 	Data     []*model.KVDoc `json:"data"`
 }
 
-//MetaData is extra info
+// MetaData is extra info
 type MetaData struct {
 	Version     string      `json:"version"`
 	Annotations Annotations `json:"annotations"`
@@ -194,18 +194,18 @@ type MetaData struct {
 type Annotations struct {
 }
 
-//KVUpdateBody is open api doc
+// KVUpdateBody is open api doc
 type KVUpdateBody struct {
 	Status string `json:"status"`
 	Value  string `json:"value"`
 }
 
-//DeleteBody is the request body struct of delete multiple kvs interface
+// DeleteBody is the request body struct of delete multiple kvs interface
 type DeleteBody struct {
 	IDs []string `json:"ids"`
 }
 
-//ErrorMsg is open api doc
+// ErrorMsg is open api doc
 type ErrorMsg struct {
 	Msg string `json:"error_msg"`
 }

@@ -33,7 +33,7 @@ import (
 	"github.com/apache/servicecomb-kie/server/datasource/etcd/key"
 )
 
-//Dao operate data in mongodb
+// Dao operate data in mongodb
 type Dao struct {
 }
 
@@ -99,7 +99,7 @@ func txnCreate(ctx context.Context, kv *model.KVDoc) (bool, error) {
 	return resp.Succeeded, nil
 }
 
-//Update update key value
+// Update update key value
 func (s *Dao) Update(ctx context.Context, kv *model.KVDoc, options ...datasource.WriteOption) error {
 	keyKV := key.KV(kv.Domain, kv.Project, kv.ID)
 	resp, err := etcdadpt.Get(ctx, keyKV)
@@ -169,14 +169,14 @@ func update(ctx context.Context, kv *model.KVDoc, options ...datasource.WriteOpt
 	return etcdadpt.PutBytes(ctx, keyKV, kvBytes)
 }
 
-//Extract key values
+// Extract key values
 func getValue(str string) string {
 	rex := regexp.MustCompile(`\(([^)]+)\)`)
 	res := rex.FindStringSubmatch(str)
 	return res[len(res)-1]
 }
 
-//Exist supports you query a key value by label map or labels id
+// Exist supports you query a key value by label map or labels id
 func (s *Dao) Exist(ctx context.Context, key, project, domain string, options ...datasource.FindOption) (bool, error) {
 	opts := datasource.FindOptions{Key: key}
 	for _, o := range options {
@@ -200,8 +200,8 @@ func (s *Dao) Exist(ctx context.Context, key, project, domain string, options ..
 	return true, nil
 }
 
-//FindOneAndDelete deletes one kv by id and return the deleted kv as these appeared before deletion
-//domain=tenant
+// FindOneAndDelete deletes one kv by id and return the deleted kv as these appeared before deletion
+// domain=tenant
 func (s *Dao) FindOneAndDelete(ctx context.Context, kvID, project, domain string, options ...datasource.WriteOption) (*model.KVDoc, error) {
 	opts := datasource.NewWriteOptions(options...)
 	if opts.SyncEnable {
@@ -287,7 +287,7 @@ func getKVDoc(ctx context.Context, domain, project, kvID string) (*model.KVDoc, 
 	return curKV, nil
 }
 
-//FindManyAndDelete deletes multiple kvs and return the deleted kv list as these appeared before deletion
+// FindManyAndDelete deletes multiple kvs and return the deleted kv list as these appeared before deletion
 func (s *Dao) FindManyAndDelete(ctx context.Context, kvIDs []string, project, domain string, options ...datasource.WriteOption) ([]*model.KVDoc, int64, error) {
 	opts := datasource.NewWriteOptions(options...)
 	if opts.SyncEnable {
@@ -395,7 +395,7 @@ func txnFindManyAndDelete(ctx context.Context, kvIDs []string, project, domain s
 	return docs, int64(successKVNum), nil
 }
 
-//Get get kv by kv id
+// Get get kv by kv id
 func (s *Dao) Get(ctx context.Context, req *model.GetKVRequest) (*model.KVDoc, error) {
 	resp, err := etcdadpt.Get(ctx, key.KV(req.Domain, req.Project, req.ID))
 	if err != nil {
@@ -423,7 +423,7 @@ func (s *Dao) Total(ctx context.Context, project, domain string) (int64, error) 
 	return total, err
 }
 
-//List get kv list by key and criteria
+// List get kv list by key and criteria
 func (s *Dao) List(ctx context.Context, project, domain string, options ...datasource.FindOption) (*model.KVResponse, error) {
 	opts := datasource.NewDefaultFindOpts()
 	for _, o := range options {

@@ -34,7 +34,7 @@ import (
 var once sync.Once
 var bus *Bus
 
-//const
+// const
 const (
 	EventKVChange             = "kv-chg"
 	DefaultEventBatchSize     = 5000
@@ -47,12 +47,12 @@ func Topics() *sync.Map {
 	return &topics
 }
 
-//Bus is message bug
+// Bus is message bug
 type Bus struct {
 	agent *agent.Agent
 }
 
-//Init create serf agent
+// Init create serf agent
 func Init() {
 	once.Do(func() {
 		ac := agent.DefaultConfig()
@@ -98,7 +98,7 @@ func splitHostPort(advertiseAddr string, defaultHost string, defaultPort int) (s
 	return host, p
 }
 
-//Start start serf agent
+// Start start serf agent
 func Start() {
 	err := bus.agent.Start()
 	if err != nil {
@@ -125,7 +125,7 @@ func join(addresses []string) error {
 	return nil
 }
 
-//Publish send event
+// Publish send event
 func Publish(event *KVChangeEvent) error {
 	b, err := json.Marshal(event)
 	if err != nil {
@@ -135,7 +135,7 @@ func Publish(event *KVChangeEvent) error {
 
 }
 
-//AddObserver observe key changes by (key or labels) or (key and labels)
+// AddObserver observe key changes by (key or labels) or (key and labels)
 func AddObserver(o *Observer, topic *Topic) (string, error) {
 	t, err := topic.Encode()
 	if err != nil {

@@ -33,11 +33,11 @@ import (
 	mmodel "github.com/apache/servicecomb-kie/server/datasource/mongo/model"
 )
 
-//Dao is the implementation
+// Dao is the implementation
 type Dao struct {
 }
 
-//GetHistory get all history by label id
+// GetHistory get all history by label id
 func (s *Dao) GetHistory(ctx context.Context, kvID, project, domain string, options ...datasource.FindOption) (*model.KVResponse, error) {
 	var filter primitive.M
 	opts := datasource.FindOptions{}
@@ -94,7 +94,7 @@ func getHistoryByKeyID(ctx context.Context, filter bson.M, offset, limit int64) 
 	return result, nil
 }
 
-//AddHistory add kv history
+// AddHistory add kv history
 func (s *Dao) AddHistory(ctx context.Context, kv *model.KVDoc) error {
 	collection := mongo.GetClient().GetDB().Collection(mmodel.CollectionKVRevision)
 	_, err := collection.InsertOne(ctx, kv)
@@ -110,8 +110,8 @@ func (s *Dao) AddHistory(ctx context.Context, kv *model.KVDoc) error {
 	return nil
 }
 
-//DelayDeletionTime add delete time to all revisions of the kv,
-//thus these revisions will be automatically deleted by TTL index.
+// DelayDeletionTime add delete time to all revisions of the kv,
+// thus these revisions will be automatically deleted by TTL index.
 func (s *Dao) DelayDeletionTime(ctx context.Context, kvIDs []string, project, domain string) error {
 	collection := mongo.GetClient().GetDB().Collection(mmodel.CollectionKVRevision)
 	now := time.Now()
@@ -132,7 +132,7 @@ func (s *Dao) DelayDeletionTime(ctx context.Context, kvIDs []string, project, do
 	return nil
 }
 
-//historyRotate delete historical versions for a key that exceeds the limited number
+// historyRotate delete historical versions for a key that exceeds the limited number
 func historyRotate(ctx context.Context, kvID, project, domain string) error {
 	filter := bson.M{"id": kvID, "domain": domain, "project": project}
 	collection := mongo.GetClient().GetDB().Collection(mmodel.CollectionKVRevision)

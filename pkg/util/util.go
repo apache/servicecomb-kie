@@ -19,8 +19,8 @@ package util
 
 import "reflect"
 
-//IsEquivalentLabel compares whether two labels are equal.
-//In particular, if one is nil and another is an empty map, it return true
+// IsEquivalentLabel compares whether two labels are equal.
+// In particular, if one is nil and another is an empty map, it return true
 func IsEquivalentLabel(x, y map[string]string) bool {
 	if len(x) == 0 && len(y) == 0 {
 		return true

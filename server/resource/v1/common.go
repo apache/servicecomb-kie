@@ -43,7 +43,7 @@ import (
 	"gopkg.in/yaml.v2"
 )
 
-//const of server
+// const of server
 const (
 	HeaderUserAgent    = "User-Agent"
 	HeaderSessionID    = "X-Session-Id"
@@ -65,7 +65,7 @@ func NewObserver() (*pubsub.Observer, error) {
 	}, nil
 }
 
-//err
+// err
 var (
 	ErrInvalidRev = errors.New(common.MsgInvalidRev)
 
@@ -74,7 +74,7 @@ var (
 	ErrIDIsNil        = errors.New("id is empty")
 )
 
-//ReadClaims get auth info
+// ReadClaims get auth info
 func ReadClaims(ctx context.Context) map[string]interface{} {
 	c, err := rbac.FromContext(ctx)
 	if err != nil {
@@ -83,7 +83,7 @@ func ReadClaims(ctx context.Context) map[string]interface{} {
 	return c
 }
 
-//ReadDomain get domain info
+// ReadDomain get domain info
 func ReadDomain(ctx context.Context) string {
 	c := ReadClaims(ctx)
 	if c != nil {
@@ -92,8 +92,8 @@ func ReadDomain(ctx context.Context) string {
 	return "default"
 }
 
-//ReadLabelCombinations get query combination from url
-//q=app:default+service:payment&q=app:default
+// ReadLabelCombinations get query combination from url
+// q=app:default+service:payment&q=app:default
 func ReadLabelCombinations(req *goRestful.Request) ([]map[string]string, error) {
 	queryCombinations := req.QueryParameters(common.QueryParamQ)
 	labelCombinations := make([]map[string]string, 0)
@@ -119,7 +119,7 @@ func ReadLabelCombinations(req *goRestful.Request) ([]map[string]string, error) 
 	return labelCombinations, nil
 }
 
-//WriteErrResponse write error message to client
+// WriteErrResponse write error message to client
 func WriteErrResponse(context *restful.Context, code int32, msg string) {
 	configErr := config.NewError(code, msg)
 	context.Resp.Header().Set(goRestful.HEADER_ContentType, goRestful.MIME_JSON)

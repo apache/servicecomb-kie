@@ -17,7 +17,7 @@
 
 package pubsub
 
-//Options is serf options
+// Options is serf options
 type Options struct {
 	BindAddr      string
 	AdvertiseAddr string

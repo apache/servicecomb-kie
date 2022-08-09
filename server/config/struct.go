@@ -17,7 +17,7 @@
 
 package config
 
-//Config is yaml file struct
+// Config is yaml file struct
 type Config struct {
 	DB   DB   `yaml:"db"`
 	RBAC RBAC `yaml:"rbac"`
@@ -39,7 +39,7 @@ type TLS struct {
 	VerifyPeer  bool   `yaml:"verifyPeer"`
 }
 
-//DB is yaml file struct to set persistent config
+// DB is yaml file struct to set persistent config
 type DB struct {
 	TLS      `yaml:",inline" json:",inline"`
 	URI      string `yaml:"uri" json:"uri,omitempty"`
@@ -48,7 +48,7 @@ type DB struct {
 	Timeout  string `yaml:"timeout" json:"timeout,omitempty"`
 }
 
-//RBAC is rbac config
+// RBAC is rbac config
 type RBAC struct {
 	Enabled    bool   `yaml:"enabled"`
 	PubKeyFile string `yaml:"rsaPublicKeyFile"`

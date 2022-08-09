@@ -18,8 +18,8 @@
 package rbac
 
 import (
-	"io/ioutil"
 	"net/http"
+	"os"
 	"path/filepath"
 	"strings"
 
@@ -36,7 +36,7 @@ const (
 	pubContentKey = "rbac.publicKey"
 )
 
-//Init initialize the rbac module
+// Init initialize the rbac module
 func Init() {
 	if !config.GetRBAC().Enabled {
 		openlog.Info("rbac is disabled")
@@ -74,10 +74,10 @@ func Init() {
 	openlog.Info("rbac is enabled")
 }
 
-//loadPublicKey read key to memory
+// loadPublicKey read key to memory
 func loadPublicKey() {
 	pf := config.GetRBAC().PubKeyFile
-	content, err := ioutil.ReadFile(filepath.Clean(pf))
+	content, err := os.ReadFile(filepath.Clean(pf))
 	if err != nil {
 		openlog.Fatal(err.Error())
 		return
@@ -88,7 +88,7 @@ func loadPublicKey() {
 	}
 }
 
-//PublicKey get public key to verify a token
+// PublicKey get public key to verify a token
 func PublicKey() string {
 	return archaius.GetString(pubContentKey, "")
 }

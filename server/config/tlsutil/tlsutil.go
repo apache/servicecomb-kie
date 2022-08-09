@@ -20,7 +20,7 @@ package tlsutil
 import (
 	"crypto/tls"
 	"errors"
-	"io/ioutil"
+	"os"
 
 	"github.com/apache/servicecomb-kie/pkg/cipherutil"
 	"github.com/apache/servicecomb-kie/server/config"
@@ -34,7 +34,7 @@ var ErrRootCAMissing = errors.New("rootCAFile is empty in config file")
 func Config(c *config.TLS) (*tls.Config, error) {
 	var password string
 	if c.CertPwdFile != "" {
-		pwdBytes, err := ioutil.ReadFile(c.CertPwdFile)
+		pwdBytes, err := os.ReadFile(c.CertPwdFile)
 		if err != nil {
 			openlog.Error("read cert password file failed: " + err.Error())
 			return nil, err

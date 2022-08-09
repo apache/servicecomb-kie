@@ -17,7 +17,7 @@
 
 package counter
 
-//Counter is db schema
+// Counter is db schema
 type Counter struct {
 	Name  string `bson:"name,omitempty"`
 	Count int64  `bson:"count,omitempty"`

@@ -15,7 +15,7 @@
  * limitations under the License.
  */
 
-//package dao supply pure persistence layer access
+// package dao supply pure persistence layer access
 package datasource
 
 import (
@@ -48,14 +48,14 @@ const (
 	ConfigResource = "config"
 )
 
-//New init db session
+// New init db session
 type New func(c *Config) (Broker, error)
 
 func RegisterPlugin(name string, f New) {
 	plugins[name] = f
 }
 
-//Broker avoid directly depend on one kind of persistence solution
+// Broker avoid directly depend on one kind of persistence solution
 type Broker interface {
 	GetRevisionDao() RevisionDao
 	GetHistoryDao() HistoryDao
@@ -67,7 +67,7 @@ func GetBroker() Broker {
 	return b
 }
 
-//KVDao provide api of KV entity
+// KVDao provide api of KV entity
 type KVDao interface {
 	// Create Update List are usually for admin console
 	Create(ctx context.Context, kv *model.KVDoc, options ...WriteOption) (*model.KVDoc, error)
@@ -85,26 +85,26 @@ type KVDao interface {
 	Total(ctx context.Context, project, domain string) (int64, error)
 }
 
-//HistoryDao provide api of History entity
+// HistoryDao provide api of History entity
 type HistoryDao interface {
 	AddHistory(ctx context.Context, kv *model.KVDoc) error
 	GetHistory(ctx context.Context, keyID, project, domain string, options ...FindOption) (*model.KVResponse, error)
 	DelayDeletionTime(ctx context.Context, kvIDs []string, project, domain string) error
 }
 
-//TrackDao provide api of Track entity
+// TrackDao provide api of Track entity
 type TrackDao interface {
 	CreateOrUpdate(ctx context.Context, detail *model.PollingDetail) (*model.PollingDetail, error)
 	GetPollingDetail(ctx context.Context, detail *model.PollingDetail) ([]*model.PollingDetail, error)
 }
 
-//RevisionDao is global revision number management
+// RevisionDao is global revision number management
 type RevisionDao interface {
 	GetRevision(ctx context.Context, domain string) (int64, error)
 	ApplyRevision(ctx context.Context, domain string) (int64, error)
 }
 
-//ViewDao create update and get view data
+// ViewDao create update and get view data
 type ViewDao interface {
 	Create(ctx context.Context, viewDoc *model.ViewDoc, options ...FindOption) error
 	Update(ctx context.Context, viewDoc *model.ViewDoc) error
@@ -128,7 +128,7 @@ func Init(kind string) error {
 	return nil
 }
 
-//ClearPart remove domain and project of kv
+// ClearPart remove domain and project of kv
 func ClearPart(kv *model.KVDoc) {
 	kv.Domain = ""
 	kv.Project = ""
