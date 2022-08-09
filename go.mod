@@ -2,11 +2,11 @@ module github.com/apache/servicecomb-kie
 
 require (
 	github.com/apache/servicecomb-service-center/eventbase v0.0.0-20220120070230-26997eb876ca
-	github.com/emicklei/go-restful v2.12.0+incompatible
+	github.com/emicklei/go-restful v2.15.1-0.20220703112237-d9c71e118c95+incompatible
 	github.com/go-chassis/cari v0.5.1-0.20220216075429-46c79de3311f
 	github.com/go-chassis/foundation v0.4.0
 	github.com/go-chassis/go-archaius v1.5.2-0.20210301074935-e4694f6b077b
-	github.com/go-chassis/go-chassis/v2 v2.3.1-0.20211217084436-360a6a6a0ef3
+	github.com/go-chassis/go-chassis/v2 v2.5.2
 	github.com/go-chassis/openlog v1.1.3
 	github.com/go-chassis/seclog v1.3.1-0.20210917082355-52c40864f240
 	github.com/gofrs/uuid v4.0.0+incompatible
@@ -39,7 +39,7 @@ require (
 	github.com/fatih/color v1.9.0 // indirect
 	github.com/form3tech-oss/jwt-go v3.2.3+incompatible // indirect
 	github.com/fsnotify/fsnotify v1.4.9 // indirect
-	github.com/go-chassis/go-restful-swagger20 v1.0.3 // indirect
+	github.com/go-chassis/go-restful-swagger20 v1.0.4-0.20220704025524-9243cbee26b7 // indirect
 	github.com/go-chassis/kie-client v0.1.1-0.20210926011742-97eed4281056 // indirect
 	github.com/go-chassis/sc-client v0.6.1-0.20210918130508-2b9daad232da // indirect
 	github.com/go-playground/locales v0.13.0 // indirect
@@ -125,7 +125,7 @@ require (
 	golang.org/x/net v0.0.0-20210405180319-a5a99cb37ef4 // indirect
 	golang.org/x/sync v0.0.0-20210220032951-036812b2e83c // indirect
 	golang.org/x/sys v0.0.0-20210603081109-ebe580a85c40 // indirect
-	golang.org/x/text v0.3.5 // indirect
+	golang.org/x/text v0.3.7 // indirect
 	golang.org/x/time v0.0.0-20210220033141-f8bda1e9f3ba // indirect
 	google.golang.org/genproto v0.0.0-20210602131652-f16073e35f0c // indirect
 	google.golang.org/grpc v1.40.0 // indirect
