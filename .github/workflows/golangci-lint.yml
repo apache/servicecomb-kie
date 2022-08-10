@@ -15,7 +15,7 @@ jobs:
       - name: golangci-lint
         uses: golangci/golangci-lint-action@v2
         with:
-          version: v1.45.2
+          version: v1.48.0
           args: --enable gofmt,gocyclo,goimports,dupl,gosec --skip-dirs=examples,test --skip-files=.*_test.go$
   static-checks:
     runs-on: ubuntu-latest
