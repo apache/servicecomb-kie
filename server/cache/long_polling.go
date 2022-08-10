@@ -9,7 +9,7 @@ import (
 
 var pollingCache = &LongPollingCache{}
 
-//LongPollingCache exchange space for time
+// LongPollingCache exchange space for time
 type LongPollingCache struct {
 	m sync.Map
 }
@@ -23,8 +23,8 @@ func CachedKV() *LongPollingCache {
 	return pollingCache
 }
 
-//Read reads the cached query result
-//only need to filter by labels if match pattern is exact
+// Read reads the cached query result
+// only need to filter by labels if match pattern is exact
 func (c *LongPollingCache) Read(topic string) (int64, *model.KVResponse, *errsvc.Error) {
 	value, ok := c.m.Load(topic)
 	if !ok {

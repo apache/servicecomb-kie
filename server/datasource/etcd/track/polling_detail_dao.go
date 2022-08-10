@@ -28,12 +28,12 @@ import (
 	"github.com/little-cui/etcdadpt"
 )
 
-//Dao is the implementation
+// Dao is the implementation
 type Dao struct {
 }
 
-//CreateOrUpdate create a record or update exist record
-//If revision and session_id exists then update else insert
+// CreateOrUpdate create a record or update exist record
+// If revision and session_id exists then update else insert
 func (s *Dao) CreateOrUpdate(ctx context.Context, detail *model.PollingDetail) (*model.PollingDetail, error) {
 	bytes, err := json.Marshal(detail)
 	if err != nil {
@@ -48,7 +48,7 @@ func (s *Dao) CreateOrUpdate(ctx context.Context, detail *model.PollingDetail) (
 	return detail, nil
 }
 
-//GetPollingDetail is to get a track data
+// GetPollingDetail is to get a track data
 func (s *Dao) GetPollingDetail(ctx context.Context, detail *model.PollingDetail) ([]*model.PollingDetail, error) {
 	kvs, n, err := etcdadpt.List(ctx, key.TrackList(detail.Domain, detail.Project))
 	if err != nil {

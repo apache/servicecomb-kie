@@ -26,7 +26,7 @@ const DefaultTimeout = 60 * time.Second
 type Config struct {
 }
 
-//NewDefaultFindOpts return default options
+// NewDefaultFindOpts return default options
 func NewDefaultFindOpts() FindOptions {
 	return FindOptions{
 		Timeout: DefaultTimeout,
@@ -56,7 +56,7 @@ type WriteOptions struct {
 	SyncEnable bool
 }
 
-//FindOptions is option to find key value
+// FindOptions is option to find key value
 type FindOptions struct {
 	ExactLabels bool
 	Status      string
@@ -76,7 +76,7 @@ type FindOptions struct {
 // WriteOption is functional option to create, update and delete kv
 type WriteOption func(*WriteOptions)
 
-//FindOption is functional option to find key value
+// FindOption is functional option to find key value
 type FindOption func(*FindOptions)
 
 // WithSync indicates that the synchronization function is on
@@ -86,63 +86,63 @@ func WithSync(enabled bool) WriteOption {
 	}
 }
 
-//WithExactLabels tell model service to return only one kv matches the labels
+// WithExactLabels tell model service to return only one kv matches the labels
 func WithExactLabels() FindOption {
 	return func(o *FindOptions) {
 		o.ExactLabels = true
 	}
 }
 
-//WithID find by kvID
+// WithID find by kvID
 func WithID(id string) FindOption {
 	return func(o *FindOptions) {
 		o.ID = id
 	}
 }
 
-//WithKey find by key
+// WithKey find by key
 func WithKey(key string) FindOption {
 	return func(o *FindOptions) {
 		o.Key = key
 	}
 }
 
-//WithStatus enabled/disabled
+// WithStatus enabled/disabled
 func WithStatus(status string) FindOption {
 	return func(o *FindOptions) {
 		o.Status = status
 	}
 }
 
-//WithTimeout will return err if execution take too long
+// WithTimeout will return err if execution take too long
 func WithTimeout(d time.Duration) FindOption {
 	return func(o *FindOptions) {
 		o.Timeout = d
 	}
 }
 
-//WithLabels find kv by labels
+// WithLabels find kv by labels
 func WithLabels(labels map[string]string) FindOption {
 	return func(o *FindOptions) {
 		o.Labels = labels
 	}
 }
 
-//WithLabelFormat find kv by label string
+// WithLabelFormat find kv by label string
 func WithLabelFormat(label string) FindOption {
 	return func(o *FindOptions) {
 		o.LabelFormat = label
 	}
 }
 
-//WithLimit tells service paging limit
+// WithLimit tells service paging limit
 func WithLimit(l int64) FindOption {
 	return func(o *FindOptions) {
 		o.Limit = l
 	}
 }
 
-//WithOffset tells service paging offset
+// WithOffset tells service paging offset
 func WithOffset(os int64) FindOption {
 	return func(o *FindOptions) {
 		o.Offset = os

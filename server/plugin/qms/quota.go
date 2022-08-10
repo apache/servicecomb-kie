@@ -26,13 +26,13 @@ import (
 	"github.com/go-chassis/openlog"
 )
 
-//const
+// const
 const (
 	DefaultQuota   = 10000
 	QuotaConfigKey = "QUOTA_CONFIG"
 )
 
-//BuildInManager read env config to max config item number, and db total usage
+// BuildInManager read env config to max config item number, and db total usage
 // it is not a centralized QMS.
 type BuildInManager struct {
 }
@@ -45,7 +45,7 @@ func (m *BuildInManager) GetQuota(domain, project, resource string) (*quota.Quot
 	panic("implement me")
 }
 
-//GetQuotas get usage and quota
+// GetQuotas get usage and quota
 func (m *BuildInManager) GetQuotas(domain, project string) ([]*quota.Quota, error) {
 	max := archaius.GetInt64(QuotaConfigKey, DefaultQuota)
 	total, err := datasource.GetBroker().GetKVDao().Total(context.TODO(), project, domain)
@@ -59,12 +59,12 @@ func (m *BuildInManager) GetQuotas(domain, project string) ([]*quota.Quota, erro
 	}}, nil
 }
 
-//IncreaseUsed no use
+// IncreaseUsed no use
 func (m *BuildInManager) IncreaseUsed(domain, project, resource string, used int64) error {
 	return nil
 }
 
-//DecreaseUsed no use
+// DecreaseUsed no use
 func (m *BuildInManager) DecreaseUsed(domain, project, resource string, used int64) error {
 	return nil
 }

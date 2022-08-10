@@ -19,7 +19,7 @@ package common
 
 import "time"
 
-//match mode
+// match mode
 const (
 	QueryParamQ            = "q"
 	QueryByLabelsCon       = "&"
@@ -41,7 +41,7 @@ const (
 	QueryParamOverride     = "override"
 )
 
-//http headers
+// http headers
 const (
 	HeaderDepth       = "X-Depth"
 	HeaderRevision    = "X-Kie-Revision"
@@ -49,14 +49,14 @@ const (
 	HeaderAccept      = "Accept"
 )
 
-//ContentType
+// ContentType
 const (
 	ContentTypeText = "application/text"
 	ContentTypeJSON = "application/json"
 	ContentTypeYaml = "text/yaml"
 )
 
-//const of server
+// const of server
 const (
 	PatternExact            = "exact"
 	StatusEnabled           = "enabled"

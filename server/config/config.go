@@ -25,10 +25,10 @@ import (
 	"gopkg.in/yaml.v2"
 )
 
-//Configurations is kie config items
+// Configurations is kie config items
 var Configurations = &Config{}
 
-//Init initiate config files
+// Init initiate config files
 func Init() error {
 	if err := archaius.AddFile(Configurations.ConfigFile, archaius.WithFileHandler(util.UseFileNameAsKeyContentAsValue)); err != nil {
 		return err
@@ -38,12 +38,12 @@ func Init() error {
 	return yaml.Unmarshal([]byte(content), Configurations)
 }
 
-//GetDB return db configs
+// GetDB return db configs
 func GetDB() DB {
 	return Configurations.DB
 }
 
-//GetRBAC return rbac config
+// GetRBAC return rbac config
 func GetRBAC() RBAC {
 	return Configurations.RBAC
 }

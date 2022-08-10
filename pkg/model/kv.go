@@ -17,7 +17,7 @@
 
 package model
 
-//KVRequest is http request body
+// KVRequest is http request body
 type KVRequest struct {
 	Key       string            `json:"key" yaml:"key"`
 	Value     string            `json:"value,omitempty" yaml:"value,omitempty"`
@@ -26,31 +26,31 @@ type KVRequest struct {
 	Labels    map[string]string `json:"labels,omitempty" yaml:"labels,omitempty"`                                     //redundant
 }
 
-//KVResponse represents the key value list
+// KVResponse represents the key value list
 type KVResponse struct {
 	Total int      `json:"total"`
 	Data  []*KVDoc `json:"data"`
 }
 
-//LabelDocResponse is label struct
+// LabelDocResponse is label struct
 type LabelDocResponse struct {
 	Labels map[string]string `json:"labels,omitempty"`
 }
 
-//LabelHistoryResponse is label history revision struct
+// LabelHistoryResponse is label history revision struct
 type LabelHistoryResponse struct {
 	Labels   map[string]string `json:"labels,omitempty"`
 	KVs      []*KVDoc          `json:"data,omitempty"`
 	Revision int               `json:"revision"`
 }
 
-//ViewResponse represents the view list
+// ViewResponse represents the view list
 type ViewResponse struct {
 	Total int        `json:"total,omitempty"`
 	Data  []*ViewDoc `json:"data,omitempty"`
 }
 
-//DocResponseSingleKey is response doc
+// DocResponseSingleKey is response doc
 type DocResponseSingleKey struct {
 	CreateRevision int64             `json:"create_revision"`
 	CreateTime     string            `json:"create_time"`
@@ -64,19 +64,19 @@ type DocResponseSingleKey struct {
 	ValueType      string            `json:"value_type"`
 }
 
-//DocResponseGetKey is response doc
+// DocResponseGetKey is response doc
 type DocResponseGetKey struct {
 	Data  []*DocResponseSingleKey `json:"data"`
 	Total int64                   `json:"total"`
 }
 
-//DocRespOfUpload is response doc
+// DocRespOfUpload is response doc
 type DocRespOfUpload struct {
 	Success []*KVDoc             `json:"success"`
 	Failure []*DocFailedOfUpload `json:"failure"`
 }
 
-//DocFailedOfUpload is reponse doc
+// DocFailedOfUpload is reponse doc
 type DocFailedOfUpload struct {
 	Key     string            `json:"key"`
 	Labels  map[string]string `json:"labels"`
@@ -84,13 +84,13 @@ type DocFailedOfUpload struct {
 	ErrMsg  string            `json:"error_message"`
 }
 
-//PollingDataResponse  is response doc
+// PollingDataResponse  is response doc
 type PollingDataResponse struct {
 	Data  []*PollingDetail `json:"data"`
 	Total int              `json:"total"`
 }
 
-//DocHealthCheck is response doc
+// DocHealthCheck is response doc
 type DocHealthCheck struct {
 	Version   string `json:"version"`
 	Revision  string `json:"revision"`

@@ -66,9 +66,9 @@ func ListKV(ctx context.Context, request *model.ListKVRequest) (int64, *model.KV
 	return rev, kv, nil
 }
 
-//Create get latest revision from history
-//and increase revision of label
-//and insert key
+// Create get latest revision from history
+// and increase revision of label
+// and insert key
 func Create(ctx context.Context, kv *model.KVDoc) (*model.KVDoc, *errsvc.Error) {
 	if kv.Status == "" {
 		kv.Status = common.StatusDisabled
@@ -209,7 +209,7 @@ func Publish(kv *model.KVDoc) {
 	openlog.Info(fmt.Sprintf("post [%s] success", kv.ID))
 }
 
-//Update update key value and add new revision
+// Update update key value and add new revision
 func Update(ctx context.Context, kv *model.UpdateKVRequest) (*model.KVDoc, error) {
 	oldKV, err := datasource.GetBroker().GetKVDao().Get(ctx, &model.GetKVRequest{
 		Domain:  kv.Domain,

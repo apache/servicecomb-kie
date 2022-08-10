@@ -34,15 +34,15 @@ import (
 	"github.com/go-chassis/openlog"
 )
 
-//const of noop auth handler
+// const of noop auth handler
 const (
 	TrackHandlerName = "track-handler"
 )
 
-//TrackHandler tracks polling data
+// TrackHandler tracks polling data
 type TrackHandler struct{}
 
-//Handle set local attribute to http request
+// Handle set local attribute to http request
 func (h *TrackHandler) Handle(chain *handler.Chain, inv *invocation.Invocation, cb invocation.ResponseCallBack) {
 	req, ok := inv.Args.(*restful.Request)
 	if !ok {
@@ -105,7 +105,7 @@ func newTrackHandler() handler.Handler {
 	return &TrackHandler{}
 }
 
-//Name is handler name
+// Name is handler name
 func (h *TrackHandler) Name() string {
 	return TrackHandlerName
 }

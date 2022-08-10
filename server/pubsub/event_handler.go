@@ -32,11 +32,11 @@ func RegisterHandler(typ string, h agent.EventHandler) {
 	openlog.Info("register handler for:" + typ)
 }
 
-//ClusterEventHandler handler serf custom event, it is singleton
+// ClusterEventHandler handler serf custom event, it is singleton
 type ClusterEventHandler struct {
 }
 
-//HandleEvent send event to subscribers
+// HandleEvent send event to subscribers
 func (h *ClusterEventHandler) HandleEvent(e serf.Event) {
 	openlog.Debug("receive event:" + e.EventType().String())
 	switch e.EventType().String() {

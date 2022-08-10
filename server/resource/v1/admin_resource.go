@@ -34,7 +34,7 @@ import (
 type AdminResource struct {
 }
 
-//URLPatterns defined config operations
+// URLPatterns defined config operations
 func (r *AdminResource) URLPatterns() []restful.Route {
 	return []restful.Route{
 		{
@@ -55,7 +55,7 @@ func (r *AdminResource) URLPatterns() []restful.Route {
 	}
 }
 
-//HealthCheck provider version info and time info
+// HealthCheck provider version info and time info
 func (r *AdminResource) HealthCheck(context *restful.Context) {
 	domain := ReadDomain(context.Ctx)
 	resp := &model.DocHealthCheck{}
