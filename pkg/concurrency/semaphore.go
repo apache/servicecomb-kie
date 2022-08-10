@@ -7,7 +7,7 @@ const (
 	MaxConcurrency     = math.MaxUint16
 )
 
-//Semaphore ctl the max concurrency.
+// Semaphore ctl the max concurrency.
 type Semaphore struct {
 	tickets chan bool
 }
