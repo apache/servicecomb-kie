@@ -29,7 +29,7 @@ func (b *Semaphore) Acquire() {
 	<-b.tickets
 }
 
-//Release return back signal
+//Release return back signal.
 func (b *Semaphore) Release() {
 	b.tickets <- true
 }

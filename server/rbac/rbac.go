@@ -18,8 +18,8 @@
 package rbac
 
 import (
-	"io/ioutil"
 	"net/http"
+	"os"
 	"path/filepath"
 	"strings"
 
@@ -77,7 +77,7 @@ func Init() {
 //loadPublicKey read key to memory
 func loadPublicKey() {
 	pf := config.GetRBAC().PubKeyFile
-	content, err := ioutil.ReadFile(filepath.Clean(pf))
+	content, err := os.ReadFile(filepath.Clean(pf))
 	if err != nil {
 		openlog.Fatal(err.Error())
 		return
