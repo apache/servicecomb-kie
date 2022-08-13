@@ -21,11 +21,11 @@ import "github.com/go-chassis/foundation/validator"
 
 const (
 	key                   = "key"
-	keyRegex              = `^[a-zA-Z0-9._:-]+$`
+	keyRegex              = `^[a-zA-Z0-9._:-]*$`
 	commonNameRegexString = `^[a-zA-Z0-9]*$|^[a-zA-Z0-9][a-zA-Z0-9_\-.]*[a-zA-Z0-9]$`
 	labelKeyRegexString   = `^[a-zA-Z0-9]{1,32}$|^[a-zA-Z0-9][a-zA-Z0-9_\-.]{1,30}[a-zA-Z0-9]$`
 	labelValueRegexString = `^[a-zA-Z0-9]{0,160}$|^[a-zA-Z0-9][a-zA-Z0-9_\-.]{0,158}[a-zA-Z0-9]$`
-	getKeyRegexString     = `^[a-zA-Z0-9]*$|^[a-zA-Z0-9][a-zA-Z0-9_\-.]*[a-zA-Z0-9]$|^beginWith\([a-zA-Z0-9][a-zA-Z0-9_\-.]*\)$|^wildcard\([a-zA-Z0-9*][a-zA-Z0-9_\-.*]*\)$`
+	getKeyRegexString     = `^[a-zA-Z0-9._:-]*$|^beginWith\([a-zA-Z0-9._:-]*\)$|^wildcard\([a-zA-Z0-9*._:-]*\)$`
 	asciiRegexString      = `^[\x00-\x7F]*$`
 	allCharString         = `.*`
 )
