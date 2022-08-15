@@ -238,3 +238,61 @@ func TestStatus(t *testing.T) {
 	}
 	assert.Error(t, validator.Validate(kvDoc))
 }
+
+func TestGetKey(t *testing.T) {
+	listKvreq := model.ListKVRequest{
+		Project: "default",
+		Domain:  "default",
+		Key:     "beginWith(zZ12.-_:)",
+		Labels: map[string]string{
+			"service": "utService",
+		},
+		Offset: 0,
+		Limit:  10,
+		Status: "enabled",
+		Match:  "exact",
+	}
+	assert.NoError(t, validator.Validate(listKvreq))
+
+	listKvreq = model.ListKVRequest{
+		Project: "default",
+		Domain:  "default",
+		Key:     "wildcard(*IME*)",
+		Labels: map[string]string{
+			"service": "utService",
+		},
+		Offset: 0,
+		Limit:  10,
+		Status: "enabled",
+		Match:  "exact",
+	}
+	assert.NoError(t, validator.Validate(listKvreq))
+
+	listKvreq = model.ListKVRequest{
+		Project: "default",
+		Domain:  "default",
+		Key:     "zZ12.-_:",
+		Labels: map[string]string{
+			"service": "utService",
+		},
+		Offset: 0,
+		Limit:  10,
+		Status: "enabled",
+		Match:  "exact",
+	}
+	assert.NoError(t, validator.Validate(listKvreq))
+
+	listKvreq = model.ListKVRequest{
+		Project: "default",
+		Domain:  "default",
+		Key:     "wildcard(*zZ12.-_:*)",
+		Labels: map[string]string{
+			"service": "utService",
+		},
+		Offset: 0,
+		Limit:  10,
+		Status: "enabled",
+		Match:  "exact",
+	}
+	assert.NoError(t, validator.Validate(listKvreq))
+}
