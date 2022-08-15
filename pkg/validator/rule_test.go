@@ -243,7 +243,7 @@ func TestGetKey(t *testing.T) {
 	listKvreq := model.ListKVRequest{
 		Project: "default",
 		Domain:  "default",
-		Key:     ``,
+		Key:     "beginWith(zZ12.-_:)",
 		Labels: map[string]string{
 			"service": "utService",
 		},
