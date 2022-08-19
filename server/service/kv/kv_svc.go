@@ -33,7 +33,6 @@ import (
 	"github.com/apache/servicecomb-kie/pkg/concurrency"
 	"github.com/apache/servicecomb-kie/pkg/model"
 	"github.com/apache/servicecomb-kie/pkg/stringutil"
-	cfg "github.com/apache/servicecomb-kie/server/config"
 	"github.com/apache/servicecomb-kie/server/datasource"
 	"github.com/apache/servicecomb-kie/server/pubsub"
 )
@@ -275,7 +274,7 @@ func FindManyAndDelete(ctx context.Context, kvIDs []string, project, domain stri
 	var kvs []*model.KVDoc
 	var deleted int64
 	var err error
-	kvs, deleted, err = datasource.GetBroker().GetKVDao().FindManyAndDelete(ctx, kvIDs, project, domain, datasource.WithSync(cfg.GetSync().Enabled))
+	kvs, deleted, err = datasource.GetBroker().GetKVDao().FindManyAndDelete(ctx, kvIDs, project, domain, datasource.WithSync(isSyncEnabled(ctx)))
 	if err != nil {
 		return nil, err
 	}
