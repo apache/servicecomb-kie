@@ -115,12 +115,8 @@ func Create(ctx context.Context, kv *model.KVDoc) (*model.KVDoc, *errsvc.Error) 
 		openlog.Error(err.Error())
 		return nil, config.NewError(config.ErrInternal, "create kv failed")
 	}
-	val := ctx.Value(Sync)
-	enabled, ok := val.(bool)
-	if !ok {
-		enabled = false
-	}
-	kv, err = datasource.GetBroker().GetKVDao().Create(ctx, kv, datasource.WithSync(enabled))
+
+	kv, err = datasource.GetBroker().GetKVDao().Create(ctx, kv, datasource.WithSync(isSyncEnabled(ctx)))
 	if err != nil {
 		openlog.Error(fmt.Sprintf("post err:%s", err.Error()))
 		return nil, config.NewError(config.ErrInternal, "create kv failed")
@@ -237,7 +233,7 @@ func Update(ctx context.Context, kv *model.UpdateKVRequest) (*model.KVDoc, error
 	if err != nil {
 		return nil, err
 	}
-	err = datasource.GetBroker().GetKVDao().Update(ctx, oldKV, datasource.WithSync(cfg.GetSync().Enabled))
+	err = datasource.GetBroker().GetKVDao().Update(ctx, oldKV, datasource.WithSync(isSyncEnabled(ctx)))
 	if err != nil {
 		return nil, err
 	}
@@ -259,7 +255,7 @@ func Update(ctx context.Context, kv *model.UpdateKVRequest) (*model.KVDoc, error
 }
 
 func FindOneAndDelete(ctx context.Context, kvID string, project, domain string) (*model.KVDoc, error) {
-	kv, err := datasource.GetBroker().GetKVDao().FindOneAndDelete(ctx, kvID, project, domain, datasource.WithSync(cfg.GetSync().Enabled))
+	kv, err := datasource.GetBroker().GetKVDao().FindOneAndDelete(ctx, kvID, project, domain, datasource.WithSync(isSyncEnabled(ctx)))
 	if err != nil {
 		return nil, err
 	}
@@ -307,4 +303,13 @@ func List(ctx context.Context, project, domain string, options ...datasource.Fin
 	listSema.Acquire()
 	defer listSema.Release()
 	return datasource.GetBroker().GetKVDao().List(ctx, project, domain, options...)
+}
+
+func isSyncEnabled(ctx context.Context) bool {
+	val := ctx.Value(Sync)
+	enabled, ok := val.(bool)
+	if !ok {
+		enabled = false
+	}
+	return enabled
 }
