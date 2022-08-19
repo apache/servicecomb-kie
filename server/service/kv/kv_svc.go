@@ -40,6 +40,8 @@ import (
 
 var listSema = concurrency.NewSemaphore(concurrency.DefaultConcurrency)
 
+const Sync = "sync"
+
 func ListKV(ctx context.Context, request *model.ListKVRequest) (int64, *model.KVResponse, *errsvc.Error) {
 	opts := []datasource.FindOption{
 		datasource.WithKey(request.Key),
@@ -113,7 +115,12 @@ func Create(ctx context.Context, kv *model.KVDoc) (*model.KVDoc, *errsvc.Error) 
 		openlog.Error(err.Error())
 		return nil, config.NewError(config.ErrInternal, "create kv failed")
 	}
-	kv, err = datasource.GetBroker().GetKVDao().Create(ctx, kv, datasource.WithSync(cfg.GetSync().Enabled))
+	val := ctx.Value(Sync)
+	enabled, ok := val.(bool)
+	if !ok {
+		enabled = false
+	}
+	kv, err = datasource.GetBroker().GetKVDao().Create(ctx, kv, datasource.WithSync(enabled))
 	if err != nil {
 		openlog.Error(fmt.Sprintf("post err:%s", err.Error()))
 		return nil, config.NewError(config.ErrInternal, "create kv failed")
