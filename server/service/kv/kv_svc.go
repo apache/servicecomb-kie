@@ -39,7 +39,7 @@ import (
 
 var listSema = concurrency.NewSemaphore(concurrency.DefaultConcurrency)
 
-const Sync = "sync"
+const CtxSyncEnabled = "sync"
 
 func ListKV(ctx context.Context, request *model.ListKVRequest) (int64, *model.KVResponse, *errsvc.Error) {
 	opts := []datasource.FindOption{
@@ -305,7 +305,7 @@ func List(ctx context.Context, project, domain string, options ...datasource.Fin
 }
 
 func isSyncEnabled(ctx context.Context) bool {
-	val := ctx.Value(Sync)
+	val := ctx.Value(CtxSyncEnabled)
 	enabled, ok := val.(bool)
 	if !ok {
 		enabled = false
