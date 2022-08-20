@@ -27,6 +27,7 @@ import (
 	"github.com/apache/servicecomb-kie/pkg/model"
 	"github.com/apache/servicecomb-kie/server/datasource"
 	kvsvc "github.com/apache/servicecomb-kie/server/service/kv"
+	"github.com/apache/servicecomb-kie/server/service/sync"
 	"github.com/apache/servicecomb-kie/test"
 	emodel "github.com/apache/servicecomb-service-center/eventbase/model"
 	"github.com/apache/servicecomb-service-center/eventbase/service/task"
@@ -115,7 +116,7 @@ func TestWithSync(t *testing.T) {
 	t.Run("create kv with sync enabled", func(t *testing.T) {
 		t.Run("creating a kv will create a task should pass", func(t *testing.T) {
 			// set the sync enabled
-			ctx := context.WithValue(context.Background(), "sync", true)
+			ctx := sync.NewContext(context.Background(), true)
 			kv1, err := kvsvc.Create(ctx, &model.KVDoc{
 				Key:    "sync-create",
 				Value:  "2s",
@@ -159,7 +160,7 @@ func TestWithSync(t *testing.T) {
 	t.Run("update kv with sync enabled", func(t *testing.T) {
 		t.Run("creating two kvs and updating them will create four tasks should pass", func(t *testing.T) {
 			// set the sync enabled
-			ctx := context.WithValue(context.Background(), "sync", true)
+			ctx := sync.NewContext(context.Background(), true)
 			kv1, err := kvsvc.Create(ctx, &model.KVDoc{
 				Key:    "sync-update-one",
 				Value:  "2s",
