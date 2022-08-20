@@ -33,9 +33,9 @@ import (
 	"github.com/apache/servicecomb-kie/pkg/concurrency"
 	"github.com/apache/servicecomb-kie/pkg/model"
 	"github.com/apache/servicecomb-kie/pkg/stringutil"
-	cfg "github.com/apache/servicecomb-kie/server/config"
 	"github.com/apache/servicecomb-kie/server/datasource"
 	"github.com/apache/servicecomb-kie/server/pubsub"
+	"github.com/apache/servicecomb-kie/server/service/sync"
 )
 
 var listSema = concurrency.NewSemaphore(concurrency.DefaultConcurrency)
@@ -113,7 +113,8 @@ func Create(ctx context.Context, kv *model.KVDoc) (*model.KVDoc, *errsvc.Error) 
 		openlog.Error(err.Error())
 		return nil, config.NewError(config.ErrInternal, "create kv failed")
 	}
-	kv, err = datasource.GetBroker().GetKVDao().Create(ctx, kv, datasource.WithSync(cfg.GetSync().Enabled))
+
+	kv, err = datasource.GetBroker().GetKVDao().Create(ctx, kv, datasource.WithSync(sync.FromContext(ctx)))
 	if err != nil {
 		openlog.Error(fmt.Sprintf("post err:%s", err.Error()))
 		return nil, config.NewError(config.ErrInternal, "create kv failed")
@@ -230,7 +231,7 @@ func Update(ctx context.Context, kv *model.UpdateKVRequest) (*model.KVDoc, error
 	if err != nil {
 		return nil, err
 	}
-	err = datasource.GetBroker().GetKVDao().Update(ctx, oldKV, datasource.WithSync(cfg.GetSync().Enabled))
+	err = datasource.GetBroker().GetKVDao().Update(ctx, oldKV, datasource.WithSync(sync.FromContext(ctx)))
 	if err != nil {
 		return nil, err
 	}
@@ -252,7 +253,7 @@ func Update(ctx context.Context, kv *model.UpdateKVRequest) (*model.KVDoc, error
 }
 
 func FindOneAndDelete(ctx context.Context, kvID string, project, domain string) (*model.KVDoc, error) {
-	kv, err := datasource.GetBroker().GetKVDao().FindOneAndDelete(ctx, kvID, project, domain, datasource.WithSync(cfg.GetSync().Enabled))
+	kv, err := datasource.GetBroker().GetKVDao().FindOneAndDelete(ctx, kvID, project, domain, datasource.WithSync(sync.FromContext(ctx)))
 	if err != nil {
 		return nil, err
 	}
@@ -272,7 +273,7 @@ func FindManyAndDelete(ctx context.Context, kvIDs []string, project, domain stri
 	var kvs []*model.KVDoc
 	var deleted int64
 	var err error
-	kvs, deleted, err = datasource.GetBroker().GetKVDao().FindManyAndDelete(ctx, kvIDs, project, domain, datasource.WithSync(cfg.GetSync().Enabled))
+	kvs, deleted, err = datasource.GetBroker().GetKVDao().FindManyAndDelete(ctx, kvIDs, project, domain, datasource.WithSync(sync.FromContext(ctx)))
 	if err != nil {
 		return nil, err
 	}
