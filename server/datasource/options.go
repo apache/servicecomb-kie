@@ -70,7 +70,8 @@ type FindOptions struct {
 	// Offset the offset of the response, start at 0
 	Offset int64
 	// Limit the page size of the response, dot not paging if limit=0
-	Limit int64
+	Limit         int64
+	CaseSensitive bool
 }
 
 // WriteOption is functional option to create, update and delete kv
@@ -83,6 +84,13 @@ type FindOption func(*FindOptions)
 func WithSync(enabled bool) WriteOption {
 	return func(o *WriteOptions) {
 		o.SyncEnable = enabled
+	}
+}
+
+// WithCaseSensitive tell model service whether to match case of letters or not.
+func WithCaseSensitive() FindOption {
+	return func(o *FindOptions) {
+		o.CaseSensitive = true
 	}
 }
 

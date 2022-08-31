@@ -148,6 +148,23 @@ func TestService_Create(t *testing.T) {
 		assert.EqualError(t, err,
 			config.NewError(config.ErrRecordAlreadyExists, datasource.ErrKVAlreadyExists.Error()).Error())
 	})
+	t.Run("create the kv with uppercase, expected: create successfully", func(t *testing.T) {
+		result, err := kvsvc.Create(context.TODO(), &model.KVDoc{
+			Key:    "TIMEOUT",
+			Value:  "2s",
+			Status: common.StatusEnabled,
+			Labels: map[string]string{
+				"app":     "mall",
+				"service": "utCart",
+			},
+			Domain:  domain,
+			Project: project,
+		})
+		assert.Nil(t, err)
+		assert.NotEmpty(t, result.ID)
+		assert.Equal(t, "TIMEOUT", result.Key)
+		assert.Equal(t, "2s", result.Value)
+	})
 	t.Run("list the kv", func(t *testing.T) {
 		res, err := kvsvc.List(context.TODO(), project, domain,
 			datasource.WithKey("wildcard(time*1)"))
