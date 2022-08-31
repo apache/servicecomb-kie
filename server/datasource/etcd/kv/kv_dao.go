@@ -486,10 +486,10 @@ func toRegex(opts datasource.FindOptions) (*regexp.Regexp, error) {
 	default:
 		value = strings.ReplaceAll(opts.Key, ".", "\\.")
 	}
+	value = "^" + value + "$"
 	if !opts.CaseSensitive {
-		value = "(?i)^" + value
+		value = "(?i)" + value
 	}
-	value += "$"
 	regex, err := regexp.Compile(value)
 	if err != nil {
 		openlog.Error("invalid wildcard expr: " + value + ", error: " + err.Error())
