@@ -186,7 +186,8 @@ func (s *Dao) Exist(ctx context.Context, key, project, domain string, options ..
 		datasource.WithExactLabels(),
 		datasource.WithLabels(opts.Labels),
 		datasource.WithLabelFormat(opts.LabelFormat),
-		datasource.WithKey(key))
+		datasource.WithKey(key),
+		datasource.WithCaseSensitive())
 	if err != nil {
 		openlog.Error("check kv exist: " + err.Error())
 		return false, err
@@ -485,7 +486,10 @@ func toRegex(opts datasource.FindOptions) (*regexp.Regexp, error) {
 	default:
 		value = strings.ReplaceAll(opts.Key, ".", "\\.")
 	}
-	value = "(?i)^" + value + "$"
+	value = "^" + value + "$"
+	if !opts.CaseSensitive {
+		value = "(?i)" + value
+	}
 	regex, err := regexp.Compile(value)
 	if err != nil {
 		openlog.Error("invalid wildcard expr: " + value + ", error: " + err.Error())
