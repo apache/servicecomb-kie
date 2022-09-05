@@ -302,3 +302,16 @@ func List(ctx context.Context, project, domain string, options ...datasource.Fin
 	defer listSema.Release()
 	return datasource.GetBroker().GetKVDao().List(ctx, project, domain, options...)
 }
+
+func Exist(ctx context.Context, key, project, domain string, labels map[string]string) (bool, error) {
+	if labels == nil {
+		labels = map[string]string{}
+	}
+	labelFormat := stringutil.FormatMap(labels)
+	exist, err := datasource.GetBroker().GetKVDao().Exist(ctx, key, project, domain, datasource.WithLabelFormat(labelFormat))
+	if err != nil {
+		openlog.Error(err.Error())
+		return false, err
+	}
+	return exist, nil
+}

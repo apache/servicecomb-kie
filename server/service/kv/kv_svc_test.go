@@ -195,3 +195,37 @@ func TestService_Delete(t *testing.T) {
 		assert.NoError(t, err)
 	})
 }
+
+func TestExist(t *testing.T) {
+	labels := map[string]string{
+		"app":     "solar-system",
+		"service": "galaxy",
+	}
+	t.Run("determine whether key 'earth' exists, expected: exists", func(t *testing.T) {
+		ctx := context.TODO()
+		kv, err := kvsvc.Create(ctx, &model.KVDoc{
+			Key:     "earth",
+			Value:   "exists",
+			Status:  common.StatusEnabled,
+			Labels:  labels,
+			Domain:  domain,
+			Project: project,
+		})
+		assert.Nil(t, err)
+		assert.NotEmpty(t, kv.ID)
+		exists, queryErr := kvsvc.Exist(ctx, "earth", project, domain, labels)
+		assert.NoError(t, queryErr)
+		assert.Equal(t, true, exists)
+	})
+	t.Run("determine whether key 'earth' exists with nil labels, expected: not exists", func(t *testing.T) {
+		exists, queryErr := kvsvc.Exist(context.TODO(), "earth", project, domain, nil)
+		assert.NoError(t, queryErr)
+		assert.Equal(t, false, exists)
+	})
+	t.Run("search wrong key, expected: not exists", func(t *testing.T) {
+		exists, queryErr := kvsvc.Exist(context.TODO(), "x.x.x.x.x.x", project, domain, labels)
+		assert.NoError(t, queryErr)
+		assert.Equal(t, false, exists)
+	})
+
+}
