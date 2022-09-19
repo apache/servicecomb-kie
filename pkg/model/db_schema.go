@@ -76,7 +76,7 @@ type PollingDetail struct {
 
 // UpdateKVRequest is db struct, it contains kv update request params
 type UpdateKVRequest struct {
-	ID      string `json:"id,omitempty" bson:"id,omitempty" yaml:"id,omitempty" swag:"string" validate:"uuid"`
+	ID      string `json:"id,omitempty" bson:"id,omitempty" yaml:"id,omitempty" swag:"string" validate:"min=1,max=64"`
 	Value   string `json:"value,omitempty" yaml:"value,omitempty" validate:"max=131072,value"`
 	Project string `json:"project,omitempty" yaml:"project,omitempty" validate:"min=1,max=256,commonName"`
 	Domain  string `json:"domain,omitempty" yaml:"domain,omitempty" validate:"min=1,max=256,commonName"` //redundant
@@ -87,7 +87,7 @@ type UpdateKVRequest struct {
 type GetKVRequest struct {
 	Project string `json:"project,omitempty" yaml:"project,omitempty" validate:"min=1,max=256,commonName"`
 	Domain  string `json:"domain,omitempty" yaml:"domain,omitempty" validate:"min=1,max=256,commonName"` //redundant
-	ID      string `json:"id,omitempty" bson:"id,omitempty" yaml:"id,omitempty" swag:"string" validate:"uuid"`
+	ID      string `json:"id,omitempty" bson:"id,omitempty" yaml:"id,omitempty" swag:"string" validate:"min=1,max=64"`
 }
 
 // ListKVRequest contains kv list request params
