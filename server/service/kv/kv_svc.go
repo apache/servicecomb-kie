@@ -19,15 +19,10 @@ package kv
 
 import (
 	"context"
+	"crypto/sha256"
 	"fmt"
+	"strings"
 	"time"
-
-	"github.com/go-chassis/cari/config"
-	"github.com/go-chassis/cari/pkg/errsvc"
-	"github.com/go-chassis/foundation/validator"
-	"github.com/go-chassis/go-chassis/v2/pkg/backends/quota"
-	"github.com/go-chassis/openlog"
-	"github.com/gofrs/uuid"
 
 	"github.com/apache/servicecomb-kie/pkg/common"
 	"github.com/apache/servicecomb-kie/pkg/concurrency"
@@ -36,6 +31,11 @@ import (
 	"github.com/apache/servicecomb-kie/server/datasource"
 	"github.com/apache/servicecomb-kie/server/pubsub"
 	"github.com/apache/servicecomb-kie/server/service/sync"
+	"github.com/go-chassis/cari/config"
+	"github.com/go-chassis/cari/pkg/errsvc"
+	"github.com/go-chassis/foundation/validator"
+	"github.com/go-chassis/go-chassis/v2/pkg/backends/quota"
+	"github.com/go-chassis/openlog"
 )
 
 var listSema = concurrency.NewSemaphore(concurrency.DefaultConcurrency)
@@ -131,11 +131,12 @@ func Create(ctx context.Context, kv *model.KVDoc) (*model.KVDoc, *errsvc.Error) 
 }
 
 func completeKV(kv *model.KVDoc, revision int64) error {
-	id, err := uuid.NewV4()
-	if err != nil {
-		return err
-	}
-	kv.ID = id.String()
+	kv.ID = fmt.Sprintf("%x", sha256.Sum256([]byte(strings.Join([]string{
+		kv.Domain,
+		kv.Project,
+		kv.Key,
+		kv.LabelFormat,
+	}, "/"))))
 	kv.UpdateRevision = revision
 	kv.CreateRevision = revision
 	now := time.Now().Unix()
