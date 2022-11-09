@@ -22,6 +22,7 @@ import (
 	"context"
 	"encoding/json"
 	"fmt"
+	kierbac "github.com/apache/servicecomb-kie/server/rbac"
 	"net/http"
 	"time"
 
@@ -69,6 +70,12 @@ func (r *KVResource) Upload(rctx *restful.Context) {
 // Post create a kv
 func (r *KVResource) Post(rctx *restful.Context) {
 	var err error
+	_, err = kierbac.GetPermLabels(rctx, kierbac.CreateConfigResourceScope())
+	if err != nil {
+		WriteErrResponse(rctx, http.StatusUnauthorized, err.Error())
+		return
+	}
+
 	kv := new(model.KVDoc)
 	if err = readRequest(rctx, kv); err != nil {
 		WriteErrResponse(rctx, config.ErrInvalidParams, fmt.Sprintf(FmtReadRequestError, err))
@@ -91,6 +98,12 @@ func (r *KVResource) Post(rctx *restful.Context) {
 // Put update a kv
 func (r *KVResource) Put(rctx *restful.Context) {
 	var err error
+	_, err = kierbac.GetPermLabels(rctx, kierbac.UpdateConfigResourceScope())
+	if err != nil {
+		WriteErrResponse(rctx, http.StatusUnauthorized, err.Error())
+		return
+	}
+
 	kvID := rctx.ReadPathParameter(common.PathParamKVID)
 	project := rctx.ReadPathParameter(common.PathParameterProject)
 	kvReq := new(model.UpdateKVRequest)
@@ -138,12 +151,18 @@ func (r *KVResource) Put(rctx *restful.Context) {
 
 // Get search key by kv id
 func (r *KVResource) Get(rctx *restful.Context) {
+	permLabels, err := kierbac.GetPermLabels(rctx, kierbac.GetConfigResourceScope())
+	if err != nil {
+		WriteErrResponse(rctx, http.StatusUnauthorized, err.Error())
+		return
+	}
+
 	request := &model.GetKVRequest{
 		Project: rctx.ReadPathParameter(common.PathParameterProject),
 		Domain:  ReadDomain(rctx.Ctx),
 		ID:      rctx.ReadPathParameter(common.PathParamKVID),
 	}
-	err := validator.Validate(request)
+	err = validator.Validate(request)
 	if err != nil {
 		WriteErrResponse(rctx, config.ErrInvalidParams, err.Error())
 		return
@@ -158,6 +177,13 @@ func (r *KVResource) Get(rctx *restful.Context) {
 		WriteErrResponse(rctx, config.ErrInternal, "get kv failed")
 		return
 	}
+
+	p := kierbac.MatchLabelsList(kv, permLabels)
+	if !p {
+		WriteErrResponse(rctx, http.StatusUnauthorized, "have no permission for "+kv.Key)
+		return
+	}
+
 	kv.Domain = ""
 	kv.Project = ""
 	err = writeResponse(rctx, kv)
@@ -279,10 +305,16 @@ func watch(rctx *restful.Context, request *model.ListKVRequest, wait string) boo
 
 // Delete deletes one kv by id
 func (r *KVResource) Delete(rctx *restful.Context) {
+	_, err := kierbac.GetPermLabels(rctx, kierbac.DeleteConfigResourceScope())
+	if err != nil {
+		WriteErrResponse(rctx, http.StatusUnauthorized, err.Error())
+		return
+	}
+
 	project := rctx.ReadPathParameter(common.PathParameterProject)
 	domain := ReadDomain(rctx.Ctx)
 	kvID := rctx.ReadPathParameter(common.PathParamKVID)
-	err := validateDelete(domain, project, kvID)
+	err = validateDelete(domain, project, kvID)
 	if err != nil {
 		WriteErrResponse(rctx, config.ErrInvalidParams, err.Error())
 		return
