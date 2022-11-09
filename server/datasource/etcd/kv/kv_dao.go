@@ -20,6 +20,7 @@ package kv
 import (
 	"context"
 	"encoding/json"
+	"github.com/apache/servicecomb-kie/server/datasource/auth"
 	"regexp"
 	"strings"
 
@@ -38,6 +39,11 @@ type Dao struct {
 }
 
 func (s *Dao) Create(ctx context.Context, kv *model.KVDoc, options ...datasource.WriteOption) (*model.KVDoc, error) {
+	//rbac
+	if err := auth.CheckCreateOneKV(ctx, kv); err != nil {
+		return nil, err
+	}
+
 	opts := datasource.NewWriteOptions(options...)
 	var exist bool
 	var err error
@@ -116,6 +122,12 @@ func (s *Dao) Update(ctx context.Context, kv *model.KVDoc, options ...datasource
 		openlog.Error(err.Error())
 		return err
 	}
+
+	//rbac
+	if err := auth.CheckUpdateOneKV(ctx, &oldKV); err != nil {
+		return err
+	}
+
 	oldKV.LabelFormat = kv.LabelFormat
 	oldKV.Value = kv.Value
 	oldKV.Status = kv.Status
@@ -215,6 +227,12 @@ func (s *Dao) FindOneAndDelete(ctx context.Context, kvID, project, domain string
 func findOneAndDelete(ctx context.Context, kvID, project, domain string) (*model.KVDoc, error) {
 	kvKey := key.KV(domain, project, kvID)
 	kvDoc := model.KVDoc{}
+
+	//rbac check
+	if _, err := getKVDoc(ctx, domain, project, kvID); err != nil {
+		return nil, err
+	}
+
 	resp, err := etcdadpt.ListAndDelete(ctx, kvKey)
 	if err != nil {
 		openlog.Error("delete Key error: " + err.Error())
@@ -269,7 +287,7 @@ func txnFindOneAndDelete(ctx context.Context, kvID, project, domain string) (*mo
 	return kvDoc, nil
 }
 
-// getKVDoc is to get kv
+// getKVDoc is to get kv for delete
 func getKVDoc(ctx context.Context, domain, project, kvID string) (*model.KVDoc, error) {
 	resp, err := etcdadpt.Get(ctx, key.KV(domain, project, kvID))
 	if err != nil {
@@ -285,6 +303,12 @@ func getKVDoc(ctx context.Context, domain, project, kvID string) (*model.KVDoc, 
 		openlog.Error("decode error: " + err.Error())
 		return nil, err
 	}
+
+	//rbac
+	if err := auth.CheckDeleteOneKV(ctx, curKV); err != nil {
+		return nil, err
+	}
+
 	return curKV, nil
 }
 
@@ -302,6 +326,9 @@ func findManyAndDelete(ctx context.Context, kvIDs []string, project, domain stri
 	var docs []*model.KVDoc
 	var opOptions []etcdadpt.OpOptions
 	for _, id := range kvIDs {
+		if _, err := getKVDoc(ctx, domain, project, id); err != nil {
+			continue
+		}
 		opOptions = append(opOptions, etcdadpt.OpDel(etcdadpt.WithStrKey(key.KV(domain, project, id))))
 	}
 	resp, err := etcdadpt.ListAndDeleteMany(ctx, opOptions...)
@@ -412,6 +439,12 @@ func (s *Dao) Get(ctx context.Context, req *model.GetKVRequest) (*model.KVDoc, e
 		openlog.Error("decode error: " + err.Error())
 		return nil, err
 	}
+
+	//rbac
+	if err := auth.CheckGetOneKV(ctx, curKV); err != nil {
+		return nil, err
+	}
+
 	return curKV, nil
 }
 
@@ -465,6 +498,14 @@ func (s *Dao) List(ctx context.Context, project, domain string, options ...datas
 			break
 		}
 	}
+
+	filterKVs, err := auth.FilterKVList(ctx, result.Data)
+	if err != nil {
+		return nil, err
+	}
+
+	result.Data = filterKVs
+
 	return pagingResult(result, opts), nil
 }
 

@@ -91,6 +91,7 @@ func (r *KVResource) Post(rctx *restful.Context) {
 // Put update a kv
 func (r *KVResource) Put(rctx *restful.Context) {
 	var err error
+
 	kvID := rctx.ReadPathParameter(common.PathParamKVID)
 	project := rctx.ReadPathParameter(common.PathParameterProject)
 	kvReq := new(model.UpdateKVRequest)

@@ -18,6 +18,7 @@
 package rbac
 
 import (
+	"github.com/apache/servicecomb-kie/server/datasource/auth"
 	"net/http"
 	"os"
 	"path/filepath"
@@ -67,6 +68,7 @@ func Init() {
 			newReq := req.WithContext(rbac.NewContext(req.Context(), payload))
 			*req = *newReq
 			//TODO role perm check
+			auth.SetContext(req)
 			return nil
 		},
 	})
