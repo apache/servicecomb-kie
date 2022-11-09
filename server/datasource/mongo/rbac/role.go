@@ -19,13 +19,42 @@ package rbac
 
 import (
 	"context"
+	"encoding/json"
+	"errors"
+	"github.com/go-chassis/openlog"
+
+	crbac "github.com/go-chassis/cari/rbac"
 	"github.com/little-cui/etcdadpt"
 )
 
-func AccountExist(ctx context.Context, name string) (bool, error) {
-	return etcdadpt.Exist(ctx, GenerateRBACAccountKey(name))
+type RBAC_Mongo struct {
 }
 
-func GenerateRBACAccountKey(name string) string {
+func (rm *RBAC_Mongo) GetRole(ctx context.Context, name string) (*crbac.Role, error) {
+	kv, err := etcdadpt.Get(ctx, rm.GenerateRBACRoleKey(name))
+	if err != nil {
+		return nil, err
+	}
+	if kv == nil {
+		return nil, errors.New("role not exist")
+	}
+	role := &crbac.Role{}
+	err = json.Unmarshal(kv.Value, role)
+	if err != nil {
+		openlog.Error("role info format invalid", openlog.WithErr(err))
+		return nil, err
+	}
+	return role, nil
+}
+
+func (rm *RBAC_Mongo) GenerateRBACRoleKey(name string) string {
+	return "/cse-sr/roles/" + name
+}
+
+func (rm *RBAC_Mongo) AccountExist(ctx context.Context, name string) (bool, error) {
+	return etcdadpt.Exist(ctx, rm.GenerateRBACAccountKey(name))
+}
+
+func (rm *RBAC_Mongo) GenerateRBACAccountKey(name string) string {
 	return "/cse-sr/accounts/" + name
 }

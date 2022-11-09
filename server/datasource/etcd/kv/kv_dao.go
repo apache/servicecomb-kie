@@ -20,7 +20,7 @@ package kv
 import (
 	"context"
 	"encoding/json"
-	kierbac "github.com/apache/servicecomb-kie/server/rbac"
+	"github.com/apache/servicecomb-kie/server/datasource/auth"
 	"regexp"
 	"strings"
 
@@ -40,7 +40,7 @@ type Dao struct {
 
 func (s *Dao) Create(ctx context.Context, kv *model.KVDoc, options ...datasource.WriteOption) (*model.KVDoc, error) {
 	//rbac
-	if err := kierbac.CheckCreateOneKV(ctx, kv); err != nil {
+	if err := auth.CheckCreateOneKV(ctx, kv); err != nil {
 		return nil, err
 	}
 
@@ -124,7 +124,7 @@ func (s *Dao) Update(ctx context.Context, kv *model.KVDoc, options ...datasource
 	}
 
 	//rbac
-	if err := kierbac.CheckUpdateOneKV(ctx, &oldKV); err != nil {
+	if err := auth.CheckUpdateOneKV(ctx, &oldKV); err != nil {
 		return err
 	}
 
@@ -305,7 +305,7 @@ func getKVDoc(ctx context.Context, domain, project, kvID string) (*model.KVDoc, 
 	}
 
 	//rbac
-	if err := kierbac.CheckDeleteOneKV(ctx, curKV); err != nil {
+	if err := auth.CheckDeleteOneKV(ctx, curKV); err != nil {
 		return nil, err
 	}
 
@@ -441,7 +441,7 @@ func (s *Dao) Get(ctx context.Context, req *model.GetKVRequest) (*model.KVDoc, e
 	}
 
 	//rbac
-	if err := kierbac.CheckGetOneKV(ctx, curKV); err != nil {
+	if err := auth.CheckGetOneKV(ctx, curKV); err != nil {
 		return nil, err
 	}
 
@@ -499,7 +499,7 @@ func (s *Dao) List(ctx context.Context, project, domain string, options ...datas
 		}
 	}
 
-	filterKVs, err := kierbac.FilterKVList(ctx, result.Data)
+	filterKVs, err := auth.FilterKVList(ctx, result.Data)
 	if err != nil {
 		return nil, err
 	}

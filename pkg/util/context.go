@@ -21,22 +21,15 @@ import (
 	"context"
 	"google.golang.org/grpc/metadata"
 	"net/http"
-	"strings"
 	"time"
-)
-
-const (
-	CtxDomain        CtxKey = "domain"
-	CtxProject       CtxKey = "project"
-	CtxTargetDomain  CtxKey = "target-domain"
-	CtxTargetProject CtxKey = "target-project"
-	SPLIT                   = "/"
 )
 
 type StringContext struct {
 	parentCtx context.Context
 	kv        *ConcurrentMap
 }
+
+type CtxKey string
 
 func (c *StringContext) Deadline() (deadline time.Time, ok bool) {
 	return c.parentCtx.Deadline()
@@ -83,27 +76,6 @@ func SetContext(ctx context.Context, key CtxKey, val interface{}) context.Contex
 	return strCtx
 }
 
-func CloneContext(ctx context.Context) context.Context {
-	old, ok := ctx.(*StringContext)
-	if !ok {
-		return &StringContext{
-			parentCtx: ctx,
-			kv:        NewConcurrentMap(0),
-		}
-	}
-
-	strCtx := &StringContext{
-		parentCtx: ctx,
-		kv:        NewConcurrentMap(0),
-	}
-
-	old.kv.ForEach(func(item MapItem) bool {
-		strCtx.kv.Put(item.Key, item.Value)
-		return true
-	})
-	return strCtx
-}
-
 // FromContext return the value from ctx, return empty STRING if not found
 func FromContext(ctx context.Context, key CtxKey) interface{} {
 	if v := ctx.Value(key); v != nil {
@@ -120,114 +92,6 @@ func SetRequestContext(r *http.Request, key CtxKey, val interface{}) *http.Reque
 		*r = *nr
 	}
 	return r
-}
-
-func ParseDomainProject(ctx context.Context) string {
-	return ParseDomain(ctx) + SPLIT + ParseProject(ctx)
-}
-
-func ParseTargetDomainProject(ctx context.Context) string {
-	return ParseTargetDomain(ctx) + SPLIT + ParseTargetProject(ctx)
-}
-
-func ParseDomain(ctx context.Context) string {
-	v, ok := FromContext(ctx, CtxDomain).(string)
-	if !ok {
-		return ""
-	}
-	return v
-}
-
-func ParseTargetDomain(ctx context.Context) string {
-	v, _ := FromContext(ctx, CtxTargetDomain).(string)
-	if len(v) == 0 {
-		return ParseDomain(ctx)
-	}
-	return v
-}
-
-func ParseProject(ctx context.Context) string {
-	v, ok := FromContext(ctx, CtxProject).(string)
-	if !ok {
-		return ""
-	}
-	return v
-}
-
-func ParseTargetProject(ctx context.Context) string {
-	v, _ := FromContext(ctx, CtxTargetProject).(string)
-	if len(v) == 0 {
-		return ParseProject(ctx)
-	}
-	return v
-}
-
-func SetDomain(ctx context.Context, domain string) context.Context {
-	return SetContext(ctx, CtxDomain, domain)
-}
-
-func SetProject(ctx context.Context, project string) context.Context {
-	return SetContext(ctx, CtxProject, project)
-}
-
-func SetTargetDomain(ctx context.Context, domain string) context.Context {
-	return SetContext(ctx, CtxTargetDomain, domain)
-}
-
-func SetTargetProject(ctx context.Context, project string) context.Context {
-	return SetContext(ctx, CtxTargetProject, project)
-}
-
-func SetDomainProject(ctx context.Context, domain string, project string) context.Context {
-	return SetProject(SetDomain(ctx, domain), project)
-}
-
-func SetDomainProjectString(ctx context.Context, domainProject string) context.Context {
-	arr := strings.Split(domainProject, SPLIT)
-	if len(arr) != 2 {
-		return ctx
-	}
-	return SetProject(SetDomain(ctx, arr[0]), arr[1])
-}
-
-func SetTargetDomainProject(ctx context.Context, domain string, project string) context.Context {
-	return SetTargetProject(SetTargetDomain(ctx, domain), project)
-}
-
-func WithNoCache(ctx context.Context) context.Context {
-	return SetContext(ctx, CtxNocache, "1")
-}
-
-func NoCache(ctx context.Context) bool {
-	return ctx.Value(CtxNocache) == "1"
-}
-
-func WithCacheOnly(ctx context.Context) context.Context {
-	return SetContext(ctx, CtxCacheOnly, "1")
-}
-
-func CacheOnly(ctx context.Context) bool {
-	return ctx.Value(CtxCacheOnly) == "1"
-}
-
-func WithGlobal(ctx context.Context) context.Context {
-	return SetContext(ctx, CtxGlobal, "1")
-}
-
-func Global(ctx context.Context) bool {
-	return ctx.Value(CtxGlobal) == "1"
-}
-
-func EnableSync(ctx context.Context) bool {
-	return ctx.Value(CtxEnableSync) == "1"
-}
-
-func WithRequestRev(ctx context.Context, rev string) context.Context {
-	return SetContext(ctx, CtxRequestRevision, rev)
-}
-
-func WithResponseRev(ctx context.Context, rev string) context.Context {
-	return SetContext(ctx, CtxResponseRevision, rev)
 }
 
 func FromMetadata(ctx context.Context, key CtxKey) string {

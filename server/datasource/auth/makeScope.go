@@ -15,22 +15,14 @@
  * limitations under the License.
  */
 
-package rbac
+package auth
 
-import (
-	"context"
-)
-
-func CheckPermByReq(ctx context.Context, targetResource *ResourceScope) ([]map[string]string, error) {
-	account, err := GetAccountFromReq(ctx)
-	if err != nil {
-		return nil, err
-	}
-
-	hasAdmin, normalRoles := filterRoles(account.Roles)
-	if hasAdmin {
-		return nil, nil
-	}
-
-	return Allow(ctx, normalRoles, targetResource)
+// ResourceScope is the resource scope parsed from request
+type ResourceScope struct {
+	Type string
+	// Labels is a map used to filter resource permissions during pre verification.
+	// If a key of permission set is missing in the Labels, pre verification will pass this key
+	Labels []map[string]string
+	// Verb is the apply resource action, e.g. "get", "create"
+	Verb string
 }

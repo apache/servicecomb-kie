@@ -15,12 +15,12 @@
  * limitations under the License.
  */
 
-package rbac
+package auth
 
 import (
 	"context"
 	"fmt"
-	"github.com/apache/servicecomb-kie/server/datasource/etcd/rbac"
+
 	rbacmodel "github.com/go-chassis/cari/rbac"
 	"github.com/go-chassis/openlog"
 )
@@ -86,7 +86,7 @@ func LabelMatched(targetResourceLabel map[string]string, permLabel map[string]st
 func getPermsByRoles(ctx context.Context, roleList []string) ([]*rbacmodel.Permission, error) {
 	var allPerms = make([]*rbacmodel.Permission, 0)
 	for _, name := range roleList {
-		r, err := rbac.GetRole(ctx, name)
+		r, err := dbacInstance.GetRole(ctx, name)
 		if err == nil {
 			allPerms = append(allPerms, r.Perms...)
 			continue

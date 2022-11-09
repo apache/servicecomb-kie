@@ -15,18 +15,19 @@
  * limitations under the License.
  */
 
-package rbac
+package auth
 
 import (
 	"context"
 	"errors"
 	"fmt"
-	rbacdb "github.com/apache/servicecomb-kie/server/datasource/etcd/rbac"
+	"strings"
+
+	"github.com/apache/servicecomb-kie/pkg/util"
 	rbacmodel "github.com/go-chassis/cari/rbac"
 	"github.com/go-chassis/go-chassis/v2/security/authr"
 	"github.com/go-chassis/go-chassis/v2/server/restful"
 	"github.com/go-chassis/openlog"
-	"strings"
 )
 
 const (
@@ -36,10 +37,12 @@ const (
 var ErrNoRoles = errors.New("no role found in token")
 
 func GetAccountFromReq(ctx context.Context) (*rbacmodel.Account, error) {
-	v, ok := ctx.Value(restful.HeaderAuth).(string)
+	v, ok := util.FromContext(ctx, restful.HeaderAuth).(string)
 	if !ok || v == "" {
 		return nil, rbacmodel.NewError(rbacmodel.ErrNoAuthHeader, "")
 	}
+
+	accountExist(ctx, v)
 
 	s := strings.Split(v, " ")
 	if len(s) != 2 {
@@ -80,7 +83,7 @@ func accountExist(ctx context.Context, user string) error {
 	if user == RootName {
 		return nil
 	}
-	exist, err := rbacdb.AccountExist(ctx, user)
+	exist, err := dbacInstance.AccountExist(ctx, user)
 	if err != nil {
 		return err
 	}

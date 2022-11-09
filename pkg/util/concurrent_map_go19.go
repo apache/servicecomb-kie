@@ -1,6 +1,3 @@
-//go:build go1.9
-// +build go1.9
-
 /*
  * Licensed to the Apache Software Foundation (ASF) under one or more
  * contributor license agreements.  See the NOTICE file distributed with

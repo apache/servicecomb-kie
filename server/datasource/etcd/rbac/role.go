@@ -27,8 +27,11 @@ import (
 	"github.com/little-cui/etcdadpt"
 )
 
-func GetRole(ctx context.Context, name string) (*crbac.Role, error) {
-	kv, err := etcdadpt.Get(ctx, GenerateRBACRoleKey(name))
+type RBAC_ETCD struct {
+}
+
+func (re *RBAC_ETCD) GetRole(ctx context.Context, name string) (*crbac.Role, error) {
+	kv, err := etcdadpt.Get(ctx, re.GenerateRBACRoleKey(name))
 	if err != nil {
 		return nil, err
 	}
@@ -44,6 +47,14 @@ func GetRole(ctx context.Context, name string) (*crbac.Role, error) {
 	return role, nil
 }
 
-func GenerateRBACRoleKey(name string) string {
+func (re *RBAC_ETCD) GenerateRBACRoleKey(name string) string {
 	return "/cse-sr/roles/" + name
+}
+
+func (re *RBAC_ETCD) AccountExist(ctx context.Context, name string) (bool, error) {
+	return etcdadpt.Exist(ctx, re.GenerateRBACAccountKey(name))
+}
+
+func (re *RBAC_ETCD) GenerateRBACAccountKey(name string) string {
+	return "/cse-sr/accounts/" + name
 }

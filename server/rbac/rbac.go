@@ -18,8 +18,7 @@
 package rbac
 
 import (
-	"github.com/apache/servicecomb-kie/pkg/util"
-	"github.com/go-chassis/go-chassis/v2/server/restful"
+	"github.com/apache/servicecomb-kie/server/datasource/auth"
 	"net/http"
 	"os"
 	"path/filepath"
@@ -69,8 +68,7 @@ func Init() {
 			newReq := req.WithContext(rbac.NewContext(req.Context(), payload))
 			*req = *newReq
 			//TODO role perm check
-			v := req.Header.Get(restful.HeaderAuth)
-			util.SetRequestContext(req, restful.HeaderAuth, v)
+			auth.SetContext(req)
 			return nil
 		},
 	})
