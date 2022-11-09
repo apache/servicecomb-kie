@@ -26,7 +26,7 @@ import (
 )
 
 // Allow return: matched labels(empty if no label defined), error
-func Allow(ctx context.Context, project string, roleList []string,
+func Allow(ctx context.Context, roleList []string,
 	targetResource *ResourceScope) ([]map[string]string, error) {
 	//TODO check project
 	allPerms, err := getPermsByRoles(ctx, roleList)

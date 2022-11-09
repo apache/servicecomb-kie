@@ -15,22 +15,16 @@
  * limitations under the License.
  */
 
-package rbac
+package util
 
-import (
-	"context"
+type CtxKey string
+
+const (
+	HeaderRev                  = "X-Resource-Revision"
+	CtxGlobal           CtxKey = "global"
+	CtxNocache          CtxKey = "noCache"
+	CtxCacheOnly        CtxKey = "cacheOnly"
+	CtxRequestRevision  CtxKey = "requestRev"
+	CtxResponseRevision CtxKey = "responseRev"
+	CtxEnableSync       CtxKey = "enableSync"
 )
-
-func CheckPermByReq(ctx context.Context, targetResource *ResourceScope) ([]map[string]string, error) {
-	account, err := GetAccountFromReq(ctx)
-	if err != nil {
-		return nil, err
-	}
-
-	hasAdmin, normalRoles := filterRoles(account.Roles)
-	if hasAdmin {
-		return nil, nil
-	}
-
-	return Allow(ctx, normalRoles, targetResource)
-}

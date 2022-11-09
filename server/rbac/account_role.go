@@ -1,3 +1,20 @@
+/*
+ * Licensed to the Apache Software Foundation (ASF) under one or more
+ * contributor license agreements.  See the NOTICE file distributed with
+ * this work for additional information regarding copyright ownership.
+ * The ASF licenses this file to You under the Apache License, Version 2.0
+ * (the "License"); you may not use this file except in compliance with
+ * the License.  You may obtain a copy of the License at
+ *
+ *     http://www.apache.org/licenses/LICENSE-2.0
+ *
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an "AS IS" BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
+ */
+
 package rbac
 
 import (
@@ -18,18 +35,19 @@ const (
 
 var ErrNoRoles = errors.New("no role found in token")
 
-func GetRoleFromReq(rctx *restful.Context) (*rbacmodel.Account, error) {
-	v := rctx.ReadHeader(restful.HeaderAuth)
-	if v == "" {
+func GetAccountFromReq(ctx context.Context) (*rbacmodel.Account, error) {
+	v, ok := ctx.Value(restful.HeaderAuth).(string)
+	if !ok || v == "" {
 		return nil, rbacmodel.NewError(rbacmodel.ErrNoAuthHeader, "")
 	}
+
 	s := strings.Split(v, " ")
 	if len(s) != 2 {
 		return nil, rbacmodel.ErrInvalidHeader
 	}
 	to := s[1]
 
-	claims, err := authr.Authenticate(rctx.Ctx, to)
+	claims, err := authr.Authenticate(ctx, to)
 	if err != nil {
 		return nil, err
 	}
@@ -48,6 +66,12 @@ func GetRoleFromReq(rctx *restful.Context) (*rbacmodel.Account, error) {
 		openlog.Error("no role found in token")
 		return nil, ErrNoRoles
 	}
+
+	err = accountExist(ctx, account.Name)
+	if err != nil {
+		return nil, err
+	}
+
 	return account, nil
 }
 
