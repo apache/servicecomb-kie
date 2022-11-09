@@ -36,6 +36,7 @@ import (
 	"github.com/apache/servicecomb-kie/pkg/common"
 	"github.com/apache/servicecomb-kie/pkg/model"
 	"github.com/apache/servicecomb-kie/server/pubsub"
+	kierbac "github.com/apache/servicecomb-kie/server/rbac"
 	goRestful "github.com/emicklei/go-restful"
 	"github.com/go-chassis/cari/config"
 	"github.com/go-chassis/go-chassis/v2/server/restful"
@@ -281,13 +282,23 @@ func queryFromCache(rctx *restful.Context, topic string) {
 	}
 }
 func queryAndResponse(rctx *restful.Context, request *model.ListKVRequest) {
+	permLabels, err := kierbac.GetPermLabels(rctx, kierbac.GetConfigResourceScope())
+	if err != nil {
+		WriteErrResponse(rctx, http.StatusUnauthorized, err.Error())
+		return
+	}
+
 	rev, kv, queryErr := kvsvc.ListKV(rctx.Ctx, request)
 	if queryErr != nil {
 		WriteErrResponse(rctx, queryErr.Code, queryErr.Message)
 		return
 	}
+
+	permKVs := kierbac.FilterKVList(kv.Data, permLabels)
+	kv.Data = permKVs
+
 	rctx.ReadResponseWriter().Header().Set(common.HeaderRevision, strconv.FormatInt(rev, 10))
-	err := writeResponse(rctx, kv)
+	err = writeResponse(rctx, kv)
 	rctx.ReadRestfulRequest().SetAttribute(common.RespBodyContextKey, kv.Data)
 	if err != nil {
 		openlog.Error(err.Error())
