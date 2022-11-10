@@ -86,8 +86,11 @@ func ReadClaims(ctx context.Context) map[string]interface{} {
 // ReadDomain get domain info
 func ReadDomain(ctx context.Context) string {
 	c := ReadClaims(ctx)
-	if c != nil {
-		return c["domain"].(string)
+	if c == nil {
+		return "default"
+	}
+	if d, ok := c["domain"].(string); ok {
+		return d
 	}
 	return "default"
 }

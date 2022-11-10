@@ -20,7 +20,6 @@ package kv
 import (
 	"context"
 	"encoding/json"
-	"github.com/apache/servicecomb-kie/server/datasource/auth"
 	"regexp"
 	"strings"
 
@@ -31,6 +30,7 @@ import (
 	"github.com/apache/servicecomb-kie/pkg/model"
 	"github.com/apache/servicecomb-kie/pkg/util"
 	"github.com/apache/servicecomb-kie/server/datasource"
+	"github.com/apache/servicecomb-kie/server/datasource/auth"
 	"github.com/apache/servicecomb-kie/server/datasource/etcd/key"
 )
 
@@ -39,8 +39,7 @@ type Dao struct {
 }
 
 func (s *Dao) Create(ctx context.Context, kv *model.KVDoc, options ...datasource.WriteOption) (*model.KVDoc, error) {
-	//rbac
-	if err := auth.CheckCreateOneKV(ctx, kv); err != nil {
+	if err := auth.CheckCreateKV(ctx, kv); err != nil {
 		return nil, err
 	}
 
@@ -123,8 +122,7 @@ func (s *Dao) Update(ctx context.Context, kv *model.KVDoc, options ...datasource
 		return err
 	}
 
-	//rbac
-	if err := auth.CheckUpdateOneKV(ctx, &oldKV); err != nil {
+	if err := auth.CheckUpdateKV(ctx, &oldKV); err != nil {
 		return err
 	}
 
@@ -228,7 +226,6 @@ func findOneAndDelete(ctx context.Context, kvID, project, domain string) (*model
 	kvKey := key.KV(domain, project, kvID)
 	kvDoc := model.KVDoc{}
 
-	//rbac check
 	if _, err := getKVDoc(ctx, domain, project, kvID); err != nil {
 		return nil, err
 	}
@@ -304,8 +301,7 @@ func getKVDoc(ctx context.Context, domain, project, kvID string) (*model.KVDoc, 
 		return nil, err
 	}
 
-	//rbac
-	if err := auth.CheckDeleteOneKV(ctx, curKV); err != nil {
+	if err := auth.CheckDeleteKV(ctx, curKV); err != nil {
 		return nil, err
 	}
 
@@ -440,8 +436,7 @@ func (s *Dao) Get(ctx context.Context, req *model.GetKVRequest) (*model.KVDoc, e
 		return nil, err
 	}
 
-	//rbac
-	if err := auth.CheckGetOneKV(ctx, curKV); err != nil {
+	if err := auth.CheckGetKV(ctx, curKV); err != nil {
 		return nil, err
 	}
 

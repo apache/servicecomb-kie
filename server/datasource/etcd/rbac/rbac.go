@@ -21,17 +21,25 @@ import (
 	"context"
 	"encoding/json"
 	"errors"
-	"github.com/go-chassis/openlog"
 
 	crbac "github.com/go-chassis/cari/rbac"
+	"github.com/go-chassis/openlog"
 	"github.com/little-cui/etcdadpt"
 )
 
-type RBAC_ETCD struct {
+func generateRBACRoleKey(name string) string {
+	return "/cse-sr/roles/" + name
 }
 
-func (re *RBAC_ETCD) GetRole(ctx context.Context, name string) (*crbac.Role, error) {
-	kv, err := etcdadpt.Get(ctx, re.GenerateRBACRoleKey(name))
+func generateRBACAccountKey(name string) string {
+	return "/cse-sr/accounts/" + name
+}
+
+type Dao struct {
+}
+
+func (re *Dao) GetRole(ctx context.Context, name string) (*crbac.Role, error) {
+	kv, err := etcdadpt.Get(ctx, generateRBACRoleKey(name))
 	if err != nil {
 		return nil, err
 	}
@@ -47,14 +55,6 @@ func (re *RBAC_ETCD) GetRole(ctx context.Context, name string) (*crbac.Role, err
 	return role, nil
 }
 
-func (re *RBAC_ETCD) GenerateRBACRoleKey(name string) string {
-	return "/cse-sr/roles/" + name
-}
-
-func (re *RBAC_ETCD) AccountExist(ctx context.Context, name string) (bool, error) {
-	return etcdadpt.Exist(ctx, re.GenerateRBACAccountKey(name))
-}
-
-func (re *RBAC_ETCD) GenerateRBACAccountKey(name string) string {
-	return "/cse-sr/accounts/" + name
+func (re *Dao) AccountExist(ctx context.Context, name string) (bool, error) {
+	return etcdadpt.Exist(ctx, generateRBACAccountKey(name))
 }
