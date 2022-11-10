@@ -20,6 +20,8 @@ package mongo
 import (
 	"context"
 
+	"github.com/apache/servicecomb-kie/server/datasource/mongo/rbac"
+	rbacdao "github.com/apache/servicecomb-kie/server/datasource/rbac"
 	dmongo "github.com/go-chassis/cari/db/mongo"
 	"go.mongodb.org/mongo-driver/bson"
 	"go.mongodb.org/mongo-driver/mongo"
@@ -56,6 +58,9 @@ func (*Broker) GetHistoryDao() datasource.HistoryDao {
 }
 func (*Broker) GetTrackDao() datasource.TrackDao {
 	return &track.Dao{}
+}
+func (*Broker) GetRbacDao() rbacdao.Dao {
+	return &rbac.Dao{}
 }
 
 func ensureDB() error {

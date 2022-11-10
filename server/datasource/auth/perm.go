@@ -19,18 +19,30 @@ package auth
 
 import (
 	"context"
+
+	rbacmodel "github.com/go-chassis/cari/rbac"
 )
 
-func CheckPermByReq(ctx context.Context, targetResource *ResourceScope) ([]map[string]string, error) {
-	account, err := GetAccountFromReq(ctx)
+// CheckPerm return the resource scope ...
+func CheckPerm(ctx context.Context, targetResource *ResourceScope) ([]map[string]string, error) {
+	account, err := Identify(ctx)
 	if err != nil {
 		return nil, err
 	}
-
 	hasAdmin, normalRoles := filterRoles(account.Roles)
 	if hasAdmin {
 		return nil, nil
 	}
-
 	return Allow(ctx, normalRoles, targetResource)
+}
+
+func filterRoles(roleList []string) (hasAdmin bool, normalRoles []string) {
+	for _, r := range roleList {
+		if r == rbacmodel.RoleAdmin {
+			hasAdmin = true
+			return
+		}
+		normalRoles = append(normalRoles, r)
+	}
+	return
 }

@@ -21,13 +21,13 @@ import (
 	"context"
 	"fmt"
 
+	"github.com/apache/servicecomb-kie/server/datasource"
 	rbacmodel "github.com/go-chassis/cari/rbac"
 	"github.com/go-chassis/openlog"
 )
 
 // Allow return: matched labels(empty if no label defined), error
-func Allow(ctx context.Context, roleList []string,
-	targetResource *ResourceScope) ([]map[string]string, error) {
+func Allow(ctx context.Context, roleList []string, targetResource *ResourceScope) ([]map[string]string, error) {
 	//TODO check project
 	allPerms, err := getPermsByRoles(ctx, roleList)
 	if err != nil {
@@ -86,7 +86,7 @@ func LabelMatched(targetResourceLabel map[string]string, permLabel map[string]st
 func getPermsByRoles(ctx context.Context, roleList []string) ([]*rbacmodel.Permission, error) {
 	var allPerms = make([]*rbacmodel.Permission, 0)
 	for _, name := range roleList {
-		r, err := dbacInstance.GetRole(ctx, name)
+		r, err := datasource.GetBroker().GetRbacDao().GetRole(ctx, name)
 		if err == nil {
 			allPerms = append(allPerms, r.Perms...)
 			continue

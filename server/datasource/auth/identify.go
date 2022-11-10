@@ -21,12 +21,9 @@ import (
 	"context"
 	"errors"
 	"fmt"
-	"strings"
 
-	"github.com/apache/servicecomb-kie/pkg/util"
+	"github.com/apache/servicecomb-kie/server/datasource"
 	rbacmodel "github.com/go-chassis/cari/rbac"
-	"github.com/go-chassis/go-chassis/v2/security/authr"
-	"github.com/go-chassis/go-chassis/v2/server/restful"
 	"github.com/go-chassis/openlog"
 )
 
@@ -36,45 +33,25 @@ const (
 
 var ErrNoRoles = errors.New("no role found in token")
 
-func GetAccountFromReq(ctx context.Context) (*rbacmodel.Account, error) {
-	v, ok := util.FromContext(ctx, restful.HeaderAuth).(string)
-	if !ok || v == "" {
-		return nil, rbacmodel.NewError(rbacmodel.ErrNoAuthHeader, "")
-	}
-
-	accountExist(ctx, v)
-
-	s := strings.Split(v, " ")
-	if len(s) != 2 {
-		return nil, rbacmodel.ErrInvalidHeader
-	}
-	to := s[1]
-
-	claims, err := authr.Authenticate(ctx, to)
-	if err != nil {
-		return nil, err
-	}
-
-	m, ok := claims.(map[string]interface{})
-	if !ok {
-		openlog.Error("claims convert failed", openlog.WithErr(rbacmodel.ErrConvert))
-		return nil, rbacmodel.ErrConvert
-	}
-	account, err := rbacmodel.GetAccount(m)
+func Identify(ctx context.Context) (*rbacmodel.Account, error) {
+	claims, err := rbacmodel.FromContext(ctx)
 	if err != nil {
 		openlog.Error("get account from token failed", openlog.WithErr(err))
 		return nil, err
 	}
+	account, err := rbacmodel.GetAccount(claims)
+	if err != nil {
+		openlog.Error("get account from claims failed", openlog.WithErr(err))
+		return nil, err
+	}
 	if len(account.Roles) == 0 {
 		openlog.Error("no role found in token")
-		return nil, ErrNoRoles
+		return nil, rbacmodel.NewError(rbacmodel.ErrNoPermission, "no role found in token")
 	}
-
 	err = accountExist(ctx, account.Name)
 	if err != nil {
 		return nil, err
 	}
-
 	return account, nil
 }
 
@@ -83,7 +60,7 @@ func accountExist(ctx context.Context, user string) error {
 	if user == RootName {
 		return nil
 	}
-	exist, err := dbacInstance.AccountExist(ctx, user)
+	exist, err := datasource.GetBroker().GetRbacDao().AccountExist(ctx, user)
 	if err != nil {
 		return err
 	}
@@ -92,15 +69,4 @@ func accountExist(ctx context.Context, user string) error {
 		return rbacmodel.NewError(rbacmodel.ErrTokenOwnedAccountDeleted, msg)
 	}
 	return nil
-}
-
-func filterRoles(roleList []string) (hasAdmin bool, normalRoles []string) {
-	for _, r := range roleList {
-		if r == rbacmodel.RoleAdmin {
-			hasAdmin = true
-			return
-		}
-		normalRoles = append(normalRoles, r)
-	}
-	return
 }
