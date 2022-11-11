@@ -21,6 +21,9 @@ import (
 	"context"
 	"encoding/json"
 
+	rbacmodel "github.com/go-chassis/cari/rbac"
+
+	"github.com/apache/servicecomb-kie/server/datasource/auth"
 	"github.com/go-chassis/openlog"
 	"github.com/little-cui/etcdadpt"
 
@@ -35,6 +38,19 @@ type Dao struct {
 
 // GetHistory get all history by label id
 func (s *Dao) GetHistory(ctx context.Context, kvID, project, domain string, options ...datasource.FindOption) (*model.KVResponse, error) {
+	kvreq := &model.GetKVRequest{
+		Domain:  domain,
+		Project: project,
+		ID:      kvID,
+	}
+	kvdoc, err := datasource.GetBroker().GetKVDao().Get(ctx, kvreq)
+	if err != nil {
+		return nil, err
+	}
+	if err := auth.CheckGetKV(ctx, kvdoc); err != nil {
+		return nil, rbacmodel.NewError(rbacmodel.ErrUnauthorized, err.Error())
+	}
+
 	opts := datasource.FindOptions{}
 	for _, o := range options {
 		o(&opts)

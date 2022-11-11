@@ -17,7 +17,12 @@
 
 package util
 
-import "reflect"
+import (
+	"reflect"
+
+	"github.com/go-chassis/cari/config"
+	"github.com/go-chassis/cari/pkg/errsvc"
+)
 
 // IsEquivalentLabel compares whether two labels are equal.
 // In particular, if one is nil and another is an empty map, it return true
@@ -40,4 +45,12 @@ func IsContainLabel(x, y map[string]string) bool {
 		return false
 	}
 	return true
+}
+
+func SvcErr(err error) *errsvc.Error {
+	svcErr, ok := err.(*errsvc.Error)
+	if ok {
+		return svcErr
+	}
+	return config.NewError(config.ErrInternal, err.Error())
 }

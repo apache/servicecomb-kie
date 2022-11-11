@@ -60,7 +60,7 @@ func (r *HistoryResource) GetRevisions(context *restful.Context) {
 			WriteErrResponse(context, config.ErrRecordNotExists, err.Error())
 			return
 		}
-		WriteErrResponse(context, config.ErrInternal, err.Error())
+		WriteError(context, err)
 		return
 	}
 	err = writeResponse(context, revisions)
