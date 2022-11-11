@@ -22,7 +22,9 @@ import (
 	"github.com/apache/servicecomb-kie/server/datasource/etcd/counter"
 	"github.com/apache/servicecomb-kie/server/datasource/etcd/history"
 	"github.com/apache/servicecomb-kie/server/datasource/etcd/kv"
+	"github.com/apache/servicecomb-kie/server/datasource/etcd/rbac"
 	"github.com/apache/servicecomb-kie/server/datasource/etcd/track"
+	rbacdao "github.com/apache/servicecomb-kie/server/datasource/rbac"
 )
 
 type Broker struct {
@@ -42,6 +44,9 @@ func (*Broker) GetHistoryDao() datasource.HistoryDao {
 }
 func (*Broker) GetTrackDao() datasource.TrackDao {
 	return &track.Dao{}
+}
+func (*Broker) GetRbacDao() rbacdao.Dao {
+	return &rbac.Dao{}
 }
 
 func init() {

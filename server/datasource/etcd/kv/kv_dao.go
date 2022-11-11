@@ -23,6 +23,8 @@ import (
 	"regexp"
 	"strings"
 
+	rbacmodel "github.com/go-chassis/cari/rbac"
+
 	"github.com/go-chassis/cari/sync"
 	"github.com/go-chassis/openlog"
 	"github.com/little-cui/etcdadpt"
@@ -30,6 +32,7 @@ import (
 	"github.com/apache/servicecomb-kie/pkg/model"
 	"github.com/apache/servicecomb-kie/pkg/util"
 	"github.com/apache/servicecomb-kie/server/datasource"
+	"github.com/apache/servicecomb-kie/server/datasource/auth"
 	"github.com/apache/servicecomb-kie/server/datasource/etcd/key"
 )
 
@@ -38,6 +41,10 @@ type Dao struct {
 }
 
 func (s *Dao) Create(ctx context.Context, kv *model.KVDoc, options ...datasource.WriteOption) (*model.KVDoc, error) {
+	if err := auth.CheckCreateKV(ctx, kv); err != nil {
+		return nil, rbacmodel.NewError(rbacmodel.ErrUnauthorized, err.Error())
+	}
+
 	opts := datasource.NewWriteOptions(options...)
 	var exist bool
 	var err error
@@ -116,6 +123,11 @@ func (s *Dao) Update(ctx context.Context, kv *model.KVDoc, options ...datasource
 		openlog.Error(err.Error())
 		return err
 	}
+
+	if err := auth.CheckUpdateKV(ctx, &oldKV); err != nil {
+		return rbacmodel.NewError(rbacmodel.ErrUnauthorized, err.Error())
+	}
+
 	oldKV.LabelFormat = kv.LabelFormat
 	oldKV.Value = kv.Value
 	oldKV.Status = kv.Status
@@ -215,6 +227,11 @@ func (s *Dao) FindOneAndDelete(ctx context.Context, kvID, project, domain string
 func findOneAndDelete(ctx context.Context, kvID, project, domain string) (*model.KVDoc, error) {
 	kvKey := key.KV(domain, project, kvID)
 	kvDoc := model.KVDoc{}
+
+	if _, err := getKVDoc(ctx, domain, project, kvID); err != nil {
+		return nil, err
+	}
+
 	resp, err := etcdadpt.ListAndDelete(ctx, kvKey)
 	if err != nil {
 		openlog.Error("delete Key error: " + err.Error())
@@ -269,7 +286,7 @@ func txnFindOneAndDelete(ctx context.Context, kvID, project, domain string) (*mo
 	return kvDoc, nil
 }
 
-// getKVDoc is to get kv
+// getKVDoc is to get kv for delete
 func getKVDoc(ctx context.Context, domain, project, kvID string) (*model.KVDoc, error) {
 	resp, err := etcdadpt.Get(ctx, key.KV(domain, project, kvID))
 	if err != nil {
@@ -285,6 +302,11 @@ func getKVDoc(ctx context.Context, domain, project, kvID string) (*model.KVDoc, 
 		openlog.Error("decode error: " + err.Error())
 		return nil, err
 	}
+
+	if err := auth.CheckDeleteKV(ctx, curKV); err != nil {
+		return nil, rbacmodel.NewError(rbacmodel.ErrUnauthorized, err.Error())
+	}
+
 	return curKV, nil
 }
 
@@ -302,6 +324,9 @@ func findManyAndDelete(ctx context.Context, kvIDs []string, project, domain stri
 	var docs []*model.KVDoc
 	var opOptions []etcdadpt.OpOptions
 	for _, id := range kvIDs {
+		if _, err := getKVDoc(ctx, domain, project, id); err != nil {
+			continue
+		}
 		opOptions = append(opOptions, etcdadpt.OpDel(etcdadpt.WithStrKey(key.KV(domain, project, id))))
 	}
 	resp, err := etcdadpt.ListAndDeleteMany(ctx, opOptions...)
@@ -412,6 +437,11 @@ func (s *Dao) Get(ctx context.Context, req *model.GetKVRequest) (*model.KVDoc, e
 		openlog.Error("decode error: " + err.Error())
 		return nil, err
 	}
+
+	if err := auth.CheckGetKV(ctx, curKV); err != nil {
+		return nil, rbacmodel.NewError(rbacmodel.ErrUnauthorized, err.Error())
+	}
+
 	return curKV, nil
 }
 
@@ -465,6 +495,14 @@ func (s *Dao) List(ctx context.Context, project, domain string, options ...datas
 			break
 		}
 	}
+
+	filterKVs, err := auth.FilterKVList(ctx, result.Data)
+	if err != nil {
+		return nil, err
+	}
+
+	result.Data = filterKVs
+
 	return pagingResult(result, opts), nil
 }
 

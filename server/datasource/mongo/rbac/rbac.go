@@ -15,42 +15,21 @@
  * limitations under the License.
  */
 
-package util
+package rbac
 
 import (
-	"reflect"
+	"context"
 
-	"github.com/go-chassis/cari/config"
-	"github.com/go-chassis/cari/pkg/errsvc"
+	crbac "github.com/go-chassis/cari/rbac"
 )
 
-// IsEquivalentLabel compares whether two labels are equal.
-// In particular, if one is nil and another is an empty map, it return true
-func IsEquivalentLabel(x, y map[string]string) bool {
-	if len(x) == 0 && len(y) == 0 {
-		return true
-	}
-	return reflect.DeepEqual(x, y)
+type Dao struct {
 }
 
-// IsContainLabel compares whether x contain y
-func IsContainLabel(x, y map[string]string) bool {
-	if len(x) < len(y) {
-		return false
-	}
-	for yK, yV := range y {
-		if xV, ok := x[yK]; ok && xV == yV {
-			continue
-		}
-		return false
-	}
-	return true
+func (rm *Dao) GetRole(ctx context.Context, name string) (*crbac.Role, error) {
+	panic("implement me")
 }
 
-func SvcErr(err error) *errsvc.Error {
-	svcErr, ok := err.(*errsvc.Error)
-	if ok {
-		return svcErr
-	}
-	return config.NewError(config.ErrInternal, err.Error())
+func (rm *Dao) AccountExist(ctx context.Context, name string) (bool, error) {
+	panic("implement me")
 }

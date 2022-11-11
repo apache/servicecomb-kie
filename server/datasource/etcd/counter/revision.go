@@ -22,6 +22,7 @@ import (
 
 	"github.com/apache/servicecomb-kie/server/datasource"
 	"github.com/apache/servicecomb-kie/server/datasource/etcd/key"
+	"github.com/go-chassis/cari/config"
 	"github.com/go-chassis/openlog"
 	"github.com/little-cui/etcdadpt"
 )
@@ -50,7 +51,7 @@ func (s *Dao) ApplyRevision(ctx context.Context, domain string) (int64, error) {
 	resp, err := etcdadpt.PutBytesAndGet(ctx, key.Counter(revision, domain), nil)
 	if err != nil {
 		openlog.Error("put bytes error: " + err.Error())
-		return 0, err
+		return 0, config.NewError(config.ErrInternal, "apply revision failed")
 	}
 	if resp.Count == 0 {
 		return 0, datasource.ErrRevisionNotExist

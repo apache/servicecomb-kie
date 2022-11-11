@@ -15,42 +15,14 @@
  * limitations under the License.
  */
 
-package util
+package auth
 
-import (
-	"reflect"
-
-	"github.com/go-chassis/cari/config"
-	"github.com/go-chassis/cari/pkg/errsvc"
-)
-
-// IsEquivalentLabel compares whether two labels are equal.
-// In particular, if one is nil and another is an empty map, it return true
-func IsEquivalentLabel(x, y map[string]string) bool {
-	if len(x) == 0 && len(y) == 0 {
-		return true
-	}
-	return reflect.DeepEqual(x, y)
-}
-
-// IsContainLabel compares whether x contain y
-func IsContainLabel(x, y map[string]string) bool {
-	if len(x) < len(y) {
-		return false
-	}
-	for yK, yV := range y {
-		if xV, ok := x[yK]; ok && xV == yV {
-			continue
-		}
-		return false
-	}
-	return true
-}
-
-func SvcErr(err error) *errsvc.Error {
-	svcErr, ok := err.(*errsvc.Error)
-	if ok {
-		return svcErr
-	}
-	return config.NewError(config.ErrInternal, err.Error())
+// ResourceScope is the resource scope parsed from request
+type ResourceScope struct {
+	Type string
+	// Labels is a map used to filter resource permissions during pre verification.
+	// If a key of permission set is missing in the Labels, pre verification will pass this key
+	Labels []map[string]string
+	// Verb is the apply resource action, e.g. "get", "create"
+	Verb string
 }

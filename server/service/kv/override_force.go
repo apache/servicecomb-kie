@@ -21,6 +21,8 @@ import (
 	"context"
 	"fmt"
 
+	"github.com/apache/servicecomb-kie/pkg/util"
+
 	"github.com/go-chassis/cari/config"
 	"github.com/go-chassis/cari/pkg/errsvc"
 	"github.com/go-chassis/openlog"
@@ -66,7 +68,7 @@ func (f *Force) Execute(ctx context.Context, kv *model.KVDoc) (*model.KVDoc, *er
 	kv, updateErr := Update(ctx, kvReq)
 	if updateErr != nil {
 		openlog.Error(fmt.Sprintf("update record [key: %s, labels: %s] failed", input.Key, input.Labels))
-		return input, config.NewError(config.ErrInternal, updateErr.Error())
+		return input, util.SvcErr(updateErr)
 	}
 	return kv, nil
 }

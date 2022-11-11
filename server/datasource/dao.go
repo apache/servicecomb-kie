@@ -23,6 +23,7 @@ import (
 	"errors"
 	"fmt"
 
+	"github.com/apache/servicecomb-kie/server/datasource/rbac"
 	"github.com/go-chassis/openlog"
 
 	"github.com/apache/servicecomb-kie/pkg/model"
@@ -61,6 +62,7 @@ type Broker interface {
 	GetHistoryDao() HistoryDao
 	GetTrackDao() TrackDao
 	GetKVDao() KVDao
+	GetRbacDao() rbac.Dao
 }
 
 func GetBroker() Broker {

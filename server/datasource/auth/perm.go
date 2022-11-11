@@ -15,42 +15,34 @@
  * limitations under the License.
  */
 
-package util
+package auth
 
 import (
-	"reflect"
+	"context"
 
-	"github.com/go-chassis/cari/config"
-	"github.com/go-chassis/cari/pkg/errsvc"
+	rbacmodel "github.com/go-chassis/cari/rbac"
 )
 
-// IsEquivalentLabel compares whether two labels are equal.
-// In particular, if one is nil and another is an empty map, it return true
-func IsEquivalentLabel(x, y map[string]string) bool {
-	if len(x) == 0 && len(y) == 0 {
-		return true
+// CheckPerm return the resource scope ...
+func CheckPerm(ctx context.Context, targetResource *ResourceScope) ([]map[string]string, error) {
+	account, err := Identify(ctx)
+	if err != nil {
+		return nil, err
 	}
-	return reflect.DeepEqual(x, y)
+	hasAdmin, normalRoles := filterRoles(account.Roles)
+	if hasAdmin {
+		return nil, nil
+	}
+	return Allow(ctx, normalRoles, targetResource)
 }
 
-// IsContainLabel compares whether x contain y
-func IsContainLabel(x, y map[string]string) bool {
-	if len(x) < len(y) {
-		return false
-	}
-	for yK, yV := range y {
-		if xV, ok := x[yK]; ok && xV == yV {
-			continue
+func filterRoles(roleList []string) (hasAdmin bool, normalRoles []string) {
+	for _, r := range roleList {
+		if r == rbacmodel.RoleAdmin {
+			hasAdmin = true
+			return
 		}
-		return false
+		normalRoles = append(normalRoles, r)
 	}
-	return true
-}
-
-func SvcErr(err error) *errsvc.Error {
-	svcErr, ok := err.(*errsvc.Error)
-	if ok {
-		return svcErr
-	}
-	return config.NewError(config.ErrInternal, err.Error())
+	return
 }
