@@ -502,6 +502,7 @@ func (s *Dao) List(ctx context.Context, project, domain string, options ...datas
 	}
 
 	result.Data = filterKVs
+	result.Total = len(filterKVs)
 
 	return pagingResult(result, opts), nil
 }

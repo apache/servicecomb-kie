@@ -21,7 +21,6 @@ import (
 	"context"
 
 	"github.com/apache/servicecomb-kie/pkg/model"
-	"github.com/apache/servicecomb-kie/server/config"
 )
 
 const verbGet, verbCreate, verbUpdate, verbDelete = "get", "create", "update", "delete"
@@ -39,13 +38,13 @@ func configPerms(verb string, labels map[string]string) *ResourceScope {
 }
 
 func FilterKVList(ctx context.Context, kvs []*model.KVDoc) ([]*model.KVDoc, error) {
-	if !config.GetRBAC().Enabled {
+	if !CheckEnable(ctx) {
 		return kvs, nil
 	}
 	// TODO error
 	labels, err := CheckPerm(ctx, configPerms(verbGet, nil))
 	if err != nil {
-		return nil, err
+		return []*model.KVDoc{}, nil
 	}
 	if len(labels) == 0 {
 		// allow all
@@ -55,7 +54,7 @@ func FilterKVList(ctx context.Context, kvs []*model.KVDoc) ([]*model.KVDoc, erro
 }
 
 func CheckGetKV(ctx context.Context, kv *model.KVDoc) error {
-	if !config.GetRBAC().Enabled {
+	if !CheckEnable(ctx) {
 		return nil
 	}
 	_, err := CheckPerm(ctx, configPerms(verbGet, kv.Labels))
@@ -63,7 +62,7 @@ func CheckGetKV(ctx context.Context, kv *model.KVDoc) error {
 }
 
 func CheckCreateKV(ctx context.Context, kv *model.KVDoc) error {
-	if !config.GetRBAC().Enabled {
+	if !CheckEnable(ctx) {
 		return nil
 	}
 	_, err := CheckPerm(ctx, configPerms(verbCreate, kv.Labels))
@@ -71,7 +70,7 @@ func CheckCreateKV(ctx context.Context, kv *model.KVDoc) error {
 }
 
 func CheckDeleteKV(ctx context.Context, kv *model.KVDoc) error {
-	if !config.GetRBAC().Enabled {
+	if !CheckEnable(ctx) {
 		return nil
 	}
 	_, err := CheckPerm(ctx, configPerms(verbDelete, kv.Labels))
@@ -79,7 +78,7 @@ func CheckDeleteKV(ctx context.Context, kv *model.KVDoc) error {
 }
 
 func CheckUpdateKV(ctx context.Context, kv *model.KVDoc) error {
-	if !config.GetRBAC().Enabled {
+	if !CheckEnable(ctx) {
 		return nil
 	}
 	_, err := CheckPerm(ctx, configPerms(verbUpdate, kv.Labels))

@@ -33,6 +33,7 @@ import (
 
 const (
 	pubContentKey = "rbac.publicKey"
+	HeaderAuth    = "Authorization"
 )
 
 // Init initialize the rbac module
@@ -47,6 +48,12 @@ func Init() {
 			if !config.GetRBAC().Enabled {
 				return false
 			}
+
+			v := req.Header.Get(HeaderAuth)
+			if config.GetRBAC().AllowMissToken && v == "" {
+				return false
+			}
+
 			if strings.Contains(req.URL.Path, "/v1/health") {
 				return false
 			}
