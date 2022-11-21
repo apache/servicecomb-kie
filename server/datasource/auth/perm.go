@@ -20,6 +20,7 @@ package auth
 import (
 	"context"
 
+	"github.com/apache/servicecomb-kie/server/config"
 	rbacmodel "github.com/go-chassis/cari/rbac"
 )
 
@@ -45,4 +46,15 @@ func filterRoles(roleList []string) (hasAdmin bool, normalRoles []string) {
 		normalRoles = append(normalRoles, r)
 	}
 	return
+}
+
+func CheckEnable(ctx context.Context) bool {
+	if !config.GetRBAC().Enabled {
+		return false
+	}
+	if !config.GetRBAC().AllowMissToken {
+		return true
+	}
+	claims, _ := rbacmodel.FromContext(ctx)
+	return claims != nil
 }
