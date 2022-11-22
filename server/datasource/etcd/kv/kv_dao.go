@@ -194,7 +194,7 @@ func (s *Dao) Exist(ctx context.Context, key, project, domain string, options ..
 	for _, o := range options {
 		o(&opts)
 	}
-	kvs, err := s.List(ctx, project, domain,
+	kvs, err := s.listNoAuth(ctx, project, domain,
 		datasource.WithExactLabels(),
 		datasource.WithLabels(opts.Labels),
 		datasource.WithLabelFormat(opts.LabelFormat),
@@ -456,6 +456,33 @@ func (s *Dao) Total(ctx context.Context, project, domain string) (int64, error) 
 
 // List get kv list by key and criteria
 func (s *Dao) List(ctx context.Context, project, domain string, options ...datasource.FindOption) (*model.KVResponse, error) {
+	result, opts, err := s.listData(ctx, project, domain, options...)
+	if err != nil {
+		return nil, err
+	}
+
+	filterKVs, err := auth.FilterKVList(ctx, result.Data)
+	if err != nil {
+		return nil, err
+	}
+
+	result.Data = filterKVs
+	result.Total = len(filterKVs)
+
+	return pagingResult(result, opts), nil
+}
+
+func (s *Dao) listNoAuth(ctx context.Context, project, domain string, options ...datasource.FindOption) (*model.KVResponse, error) {
+	result, opts, err := s.listData(ctx, project, domain, options...)
+	if err != nil {
+		return nil, err
+	}
+
+	return pagingResult(result, opts), nil
+}
+
+// List get kv list by key and criteria
+func (s *Dao) listData(ctx context.Context, project, domain string, options ...datasource.FindOption) (*model.KVResponse, datasource.FindOptions, error) {
 	opts := datasource.NewDefaultFindOpts()
 	for _, o := range options {
 		o(&opts)
@@ -465,13 +492,13 @@ func (s *Dao) List(ctx context.Context, project, domain string, options ...datas
 
 	regex, err := toRegex(opts)
 	if err != nil {
-		return nil, err
+		return nil, opts, err
 	}
 	// TODO may be OOM
 	kvs, _, err := etcdadpt.List(ctx, key.KVList(domain, project))
 	if err != nil {
 		openlog.Error("list kv failed: " + err.Error())
-		return nil, err
+		return nil, opts, err
 	}
 	result := &model.KVResponse{
 		Data: []*model.KVDoc{},
@@ -496,15 +523,7 @@ func (s *Dao) List(ctx context.Context, project, domain string, options ...datas
 		}
 	}
 
-	filterKVs, err := auth.FilterKVList(ctx, result.Data)
-	if err != nil {
-		return nil, err
-	}
-
-	result.Data = filterKVs
-	result.Total = len(filterKVs)
-
-	return pagingResult(result, opts), nil
+	return result, opts, nil
 }
 
 func IsUniqueFind(opts datasource.FindOptions) bool {

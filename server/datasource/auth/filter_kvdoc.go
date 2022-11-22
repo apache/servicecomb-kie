@@ -35,7 +35,7 @@ func FilterKVs(kvs []*model.KVDoc, labelsList []map[string]string) []*model.KVDo
 
 func matchOne(kv *model.KVDoc, labels map[string]string) bool {
 	for lk, lv := range labels {
-		if v, ok := kv.Labels[lk]; ok && v != lv {
+		if v := kv.Labels[lk]; v != lv {
 			return false
 		}
 	}
