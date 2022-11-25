@@ -540,6 +540,7 @@ func TestKVResource_Upload(t *testing.T) {
 			Success: []*model.KVDoc{},
 			Failure: []*model.DocFailedOfUpload{},
 		}
+		fmt.Println("test=======================================================")
 		err = json.Unmarshal(body, data)
 		assert.NoError(t, err)
 		assert.Equal(t, http.StatusOK, resp.Code)
