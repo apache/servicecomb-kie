@@ -213,6 +213,30 @@ func (s *Dao) Exist(ctx context.Context, key, project, domain string, options ..
 	return true, nil
 }
 
+func (s *Dao) GetByKey(ctx context.Context, key, project, domain string, options ...datasource.FindOption) ([]*model.KVDoc, error) {
+	opts := datasource.FindOptions{Key: key}
+	for _, o := range options {
+		o(&opts)
+	}
+	kvs, err := s.listNoAuth(ctx, project, domain,
+		datasource.WithExactLabels(),
+		datasource.WithLabels(opts.Labels),
+		datasource.WithLabelFormat(opts.LabelFormat),
+		datasource.WithKey(key),
+		datasource.WithCaseSensitive())
+	if err != nil {
+		openlog.Error("check kv exist: " + err.Error())
+		return nil, err
+	}
+	if IsUniqueFind(opts) && len(kvs.Data) == 0 {
+		return nil, datasource.ErrKeyNotExists
+	}
+	if len(kvs.Data) != 1 {
+		return nil, datasource.ErrTooMany
+	}
+	return kvs.Data, nil
+}
+
 // FindOneAndDelete deletes one kv by id and return the deleted kv as these appeared before deletion
 // domain=tenant
 func (s *Dao) FindOneAndDelete(ctx context.Context, kvID, project, domain string, options ...datasource.WriteOption) (*model.KVDoc, error) {
@@ -323,12 +347,18 @@ func (s *Dao) FindManyAndDelete(ctx context.Context, kvIDs []string, project, do
 func findManyAndDelete(ctx context.Context, kvIDs []string, project, domain string) ([]*model.KVDoc, int64, error) {
 	var docs []*model.KVDoc
 	var opOptions []etcdadpt.OpOptions
+	var err error
 	for _, id := range kvIDs {
-		if _, err := getKVDoc(ctx, domain, project, id); err != nil {
+		if _, err = getKVDoc(ctx, domain, project, id); err != nil {
 			continue
 		}
 		opOptions = append(opOptions, etcdadpt.OpDel(etcdadpt.WithStrKey(key.KV(domain, project, id))))
 	}
+
+	if len(opOptions) == 0 {
+		return make([]*model.KVDoc, 0), 0, err
+	}
+
 	resp, err := etcdadpt.ListAndDeleteMany(ctx, opOptions...)
 	if err != nil {
 		openlog.Error("find Keys error: " + err.Error())

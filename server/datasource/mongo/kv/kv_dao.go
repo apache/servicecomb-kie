@@ -666,6 +666,33 @@ func (s *Dao) Get(ctx context.Context, req *model.GetKVRequest) (*model.KVDoc, e
 	return kvs[0], nil
 }
 
+func (s *Dao) GetByKey(ctx context.Context, key, project, domain string, options ...datasource.FindOption) ([]*model.KVDoc, error) {
+	opts := datasource.FindOptions{}
+	for _, o := range options {
+		o(&opts)
+	}
+	if opts.LabelFormat != "" {
+		kvs, err := findKVByLabel(ctx, domain, opts.LabelFormat, key, project)
+		if err != nil {
+			return nil, err
+		}
+		return kvs, nil
+	}
+	kvs, err := s.List(ctx, domain, project,
+		datasource.WithExactLabels(),
+		datasource.WithLabels(opts.Labels),
+		datasource.WithKey(key))
+	if err != nil {
+		openlog.Error("check kv exist: " + err.Error())
+		return nil, err
+	}
+	if len(kvs.Data) != 1 {
+		return nil, datasource.ErrTooMany
+	}
+
+	return kvs.Data, nil
+}
+
 func (s *Dao) Total(ctx context.Context, project, domain string) (int64, error) {
 	collection := dmongo.GetClient().GetDB().Collection(mmodel.CollectionKV)
 	filter := bson.M{"domain": domain, "project": project}
