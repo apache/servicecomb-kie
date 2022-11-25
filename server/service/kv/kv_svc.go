@@ -318,3 +318,16 @@ func Exist(ctx context.Context, key, project, domain string, labels map[string]s
 	}
 	return exist, nil
 }
+
+func GetByKey(ctx context.Context, key, project, domain string, labels map[string]string) ([]*model.KVDoc, error) {
+	if labels == nil {
+		labels = map[string]string{}
+	}
+	labelFormat := stringutil.FormatMap(labels)
+	kvs, err := datasource.GetBroker().GetKVDao().GetByKey(ctx, key, project, domain, datasource.WithLabelFormat(labelFormat))
+	if err != nil {
+		openlog.Error(err.Error())
+		return nil, err
+	}
+	return kvs, nil
+}

@@ -82,6 +82,7 @@ type KVDao interface {
 
 	//Get return kv by id
 	Get(ctx context.Context, req *model.GetKVRequest) (*model.KVDoc, error)
+	GetByKey(ctx context.Context, key, project, domain string, options ...FindOption) ([]*model.KVDoc, error)
 	Exist(ctx context.Context, key, project, domain string, options ...FindOption) (bool, error)
 	// Total should return kv resource number by domain id and project id
 	Total(ctx context.Context, project, domain string) (int64, error)

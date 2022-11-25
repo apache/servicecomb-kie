@@ -47,19 +47,13 @@ func (f *Force) Execute(ctx context.Context, kv *model.KVDoc) (*model.KVDoc, *er
 		return input, err
 	}
 
-	request := &model.ListKVRequest{
-		Project: input.Project,
-		Domain:  input.Domain,
-		Key:     input.Key,
-		Labels:  input.Labels,
-	}
-	_, getKvsByOpts, getKvErr := ListKV(ctx, request)
+	getKvsByOpts, getKvErr := GetByKey(ctx, input.Key, input.Project, input.Domain, input.Labels)
 	if getKvErr != nil {
 		openlog.Info(fmt.Sprintf("get record [key: %s, labels: %s] failed", input.Key, input.Labels))
-		return input, getKvErr
+		return input, util.SvcErr(getKvErr)
 	}
 	kvReq := &model.UpdateKVRequest{
-		ID:      getKvsByOpts.Data[0].ID,
+		ID:      getKvsByOpts[0].ID,
 		Value:   input.Value,
 		Status:  input.Status,
 		Project: input.Project,
