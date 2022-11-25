@@ -23,8 +23,6 @@ import (
 	"regexp"
 	"strings"
 
-	rbacmodel "github.com/go-chassis/cari/rbac"
-
 	"github.com/go-chassis/cari/sync"
 	"github.com/go-chassis/openlog"
 	"github.com/little-cui/etcdadpt"
@@ -42,7 +40,7 @@ type Dao struct {
 
 func (s *Dao) Create(ctx context.Context, kv *model.KVDoc, options ...datasource.WriteOption) (*model.KVDoc, error) {
 	if err := auth.CheckCreateKV(ctx, kv); err != nil {
-		return nil, rbacmodel.NewError(rbacmodel.ErrUnauthorized, err.Error())
+		return nil, err
 	}
 
 	opts := datasource.NewWriteOptions(options...)
@@ -125,7 +123,7 @@ func (s *Dao) Update(ctx context.Context, kv *model.KVDoc, options ...datasource
 	}
 
 	if err := auth.CheckUpdateKV(ctx, &oldKV); err != nil {
-		return rbacmodel.NewError(rbacmodel.ErrUnauthorized, err.Error())
+		return err
 	}
 
 	oldKV.LabelFormat = kv.LabelFormat
@@ -328,7 +326,7 @@ func getKVDoc(ctx context.Context, domain, project, kvID string) (*model.KVDoc, 
 	}
 
 	if err := auth.CheckDeleteKV(ctx, curKV); err != nil {
-		return nil, rbacmodel.NewError(rbacmodel.ErrUnauthorized, err.Error())
+		return nil, err
 	}
 
 	return curKV, nil
@@ -469,7 +467,7 @@ func (s *Dao) Get(ctx context.Context, req *model.GetKVRequest) (*model.KVDoc, e
 	}
 
 	if err := auth.CheckGetKV(ctx, curKV); err != nil {
-		return nil, rbacmodel.NewError(rbacmodel.ErrUnauthorized, err.Error())
+		return nil, err
 	}
 
 	return curKV, nil
