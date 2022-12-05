@@ -24,6 +24,8 @@ import (
 	"strings"
 	"time"
 
+	"github.com/apache/servicecomb-kie/pkg/util"
+
 	"github.com/apache/servicecomb-kie/pkg/common"
 	"github.com/apache/servicecomb-kie/pkg/concurrency"
 	"github.com/apache/servicecomb-kie/pkg/model"
@@ -117,7 +119,7 @@ func Create(ctx context.Context, kv *model.KVDoc) (*model.KVDoc, *errsvc.Error) 
 	kv, err = datasource.GetBroker().GetKVDao().Create(ctx, kv, datasource.WithSync(sync.FromContext(ctx)))
 	if err != nil {
 		openlog.Error(fmt.Sprintf("post err:%s", err.Error()))
-		return nil, config.NewError(config.ErrInternal, "create kv failed")
+		return nil, util.SvcErr(err)
 	}
 	err = datasource.GetBroker().GetHistoryDao().AddHistory(ctx, kv)
 	if err != nil {
@@ -315,4 +317,17 @@ func Exist(ctx context.Context, key, project, domain string, labels map[string]s
 		return false, err
 	}
 	return exist, nil
+}
+
+func GetByKey(ctx context.Context, key, project, domain string, labels map[string]string) ([]*model.KVDoc, error) {
+	if labels == nil {
+		labels = map[string]string{}
+	}
+	labelFormat := stringutil.FormatMap(labels)
+	kvs, err := datasource.GetBroker().GetKVDao().GetByKey(ctx, key, project, domain, datasource.WithLabelFormat(labelFormat))
+	if err != nil {
+		openlog.Error(err.Error())
+		return nil, err
+	}
+	return kvs, nil
 }

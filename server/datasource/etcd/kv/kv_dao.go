@@ -30,6 +30,7 @@ import (
 	"github.com/apache/servicecomb-kie/pkg/model"
 	"github.com/apache/servicecomb-kie/pkg/util"
 	"github.com/apache/servicecomb-kie/server/datasource"
+	"github.com/apache/servicecomb-kie/server/datasource/auth"
 	"github.com/apache/servicecomb-kie/server/datasource/etcd/key"
 )
 
@@ -38,6 +39,10 @@ type Dao struct {
 }
 
 func (s *Dao) Create(ctx context.Context, kv *model.KVDoc, options ...datasource.WriteOption) (*model.KVDoc, error) {
+	if err := auth.CheckCreateKV(ctx, kv); err != nil {
+		return nil, err
+	}
+
 	opts := datasource.NewWriteOptions(options...)
 	var exist bool
 	var err error
@@ -116,6 +121,11 @@ func (s *Dao) Update(ctx context.Context, kv *model.KVDoc, options ...datasource
 		openlog.Error(err.Error())
 		return err
 	}
+
+	if err := auth.CheckUpdateKV(ctx, &oldKV); err != nil {
+		return err
+	}
+
 	oldKV.LabelFormat = kv.LabelFormat
 	oldKV.Value = kv.Value
 	oldKV.Status = kv.Status
@@ -182,7 +192,7 @@ func (s *Dao) Exist(ctx context.Context, key, project, domain string, options ..
 	for _, o := range options {
 		o(&opts)
 	}
-	kvs, err := s.List(ctx, project, domain,
+	kvs, err := s.listNoAuth(ctx, project, domain,
 		datasource.WithExactLabels(),
 		datasource.WithLabels(opts.Labels),
 		datasource.WithLabelFormat(opts.LabelFormat),
@@ -201,6 +211,30 @@ func (s *Dao) Exist(ctx context.Context, key, project, domain string, options ..
 	return true, nil
 }
 
+func (s *Dao) GetByKey(ctx context.Context, key, project, domain string, options ...datasource.FindOption) ([]*model.KVDoc, error) {
+	opts := datasource.FindOptions{Key: key}
+	for _, o := range options {
+		o(&opts)
+	}
+	kvs, err := s.listNoAuth(ctx, project, domain,
+		datasource.WithExactLabels(),
+		datasource.WithLabels(opts.Labels),
+		datasource.WithLabelFormat(opts.LabelFormat),
+		datasource.WithKey(key),
+		datasource.WithCaseSensitive())
+	if err != nil {
+		openlog.Error("check kv exist: " + err.Error())
+		return nil, err
+	}
+	if IsUniqueFind(opts) && len(kvs.Data) == 0 {
+		return nil, datasource.ErrKeyNotExists
+	}
+	if len(kvs.Data) != 1 {
+		return nil, datasource.ErrTooMany
+	}
+	return kvs.Data, nil
+}
+
 // FindOneAndDelete deletes one kv by id and return the deleted kv as these appeared before deletion
 // domain=tenant
 func (s *Dao) FindOneAndDelete(ctx context.Context, kvID, project, domain string, options ...datasource.WriteOption) (*model.KVDoc, error) {
@@ -215,6 +249,11 @@ func (s *Dao) FindOneAndDelete(ctx context.Context, kvID, project, domain string
 func findOneAndDelete(ctx context.Context, kvID, project, domain string) (*model.KVDoc, error) {
 	kvKey := key.KV(domain, project, kvID)
 	kvDoc := model.KVDoc{}
+
+	if _, err := getKVDoc(ctx, domain, project, kvID); err != nil {
+		return nil, err
+	}
+
 	resp, err := etcdadpt.ListAndDelete(ctx, kvKey)
 	if err != nil {
 		openlog.Error("delete Key error: " + err.Error())
@@ -269,7 +308,7 @@ func txnFindOneAndDelete(ctx context.Context, kvID, project, domain string) (*mo
 	return kvDoc, nil
 }
 
-// getKVDoc is to get kv
+// getKVDoc is to get kv for delete
 func getKVDoc(ctx context.Context, domain, project, kvID string) (*model.KVDoc, error) {
 	resp, err := etcdadpt.Get(ctx, key.KV(domain, project, kvID))
 	if err != nil {
@@ -285,6 +324,11 @@ func getKVDoc(ctx context.Context, domain, project, kvID string) (*model.KVDoc, 
 		openlog.Error("decode error: " + err.Error())
 		return nil, err
 	}
+
+	if err := auth.CheckDeleteKV(ctx, curKV); err != nil {
+		return nil, err
+	}
+
 	return curKV, nil
 }
 
@@ -301,9 +345,18 @@ func (s *Dao) FindManyAndDelete(ctx context.Context, kvIDs []string, project, do
 func findManyAndDelete(ctx context.Context, kvIDs []string, project, domain string) ([]*model.KVDoc, int64, error) {
 	var docs []*model.KVDoc
 	var opOptions []etcdadpt.OpOptions
+	var err error
 	for _, id := range kvIDs {
+		if _, err = getKVDoc(ctx, domain, project, id); err != nil {
+			continue
+		}
 		opOptions = append(opOptions, etcdadpt.OpDel(etcdadpt.WithStrKey(key.KV(domain, project, id))))
 	}
+
+	if len(opOptions) == 0 {
+		return make([]*model.KVDoc, 0), 0, err
+	}
+
 	resp, err := etcdadpt.ListAndDeleteMany(ctx, opOptions...)
 	if err != nil {
 		openlog.Error("find Keys error: " + err.Error())
@@ -412,6 +465,11 @@ func (s *Dao) Get(ctx context.Context, req *model.GetKVRequest) (*model.KVDoc, e
 		openlog.Error("decode error: " + err.Error())
 		return nil, err
 	}
+
+	if err := auth.CheckGetKV(ctx, curKV); err != nil {
+		return nil, err
+	}
+
 	return curKV, nil
 }
 
@@ -426,6 +484,33 @@ func (s *Dao) Total(ctx context.Context, project, domain string) (int64, error) 
 
 // List get kv list by key and criteria
 func (s *Dao) List(ctx context.Context, project, domain string, options ...datasource.FindOption) (*model.KVResponse, error) {
+	result, opts, err := s.listData(ctx, project, domain, options...)
+	if err != nil {
+		return nil, err
+	}
+
+	filterKVs, err := auth.FilterKVList(ctx, result.Data)
+	if err != nil {
+		return nil, err
+	}
+
+	result.Data = filterKVs
+	result.Total = len(filterKVs)
+
+	return pagingResult(result, opts), nil
+}
+
+func (s *Dao) listNoAuth(ctx context.Context, project, domain string, options ...datasource.FindOption) (*model.KVResponse, error) {
+	result, opts, err := s.listData(ctx, project, domain, options...)
+	if err != nil {
+		return nil, err
+	}
+
+	return pagingResult(result, opts), nil
+}
+
+// List get kv list by key and criteria
+func (s *Dao) listData(ctx context.Context, project, domain string, options ...datasource.FindOption) (*model.KVResponse, datasource.FindOptions, error) {
 	opts := datasource.NewDefaultFindOpts()
 	for _, o := range options {
 		o(&opts)
@@ -435,13 +520,13 @@ func (s *Dao) List(ctx context.Context, project, domain string, options ...datas
 
 	regex, err := toRegex(opts)
 	if err != nil {
-		return nil, err
+		return nil, opts, err
 	}
 	// TODO may be OOM
 	kvs, _, err := etcdadpt.List(ctx, key.KVList(domain, project))
 	if err != nil {
 		openlog.Error("list kv failed: " + err.Error())
-		return nil, err
+		return nil, opts, err
 	}
 	result := &model.KVResponse{
 		Data: []*model.KVDoc{},
@@ -465,7 +550,8 @@ func (s *Dao) List(ctx context.Context, project, domain string, options ...datas
 			break
 		}
 	}
-	return pagingResult(result, opts), nil
+
+	return result, opts, nil
 }
 
 func IsUniqueFind(opts datasource.FindOptions) bool {

@@ -91,6 +91,7 @@ func (r *KVResource) Post(rctx *restful.Context) {
 // Put update a kv
 func (r *KVResource) Put(rctx *restful.Context) {
 	var err error
+
 	kvID := rctx.ReadPathParameter(common.PathParamKVID)
 	project := rctx.ReadPathParameter(common.PathParameterProject)
 	kvReq := new(model.UpdateKVRequest)
@@ -114,7 +115,7 @@ func (r *KVResource) Put(rctx *restful.Context) {
 			WriteErrResponse(rctx, config.ErrRecordNotExists, err.Error())
 			return
 		}
-		WriteErrResponse(rctx, config.ErrInternal, "update kv failed")
+		WriteError(rctx, err)
 		return
 	}
 	err = pubsub.Publish(&pubsub.KVChangeEvent{
@@ -155,7 +156,7 @@ func (r *KVResource) Get(rctx *restful.Context) {
 			WriteErrResponse(rctx, config.ErrRecordNotExists, err.Error())
 			return
 		}
-		WriteErrResponse(rctx, config.ErrInternal, "get kv failed")
+		WriteError(rctx, err)
 		return
 	}
 	kv.Domain = ""
@@ -297,7 +298,7 @@ func (r *KVResource) Delete(rctx *restful.Context) {
 			WriteErrResponse(rctx, config.ErrRecordNotExists, err.Error())
 			return
 		}
-		WriteErrResponse(rctx, config.ErrInternal, common.MsgDeleteKVFailed)
+		WriteError(rctx, err)
 		return
 	}
 	err = pubsub.Publish(&pubsub.KVChangeEvent{
@@ -337,7 +338,7 @@ func (r *KVResource) DeleteList(rctx *restful.Context) {
 			"kvIDs": b.IDs,
 			"error": err.Error(),
 		}))
-		WriteErrResponse(rctx, config.ErrInternal, common.MsgDeleteKVFailed)
+		WriteError(rctx, err)
 		return
 	}
 	for _, kv := range kvs {

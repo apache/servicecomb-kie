@@ -26,6 +26,8 @@ import (
 	"strings"
 	"time"
 
+	"github.com/go-chassis/cari/pkg/errsvc"
+
 	"github.com/apache/servicecomb-kie/server/cache"
 	"github.com/gofrs/uuid"
 
@@ -86,8 +88,11 @@ func ReadClaims(ctx context.Context) map[string]interface{} {
 // ReadDomain get domain info
 func ReadDomain(ctx context.Context) string {
 	c := ReadClaims(ctx)
-	if c != nil {
-		return c["domain"].(string)
+	if c == nil {
+		return "default"
+	}
+	if d, ok := c["domain"].(string); ok {
+		return d
 	}
 	return "default"
 }
@@ -133,6 +138,14 @@ func WriteErrResponse(context *restful.Context, code int32, msg string) {
 	if err != nil {
 		openlog.Error("can not marshal:" + err.Error())
 	}
+}
+
+func WriteError(context *restful.Context, err error) {
+	svcErr, ok := err.(*errsvc.Error)
+	if !ok {
+		svcErr = config.NewError(config.ErrInternal, err.Error())
+	}
+	WriteErrResponse(context, svcErr.Code, svcErr.Message)
 }
 
 func readRequest(ctx *restful.Context, v interface{}) error {

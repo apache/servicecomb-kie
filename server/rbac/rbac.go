@@ -24,7 +24,6 @@ import (
 	"strings"
 
 	"github.com/apache/servicecomb-kie/server/config"
-	"github.com/go-chassis/cari/rbac"
 	"github.com/go-chassis/go-archaius"
 	"github.com/go-chassis/go-chassis/v2/middleware/jwt"
 	"github.com/go-chassis/go-chassis/v2/security/secret"
@@ -34,6 +33,7 @@ import (
 
 const (
 	pubContentKey = "rbac.publicKey"
+	HeaderAuth    = "Authorization"
 )
 
 // Init initialize the rbac module
@@ -48,6 +48,12 @@ func Init() {
 			if !config.GetRBAC().Enabled {
 				return false
 			}
+
+			v := req.Header.Get(HeaderAuth)
+			if config.GetRBAC().AllowMissToken && v == "" {
+				return false
+			}
+
 			if strings.Contains(req.URL.Path, "/v1/health") {
 				return false
 			}
@@ -61,13 +67,6 @@ func Init() {
 				return nil, err
 			}
 			return p, nil
-		},
-		Authorize: func(payload map[string]interface{}, req *http.Request) error {
-			payload["domain"] = "default" //TODO eliminate dead code
-			newReq := req.WithContext(rbac.NewContext(req.Context(), payload))
-			*req = *newReq
-			//TODO role perm check
-			return nil
 		},
 	})
 	loadPublicKey()

@@ -15,42 +15,29 @@
  * limitations under the License.
  */
 
-package util
+package auth
 
-import (
-	"reflect"
+import "github.com/apache/servicecomb-kie/pkg/model"
 
-	"github.com/go-chassis/cari/config"
-	"github.com/go-chassis/cari/pkg/errsvc"
-)
-
-// IsEquivalentLabel compares whether two labels are equal.
-// In particular, if one is nil and another is an empty map, it return true
-func IsEquivalentLabel(x, y map[string]string) bool {
-	if len(x) == 0 && len(y) == 0 {
-		return true
+func FilterKVs(kvs []*model.KVDoc, labelsList []map[string]string) []*model.KVDoc {
+	var permKVs []*model.KVDoc
+	for _, kv := range kvs {
+		for _, labels := range labelsList {
+			if !matchOne(kv, labels) {
+				continue
+			}
+			permKVs = append(permKVs, kv)
+			break
+		}
 	}
-	return reflect.DeepEqual(x, y)
+	return permKVs
 }
 
-// IsContainLabel compares whether x contain y
-func IsContainLabel(x, y map[string]string) bool {
-	if len(x) < len(y) {
-		return false
-	}
-	for yK, yV := range y {
-		if xV, ok := x[yK]; ok && xV == yV {
-			continue
+func matchOne(kv *model.KVDoc, labels map[string]string) bool {
+	for lk, lv := range labels {
+		if v := kv.Labels[lk]; v != lv {
+			return false
 		}
-		return false
 	}
 	return true
-}
-
-func SvcErr(err error) *errsvc.Error {
-	svcErr, ok := err.(*errsvc.Error)
-	if ok {
-		return svcErr
-	}
-	return config.NewError(config.ErrInternal, err.Error())
 }

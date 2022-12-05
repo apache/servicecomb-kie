@@ -21,6 +21,8 @@ import (
 	"context"
 	"fmt"
 
+	"github.com/apache/servicecomb-kie/pkg/util"
+
 	"github.com/go-chassis/cari/config"
 	"github.com/go-chassis/cari/pkg/errsvc"
 	"github.com/go-chassis/openlog"
@@ -45,19 +47,13 @@ func (f *Force) Execute(ctx context.Context, kv *model.KVDoc) (*model.KVDoc, *er
 		return input, err
 	}
 
-	request := &model.ListKVRequest{
-		Project: input.Project,
-		Domain:  input.Domain,
-		Key:     input.Key,
-		Labels:  input.Labels,
-	}
-	_, getKvsByOpts, getKvErr := ListKV(ctx, request)
+	getKvsByOpts, getKvErr := GetByKey(ctx, input.Key, input.Project, input.Domain, input.Labels)
 	if getKvErr != nil {
 		openlog.Info(fmt.Sprintf("get record [key: %s, labels: %s] failed", input.Key, input.Labels))
-		return input, getKvErr
+		return input, util.SvcErr(getKvErr)
 	}
 	kvReq := &model.UpdateKVRequest{
-		ID:      getKvsByOpts.Data[0].ID,
+		ID:      getKvsByOpts[0].ID,
 		Value:   input.Value,
 		Status:  input.Status,
 		Project: input.Project,
@@ -66,7 +62,7 @@ func (f *Force) Execute(ctx context.Context, kv *model.KVDoc) (*model.KVDoc, *er
 	kv, updateErr := Update(ctx, kvReq)
 	if updateErr != nil {
 		openlog.Error(fmt.Sprintf("update record [key: %s, labels: %s] failed", input.Key, input.Labels))
-		return input, config.NewError(config.ErrInternal, updateErr.Error())
+		return input, util.SvcErr(updateErr)
 	}
 	return kv, nil
 }

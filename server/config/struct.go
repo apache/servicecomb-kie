@@ -50,8 +50,9 @@ type DB struct {
 
 // RBAC is rbac config
 type RBAC struct {
-	Enabled    bool   `yaml:"enabled"`
-	PubKeyFile string `yaml:"rsaPublicKeyFile"`
+	Enabled        bool   `yaml:"enabled"`
+	AllowMissToken bool   `yaml:"allowMissToken"`
+	PubKeyFile     string `yaml:"rsaPublicKeyFile"`
 }
 
 // Sync is sync config
