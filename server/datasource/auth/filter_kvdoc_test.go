@@ -53,3 +53,32 @@ func TestFilterKVs(t *testing.T) {
 	r := FilterKVs(kvs, permResourceLabel)
 	assert.Equal(t, 1, len(r))
 }
+
+func TestFilterKVsNull(t *testing.T) {
+	permResourceLabel := []map[string]string{
+		{"environment": ""},
+	}
+
+	var kvs []*model.KVDoc
+
+	kv1 := new(model.KVDoc)
+	kv1.Key = "k1"
+	kv1.Value = "v1"
+	kv1.Labels = map[string]string{"environment": "production", "appId": "default", "service": "s1"}
+	kvs = append(kvs, kv1)
+
+	kv2 := new(model.KVDoc)
+	kv2.Key = "k2"
+	kv2.Value = "v2"
+	kv2.Labels = map[string]string{"environment": "", "appId": "default"}
+	kvs = append(kvs, kv2)
+
+	kv3 := new(model.KVDoc)
+	kv3.Key = "k3"
+	kv3.Value = "v3"
+	kv3.Labels = map[string]string{"version": "xxx"}
+	kvs = append(kvs, kv3)
+
+	r := FilterKVs(kvs, permResourceLabel)
+	assert.Equal(t, 1, len(r))
+}
