@@ -78,7 +78,8 @@ func (r *KVResource) Post(rctx *restful.Context) {
 	kv.Project = rctx.ReadPathParameter(common.PathParameterProject)
 	kv, postErr := kvsvc.Create(rctx.Ctx, kv)
 	if postErr != nil {
-		WriteErrResponse(rctx, postErr.Code, postErr.Message)
+		openlog.Error(fmt.Sprintf("post kv [%v] failed, err:%s", kv, postErr.Error()))
+		WriteErrResponse(rctx, postErr.Code, postErr.Error())
 		return
 	}
 	kvsvc.Publish(kv)
