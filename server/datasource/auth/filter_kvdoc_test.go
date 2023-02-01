@@ -53,3 +53,13 @@ func TestFilterKVs(t *testing.T) {
 	r := FilterKVs(kvs, permResourceLabel)
 	assert.Equal(t, 1, len(r))
 }
+
+func TestFilterKVsWithEmptyKvs(t *testing.T) {
+	permResourceLabel := []map[string]string{
+		{"environment": "production", "appId": "default", "service": "s1"},
+		{"environment": "testing"},
+	}
+	var kvs = make([]*model.KVDoc, 0, 3)
+	r := FilterKVs(kvs, permResourceLabel)
+	assert.NotNil(t, r)
+}
