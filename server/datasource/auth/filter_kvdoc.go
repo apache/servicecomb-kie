@@ -20,7 +20,7 @@ package auth
 import "github.com/apache/servicecomb-kie/pkg/model"
 
 func FilterKVs(kvs []*model.KVDoc, labelsList []map[string]string) []*model.KVDoc {
-	var permKVs []*model.KVDoc
+	var permKVs = make([]*model.KVDoc, 0, len(kvs))
 	for _, kv := range kvs {
 		for _, labels := range labelsList {
 			if !matchOne(kv, labels) {
