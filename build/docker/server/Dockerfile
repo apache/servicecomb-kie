@@ -15,7 +15,8 @@
 
 FROM alpine:latest
 
-RUN mkdir -p /etc/servicecomb-kie/
+WORKDIR /opt/servicecomb-kie
+
 RUN mkdir -p /opt/servicecomb-kie/conf
 
 ADD ./kie /opt/servicecomb-kie/

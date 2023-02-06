@@ -6,10 +6,15 @@ servicecomb:
   protocols:
     rest:
       listenAddress: 127.0.0.1:30110
+  rateLimiting:
+    global: |
+      match: none
+      rate: 200
+      burst: 200
   handler:
     chain:
       Provider:
-        default: ratelimiter-provider,monitoring,jwt,track-handler
+        default: access-log,monitoring,jwt,track-handler,traffic-marker,rate-limiter
   transport:
     maxBodyBytes:
       rest: 2621440 #2.5M
