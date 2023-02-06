@@ -14,68 +14,65 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
-
+set -e
 
 root_dir=/opt/servicecomb-kie
 net_name=$(ip -o -4 route show to default | awk '{print $5}')
 listen_addr=$(ifconfig ${net_name} | grep -E 'inet\W' | grep -o -E [0-9]+.[0-9]+.[0-9]+.[0-9]+ | head -n 1)
 if [ -z "${LOG_LEVEL}" ]; then
- export LOG_LEVEL="DEBUG"
+  export LOG_LEVEL="DEBUG"
 fi
 
-writeConfig(){
-echo "write template config..."
-cat <<EOM > ${root_dir}/conf/chassis.yaml
+writeConfig() {
+  echo "write template config..."
+  cat <<EOM >${root_dir}/conf/chassis.yaml
 servicecomb:
   registry:
     disabled: true
   protocols:
     rest:
       listenAddress: ${listen_addr}:30110
+  rateLimiting:
+    global: |
+      match: none
+      rate: 200
+      burst: 200
   handler:
     chain:
       Provider:
-        default: ratelimiter-provider,monitoring,jwt,track-handler
-servicecomb:
-  service:
-    quota:
-      plugin: build-in
+        default: access-log,monitoring,jwt,track-handler,traffic-marker,rate-limiter
 EOM
-cat <<EOM > ${root_dir}/conf/lager.yaml
+
+  cat <<EOM >${root_dir}/conf/lager.yaml
+logWriters: file
 logLevel: ${LOG_LEVEL}
-
 logFile: log/chassis.log
-
-logFormatText: false
-
-rollingPolicy: size
-
-logRotateDate: 1
-
-logRotateSize: 10
-
-logBackupCount: 7
+logFormatText: true
+LogRotateCompress: true
+logRotateSize: 30
+logBackupCount: 20
+logRotateAge: 0
+accessLogFile: log/access.log
 EOM
 
-local uri="mongodb://${MONGODB_ADDR}/kie"
-if [ -n "${MONGODB_USER}" ]; then
-  uri="mongodb://${MONGODB_USER}:${MONGODB_PWD}@${MONGODB_ADDR}/kie"
-fi
+  db_type=${DB_KIND:-"mongo"}
+  uri=${DB_URI}
+  if [ -z "${uri}" ] && [ "${db_type}" == "mongo" ]; then
+    uri="mongodb://${MONGODB_ADDR}/kie"
+    if [ -n "${MONGODB_USER}" ]; then
+      uri="mongodb://${MONGODB_USER}:${MONGODB_PWD}@${MONGODB_ADDR}/kie"
+    fi
+  fi
 
-cat <<EOM > /etc/servicecomb-kie/kie-conf.yaml
+  cat <<EOM >${root_dir}/conf/kie-conf.yaml
 db:
+  kind: ${db_type}
   uri: ${uri}
-  type: mongodb
-  poolSize: 10
-  ssl: false
-  sslCA:
-  sslCert:
 EOM
 }
-
 
 echo "prepare config file...."
 writeConfig
 
 echo "start kie server"
-/opt/servicecomb-kie/kie --config /etc/servicecomb-kie/kie-conf.yaml
+/opt/servicecomb-kie/kie --config ${root_dir}/conf/kie-conf.yaml
