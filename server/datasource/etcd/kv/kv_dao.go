@@ -20,6 +20,8 @@ package kv
 import (
 	"context"
 	"encoding/json"
+	"github.com/apache/servicecomb-kie/pkg/stringutil"
+	"github.com/apache/servicecomb-kie/server/cache"
 	"regexp"
 	"strings"
 
@@ -522,11 +524,65 @@ func (s *Dao) listData(ctx context.Context, project, domain string, options ...d
 	if err != nil {
 		return nil, opts, err
 	}
-	// TODO may be OOM
-	kvs, _, err := etcdadpt.List(ctx, key.KVList(domain, project))
+
+	labelFormat := stringutil.FormatMap(opts.Labels)
+	inputKey := strings.Join([]string{
+		"",
+		domain,
+		project,
+		labelFormat,
+	}, "/")
+	if kvIDs, ok := cache.Kc.Cache[inputKey]; ok {
+		result, err := cacheSearch(ctx, project, domain, kvIDs, opts, regex)
+		if err != nil {
+			openlog.Error("list kv failed: " + err.Error())
+			return nil, opts, nil
+		}
+		return result, opts, nil
+	}
+
+	result, err := matchLabelsSearch(ctx, domain, project, regex, opts)
 	if err != nil {
 		openlog.Error("list kv failed: " + err.Error())
 		return nil, opts, err
+	}
+
+	return result, opts, nil
+}
+
+func cacheSearch(ctx context.Context, project string, domain string, kvIDs []string, opts datasource.FindOptions, regex *regexp.Regexp) (*model.KVResponse, error) {
+	result := &model.KVResponse{}
+	for _, kvID := range kvIDs {
+		kv, err := etcdadpt.Get(ctx, key.KV(domain, project, kvID))
+		if err != nil {
+			openlog.Error("list kv failed: " + err.Error())
+			continue
+		}
+		var doc model.KVDoc
+		err = json.Unmarshal(kv.Value, &doc)
+		if err != nil {
+			openlog.Error("decode to KVList error: " + err.Error())
+			continue
+		}
+
+		if !filterMatch(&doc, opts, regex) {
+			continue
+		}
+
+		datasource.ClearPart(&doc)
+		result.Data = append(result.Data, &doc)
+		result.Total++
+		if IsUniqueFind(opts) {
+			break
+		}
+	}
+	return result, nil
+}
+
+func matchLabelsSearch(ctx context.Context, domain, project string, regex *regexp.Regexp, opts datasource.FindOptions) (*model.KVResponse, error) {
+	kvs, _, err := etcdadpt.List(ctx, key.KVList(domain, project))
+	if err != nil {
+		return nil, err
 	}
 	result := &model.KVResponse{
 		Data: []*model.KVDoc{},
@@ -551,7 +607,7 @@ func (s *Dao) listData(ctx context.Context, project, domain string, options ...d
 		}
 	}
 
-	return result, opts, nil
+	return result, nil
 }
 
 func IsUniqueFind(opts datasource.FindOptions) bool {
