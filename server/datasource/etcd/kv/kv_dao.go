@@ -20,18 +20,17 @@ package kv
 import (
 	"context"
 	"encoding/json"
-	"regexp"
-	"strings"
-
-	"github.com/go-chassis/cari/sync"
-	"github.com/go-chassis/openlog"
-	"github.com/little-cui/etcdadpt"
-
 	"github.com/apache/servicecomb-kie/pkg/model"
 	"github.com/apache/servicecomb-kie/pkg/util"
+	"github.com/apache/servicecomb-kie/server/cache"
 	"github.com/apache/servicecomb-kie/server/datasource"
 	"github.com/apache/servicecomb-kie/server/datasource/auth"
 	"github.com/apache/servicecomb-kie/server/datasource/etcd/key"
+	kieSync "github.com/go-chassis/cari/sync"
+	"github.com/go-chassis/openlog"
+	"github.com/little-cui/etcdadpt"
+	"regexp"
+	"strings"
 )
 
 // Dao operate data in mongodb
@@ -84,7 +83,7 @@ func txnCreate(ctx context.Context, kv *model.KVDoc) (bool, error) {
 		openlog.Error("fail to marshal kv " + err.Error())
 		return false, err
 	}
-	task, err := sync.NewTask(kv.Domain, kv.Project, sync.CreateAction, datasource.ConfigResource, kv)
+	task, err := kieSync.NewTask(kv.Domain, kv.Project, kieSync.CreateAction, datasource.ConfigResource, kv)
 	if err != nil {
 		openlog.Error("fail to create task" + err.Error())
 		return false, err
@@ -154,7 +153,7 @@ func txnUpdate(ctx context.Context, kv *model.KVDoc) error {
 		openlog.Error(err.Error())
 		return err
 	}
-	task, err := sync.NewTask(kv.Domain, kv.Project, sync.UpdateAction, datasource.ConfigResource, kv)
+	task, err := kieSync.NewTask(kv.Domain, kv.Project, kieSync.UpdateAction, datasource.ConfigResource, kv)
 	if err != nil {
 		openlog.Error("fail to create task" + err.Error())
 		return err
@@ -278,7 +277,7 @@ func txnFindOneAndDelete(ctx context.Context, kvID, project, domain string) (*mo
 		openlog.Error(err.Error())
 		return nil, err
 	}
-	task, err := sync.NewTask(domain, project, sync.DeleteAction, datasource.ConfigResource, kvDoc)
+	task, err := kieSync.NewTask(domain, project, kieSync.DeleteAction, datasource.ConfigResource, kvDoc)
 	if err != nil {
 		openlog.Error("fail to create task" + err.Error())
 		return nil, err
@@ -288,7 +287,7 @@ func txnFindOneAndDelete(ctx context.Context, kvID, project, domain string) (*mo
 		openlog.Error("fail to marshal task" + err.Error())
 		return nil, err
 	}
-	tombstone := sync.NewTombstone(domain, project, datasource.ConfigResource, datasource.TombstoneID(kvDoc))
+	tombstone := kieSync.NewTombstone(domain, project, datasource.ConfigResource, datasource.TombstoneID(kvDoc))
 	tombstoneBytes, err := json.Marshal(tombstone)
 	if err != nil {
 		openlog.Error("fail to marshal tombstone" + err.Error())
@@ -383,8 +382,8 @@ func txnFindManyAndDelete(ctx context.Context, kvIDs []string, project, domain s
 	var opOptions []etcdadpt.OpOptions
 	kvTotalNum := len(kvIDs)
 	docs = make([]*model.KVDoc, kvTotalNum)
-	tasks := make([]*sync.Task, kvTotalNum)
-	tombstones := make([]*sync.Tombstone, kvTotalNum)
+	tasks := make([]*kieSync.Task, kvTotalNum)
+	tombstones := make([]*kieSync.Tombstone, kvTotalNum)
 	successKVNum := 0
 	for i := 0; i < kvTotalNum; i++ {
 		kvDoc, err := getKVDoc(ctx, domain, project, kvIDs[i])
@@ -399,14 +398,14 @@ func txnFindManyAndDelete(ctx context.Context, kvIDs []string, project, domain s
 		if kvDoc == nil {
 			continue
 		}
-		task, err := sync.NewTask(domain, project, sync.DeleteAction, datasource.ConfigResource, kvDoc)
+		task, err := kieSync.NewTask(domain, project, kieSync.DeleteAction, datasource.ConfigResource, kvDoc)
 		if err != nil {
 			openlog.Error("fail to create task")
 			return nil, 0, err
 		}
 		docs[successKVNum] = kvDoc
 		tasks[successKVNum] = task
-		tombstones[successKVNum] = sync.NewTombstone(domain, project, datasource.ConfigResource,
+		tombstones[successKVNum] = kieSync.NewTombstone(domain, project, datasource.ConfigResource,
 			datasource.TombstoneID(kvDoc))
 		successKVNum++
 	}
@@ -522,11 +521,34 @@ func (s *Dao) listData(ctx context.Context, project, domain string, options ...d
 	if err != nil {
 		return nil, opts, err
 	}
-	// TODO may be OOM
-	kvs, _, err := etcdadpt.List(ctx, key.KVList(domain, project))
+
+	if cache.Kc != nil {
+		result, err := cache.Kc.Search(ctx, &cache.KvCacheSearchReq{
+			Domain:  domain,
+			Project: project,
+			Opts:    &opts,
+			Regex:   regex,
+		})
+		if err == nil {
+			return result, opts, nil
+		}
+		openlog.Error("using cache to search kv failed: " + err.Error())
+	}
+
+	result, err := matchLabelsSearch(ctx, domain, project, regex, opts)
 	if err != nil {
 		openlog.Error("list kv failed: " + err.Error())
 		return nil, opts, err
+	}
+
+	return result, opts, nil
+}
+
+func matchLabelsSearch(ctx context.Context, domain, project string, regex *regexp.Regexp, opts datasource.FindOptions) (*model.KVResponse, error) {
+	openlog.Debug("using labels to search kv")
+	kvs, _, err := etcdadpt.List(ctx, key.KVList(domain, project))
+	if err != nil {
+		return nil, err
 	}
 	result := &model.KVResponse{
 		Data: []*model.KVDoc{},
@@ -551,7 +573,7 @@ func (s *Dao) listData(ctx context.Context, project, domain string, options ...d
 		}
 	}
 
-	return result, opts, nil
+	return result, nil
 }
 
 func IsUniqueFind(opts datasource.FindOptions) bool {
