@@ -523,16 +523,18 @@ func (s *Dao) listData(ctx context.Context, project, domain string, options ...d
 	}
 
 	if cache.Kc != nil {
-		result, err := cache.Kc.Search(ctx, &cache.KvCacheSearchReq{
+		result, useCache, err := cache.Kc.Search(ctx, &cache.KvCacheSearchReq{
 			Domain:  domain,
 			Project: project,
 			Opts:    &opts,
 			Regex:   regex,
 		})
-		if err == nil {
+		if useCache && err == nil {
 			return result, opts, nil
 		}
-		openlog.Error("using cache to search kv failed: " + err.Error())
+		if useCache && err != nil {
+			openlog.Error("using cache to search kv failed: " + err.Error())
+		}
 	}
 
 	result, err := matchLabelsSearch(ctx, domain, project, regex, opts)

@@ -20,8 +20,8 @@ import (
 )
 
 func Init() {
-	kvDocCache := goCache.New(time.Hour, time.Hour)
-	Kc = NewKvCache(0, &sync.Map{}, kvDocCache)
+	kvDocCache := goCache.New(10*time.Minute, 11*time.Minute)
+	Kc = NewKvCache(time.Hour, 0, &sync.Map{}, kvDocCache)
 	go Kc.refresh(context.Background())
 }
 
@@ -34,6 +34,7 @@ const (
 type KvIdSet map[string]struct{}
 
 type KvCache struct {
+	timeOut    time.Duration
 	client     etcdadpt.Client
 	revision   int64
 	kvIdCache  *sync.Map
@@ -47,8 +48,9 @@ type KvCacheSearchReq struct {
 	Regex   *regexp.Regexp
 }
 
-func NewKvCache(rev int64, idCache *sync.Map, docCache *goCache.Cache) *KvCache {
+func NewKvCache(timeOut time.Duration, rev int64, idCache *sync.Map, docCache *goCache.Cache) *KvCache {
 	return &KvCache{
+		timeOut:    timeOut,
 		client:     etcdadpt.Instance(),
 		revision:   rev,
 		kvIdCache:  idCache,
@@ -82,14 +84,20 @@ func (kc *KvCache) refresh(ctx context.Context) {
 }
 
 func (kc *KvCache) listWatch(ctx context.Context) error {
-	rsp, err := kc.client.Do(ctx, etcdadpt.WatchPrefixOpOptions(PrefixKvs)...)
+	rsp, err := kc.List(ctx)
 	if err != nil {
-		openlog.Error(fmt.Sprintf("list prefix %s failed, current rev: %d, err, %v", PrefixKvs, kc.revision, err))
 		return err
 	}
 	kc.revision = rsp.Revision
 
 	kc.cachePut(rsp)
+
+	return kc.Watch(ctx)
+}
+
+func (kc *KvCache) Watch(ctx context.Context) error {
+	timoutCtx, cancel := context.WithTimeout(ctx, kc.timeOut)
+	defer cancel()
 
 	rev := kc.revision
 	opts := append(
@@ -97,12 +105,21 @@ func (kc *KvCache) listWatch(ctx context.Context) error {
 		etcdadpt.WithRev(kc.revision+1),
 		etcdadpt.WithWatchCallback(kc.watchCallBack),
 	)
-	err = kc.client.Watch(ctx, opts...)
+	err := kc.client.Watch(timoutCtx, opts...)
 	if err != nil {
 		openlog.Error(fmt.Sprintf("watch prefix %s failed, start rev: %d+1->%d->0, err %v", PrefixKvs, rev, kc.revision, err))
 		kc.revision = 0
 	}
 	return err
+}
+
+func (kc *KvCache) List(ctx context.Context) (*etcdadpt.Response, error) {
+	rsp, err := kc.client.Do(ctx, etcdadpt.WatchPrefixOpOptions(PrefixKvs)...)
+	if err != nil {
+		openlog.Error(fmt.Sprintf("list prefix %s failed, current rev: %d, err, %v", PrefixKvs, kc.revision, err))
+		return nil, err
+	}
+	return rsp, nil
 }
 
 func (kc *KvCache) watchCallBack(message string, rsp *etcdadpt.Response) error {
@@ -126,6 +143,7 @@ func (kc *KvCache) cachePut(rsp *etcdadpt.Response) {
 	for _, kv := range rsp.Kvs {
 		kvDoc, err := kc.GetKvDoc(kv)
 		if err != nil {
+			openlog.Error(fmt.Sprintf("failed to unmarshal kv, err %v", err))
 			continue
 		}
 		kc.StoreKvDoc(kvDoc.ID, kvDoc)
@@ -144,6 +162,7 @@ func (kc *KvCache) cacheDelete(rsp *etcdadpt.Response) {
 	for _, kv := range rsp.Kvs {
 		kvDoc, err := kc.GetKvDoc(kv)
 		if err != nil {
+			openlog.Error(fmt.Sprintf("failed to unmarshal kv, err %v", err))
 			continue
 		}
 		kc.DeleteKvDoc(kvDoc.ID)
@@ -193,63 +212,35 @@ func (kc *KvCache) DeleteKvDoc(kvId string) {
 	kc.kvDocCache.Delete(kvId)
 }
 
-func (kc *KvCache) Search(ctx context.Context, req *KvCacheSearchReq) (*model.KVResponse, error) {
-	openlog.Debug("using cache to search kv")
-
+func (kc *KvCache) Search(ctx context.Context, req *KvCacheSearchReq) (*model.KVResponse, bool, error) {
 	if !req.Opts.ExactLabels {
-		openlog.Error("opts.ExactLabels is false, shouldn't use cache to search")
-		return nil, fmt.Errorf("opts.ExactLabels is false, shouldn't use cache to search")
+		return nil, false, nil
 	}
 
+	openlog.Debug("using cache to search kv")
 	cacheKey := kc.GetCacheKey(req.Domain, req.Project, req.Opts.Labels)
-	kvIDs, ok := kc.LoadKvIdSet(cacheKey)
+	kvIds, ok := kc.LoadKvIdSet(cacheKey)
 	if !ok {
 		kc.StoreKvIdSet(cacheKey, KvIdSet{})
 		openlog.Error("cacheKey " + cacheKey + " not exists")
-		return nil, fmt.Errorf("cacheKey " + cacheKey + " not exists")
+		return nil, true, fmt.Errorf("cacheKey " + cacheKey + " not exists")
 	}
 
 	result := &model.KVResponse{}
 
-	//val, ok := kc.kvDocCache.Get(cacheKey)
-	//if ok {
-	//	kvDocs, _ := val.([]*model.KVDoc)
-	//	result.Data = kvDocs
-	//	result.Total = len(kvDocs)
-	//	return result, nil
-	//}
-
-	cnt := 0
-	wg := sync.WaitGroup{}
-	tpData := make([]*model.KVDoc, len(kvIDs))
-	for kvID := range kvIDs {
-		wg.Add(1)
-		go func(kvID string, cnt int) {
-			defer wg.Done()
-			docKey := key.KV(req.Domain, req.Project, kvID)
-			var doc *model.KVDoc
-			if doc, ok = kc.LoadKvDoc(kvID); !ok {
-				val, err := kc.getKvFromEtcd(ctx, docKey)
-				if err != nil {
-					openlog.Error("get kv failed: " + err.Error())
-					return
-				}
-				doc = val
+	var kvIdsLeft []string
+	for kvId := range kvIds {
+		if doc, ok := kc.LoadKvDoc(kvId); ok {
+			if isMatch(req, doc) {
+				datasource.ClearPart(doc)
+				result.Data = append(result.Data, doc)
 			}
-
-			if req.Opts.Status != "" && doc.Status != req.Opts.Status {
-				return
-			}
-			if req.Regex != nil && !req.Regex.MatchString(doc.Key) {
-				return
-			}
-
-			datasource.ClearPart(doc)
-			tpData[cnt] = doc
-		}(kvID, cnt)
-		cnt++
+			continue
+		}
+		kvIdsLeft = append(kvIdsLeft, kvId)
 	}
-	wg.Wait()
+
+	tpData := kc.getKvFromEtcd(ctx, req, kvIdsLeft)
 	for i := range tpData {
 		if tpData[i] == nil {
 			continue
@@ -257,27 +248,63 @@ func (kc *KvCache) Search(ctx context.Context, req *KvCacheSearchReq) (*model.KV
 		result.Data = append(result.Data, tpData[i])
 	}
 	result.Total = len(result.Data)
-	return result, nil
+	return result, true, nil
 }
 
-func (kc *KvCache) getKvFromEtcd(ctx context.Context, docKey string) (*model.KVDoc, error) {
+func (kc *KvCache) getKvFromEtcd(ctx context.Context, req *KvCacheSearchReq, kvIdsLeft []string) []*model.KVDoc {
+	if len(kvIdsLeft) == 0 {
+		return nil
+	}
+
 	openlog.Debug("get kv from etcd by kvId")
-	kv, err := etcdadpt.Get(ctx, docKey)
-	if err != nil {
-		return nil, err
+	wg := sync.WaitGroup{}
+	tpData := make([]*model.KVDoc, len(kvIdsLeft))
+	for i, kvId := range kvIdsLeft {
+		wg.Add(1)
+		go func(kvID string, cnt int) {
+			defer wg.Done()
+
+			docKey := key.KV(req.Domain, req.Project, kvID)
+			kv, err := etcdadpt.Get(ctx, docKey)
+			if err != nil {
+				openlog.Error(fmt.Sprintf("failed to get kv from etcd, err %v", err))
+				return
+			}
+
+			doc, err := kc.GetKvDoc(kv)
+			if err != nil {
+				openlog.Error(fmt.Sprintf("failed to unmarshal kv, err %v", err))
+				return
+			}
+
+			kc.StoreKvDoc(doc.ID, doc)
+
+			if !isMatch(req, doc) {
+				return
+			}
+
+			datasource.ClearPart(doc)
+			tpData[cnt] = doc
+		}(kvId, i)
 	}
-	doc, err := kc.GetKvDoc(kv)
-	if err != nil {
-		return nil, err
+	wg.Wait()
+	return tpData
+}
+
+func isMatch(req *KvCacheSearchReq, doc *model.KVDoc) bool {
+	if req.Opts.Status != "" && doc.Status != req.Opts.Status {
+		return false
 	}
-	return doc, nil
+	if req.Regex != nil && !req.Regex.MatchString(doc.Key) {
+		return false
+	}
+	return true
 }
 
 func (kc *KvCache) GetKvDoc(kv *mvccpb.KeyValue) (*model.KVDoc, error) {
 	kvDoc := &model.KVDoc{}
 	err := json.Unmarshal(kv.Value, kvDoc)
 	if err != nil {
-		openlog.Error(fmt.Sprintf("failed to unmarshal kv, err %v", err))
 		return nil, err
 	}
 	return kvDoc, nil
