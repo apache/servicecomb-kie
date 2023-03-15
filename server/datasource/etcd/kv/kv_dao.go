@@ -26,7 +26,7 @@ import (
 	"github.com/apache/servicecomb-kie/server/datasource"
 	"github.com/apache/servicecomb-kie/server/datasource/auth"
 	"github.com/apache/servicecomb-kie/server/datasource/etcd/key"
-	kieSync "github.com/go-chassis/cari/sync"
+	"github.com/go-chassis/cari/sync"
 	"github.com/go-chassis/openlog"
 	"github.com/little-cui/etcdadpt"
 	"regexp"
@@ -83,7 +83,7 @@ func txnCreate(ctx context.Context, kv *model.KVDoc) (bool, error) {
 		openlog.Error("fail to marshal kv " + err.Error())
 		return false, err
 	}
-	task, err := kieSync.NewTask(kv.Domain, kv.Project, kieSync.CreateAction, datasource.ConfigResource, kv)
+	task, err := sync.NewTask(kv.Domain, kv.Project, sync.CreateAction, datasource.ConfigResource, kv)
 	if err != nil {
 		openlog.Error("fail to create task" + err.Error())
 		return false, err
@@ -153,7 +153,7 @@ func txnUpdate(ctx context.Context, kv *model.KVDoc) error {
 		openlog.Error(err.Error())
 		return err
 	}
-	task, err := kieSync.NewTask(kv.Domain, kv.Project, kieSync.UpdateAction, datasource.ConfigResource, kv)
+	task, err := sync.NewTask(kv.Domain, kv.Project, sync.UpdateAction, datasource.ConfigResource, kv)
 	if err != nil {
 		openlog.Error("fail to create task" + err.Error())
 		return err
@@ -277,7 +277,7 @@ func txnFindOneAndDelete(ctx context.Context, kvID, project, domain string) (*mo
 		openlog.Error(err.Error())
 		return nil, err
 	}
-	task, err := kieSync.NewTask(domain, project, kieSync.DeleteAction, datasource.ConfigResource, kvDoc)
+	task, err := sync.NewTask(domain, project, sync.DeleteAction, datasource.ConfigResource, kvDoc)
 	if err != nil {
 		openlog.Error("fail to create task" + err.Error())
 		return nil, err
@@ -287,7 +287,7 @@ func txnFindOneAndDelete(ctx context.Context, kvID, project, domain string) (*mo
 		openlog.Error("fail to marshal task" + err.Error())
 		return nil, err
 	}
-	tombstone := kieSync.NewTombstone(domain, project, datasource.ConfigResource, datasource.TombstoneID(kvDoc))
+	tombstone := sync.NewTombstone(domain, project, datasource.ConfigResource, datasource.TombstoneID(kvDoc))
 	tombstoneBytes, err := json.Marshal(tombstone)
 	if err != nil {
 		openlog.Error("fail to marshal tombstone" + err.Error())
@@ -382,8 +382,8 @@ func txnFindManyAndDelete(ctx context.Context, kvIDs []string, project, domain s
 	var opOptions []etcdadpt.OpOptions
 	kvTotalNum := len(kvIDs)
 	docs = make([]*model.KVDoc, kvTotalNum)
-	tasks := make([]*kieSync.Task, kvTotalNum)
-	tombstones := make([]*kieSync.Tombstone, kvTotalNum)
+	tasks := make([]*sync.Task, kvTotalNum)
+	tombstones := make([]*sync.Tombstone, kvTotalNum)
 	successKVNum := 0
 	for i := 0; i < kvTotalNum; i++ {
 		kvDoc, err := getKVDoc(ctx, domain, project, kvIDs[i])
@@ -398,14 +398,14 @@ func txnFindManyAndDelete(ctx context.Context, kvIDs []string, project, domain s
 		if kvDoc == nil {
 			continue
 		}
-		task, err := kieSync.NewTask(domain, project, kieSync.DeleteAction, datasource.ConfigResource, kvDoc)
+		task, err := sync.NewTask(domain, project, sync.DeleteAction, datasource.ConfigResource, kvDoc)
 		if err != nil {
 			openlog.Error("fail to create task")
 			return nil, 0, err
 		}
 		docs[successKVNum] = kvDoc
 		tasks[successKVNum] = task
-		tombstones[successKVNum] = kieSync.NewTombstone(domain, project, datasource.ConfigResource,
+		tombstones[successKVNum] = sync.NewTombstone(domain, project, datasource.ConfigResource,
 			datasource.TombstoneID(kvDoc))
 		successKVNum++
 	}
@@ -522,8 +522,8 @@ func (s *Dao) listData(ctx context.Context, project, domain string, options ...d
 		return nil, opts, err
 	}
 
-	if cache.Kc != nil {
-		result, useCache, err := cache.Kc.Search(ctx, &cache.KvCacheSearchReq{
+	if cache.Enabled() {
+		result, useCache, err := cache.Search(ctx, &cache.KvCacheSearchReq{
 			Domain:  domain,
 			Project: project,
 			Opts:    &opts,

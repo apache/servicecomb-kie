@@ -4,6 +4,11 @@ import (
 	"context"
 	"encoding/json"
 	"fmt"
+	"regexp"
+	"strings"
+	"sync"
+	"time"
+
 	"github.com/apache/servicecomb-kie/pkg/model"
 	"github.com/apache/servicecomb-kie/pkg/stringutil"
 	"github.com/apache/servicecomb-kie/server/datasource"
@@ -13,22 +18,21 @@ import (
 	"github.com/little-cui/etcdadpt"
 	goCache "github.com/patrickmn/go-cache"
 	"go.etcd.io/etcd/api/v3/mvccpb"
-	"regexp"
-	"strings"
-	"sync"
-	"time"
 )
 
 func Init() {
-	kvDocCache := goCache.New(10*time.Minute, 11*time.Minute)
-	Kc = NewKvCache(time.Hour, 0, &sync.Map{}, kvDocCache)
-	go Kc.refresh(context.Background())
+	Kc = NewKvCache()
+	go Kc.Refresh(context.Background())
 }
 
 var Kc *KvCache
 
 const (
-	PrefixKvs = "kvs"
+	PrefixKvs            = "kvs"
+	cacheExpirationTime  = 10 * time.Minute
+	cacheCleanupInterval = 11 * time.Minute
+	etcdWatchTimeout     = 1 * time.Hour
+	backOffMinInterval   = 5 * time.Second
 )
 
 type KvIdSet map[string]struct{}
@@ -37,7 +41,7 @@ type KvCache struct {
 	timeOut    time.Duration
 	client     etcdadpt.Client
 	revision   int64
-	kvIdCache  *sync.Map
+	kvIdCache  sync.Map
 	kvDocCache *goCache.Cache
 }
 
@@ -48,24 +52,28 @@ type KvCacheSearchReq struct {
 	Regex   *regexp.Regexp
 }
 
-func NewKvCache(timeOut time.Duration, rev int64, idCache *sync.Map, docCache *goCache.Cache) *KvCache {
+func NewKvCache() *KvCache {
+	kvDocCache := goCache.New(cacheExpirationTime, cacheCleanupInterval)
 	return &KvCache{
-		timeOut:    timeOut,
+		timeOut:    etcdWatchTimeout,
 		client:     etcdadpt.Instance(),
-		revision:   rev,
-		kvIdCache:  idCache,
-		kvDocCache: docCache,
+		revision:   0,
+		kvDocCache: kvDocCache,
 	}
 }
 
-func (kc *KvCache) refresh(ctx context.Context) {
+func Enabled() bool {
+	return Kc != nil
+}
+
+func (kc *KvCache) Refresh(ctx context.Context) {
 	openlog.Info("start to list and watch")
 	retries := 0
 
-	timer := time.NewTimer(time.Second)
+	timer := time.NewTimer(backOffMinInterval)
 	defer timer.Stop()
 	for {
-		nextPeriod := time.Second
+		nextPeriod := backOffMinInterval
 		if err := kc.listWatch(ctx); err != nil {
 			retries++
 			nextPeriod = backoff.GetBackoff().Delay(retries)
@@ -84,7 +92,7 @@ func (kc *KvCache) refresh(ctx context.Context) {
 }
 
 func (kc *KvCache) listWatch(ctx context.Context) error {
-	rsp, err := kc.List(ctx)
+	rsp, err := kc.list(ctx)
 	if err != nil {
 		return err
 	}
@@ -92,10 +100,10 @@ func (kc *KvCache) listWatch(ctx context.Context) error {
 
 	kc.cachePut(rsp)
 
-	return kc.Watch(ctx)
+	return kc.watch(ctx)
 }
 
-func (kc *KvCache) Watch(ctx context.Context) error {
+func (kc *KvCache) watch(ctx context.Context) error {
 	timoutCtx, cancel := context.WithTimeout(ctx, kc.timeOut)
 	defer cancel()
 
@@ -113,7 +121,7 @@ func (kc *KvCache) Watch(ctx context.Context) error {
 	return err
 }
 
-func (kc *KvCache) List(ctx context.Context) (*etcdadpt.Response, error) {
+func (kc *KvCache) list(ctx context.Context) (*etcdadpt.Response, error) {
 	rsp, err := kc.client.Do(ctx, etcdadpt.WatchPrefixOpOptions(PrefixKvs)...)
 	if err != nil {
 		openlog.Error(fmt.Sprintf("list prefix %s failed, current rev: %d, err, %v", PrefixKvs, kc.revision, err))
@@ -212,40 +220,39 @@ func (kc *KvCache) DeleteKvDoc(kvId string) {
 	kc.kvDocCache.Delete(kvId)
 }
 
-func (kc *KvCache) Search(ctx context.Context, req *KvCacheSearchReq) (*model.KVResponse, bool, error) {
+func Search(ctx context.Context, req *KvCacheSearchReq) (*model.KVResponse, bool, error) {
 	if !req.Opts.ExactLabels {
 		return nil, false, nil
 	}
 
-	openlog.Debug("using cache to search kv")
-	cacheKey := kc.GetCacheKey(req.Domain, req.Project, req.Opts.Labels)
-	kvIds, ok := kc.LoadKvIdSet(cacheKey)
+	openlog.Debug(fmt.Sprintf("using cache to search kv, domain %v, project %v, opts %+v", req.Domain, req.Project, *req.Opts))
+	result := &model.KVResponse{}
+	cacheKey := Kc.GetCacheKey(req.Domain, req.Project, req.Opts.Labels)
+	kvIds, ok := Kc.LoadKvIdSet(cacheKey)
 	if !ok {
-		kc.StoreKvIdSet(cacheKey, KvIdSet{})
-		openlog.Error("cacheKey " + cacheKey + " not exists")
-		return nil, true, fmt.Errorf("cacheKey " + cacheKey + " not exists")
+		Kc.StoreKvIdSet(cacheKey, KvIdSet{})
+		return result, true, nil
 	}
 
-	result := &model.KVResponse{}
+	var docs []*model.KVDoc
 
 	var kvIdsLeft []string
 	for kvId := range kvIds {
-		if doc, ok := kc.LoadKvDoc(kvId); ok {
-			if isMatch(req, doc) {
-				datasource.ClearPart(doc)
-				result.Data = append(result.Data, doc)
-			}
+		if doc, ok := Kc.LoadKvDoc(kvId); ok {
+			datasource.ClearPart(doc)
+			docs = append(docs, doc)
 			continue
 		}
 		kvIdsLeft = append(kvIdsLeft, kvId)
 	}
 
-	tpData := kc.getKvFromEtcd(ctx, req, kvIdsLeft)
-	for i := range tpData {
-		if tpData[i] == nil {
-			continue
+	tpData := Kc.getKvFromEtcd(ctx, req, kvIdsLeft)
+	docs = append(docs, tpData...)
+
+	for i := range docs {
+		if isMatch(req, docs[i]) {
+			result.Data = append(result.Data, docs[i])
 		}
-		result.Data = append(result.Data, tpData[i])
 	}
 	result.Total = len(result.Data)
 	return result, true, nil
@@ -258,7 +265,7 @@ func (kc *KvCache) getKvFromEtcd(ctx context.Context, req *KvCacheSearchReq, kvI
 
 	openlog.Debug("get kv from etcd by kvId")
 	wg := sync.WaitGroup{}
-	tpData := make([]*model.KVDoc, len(kvIdsLeft))
+	docs := make([]*model.KVDoc, len(kvIdsLeft))
 	for i, kvId := range kvIdsLeft {
 		wg.Add(1)
 		go func(kvID string, cnt int) {
@@ -278,20 +285,18 @@ func (kc *KvCache) getKvFromEtcd(ctx context.Context, req *KvCacheSearchReq, kvI
 			}
 
 			kc.StoreKvDoc(doc.ID, doc)
-
-			if !isMatch(req, doc) {
-				return
-			}
-
 			datasource.ClearPart(doc)
-			tpData[cnt] = doc
+			docs[cnt] = doc
 		}(kvId, i)
 	}
 	wg.Wait()
-	return tpData
+	return docs
 }
 
 func isMatch(req *KvCacheSearchReq, doc *model.KVDoc) bool {
+	if doc == nil {
+		return false
+	}
 	if req.Opts.Status != "" && doc.Status != req.Opts.Status {
 		return false
 	}
