@@ -20,17 +20,17 @@ package kv
 import (
 	"context"
 	"encoding/json"
+	"regexp"
+	"strings"
+
 	"github.com/apache/servicecomb-kie/pkg/model"
 	"github.com/apache/servicecomb-kie/pkg/util"
-	"github.com/apache/servicecomb-kie/server/cache"
 	"github.com/apache/servicecomb-kie/server/datasource"
 	"github.com/apache/servicecomb-kie/server/datasource/auth"
 	"github.com/apache/servicecomb-kie/server/datasource/etcd/key"
 	"github.com/go-chassis/cari/sync"
 	"github.com/go-chassis/openlog"
 	"github.com/little-cui/etcdadpt"
-	"regexp"
-	"strings"
 )
 
 // Dao operate data in mongodb
@@ -522,8 +522,8 @@ func (s *Dao) listData(ctx context.Context, project, domain string, options ...d
 		return nil, opts, err
 	}
 
-	if cache.Enabled() {
-		result, useCache, err := cache.Search(ctx, &cache.KvCacheSearchReq{
+	if Enabled() {
+		result, useCache, err := Search(ctx, &CacheSearchReq{
 			Domain:  domain,
 			Project: project,
 			Opts:    &opts,

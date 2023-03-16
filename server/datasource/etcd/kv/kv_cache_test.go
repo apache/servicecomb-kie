@@ -1,10 +1,11 @@
-package cache
+package kv
 
 import (
+	"testing"
+
 	"github.com/little-cui/etcdadpt"
 	"github.com/stretchr/testify/assert"
 	"go.etcd.io/etcd/api/v3/mvccpb"
-	"testing"
 )
 
 type args struct {

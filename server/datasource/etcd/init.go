@@ -31,6 +31,7 @@ type Broker struct {
 }
 
 func NewFrom(c *datasource.Config) (datasource.Broker, error) {
+	kv.Init()
 	return &Broker{}, nil
 }
 func (*Broker) GetRevisionDao() datasource.RevisionDao {

@@ -19,7 +19,6 @@ package server
 
 import (
 	"github.com/apache/servicecomb-kie/pkg/validator"
-	"github.com/apache/servicecomb-kie/server/cache"
 	"github.com/apache/servicecomb-kie/server/config"
 	"github.com/apache/servicecomb-kie/server/datasource"
 	"github.com/apache/servicecomb-kie/server/db"
@@ -53,7 +52,6 @@ func Run() {
 	rbac.Init()
 	pubsub.Init()
 	pubsub.Start()
-	cache.Init()
 	if err := chassis.Run(); err != nil {
 		openlog.Fatal("service exit: " + err.Error())
 	}
