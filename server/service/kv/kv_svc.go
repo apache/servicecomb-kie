@@ -97,7 +97,14 @@ func Create(ctx context.Context, kv *model.KVDoc) (*model.KVDoc, *errsvc.Error) 
 		kv.ValueType = datasource.DefaultValueType
 	}
 	//check whether the project has certain labels or not
-	exist, err := datasource.GetBroker().GetKVDao().Exist(ctx, kv.Key, kv.Project, kv.Domain, datasource.WithLabelFormat(kv.LabelFormat))
+	exist, err := datasource.GetBroker().GetKVDao().Exist(
+		ctx,
+		kv.Key,
+		kv.Project,
+		kv.Domain,
+		datasource.WithLabelFormat(kv.LabelFormat),
+		datasource.WithLabels(kv.Labels),
+	)
 	if err != nil {
 		openlog.Error(err.Error())
 		return nil, config.NewError(config.ErrInternal, "create kv failed")
@@ -311,7 +318,14 @@ func Exist(ctx context.Context, key, project, domain string, labels map[string]s
 		labels = map[string]string{}
 	}
 	labelFormat := stringutil.FormatMap(labels)
-	exist, err := datasource.GetBroker().GetKVDao().Exist(ctx, key, project, domain, datasource.WithLabelFormat(labelFormat))
+	exist, err := datasource.GetBroker().GetKVDao().Exist(
+		ctx,
+		key,
+		project,
+		domain,
+		datasource.WithLabelFormat(labelFormat),
+		datasource.WithLabels(labels),
+	)
 	if err != nil {
 		openlog.Error(err.Error())
 		return false, err
@@ -324,7 +338,14 @@ func GetByKey(ctx context.Context, key, project, domain string, labels map[strin
 		labels = map[string]string{}
 	}
 	labelFormat := stringutil.FormatMap(labels)
-	kvs, err := datasource.GetBroker().GetKVDao().GetByKey(ctx, key, project, domain, datasource.WithLabelFormat(labelFormat))
+	kvs, err := datasource.GetBroker().GetKVDao().GetByKey(
+		ctx,
+		key,
+		project,
+		domain,
+		datasource.WithLabelFormat(labelFormat),
+		datasource.WithLabels(labels),
+	)
 	if err != nil {
 		openlog.Error(err.Error())
 		return nil, err

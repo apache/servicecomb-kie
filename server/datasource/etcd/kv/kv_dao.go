@@ -23,15 +23,14 @@ import (
 	"regexp"
 	"strings"
 
-	"github.com/go-chassis/cari/sync"
-	"github.com/go-chassis/openlog"
-	"github.com/little-cui/etcdadpt"
-
 	"github.com/apache/servicecomb-kie/pkg/model"
 	"github.com/apache/servicecomb-kie/pkg/util"
 	"github.com/apache/servicecomb-kie/server/datasource"
 	"github.com/apache/servicecomb-kie/server/datasource/auth"
 	"github.com/apache/servicecomb-kie/server/datasource/etcd/key"
+	"github.com/go-chassis/cari/sync"
+	"github.com/go-chassis/openlog"
+	"github.com/little-cui/etcdadpt"
 )
 
 // Dao operate data in mongodb
@@ -522,11 +521,36 @@ func (s *Dao) listData(ctx context.Context, project, domain string, options ...d
 	if err != nil {
 		return nil, opts, err
 	}
-	// TODO may be OOM
-	kvs, _, err := etcdadpt.List(ctx, key.KVList(domain, project))
+
+	if Enabled() {
+		result, useCache, err := Search(ctx, &CacheSearchReq{
+			Domain:  domain,
+			Project: project,
+			Opts:    &opts,
+			Regex:   regex,
+		})
+		if useCache && err == nil {
+			return result, opts, nil
+		}
+		if useCache && err != nil {
+			openlog.Error("using cache to search kv failed: " + err.Error())
+		}
+	}
+
+	result, err := matchLabelsSearch(ctx, domain, project, regex, opts)
 	if err != nil {
 		openlog.Error("list kv failed: " + err.Error())
 		return nil, opts, err
+	}
+
+	return result, opts, nil
+}
+
+func matchLabelsSearch(ctx context.Context, domain, project string, regex *regexp.Regexp, opts datasource.FindOptions) (*model.KVResponse, error) {
+	openlog.Debug("using labels to search kv")
+	kvs, _, err := etcdadpt.List(ctx, key.KVList(domain, project))
+	if err != nil {
+		return nil, err
 	}
 	result := &model.KVResponse{
 		Data: []*model.KVDoc{},
@@ -551,7 +575,7 @@ func (s *Dao) listData(ctx context.Context, project, domain string, options ...d
 		}
 	}
 
-	return result, opts, nil
+	return result, nil
 }
 
 func IsUniqueFind(opts datasource.FindOptions) bool {
