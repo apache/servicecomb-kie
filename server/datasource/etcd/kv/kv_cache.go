@@ -226,7 +226,9 @@ func Search(ctx context.Context, req *CacheSearchReq) (*model.KVResponse, bool, 
 	}
 
 	openlog.Debug(fmt.Sprintf("using cache to search kv, domain %v, project %v, opts %+v", req.Domain, req.Project, *req.Opts))
-	result := &model.KVResponse{}
+	result := &model.KVResponse{
+		Data: []*model.KVDoc{},
+	}
 	cacheKey := kvCache.GetCacheKey(req.Domain, req.Project, req.Opts.Labels)
 	kvIds, ok := kvCache.LoadKvIDSet(cacheKey)
 	if !ok {
