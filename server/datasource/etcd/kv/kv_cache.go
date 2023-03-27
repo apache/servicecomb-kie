@@ -11,6 +11,7 @@ import (
 
 	"github.com/apache/servicecomb-kie/pkg/model"
 	"github.com/apache/servicecomb-kie/pkg/stringutil"
+	"github.com/apache/servicecomb-kie/server/config"
 	"github.com/apache/servicecomb-kie/server/datasource"
 	"github.com/apache/servicecomb-kie/server/datasource/etcd/key"
 	"github.com/go-chassis/foundation/backoff"
@@ -37,21 +38,27 @@ const (
 
 type IDSet map[string]struct{}
 
-type Cache struct {
-	timeOut    time.Duration
-	client     etcdadpt.Client
-	revision   int64
-	kvIDCache  sync.Map
-	kvDocCache *goCache.Cache
+type LabelsSet map[string]struct{}
+
+type CacheSearchReq struct {
+	Domain  string
+	Project string
+	Opts    *datasource.FindOptions
+	Regex   *regexp.Regexp
 }
 
 func NewKvCache() *Cache {
 	kvDocCache := goCache.New(cacheExpirationTime, cacheCleanupInterval)
+	labelsSet := LabelsSet{}
+	for _, label := range config.Configurations.CacheLabels.LabelsArray {
+		labelsSet[label] = struct{}{}
+	}
 	return &Cache{
 		timeOut:    etcdWatchTimeout,
 		client:     etcdadpt.Instance(),
 		revision:   0,
 		kvDocCache: kvDocCache,
+		labelsSet:  labelsSet,
 	}
 }
 
@@ -59,11 +66,13 @@ func Enabled() bool {
 	return kvCache != nil
 }
 
-type CacheSearchReq struct {
-	Domain  string
-	Project string
-	Opts    *datasource.FindOptions
-	Regex   *regexp.Regexp
+type Cache struct {
+	timeOut    time.Duration
+	client     etcdadpt.Client
+	revision   int64
+	kvIDCache  sync.Map
+	kvDocCache *goCache.Cache
+	labelsSet  LabelsSet
 }
 
 func (kc *Cache) Refresh(ctx context.Context) {
@@ -154,6 +163,9 @@ func (kc *Cache) cachePut(rsp *etcdadpt.Response) {
 			openlog.Error(fmt.Sprintf("failed to unmarshal kv, err %v", err))
 			continue
 		}
+		if !kc.isInLabelsSet(kvDoc.Labels) {
+			continue
+		}
 		kc.StoreKvDoc(kvDoc.ID, kvDoc)
 		cacheKey := kc.GetCacheKey(kvDoc.Domain, kvDoc.Project, kvDoc.Labels)
 		m, ok := kc.LoadKvIDSet(cacheKey)
@@ -220,46 +232,6 @@ func (kc *Cache) DeleteKvDoc(kvID string) {
 	kc.kvDocCache.Delete(kvID)
 }
 
-func Search(ctx context.Context, req *CacheSearchReq) (*model.KVResponse, bool, error) {
-	if !req.Opts.ExactLabels {
-		return nil, false, nil
-	}
-
-	openlog.Debug(fmt.Sprintf("using cache to search kv, domain %v, project %v, opts %+v", req.Domain, req.Project, *req.Opts))
-	result := &model.KVResponse{
-		Data: []*model.KVDoc{},
-	}
-	cacheKey := kvCache.GetCacheKey(req.Domain, req.Project, req.Opts.Labels)
-	kvIds, ok := kvCache.LoadKvIDSet(cacheKey)
-	if !ok {
-		kvCache.StoreKvIDSet(cacheKey, IDSet{})
-		return result, true, nil
-	}
-
-	var docs []*model.KVDoc
-
-	var kvIdsLeft []string
-	for kvID := range kvIds {
-		if doc, ok := kvCache.LoadKvDoc(kvID); ok {
-			docs = append(docs, doc)
-			continue
-		}
-		kvIdsLeft = append(kvIdsLeft, kvID)
-	}
-
-	tpData := kvCache.getKvFromEtcd(ctx, req, kvIdsLeft)
-	docs = append(docs, tpData...)
-
-	for _, doc := range docs {
-		if isMatch(req, doc) {
-			datasource.ClearPart(doc)
-			result.Data = append(result.Data, doc)
-		}
-	}
-	result.Total = len(result.Data)
-	return result, true, nil
-}
-
 func (kc *Cache) getKvFromEtcd(ctx context.Context, req *CacheSearchReq, kvIdsLeft []string) []*model.KVDoc {
 	if len(kvIdsLeft) == 0 {
 		return nil
@@ -294,19 +266,6 @@ func (kc *Cache) getKvFromEtcd(ctx context.Context, req *CacheSearchReq, kvIdsLe
 	return docs
 }
 
-func isMatch(req *CacheSearchReq, doc *model.KVDoc) bool {
-	if doc == nil {
-		return false
-	}
-	if req.Opts.Status != "" && doc.Status != req.Opts.Status {
-		return false
-	}
-	if req.Regex != nil && !req.Regex.MatchString(doc.Key) {
-		return false
-	}
-	return true
-}
-
 func (kc *Cache) GetKvDoc(kv *mvccpb.KeyValue) (*model.KVDoc, error) {
 	kvDoc := &model.KVDoc{}
 	err := json.Unmarshal(kv.Value, kvDoc)
@@ -325,4 +284,67 @@ func (kc *Cache) GetCacheKey(domain, project string, labels map[string]string) s
 		labelFormat,
 	}, "/")
 	return inputKey
+}
+
+func (kc *Cache) isInLabelsSet(Labels map[string]string) bool {
+	for label := range Labels {
+		if _, ok := kc.labelsSet[label]; !ok {
+			return false
+		}
+	}
+	return true
+}
+
+func Search(ctx context.Context, req *CacheSearchReq) (*model.KVResponse, bool, error) {
+	result := &model.KVResponse{
+		Data: []*model.KVDoc{},
+	}
+	if !req.Opts.ExactLabels || !kvCache.isInLabelsSet(req.Opts.Labels) {
+		return result, false, nil
+	}
+
+	openlog.Debug(fmt.Sprintf("using cache to search kv, domain %v, project %v, opts %+v", req.Domain, req.Project, *req.Opts))
+	cacheKey := kvCache.GetCacheKey(req.Domain, req.Project, req.Opts.Labels)
+
+	kvIds, ok := kvCache.LoadKvIDSet(cacheKey)
+	if !ok {
+		kvCache.StoreKvIDSet(cacheKey, IDSet{})
+		return result, true, nil
+	}
+
+	var docs []*model.KVDoc
+
+	var kvIdsLeft []string
+	for kvID := range kvIds {
+		if doc, ok := kvCache.LoadKvDoc(kvID); ok {
+			docs = append(docs, doc)
+			continue
+		}
+		kvIdsLeft = append(kvIdsLeft, kvID)
+	}
+
+	tpData := kvCache.getKvFromEtcd(ctx, req, kvIdsLeft)
+	docs = append(docs, tpData...)
+
+	for _, doc := range docs {
+		if isMatch(req, doc) {
+			datasource.ClearPart(doc)
+			result.Data = append(result.Data, doc)
+		}
+	}
+	result.Total = len(result.Data)
+	return result, true, nil
+}
+
+func isMatch(req *CacheSearchReq, doc *model.KVDoc) bool {
+	if doc == nil {
+		return false
+	}
+	if req.Opts.Status != "" && doc.Status != req.Opts.Status {
+		return false
+	}
+	if req.Regex != nil && !req.Regex.MatchString(doc.Key) {
+		return false
+	}
+	return true
 }

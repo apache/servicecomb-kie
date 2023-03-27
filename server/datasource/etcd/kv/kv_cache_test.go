@@ -3,10 +3,15 @@ package kv
 import (
 	"testing"
 
+	"github.com/apache/servicecomb-kie/server/config"
 	"github.com/little-cui/etcdadpt"
 	"github.com/stretchr/testify/assert"
 	"go.etcd.io/etcd/api/v3/mvccpb"
 )
+
+func init() {
+	config.Configurations.CacheLabels.LabelsArray = []string{"environment", "service", "app", "version"}
+}
 
 type args struct {
 	rsp *etcdadpt.Response
