@@ -19,10 +19,10 @@ package config
 
 // Config is yaml file struct
 type Config struct {
-	DB          DB          `yaml:"db"`
-	RBAC        RBAC        `yaml:"rbac"`
-	Sync        Sync        `yaml:"sync"`
-	CacheLabels CacheLabels `yaml:"cacheLabels"`
+	DB    DB    `yaml:"db"`
+	RBAC  RBAC  `yaml:"rbac"`
+	Sync  Sync  `yaml:"sync"`
+	Cache Cache `yaml:"cache"`
 	//config from cli
 	ConfigFile     string
 	NodeName       string
@@ -61,6 +61,6 @@ type Sync struct {
 	Enabled bool `yaml:"enabled"`
 }
 
-type CacheLabels struct {
-	LabelsArray []string `yaml:"labelsArray"`
+type Cache struct {
+	Labels []string `yaml:"labels"`
 }

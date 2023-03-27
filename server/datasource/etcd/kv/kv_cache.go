@@ -50,7 +50,7 @@ type CacheSearchReq struct {
 func NewKvCache() *Cache {
 	kvDocCache := goCache.New(cacheExpirationTime, cacheCleanupInterval)
 	labelsSet := LabelsSet{}
-	for _, label := range config.Configurations.CacheLabels.LabelsArray {
+	for _, label := range config.Configurations.Cache.Labels {
 		labelsSet[label] = struct{}{}
 	}
 	return &Cache{

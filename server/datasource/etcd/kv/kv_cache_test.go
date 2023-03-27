@@ -10,7 +10,7 @@ import (
 )
 
 func init() {
-	config.Configurations.CacheLabels.LabelsArray = []string{"environment", "service", "app", "version"}
+	config.Configurations.Cache.Labels = []string{"environment", "service", "app", "version"}
 }
 
 type args struct {
