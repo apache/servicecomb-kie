@@ -139,7 +139,7 @@ func (kc *Cache) list(ctx context.Context) (*etcdadpt.Response, error) {
 	return rsp, nil
 }
 
-func (kc *Cache) watchCallBack(message string, rsp *etcdadpt.Response) error {
+func (kc *Cache) watchCallBack(_ string, rsp *etcdadpt.Response) error {
 	if rsp == nil || len(rsp.Kvs) == 0 {
 		return fmt.Errorf("unknown event")
 	}
