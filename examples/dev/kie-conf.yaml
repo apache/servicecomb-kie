@@ -19,3 +19,9 @@ db:
 sync:
   # turn on the synchronization switch related operations will be written to the task in the db
   enabled: false
+#cache:
+#  labels:
+#    - environment
+#    - service
+#    - app
+#    - version
