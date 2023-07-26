@@ -134,7 +134,7 @@ func Create(ctx context.Context, kv *model.KVDoc) (*model.KVDoc, *errsvc.Error) 
 			fmt.Sprintf("can not updateKeyValue version for [%s] [%s] in [%s]",
 				kv.Key, kv.Labels, kv.Domain))
 	}
-	openlog.Debug(fmt.Sprintf("create %s with labels %s value [%s]", kv.Key, kv.Labels, kv.Value))
+	openlog.Debug(fmt.Sprintf("create %s with labels %s length [%d]", kv.Key, kv.Labels, len(kv.Value)))
 	datasource.ClearPart(kv)
 	return kv, nil
 }
@@ -246,8 +246,8 @@ func Update(ctx context.Context, kv *model.UpdateKVRequest) (*model.KVDoc, error
 		return nil, err
 	}
 	openlog.Info(
-		fmt.Sprintf("update %s with labels %s value [%s]",
-			oldKV.Key, oldKV.Labels, kv.Value))
+		fmt.Sprintf("update %s with labels %s length [%d]",
+			oldKV.Key, oldKV.Labels, len(kv.Value)))
 	err = datasource.GetBroker().GetHistoryDao().AddHistory(ctx, oldKV)
 	if err != nil {
 		openlog.Error(
@@ -255,8 +255,8 @@ func Update(ctx context.Context, kv *model.UpdateKVRequest) (*model.KVDoc, error
 				oldKV.Key, oldKV.Labels, kv.Domain, err))
 	}
 	openlog.Debug(
-		fmt.Sprintf("add history %s with labels %s value [%s]",
-			oldKV.Key, oldKV.Labels, oldKV.Value))
+		fmt.Sprintf("add history %s with labels %s length [%d]",
+			oldKV.Key, oldKV.Labels, len(oldKV.Value)))
 	datasource.ClearPart(oldKV)
 	return oldKV, nil
 
