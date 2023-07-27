@@ -6,9 +6,14 @@ servicecomb:
   protocols:
     rest:
       listenAddress: 127.0.0.1:30110
+  match:
+    rateLimitPolicy: |
+      matches:
+        - apiPath:
+            contains: "/kie"
   rateLimiting:
-    global: |
-      match: none
+    limiterPolicy1: |
+      match: rateLimitPolicy
       rate: 200
       burst: 200
   handler:
