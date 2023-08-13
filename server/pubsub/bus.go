@@ -154,3 +154,13 @@ func AddObserver(o *Observer, topic *Topic) (string, error) {
 	openlog.Debug("add new observer for topic:" + t)
 	return t, nil
 }
+
+func RemoveObserver(uuid string, topic *Topic) {
+	t, err := topic.Encode()
+	if err != nil {
+		openlog.Error(err.Error())
+	}
+	observers, _ := topics.Load(t)
+	m := observers.(*sync.Map)
+	m.Delete(uuid)
+}

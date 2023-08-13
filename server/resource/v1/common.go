@@ -228,6 +228,7 @@ func eventHappened(waitStr string, topic *pubsub.Topic) (bool, string, error) {
 	select {
 	case <-time.After(d):
 		happened = false
+		pubsub.RemoveObserver(o.UUID, topic)
 	case <-o.Event:
 	}
 	return happened, topicName, nil
