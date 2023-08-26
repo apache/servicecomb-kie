@@ -27,6 +27,7 @@ import (
 	"strings"
 	"time"
 
+	"github.com/apache/servicecomb-kie/server/pubsub/notifier"
 	"github.com/go-chassis/cari/pkg/errsvc"
 
 	"github.com/apache/servicecomb-kie/server/cache"
