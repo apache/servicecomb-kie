@@ -262,12 +262,14 @@ func isLegalWaitRequest(rctx *restful.Context, request *model.ListKVRequest) boo
 	return true
 }
 func watch(rctx *restful.Context, request *model.ListKVRequest, wait string) bool {
+	ctx, cancel := context.WithCancel(rctx.Ctx)
+	defer cancel()
 	changed, topic, err := eventHappened(wait, &pubsub.Topic{
 		Labels:    request.Labels,
 		Project:   request.Project,
 		MatchType: request.Match,
 		DomainID:  request.Domain,
-	})
+	}, ctx)
 	if err != nil {
 		WriteErrResponse(rctx, config.ErrObserveEvent, err.Error())
 		return true

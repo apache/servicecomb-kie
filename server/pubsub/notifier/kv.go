@@ -75,15 +75,14 @@ func (h *KVHandler) FindTopicAndFire(ke *pubsub.KVChangeEvent) {
 			return true
 		}
 		if t.Match(ke) {
-			prepareCache(key.(string), t)
 			notifyAndRemoveObservers(value, ke)
 		}
 		return true
 	})
 }
 
-func prepareCache(topicName string, topic *pubsub.Topic) {
-	rev, kvs, err := kvsvc.ListKV(context.TODO(), &model.ListKVRequest{
+func PrepareCache(topicName string, topic *pubsub.Topic, ctx context.Context) {
+	rev, kvs, err := kvsvc.ListKV(ctx, &model.ListKVRequest{
 		Domain:  topic.DomainID,
 		Project: topic.Project,
 		Labels:  topic.Labels,

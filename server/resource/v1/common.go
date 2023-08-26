@@ -21,6 +21,7 @@ import (
 	"context"
 	"encoding/json"
 	"errors"
+	"github.com/apache/servicecomb-kie/server/pubsub/notifier"
 	"net/http"
 	"strconv"
 	"strings"
@@ -210,7 +211,7 @@ func getMatchPattern(rctx *restful.Context) string {
 	}
 	return m
 }
-func eventHappened(waitStr string, topic *pubsub.Topic) (bool, string, error) {
+func eventHappened(waitStr string, topic *pubsub.Topic, ctx context.Context) (bool, string, error) {
 	d, err := time.ParseDuration(waitStr)
 	if err != nil || d > common.MaxWait {
 		return false, "", errors.New(common.MsgInvalidWait)
@@ -230,6 +231,7 @@ func eventHappened(waitStr string, topic *pubsub.Topic) (bool, string, error) {
 		happened = false
 		pubsub.RemoveObserver(o.UUID, topic)
 	case <-o.Event:
+		notifier.PrepareCache(topicName, topic, ctx)
 	}
 	return happened, topicName, nil
 }
