@@ -267,7 +267,7 @@ func watch(rctx *restful.Context, request *model.ListKVRequest, wait string) boo
 		Project:   request.Project,
 		MatchType: request.Match,
 		DomainID:  request.Domain,
-	})
+	}, rctx.Ctx)
 	if err != nil {
 		WriteErrResponse(rctx, config.ErrObserveEvent, err.Error())
 		return true

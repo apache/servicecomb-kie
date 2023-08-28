@@ -210,7 +210,7 @@ func getMatchPattern(rctx *restful.Context) string {
 	}
 	return m
 }
-func eventHappened(waitStr string, topic *pubsub.Topic) (bool, string, error) {
+func eventHappened(waitStr string, topic *pubsub.Topic, ctx context.Context) (bool, string, error) {
 	d, err := time.ParseDuration(waitStr)
 	if err != nil || d > common.MaxWait {
 		return false, "", errors.New(common.MsgInvalidWait)
@@ -230,6 +230,7 @@ func eventHappened(waitStr string, topic *pubsub.Topic) (bool, string, error) {
 		happened = false
 		pubsub.RemoveObserver(o.UUID, topic)
 	case <-o.Event:
+		prepareCache(topicName, topic, ctx)
 	}
 	return happened, topicName, nil
 }
@@ -306,4 +307,21 @@ func queryAndResponse(rctx *restful.Context, request *model.ListKVRequest) {
 	if err != nil {
 		openlog.Error(err.Error())
 	}
+}
+
+func prepareCache(topicName string, topic *pubsub.Topic, ctx context.Context) {
+	rev, kvs, err := kvsvc.ListKV(ctx, &model.ListKVRequest{
+		Domain:  topic.DomainID,
+		Project: topic.Project,
+		Labels:  topic.Labels,
+		Match:   topic.MatchType,
+	})
+	if err != nil {
+		openlog.Error("can not query kvs:" + err.Error())
+	}
+	cache.CachedKV().Write(topicName, &cache.DBResult{
+		KVs: kvs,
+		Rev: rev,
+		Err: err,
+	})
 }
