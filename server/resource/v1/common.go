@@ -21,7 +21,6 @@ import (
 	"context"
 	"encoding/json"
 	"errors"
-	"github.com/apache/servicecomb-kie/server/pubsub/notifier"
 	"net/http"
 	"strconv"
 	"strings"
