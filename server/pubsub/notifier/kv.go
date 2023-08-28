@@ -1,14 +1,10 @@
 package notifier
 
 import (
-	"context"
 	"sync"
 	"time"
 
-	"github.com/apache/servicecomb-kie/pkg/model"
-	"github.com/apache/servicecomb-kie/server/cache"
 	"github.com/apache/servicecomb-kie/server/pubsub"
-	kvsvc "github.com/apache/servicecomb-kie/server/service/kv"
 	"github.com/go-chassis/openlog"
 	"github.com/hashicorp/serf/serf"
 )
@@ -78,23 +74,6 @@ func (h *KVHandler) FindTopicAndFire(ke *pubsub.KVChangeEvent) {
 			notifyAndRemoveObservers(value, ke)
 		}
 		return true
-	})
-}
-
-func PrepareCache(topicName string, topic *pubsub.Topic, ctx context.Context) {
-	rev, kvs, err := kvsvc.ListKV(ctx, &model.ListKVRequest{
-		Domain:  topic.DomainID,
-		Project: topic.Project,
-		Labels:  topic.Labels,
-		Match:   topic.MatchType,
-	})
-	if err != nil {
-		openlog.Error("can not query kvs:" + err.Error())
-	}
-	cache.CachedKV().Write(topicName, &cache.DBResult{
-		KVs: kvs,
-		Rev: rev,
-		Err: err,
 	})
 }
 
