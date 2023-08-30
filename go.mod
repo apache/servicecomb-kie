@@ -135,7 +135,7 @@ require (
 	google.golang.org/protobuf v1.27.1 // indirect
 	gopkg.in/check.v1 v1.0.0-20200227125254-8fa46927fb4f // indirect
 	gopkg.in/natefinch/lumberjack.v2 v2.0.0 // indirect
-	gopkg.in/yaml.v3 v3.0.0-20210107192922-496545a6307b // indirect
+	gopkg.in/yaml.v3 v3.0.0 // indirect
 	k8s.io/apimachinery v0.19.5 // indirect
 	k8s.io/client-go v0.19.5 // indirect
 	k8s.io/utils v0.0.0-20200729134348-d5654de09c73 // indirect
