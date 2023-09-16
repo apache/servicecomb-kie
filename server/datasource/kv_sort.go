@@ -32,14 +32,17 @@ func (k *KVDocSorter) Len() int {
 }
 
 func (k *KVDocSorter) Less(i, j int) bool {
-	return k.KVs[i].UpdateRevision > k.KVs[j].UpdateRevision
+	if k.KVs[i].Priority == k.KVs[j].Priority {
+		return k.KVs[i].UpdateRevision > k.KVs[j].UpdateRevision
+	}
+	return k.KVs[i].Priority > k.KVs[j].Priority
 }
 
 func (k *KVDocSorter) Swap(i, j int) {
 	k.KVs[i], k.KVs[j] = k.KVs[j], k.KVs[i]
 }
 
-func ReverseByUpdateRev(kvs []*model.KVDoc) {
+func ReverseByPriorityAndUpdateRev(kvs []*model.KVDoc) {
 	sorter := &KVDocSorter{KVs: kvs}
 	sort.Sort(sorter)
 }

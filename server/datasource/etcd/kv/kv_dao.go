@@ -23,14 +23,15 @@ import (
 	"regexp"
 	"strings"
 
+	"github.com/go-chassis/cari/sync"
+	"github.com/go-chassis/openlog"
+	"github.com/little-cui/etcdadpt"
+
 	"github.com/apache/servicecomb-kie/pkg/model"
 	"github.com/apache/servicecomb-kie/pkg/util"
 	"github.com/apache/servicecomb-kie/server/datasource"
 	"github.com/apache/servicecomb-kie/server/datasource/auth"
 	"github.com/apache/servicecomb-kie/server/datasource/etcd/key"
-	"github.com/go-chassis/cari/sync"
-	"github.com/go-chassis/openlog"
-	"github.com/little-cui/etcdadpt"
 )
 
 // Dao operate data in mongodb
@@ -609,7 +610,7 @@ func toRegex(opts datasource.FindOptions) (*regexp.Regexp, error) {
 }
 
 func pagingResult(result *model.KVResponse, opts datasource.FindOptions) *model.KVResponse {
-	datasource.ReverseByUpdateRev(result.Data)
+	datasource.ReverseByPriorityAndUpdateRev(result.Data)
 
 	if opts.Limit == 0 {
 		return result
