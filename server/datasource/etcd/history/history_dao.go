@@ -21,9 +21,10 @@ import (
 	"context"
 	"encoding/json"
 
-	"github.com/apache/servicecomb-kie/server/datasource/auth"
 	"github.com/go-chassis/openlog"
 	"github.com/little-cui/etcdadpt"
+
+	"github.com/apache/servicecomb-kie/server/datasource/auth"
 
 	"github.com/apache/servicecomb-kie/pkg/model"
 	"github.com/apache/servicecomb-kie/server/datasource"
@@ -80,7 +81,7 @@ func pagingResult(histories []*model.KVDoc, offset, limit int64) []*model.KVDoc 
 		return []*model.KVDoc{}
 	}
 
-	datasource.ReverseByUpdateRev(histories)
+	datasource.ReverseByPriorityAndUpdateRev(histories)
 
 	if limit == 0 {
 		return histories
