@@ -42,7 +42,7 @@ require (
 	github.com/form3tech-oss/jwt-go v3.2.3+incompatible // indirect
 	github.com/fsnotify/fsnotify v1.4.9 // indirect
 	github.com/go-chassis/go-restful-swagger20 v1.0.4-0.20220704025524-9243cbee26b7 // indirect
-	github.com/go-chassis/kie-client v0.1.1-0.20210926011742-97eed4281056 // indirect
+	github.com/go-chassis/kie-client v0.2.1-0.20230916083600-b7689965c383 // indirect
 	github.com/go-chassis/sc-client v0.6.1-0.20220728072125-dacdd0c834bf // indirect
 	github.com/go-playground/locales v0.13.0 // indirect
 	github.com/go-playground/universal-translator v0.17.0 // indirect
