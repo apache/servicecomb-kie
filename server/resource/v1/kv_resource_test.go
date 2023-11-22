@@ -253,6 +253,38 @@ func TestKVResource_List(t *testing.T) {
 		assert.NoError(t, err)
 		assert.Equal(t, 3, len(result.Data))
 	})
+	t.Run("list kv by value, should return 1 kv", func(t *testing.T) {
+		r, _ := http.NewRequest("GET", "/v1/kv_test/kie/kv?value=aaa", nil)
+		r.Header.Set("Content-Type", "application/json")
+		kvr := &v1.KVResource{}
+		c, err := restfultest.New(kvr, nil)
+		assert.NoError(t, err)
+		resp := httptest.NewRecorder()
+		c.ServeHTTP(resp, r)
+		body, err := ioutil.ReadAll(resp.Body)
+		assert.NoError(t, err)
+		assert.Equal(t, http.StatusOK, resp.Code, string(body))
+		result := &model.KVResponse{}
+		err = json.Unmarshal(body, result)
+		assert.NoError(t, err)
+		assert.Equal(t, 1, len(result.Data))
+	})
+	t.Run("list kv by value, should return 1 kv", func(t *testing.T) {
+		r, _ := http.NewRequest("GET", "/v1/kv_test/kie/kv?value=AAA", nil)
+		r.Header.Set("Content-Type", "application/json")
+		kvr := &v1.KVResource{}
+		c, err := restfultest.New(kvr, nil)
+		assert.NoError(t, err)
+		resp := httptest.NewRecorder()
+		c.ServeHTTP(resp, r)
+		body, err := ioutil.ReadAll(resp.Body)
+		assert.NoError(t, err)
+		assert.Equal(t, http.StatusOK, resp.Code, string(body))
+		result := &model.KVResponse{}
+		err = json.Unmarshal(body, result)
+		assert.NoError(t, err)
+		assert.Equal(t, 0, len(result.Data))
+	})
 	var rev string
 	t.Run("list kv by service label, exact match,should return 2 kv", func(t *testing.T) {
 		r, _ := http.NewRequest("GET", "/v1/kv_test/kie/kv?label=service:utService&match=exact", nil)

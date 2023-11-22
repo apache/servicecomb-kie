@@ -524,17 +524,14 @@ func (s *Dao) listData(ctx context.Context, project, domain string, options ...d
 	}
 
 	if Enabled() {
-		result, useCache, err := Search(ctx, &CacheSearchReq{
+		result, useCache := Search(ctx, &CacheSearchReq{
 			Domain:  domain,
 			Project: project,
 			Opts:    &opts,
 			Regex:   regex,
 		})
-		if useCache && err == nil {
+		if useCache {
 			return result, opts, nil
-		}
-		if useCache && err != nil {
-			openlog.Error("using cache to search kv failed: " + err.Error())
 		}
 	}
 
@@ -644,6 +641,9 @@ func filterMatch(doc *model.KVDoc, opts datasource.FindOptions, regex *regexp.Re
 		}
 	}
 	if opts.LabelFormat != "" && doc.LabelFormat != opts.LabelFormat {
+		return false
+	}
+	if opts.Value != "" && !strings.Contains(doc.Value, opts.Value) {
 		return false
 	}
 	return true
