@@ -272,7 +272,7 @@ func (kc *Cache) getKvFromEtcd(ctx context.Context, req *CacheSearchReq, kvIdsLe
 	openlog.Debug("get kv from etcd by kvId")
 	wg := sync.WaitGroup{}
 	docs := make([]*model.KVDoc, len(kvIdsLeft))
-	var Err error
+	var getKvErr error
 	for i, kvID := range kvIdsLeft {
 		wg.Add(1)
 		go func(kvID string, cnt int) {
@@ -282,14 +282,14 @@ func (kc *Cache) getKvFromEtcd(ctx context.Context, req *CacheSearchReq, kvIdsLe
 			kv, err := etcdadpt.Get(ctx, docKey)
 			if err != nil {
 				openlog.Error(fmt.Sprintf("failed to get kv from etcd, err %v", err))
-				Err = err
+				getKvErr = err
 				return
 			}
 
 			doc, err := kc.GetKvDoc(kv)
 			if err != nil {
 				openlog.Error(fmt.Sprintf("failed to unmarshal kv, err %v", err))
-				Err = err
+				getKvErr = err
 				return
 			}
 
@@ -298,8 +298,8 @@ func (kc *Cache) getKvFromEtcd(ctx context.Context, req *CacheSearchReq, kvIdsLe
 		}(kvID, i)
 	}
 	wg.Wait()
-	if Err != nil {
-		return nil, Err
+	if getKvErr != nil {
+		return nil, getKvErr
 	}
 	return docs, nil
 }
