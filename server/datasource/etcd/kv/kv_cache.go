@@ -248,7 +248,10 @@ func Search(ctx context.Context, req *CacheSearchReq) (*model.KVResponse, bool) 
 		}
 		return true
 	})
-	tpData := kvCache.getKvFromEtcd(ctx, req, kvIdsLeft)
+	tpData, err := kvCache.getKvFromEtcd(ctx, req, kvIdsLeft)
+	if err != nil {
+		return nil, true, err
+	}
 	docs = append(docs, tpData...)
 
 	for _, doc := range docs {
@@ -261,14 +264,15 @@ func Search(ctx context.Context, req *CacheSearchReq) (*model.KVResponse, bool) 
 	return result, true
 }
 
-func (kc *Cache) getKvFromEtcd(ctx context.Context, req *CacheSearchReq, kvIdsLeft []string) []*model.KVDoc {
+func (kc *Cache) getKvFromEtcd(ctx context.Context, req *CacheSearchReq, kvIdsLeft []string) ([]*model.KVDoc, error) {
 	if len(kvIdsLeft) == 0 {
-		return nil
+		return nil, nil
 	}
 
 	openlog.Debug("get kv from etcd by kvId")
 	wg := sync.WaitGroup{}
 	docs := make([]*model.KVDoc, len(kvIdsLeft))
+	var Err error
 	for i, kvID := range kvIdsLeft {
 		wg.Add(1)
 		go func(kvID string, cnt int) {
@@ -278,12 +282,14 @@ func (kc *Cache) getKvFromEtcd(ctx context.Context, req *CacheSearchReq, kvIdsLe
 			kv, err := etcdadpt.Get(ctx, docKey)
 			if err != nil {
 				openlog.Error(fmt.Sprintf("failed to get kv from etcd, err %v", err))
+				Err = err
 				return
 			}
 
 			doc, err := kc.GetKvDoc(kv)
 			if err != nil {
 				openlog.Error(fmt.Sprintf("failed to unmarshal kv, err %v", err))
+				Err = err
 				return
 			}
 
@@ -292,7 +298,10 @@ func (kc *Cache) getKvFromEtcd(ctx context.Context, req *CacheSearchReq, kvIdsLe
 		}(kvID, i)
 	}
 	wg.Wait()
-	return docs
+	if Err != nil {
+		return nil, Err
+	}
+	return docs, nil
 }
 
 func isMatch(req *CacheSearchReq, doc *model.KVDoc) bool {
