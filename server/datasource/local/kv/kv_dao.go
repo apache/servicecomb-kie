@@ -43,18 +43,7 @@ func (s *Dao) Create(ctx context.Context, kv *model.KVDoc, options ...datasource
 		return nil, err
 	}
 
-	//kvpath := path.Join(file.FileRootPath, kv.Domain, kv.Project, kv.ID, "newest_version.json")
-	//_, err := os.Stat(kvpath)
-	//if err != nil {
-	//	openlog.Error("create error", openlog.WithTags(openlog.Tags{
-	//		"err": datasource.ErrKVAlreadyExists.Error(),
-	//		"kv":  kv,
-	//	}))
-	//	return nil, datasource.ErrKVAlreadyExists
-	//}
-
 	err := create(kv)
-
 	if err != nil {
 		openlog.Error("create error", openlog.WithTags(openlog.Tags{
 			"err": err.Error(),
@@ -76,18 +65,18 @@ func create(kv *model.KVDoc) (err error) {
 		}
 	}()
 
-	err = file.CreateOrUpdateFile(path.Join(file.FileRootPath, kv.Domain, kv.Project, kv.ID, strconv.FormatInt(kv.UpdateRevision, 10)+".json"), data, rollbackOperations)
+	err = file.CreateOrUpdateFile(path.Join(file.FileRootPath, kv.Domain, kv.Project, kv.ID, strconv.FormatInt(kv.UpdateRevision, 10)+".json"), data, &rollbackOperations)
 	if err != nil {
 		return err
 	}
 
-	err = file.CreateOrUpdateFile(path.Join(file.FileRootPath, kv.Domain, kv.Project, kv.ID, "newest_version.json"), data, rollbackOperations)
+	err = file.CreateOrUpdateFile(path.Join(file.FileRootPath, kv.Domain, kv.Project, kv.ID, file.NewstKVFile), data, &rollbackOperations)
 	return err
 }
 
 // Update update key value
 func (s *Dao) Update(ctx context.Context, kv *model.KVDoc, options ...datasource.WriteOption) error {
-	kvpath := path.Join(file.FileRootPath, kv.Domain, kv.Project, kv.ID, "newest_version.json")
+	kvpath := path.Join(file.FileRootPath, kv.Domain, kv.Project, kv.ID, file.NewstKVFile)
 	kvInfo, err := file.ReadFile(kvpath)
 	if err != nil {
 		openlog.Error(err.Error())
@@ -184,7 +173,7 @@ func (s *Dao) GetByKey(ctx context.Context, key, project, domain string, options
 // domain=tenant
 func (s *Dao) FindOneAndDelete(ctx context.Context, kvID, project, domain string, options ...datasource.WriteOption) (*model.KVDoc, error) {
 	kvDoc := model.KVDoc{}
-	kvpath := path.Join(file.FileRootPath, domain, project, kvID, "newest_version.json")
+	kvpath := path.Join(file.FileRootPath, domain, project, kvID, file.NewstKVFile)
 	kvFolderPath := path.Join(file.FileRootPath, domain, project, kvID)
 	kvTmpFolderPath := path.Join(file.FileRootPath, "tmp", domain, project, kvID)
 
@@ -207,12 +196,20 @@ func (s *Dao) FindOneAndDelete(ctx context.Context, kvID, project, domain string
 	err = json.Unmarshal(kvInfo, &kvDoc)
 	if err != nil {
 		openlog.Error("decode error: " + err.Error())
-		file.MoveDir(kvTmpFolderPath, kvFolderPath)
+		moveDirErr := file.MoveDir(kvTmpFolderPath, kvFolderPath)
+		if moveDirErr != nil {
+			openlog.Error("rollback error when delete kv: " + err.Error())
+		}
 		return nil, err
 	}
-	file.CleanDir(kvTmpFolderPath)
-	file.CleanDir(kvFolderPath)
-
+	err = file.CleanDir(kvTmpFolderPath)
+	if err != nil {
+		openlog.Warn("clean tmp dir error when delete kv: " + err.Error())
+	}
+	err = file.CleanDir(kvFolderPath)
+	if err != nil {
+		openlog.Warn("clean dir error when delete kv: " + err.Error())
+	}
 	// delete Cache
 	kvCache.CacheDelete([]*model.KVDoc{&kvDoc})
 	return &kvDoc, nil
@@ -229,19 +226,31 @@ func (s *Dao) FindManyAndDelete(ctx context.Context, kvIDs []string, project, do
 	defer func() {
 		if err != nil {
 			for _, id := range removedIds {
-				file.MoveDir(path.Join(kvTmpParentPath, id), path.Join(kvParentPath, id))
-				file.CleanDir(path.Join(kvTmpParentPath, id))
+				err = file.MoveDir(path.Join(kvTmpParentPath, id), path.Join(kvParentPath, id))
+				if err != nil {
+					openlog.Warn("move tmp dir to real dir error when delete many kvs: " + err.Error())
+				}
+				err = file.CleanDir(path.Join(kvTmpParentPath, id))
+				if err != nil {
+					openlog.Warn("clean tmp dir error when delete many kvs: " + err.Error())
+				}
 			}
 		} else {
 			for _, id := range removedIds {
-				file.CleanDir(path.Join(kvTmpParentPath, id))
-				file.CleanDir(path.Join(kvParentPath, id))
+				err = file.CleanDir(path.Join(kvTmpParentPath, id))
+				if err != nil {
+					openlog.Warn("clean tmp dir error when delete many kvs: " + err.Error())
+				}
+				err = file.CleanDir(path.Join(kvParentPath, id))
+				if err != nil {
+					openlog.Warn("clean real dir error when delete many kvs: " + err.Error())
+				}
 			}
 		}
 	}()
 
 	for _, id := range kvIDs {
-		kvPath := path.Join(kvParentPath, id, "newest_version.json")
+		kvPath := path.Join(kvParentPath, id, file.NewstKVFile)
 		kvInfo, kvErr := getKVDoc(kvPath)
 		err = kvErr
 		if err != nil {
@@ -266,7 +275,7 @@ func (s *Dao) FindManyAndDelete(ctx context.Context, kvIDs []string, project, do
 
 // Get get kv by kv id
 func (s *Dao) Get(ctx context.Context, req *model.GetKVRequest) (*model.KVDoc, error) {
-	kvpath := path.Join(file.FileRootPath, req.Domain, req.Project, req.ID, "newest_version.json")
+	kvpath := path.Join(file.FileRootPath, req.Domain, req.Project, req.ID, file.NewstKVFile)
 	curKV, err := getKVDoc(kvpath)
 	if err != nil {
 		return nil, err
@@ -297,7 +306,7 @@ func getKVDoc(kvpath string) (*model.KVDoc, error) {
 
 func (s *Dao) Total(ctx context.Context, project, domain string) (int64, error) {
 	kvParentPath := path.Join(file.FileRootPath, domain, project)
-	total, err := file.Count(kvParentPath)
+	total, err := file.CountInDomain(kvParentPath)
 
 	if err != nil {
 		if os.IsNotExist(err) {
@@ -371,9 +380,10 @@ func (s *Dao) listData(ctx context.Context, project, domain string, options ...d
 		return nil, opts, err
 	}
 
-	result.Data = append(result.Data, resultInCache.Data...)
-	result.Total += len(resultInCache.Data)
-
+	if resultInCache != nil {
+		result.Data = append(result.Data, resultInCache.Data...)
+		result.Total += len(resultInCache.Data)
+	}
 	return result, opts, nil
 }
 
@@ -406,12 +416,16 @@ func matchLabelsSearchLocally(ctx context.Context, domain, project string, regex
 			continue
 		}
 
-		//if !filterMatch(&doc, opts, regex) {
-		//	continue
-		//}
+		if !filterMatch(&doc, opts, regex) {
+			continue
+		}
 		bytes, _ := json.Marshal(doc)
 		var docDeepCopy model.KVDoc
-		json.Unmarshal(bytes, &docDeepCopy)
+		err = json.Unmarshal(bytes, &docDeepCopy)
+		if err != nil {
+			openlog.Error("decode to KVList error: " + err.Error())
+			continue
+		}
 		docs = append(docs, &docDeepCopy)
 		datasource.ClearPart(&doc)
 		result.Data = append(result.Data, &doc)
@@ -476,6 +490,9 @@ func pagingResult(result *model.KVResponse, opts datasource.FindOptions) *model.
 }
 
 func filterMatch(doc *model.KVDoc, opts datasource.FindOptions, regex *regexp.Regexp) bool {
+	if opts.Key != "" && doc.Key != opts.Key {
+		return false
+	}
 	if opts.Status != "" && doc.Status != opts.Status {
 		return false
 	}

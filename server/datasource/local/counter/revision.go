@@ -20,13 +20,12 @@ package counter
 import (
 	"context"
 	"github.com/apache/servicecomb-kie/server/datasource/local/file"
+	"os"
 	"path"
 	"strconv"
 
 	"github.com/go-chassis/openlog"
 )
-
-const revision = "revision_counter"
 
 // Dao is the implementation
 type Dao struct {
@@ -39,8 +38,11 @@ func (s *Dao) GetRevision(ctx context.Context, domain string) (int64, error) {
 	revisionByte, err := file.ReadFile(revisionPath)
 
 	if err != nil {
+		if os.IsNotExist(err) {
+			return 0, nil
+		}
 		openlog.Error("get error: " + err.Error())
-		return 0, nil
+		return 0, err
 	}
 	if revisionByte == nil || string(revisionByte) == "" {
 		return 0, nil
@@ -59,6 +61,9 @@ func (s *Dao) ApplyRevision(ctx context.Context, domain string) (int64, error) {
 	if err != nil {
 		return 0, err
 	}
-	file.CreateOrUpdateFile(path.Join(file.FileRootPath, domain, "revision"), []byte(strconv.Itoa(int(currentRevisionNum+1))), []file.FileDoRecord{})
+	err = file.CreateOrUpdateFile(path.Join(file.FileRootPath, domain, "revision"), []byte(strconv.Itoa(int(currentRevisionNum+1))), &[]file.FileDoRecord{})
+	if err != nil {
+		return 0, err
+	}
 	return currentRevisionNum + 1, nil
 }

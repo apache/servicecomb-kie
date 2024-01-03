@@ -167,9 +167,9 @@ func (kc *Cache) CacheDelete(kvs []*model.KVDoc) {
 }
 
 func Search(req *CacheSearchReq) (*model.KVResponse, bool, []string) {
-	//if !req.Opts.ExactLabels {
-	//	return nil, false, nil
-	//}
+	if !req.Opts.ExactLabels {
+		return nil, false, nil
+	}
 
 	openlog.Debug(fmt.Sprintf("using cache to search kv, domain %v, project %v, opts %+v", req.Domain, req.Project, *req.Opts))
 	result := &model.KVResponse{
@@ -197,8 +197,10 @@ func Search(req *CacheSearchReq) (*model.KVResponse, bool, []string) {
 		if isMatch(req, doc) {
 			bytes, _ := json.Marshal(doc)
 			var docDeepCopy model.KVDoc
-			json.Unmarshal(bytes, &docDeepCopy)
-
+			err := json.Unmarshal(bytes, &docDeepCopy)
+			if err != nil {
+				return nil, false, nil
+			}
 			datasource.ClearPart(&docDeepCopy)
 			result.Data = append(result.Data, &docDeepCopy)
 		}

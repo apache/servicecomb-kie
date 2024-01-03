@@ -22,6 +22,7 @@ import (
 	"encoding/json"
 	"github.com/apache/servicecomb-kie/server/datasource/local/file"
 	"path"
+	"strconv"
 
 	"github.com/apache/servicecomb-kie/server/datasource/auth"
 	"github.com/go-chassis/openlog"
@@ -96,8 +97,8 @@ func pagingResult(histories []*model.KVDoc, offset, limit int64) []*model.KVDoc 
 
 // AddHistory add kv history
 func (s *Dao) AddHistory(ctx context.Context, kv *model.KVDoc) error {
-	// history have been added in function <create> in kv_dao.go
-	return nil
+	err := s.historyRotate(ctx, kv.ID, kv.Project, kv.Domain)
+	return err
 }
 
 // DelayDeletionTime add delete time to all revisions of the kv,
@@ -110,7 +111,6 @@ func (s *Dao) DelayDeletionTime(ctx context.Context, kvIDs []string, project, do
 
 // historyRotate delete historical versions for a key that exceeds the limited number
 func (s *Dao) historyRotate(ctx context.Context, kvID, project, domain string) error {
-	var revisionFiles []string
 	resp, err := s.GetHistory(ctx, kvID, project, domain)
 	if err != nil {
 		openlog.Error(err.Error())
@@ -124,9 +124,8 @@ func (s *Dao) historyRotate(ctx context.Context, kvID, project, domain string) e
 
 	for _, kv := range kvs {
 		revision := kv.UpdateRevision
-		revisionFilePath := path.Join(file.FileRootPath, domain, project, kvID, string(revision)+".json")
-		revisionFiles = append(revisionFiles, revisionFilePath)
-		err = file.DeleteFile(revisionFilePath, []file.FileDoRecord{})
+		revisionFilePath := path.Join(file.FileRootPath, domain, project, kvID, strconv.FormatInt(revision, 10)+".json")
+		err = file.DeleteFile(revisionFilePath, &[]file.FileDoRecord{})
 		if err != nil {
 			openlog.Error(err.Error())
 			return err
