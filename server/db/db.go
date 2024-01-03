@@ -59,6 +59,13 @@ func Init(c config.DB) error {
 			return errors.New("tls setting invalid:" + err.Error())
 		}
 	}
+
+	if c.Kind == "embedded_etcd_with_localstorage" {
+		c.Kind = "embedded_etcd"
+	}
+	if c.Kind == "etcd_with_localstorage" {
+		c.Kind = "etcd"
+	}
 	return db.Init(&dconfig.Config{
 		Kind:       c.Kind,
 		URI:        c.URI,
