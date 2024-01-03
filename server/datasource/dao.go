@@ -120,9 +120,10 @@ type ViewDao interface {
 func Init(kind string) error {
 	var err error
 	f, ok := plugins[kind]
-	if !ok {
+	if kind != "etcd_with_localstorage" && kind != "embedded_etcd_with_localstorage" && !ok {
 		return fmt.Errorf("do not support '%s'", kind)
 	}
+
 	dbc := &Config{}
 	if b, err = f(dbc); err != nil {
 		return err
