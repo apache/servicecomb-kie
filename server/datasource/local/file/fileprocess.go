@@ -13,7 +13,7 @@ import (
 var mutexMap = make(map[string]*sync.Mutex)
 var mutexLock = &sync.Mutex{}
 
-var FileRootPath = "./filepath"
+var FileRootPath = "/data/kvs"
 
 type SchemaDAO struct{}
 

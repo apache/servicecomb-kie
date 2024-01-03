@@ -20,12 +20,11 @@ package track
 import (
 	"context"
 	"encoding/json"
-
 	"github.com/apache/servicecomb-kie/pkg/model"
 	"github.com/apache/servicecomb-kie/server/datasource"
-	"github.com/apache/servicecomb-kie/server/datasource/etcd/key"
+	"github.com/apache/servicecomb-kie/server/datasource/local/file"
 	"github.com/go-chassis/openlog"
-	"github.com/little-cui/etcdadpt"
+	"path"
 )
 
 // Dao is the implementation
@@ -40,7 +39,16 @@ func (s *Dao) CreateOrUpdate(ctx context.Context, detail *model.PollingDetail) (
 		openlog.Error("encode polling detail error: " + err.Error())
 		return nil, err
 	}
-	err = etcdadpt.PutBytes(ctx, key.Track(detail.Domain, detail.Project, detail.Revision, detail.SessionID), bytes)
+
+	//trackPath := path.Join(file.FileRootPath, "track", detail.Domain, detail.Project, strconv.FormatInt(time.Now().Unix(), 10)+".json")
+	revision := "default"
+	if detail.Revision != "" {
+		revision = detail.Revision
+	}
+	trackPath := path.Join(file.FileRootPath, "track", detail.Domain, detail.Project, revision, detail.SessionID+".json")
+
+	err = file.CreateOrUpdateFile(trackPath, bytes, []file.FileDoRecord{})
+	//err = etcdadpt.PutBytes(ctx, key.Track(detail.Domain, detail.Project, detail.Revision, detail.SessionID), bytes)
 	if err != nil {
 		openlog.Error(err.Error())
 		return nil, err
@@ -50,15 +58,23 @@ func (s *Dao) CreateOrUpdate(ctx context.Context, detail *model.PollingDetail) (
 
 // GetPollingDetail is to get a track data
 func (s *Dao) GetPollingDetail(ctx context.Context, detail *model.PollingDetail) ([]*model.PollingDetail, error) {
-	kvs, n, err := etcdadpt.List(ctx, key.TrackList(detail.Domain, detail.Project))
+	//kvs, n, err := etcdadpt.List(ctx, key.TrackList(detail.Domain, detail.Project))
+	//if err != nil {
+	//	openlog.Error(err.Error())
+	//	return nil, err
+	//}
+	//trackFolderPath := path.Join(file.FileRootPath, "track", detail.Domain, detail.Project)
+	trackFolderPath := path.Join(file.FileRootPath, "track", detail.Domain, detail.Project)
+	_, kvs, err := file.ReadAllFiles(trackFolderPath)
 	if err != nil {
 		openlog.Error(err.Error())
 		return nil, err
 	}
-	records := make([]*model.PollingDetail, 0, n)
+
+	records := make([]*model.PollingDetail, 0, len(kvs))
 	for _, kv := range kvs {
 		var doc model.PollingDetail
-		err := json.Unmarshal(kv.Value, &doc)
+		err := json.Unmarshal(kv, &doc)
 		if err != nil {
 			openlog.Error("decode polling detail error: " + err.Error())
 			continue

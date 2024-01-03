@@ -21,6 +21,7 @@ import (
 	"context"
 	"encoding/json"
 	"github.com/apache/servicecomb-kie/server/datasource/local/file"
+	"os"
 	"path"
 	"regexp"
 	"strconv"
@@ -293,10 +294,13 @@ func (s *Dao) Total(ctx context.Context, project, domain string) (int64, error) 
 	total, err := file.Count(kvParentPath)
 
 	if err != nil {
+		if os.IsNotExist(err) {
+			return 0, nil
+		}
 		openlog.Error("find total number: " + err.Error())
 		return 0, err
 	}
-	return int64(total), err
+	return int64(total), nil
 }
 
 // List get kv list by key and criteria
@@ -354,6 +358,11 @@ func (s *Dao) listData(ctx context.Context, project, domain string, options ...d
 
 	result, err := matchLabelsSearchLocally(ctx, domain, project, regex, opts)
 	if err != nil {
+		if os.IsNotExist(err) {
+			return &model.KVResponse{
+				Data: []*model.KVDoc{},
+			}, opts, nil
+		}
 		openlog.Error("list kv failed: " + err.Error())
 		return nil, opts, err
 	}
