@@ -119,6 +119,8 @@ func (s *Dao) Update(ctx context.Context, kv *model.KVDoc, options ...datasource
 		openlog.Error(err.Error())
 		return err
 	}
+
+	kvCache.CachePut([]*model.KVDoc{kv})
 	return nil
 }
 
@@ -210,6 +212,9 @@ func (s *Dao) FindOneAndDelete(ctx context.Context, kvID, project, domain string
 	}
 	file.CleanDir(kvTmpFolderPath)
 	file.CleanDir(kvFolderPath)
+
+	// delete Cache
+	kvCache.CacheDelete([]*model.KVDoc{&kvDoc})
 	return &kvDoc, nil
 }
 
@@ -255,6 +260,7 @@ func (s *Dao) FindManyAndDelete(ctx context.Context, kvIDs []string, project, do
 	if len(docs) == 0 {
 		return nil, 0, datasource.ErrKeyNotExists
 	}
+	kvCache.CacheDelete(docs)
 	return docs, int64(len(docs)), nil
 }
 
@@ -344,19 +350,17 @@ func (s *Dao) listData(ctx context.Context, project, domain string, options ...d
 		return nil, opts, err
 	}
 
-	//if Enabled() {
-	//	result, useCache := Search(ctx, &CacheSearchReq{
-	//		Domain:  domain,
-	//		Project: project,
-	//		Opts:    &opts,
-	//		Regex:   regex,
-	//	})
-	//	if useCache {
-	//		return result, opts, nil
-	//	}
-	//}
+	resultInCache, useCache, kvIdsInCache := Search(&CacheSearchReq{
+		Domain:  domain,
+		Project: project,
+		Opts:    &opts,
+		Regex:   regex,
+	})
+	if useCache {
+		openlog.Info("Use Cache Find Success")
+	}
 
-	result, err := matchLabelsSearchLocally(ctx, domain, project, regex, opts)
+	result, err := matchLabelsSearchLocally(ctx, domain, project, regex, opts, kvIdsInCache)
 	if err != nil {
 		if os.IsNotExist(err) {
 			return &model.KVResponse{
@@ -367,10 +371,13 @@ func (s *Dao) listData(ctx context.Context, project, domain string, options ...d
 		return nil, opts, err
 	}
 
+	result.Data = append(result.Data, resultInCache.Data...)
+	result.Total += len(resultInCache.Data)
+
 	return result, opts, nil
 }
 
-func matchLabelsSearchLocally(ctx context.Context, domain, project string, regex *regexp.Regexp, opts datasource.FindOptions) (*model.KVResponse, error) {
+func matchLabelsSearchLocally(ctx context.Context, domain, project string, regex *regexp.Regexp, opts datasource.FindOptions, kvIdsInCache []string) (*model.KVResponse, error) {
 	openlog.Debug("using labels to search kv")
 	kvParentPath := path.Join(file.FileRootPath, domain, project)
 	kvs, err := file.ReadAllKvsFromProjectFolder(kvParentPath)
@@ -380,6 +387,7 @@ func matchLabelsSearchLocally(ctx context.Context, domain, project string, regex
 	result := &model.KVResponse{
 		Data: []*model.KVDoc{},
 	}
+	var docs []*model.KVDoc
 	for _, kv := range kvs {
 		var doc model.KVDoc
 		err := json.Unmarshal(kv, &doc)
@@ -387,10 +395,24 @@ func matchLabelsSearchLocally(ctx context.Context, domain, project string, regex
 			openlog.Error("decode to KVList error: " + err.Error())
 			continue
 		}
-		if !filterMatch(&doc, opts, regex) {
+		var exist = false
+		for _, v := range kvIdsInCache {
+			if v == doc.ID {
+				exist = true
+				break
+			}
+		}
+		if exist {
 			continue
 		}
 
+		//if !filterMatch(&doc, opts, regex) {
+		//	continue
+		//}
+		bytes, _ := json.Marshal(doc)
+		var docDeepCopy model.KVDoc
+		json.Unmarshal(bytes, &docDeepCopy)
+		docs = append(docs, &docDeepCopy)
 		datasource.ClearPart(&doc)
 		result.Data = append(result.Data, &doc)
 		result.Total++
@@ -399,6 +421,7 @@ func matchLabelsSearchLocally(ctx context.Context, domain, project string, regex
 			break
 		}
 	}
+	kvCache.CachePut(docs)
 
 	return result, nil
 }
