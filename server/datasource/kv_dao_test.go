@@ -150,7 +150,7 @@ func TestWithSync(t *testing.T) {
 				Project:      "sync-create",
 				ResourceType: datasource.ConfigResource,
 			}
-			tombstones, tempErr := tombstone.List(ctx, &tbListReq)
+			tombstones, _ := tombstone.List(ctx, &tbListReq)
 			assert.Equal(t, 1, len(tombstones))
 			tempErr = tombstone.Delete(ctx, tombstones...)
 			assert.Nil(t, tempErr)
@@ -222,7 +222,7 @@ func TestWithSync(t *testing.T) {
 				Project:      "sync-update",
 				ResourceType: datasource.ConfigResource,
 			}
-			tombstones, tempErr := tombstone.List(ctx, &tbListReq)
+			tombstones, _ := tombstone.List(ctx, &tbListReq)
 			assert.Equal(t, 2, len(tombstones))
 			tempErr = tombstone.Delete(ctx, tombstones...)
 			assert.Nil(t, tempErr)

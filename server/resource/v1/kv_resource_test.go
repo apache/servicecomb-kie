@@ -356,7 +356,7 @@ func TestKVResource_List(t *testing.T) {
 		c.ServeHTTP(resp2, r2)
 		rev = resp2.Header().Get(common2.HeaderRevision)
 		t.Log(rev)
-		body, err := ioutil.ReadAll(resp2.Body)
+		body, _ := ioutil.ReadAll(resp2.Body)
 		time.Sleep(1 * time.Second)
 		t.Log(string(body))
 		assert.Equal(t, http.StatusNotModified, resp2.Result().StatusCode)

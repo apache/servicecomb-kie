@@ -24,6 +24,7 @@ import (
 	"github.com/apache/servicecomb-kie/server/datasource"
 	"github.com/apache/servicecomb-kie/server/datasource/local/file"
 	"github.com/go-chassis/openlog"
+	"os"
 	"path"
 )
 
@@ -40,15 +41,13 @@ func (s *Dao) CreateOrUpdate(ctx context.Context, detail *model.PollingDetail) (
 		return nil, err
 	}
 
-	//trackPath := path.Join(file.FileRootPath, "track", detail.Domain, detail.Project, strconv.FormatInt(time.Now().Unix(), 10)+".json")
 	revision := "default"
 	if detail.Revision != "" {
 		revision = detail.Revision
 	}
 	trackPath := path.Join(file.FileRootPath, "track", detail.Domain, detail.Project, revision, detail.SessionID+".json")
 
-	err = file.CreateOrUpdateFile(trackPath, bytes, []file.FileDoRecord{})
-	//err = etcdadpt.PutBytes(ctx, key.Track(detail.Domain, detail.Project, detail.Revision, detail.SessionID), bytes)
+	err = file.CreateOrUpdateFile(trackPath, bytes, &[]file.FileDoRecord{}, false)
 	if err != nil {
 		openlog.Error(err.Error())
 		return nil, err
@@ -58,15 +57,12 @@ func (s *Dao) CreateOrUpdate(ctx context.Context, detail *model.PollingDetail) (
 
 // GetPollingDetail is to get a track data
 func (s *Dao) GetPollingDetail(ctx context.Context, detail *model.PollingDetail) ([]*model.PollingDetail, error) {
-	//kvs, n, err := etcdadpt.List(ctx, key.TrackList(detail.Domain, detail.Project))
-	//if err != nil {
-	//	openlog.Error(err.Error())
-	//	return nil, err
-	//}
-	//trackFolderPath := path.Join(file.FileRootPath, "track", detail.Domain, detail.Project)
 	trackFolderPath := path.Join(file.FileRootPath, "track", detail.Domain, detail.Project)
 	_, kvs, err := file.ReadAllFiles(trackFolderPath)
 	if err != nil {
+		if os.IsNotExist(err) {
+			return make([]*model.PollingDetail, 0), nil
+		}
 		openlog.Error(err.Error())
 		return nil, err
 	}
