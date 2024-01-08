@@ -35,6 +35,7 @@ import (
 
 	//storage
 	_ "github.com/apache/servicecomb-kie/server/datasource/etcd"
+	_ "github.com/apache/servicecomb-kie/server/datasource/local"
 	_ "github.com/apache/servicecomb-kie/server/datasource/mongo"
 
 	//quota management
