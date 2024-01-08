@@ -24,6 +24,7 @@ import (
 	"github.com/apache/servicecomb-kie/server/datasource"
 	"github.com/apache/servicecomb-kie/server/datasource/local/file"
 	"github.com/go-chassis/openlog"
+	"os"
 	"path"
 )
 
@@ -46,7 +47,7 @@ func (s *Dao) CreateOrUpdate(ctx context.Context, detail *model.PollingDetail) (
 	}
 	trackPath := path.Join(file.FileRootPath, "track", detail.Domain, detail.Project, revision, detail.SessionID+".json")
 
-	err = file.CreateOrUpdateFile(trackPath, bytes, &[]file.FileDoRecord{})
+	err = file.CreateOrUpdateFile(trackPath, bytes, &[]file.FileDoRecord{}, false)
 	if err != nil {
 		openlog.Error(err.Error())
 		return nil, err
@@ -59,6 +60,9 @@ func (s *Dao) GetPollingDetail(ctx context.Context, detail *model.PollingDetail)
 	trackFolderPath := path.Join(file.FileRootPath, "track", detail.Domain, detail.Project)
 	_, kvs, err := file.ReadAllFiles(trackFolderPath)
 	if err != nil {
+		if os.IsNotExist(err) {
+			return make([]*model.PollingDetail, 0, 0), nil
+		}
 		openlog.Error(err.Error())
 		return nil, err
 	}

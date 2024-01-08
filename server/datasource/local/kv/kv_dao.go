@@ -65,12 +65,12 @@ func create(kv *model.KVDoc) (err error) {
 		}
 	}()
 
-	err = file.CreateOrUpdateFile(path.Join(file.FileRootPath, kv.Domain, kv.Project, kv.ID, strconv.FormatInt(kv.UpdateRevision, 10)+".json"), data, &rollbackOperations)
+	err = file.CreateOrUpdateFile(path.Join(file.FileRootPath, kv.Domain, kv.Project, kv.ID, strconv.FormatInt(kv.UpdateRevision, 10)+".json"), data, &rollbackOperations, false)
 	if err != nil {
 		return err
 	}
 
-	err = file.CreateOrUpdateFile(path.Join(file.FileRootPath, kv.Domain, kv.Project, kv.ID, file.NewstKVFile), data, &rollbackOperations)
+	err = file.CreateOrUpdateFile(path.Join(file.FileRootPath, kv.Domain, kv.Project, kv.ID, file.NewstKVFile), data, &rollbackOperations, false)
 	return err
 }
 

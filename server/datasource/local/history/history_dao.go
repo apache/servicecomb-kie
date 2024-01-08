@@ -122,9 +122,14 @@ func (s *Dao) historyRotate(ctx context.Context, kvID, project, domain string) e
 	kvs := resp.Data
 	kvs = kvs[datasource.MaxHistoryNum:]
 
+	mutex := file.GetOrCreateMutex(path.Join(file.FileRootPath, domain, project, kvID))
+	mutex.Lock()
+	defer mutex.Unlock()
+
 	for _, kv := range kvs {
 		revision := kv.UpdateRevision
 		revisionFilePath := path.Join(file.FileRootPath, domain, project, kvID, strconv.FormatInt(revision, 10)+".json")
+
 		err = file.DeleteFile(revisionFilePath, &[]file.FileDoRecord{})
 		if err != nil {
 			openlog.Error(err.Error())

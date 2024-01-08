@@ -61,7 +61,7 @@ func (s *Dao) ApplyRevision(ctx context.Context, domain string) (int64, error) {
 	if err != nil {
 		return 0, err
 	}
-	err = file.CreateOrUpdateFile(path.Join(file.FileRootPath, domain, "revision"), []byte(strconv.Itoa(int(currentRevisionNum+1))), &[]file.FileDoRecord{})
+	err = file.CreateOrUpdateFile(path.Join(file.FileRootPath, domain, "revision"), []byte(strconv.Itoa(int(currentRevisionNum+1))), &[]file.FileDoRecord{}, false)
 	if err != nil {
 		return 0, err
 	}
