@@ -221,9 +221,9 @@ func (kc *Cache) DeleteKvDoc(kvID string) {
 	kc.kvDocCache.Delete(kvID)
 }
 
-func Search(ctx context.Context, req *CacheSearchReq) (*model.KVResponse, bool) {
+func Search(ctx context.Context, req *CacheSearchReq) (*model.KVResponse, bool, error) {
 	if !req.Opts.ExactLabels {
-		return nil, false
+		return nil, false, nil
 	}
 
 	openlog.Debug(fmt.Sprintf("using cache to search kv, domain %v, project %v, opts %+v", req.Domain, req.Project, *req.Opts))
@@ -261,7 +261,7 @@ func Search(ctx context.Context, req *CacheSearchReq) (*model.KVResponse, bool) 
 		}
 	}
 	result.Total = len(result.Data)
-	return result, true
+	return result, true, nil
 }
 
 func (kc *Cache) getKvFromEtcd(ctx context.Context, req *CacheSearchReq, kvIdsLeft []string) ([]*model.KVDoc, error) {
