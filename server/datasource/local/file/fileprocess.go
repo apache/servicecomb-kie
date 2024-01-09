@@ -14,7 +14,7 @@ var FileRootPath = "/data/kvs"
 
 var NewstKVFile = "newest_version.json"
 
-var MutexMap = make(map[string]*sync.Mutex)
+var MutexMap = make(map[string]*sync.RWMutex)
 var mutexMapLock = &sync.Mutex{}
 var rollbackMutexLock = &sync.Mutex{}
 var createDirMutexLock = &sync.Mutex{}
@@ -26,11 +26,11 @@ type FileDoRecord struct {
 	content  []byte
 }
 
-func GetOrCreateMutex(path string) *sync.Mutex {
+func GetOrCreateMutex(path string) *sync.RWMutex {
 	mutexMapLock.Lock()
 	mutex, ok := MutexMap[path]
 	if !ok {
-		mutex = &sync.Mutex{}
+		mutex = &sync.RWMutex{}
 		MutexMap[path] = mutex
 	}
 	mutexMapLock.Unlock()
@@ -213,8 +213,8 @@ func CleanDir(dir string) error {
 func ReadFile(filepath string) ([]byte, error) {
 	// check the file is empty
 	mutex := GetOrCreateMutex(path.Dir(filepath))
-	mutex.Lock()
-	defer mutex.Unlock()
+	mutex.RLocker()
+	defer mutex.RLocker()
 
 	content, err := os.ReadFile(filepath)
 	if err != nil {
@@ -226,8 +226,8 @@ func ReadFile(filepath string) ([]byte, error) {
 
 func CountInDomain(dir string) (int, error) {
 	mutex := GetOrCreateMutex(dir)
-	mutex.Lock()
-	defer mutex.Unlock()
+	mutex.RLock()
+	defer mutex.RUnlock()
 
 	files, err := os.ReadDir(dir)
 	if err != nil {
@@ -279,8 +279,8 @@ func ReadAllKvsFromProjectFolder(dir string) ([][]byte, error) {
 
 func ReadAllFiles(dir string) ([]string, [][]byte, error) {
 	mutex := GetOrCreateMutex(dir)
-	mutex.Lock()
-	defer mutex.Unlock()
+	mutex.RLock()
+	defer mutex.RUnlock()
 
 	files := []string{}
 	err := filepath.Walk(dir, func(path string, info os.FileInfo, err error) error {

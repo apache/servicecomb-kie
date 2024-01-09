@@ -22,7 +22,6 @@ import (
 	"context"
 	"errors"
 	"fmt"
-
 	"github.com/apache/servicecomb-kie/server/datasource/rbac"
 	"github.com/go-chassis/openlog"
 
@@ -120,7 +119,9 @@ type ViewDao interface {
 func Init(kind string) error {
 	var err error
 	f, ok := plugins[kind]
-	if kind != "etcd_with_localstorage" && kind != "embedded_etcd_with_localstorage" && !ok {
+
+	if !ok {
+		openlog.Info(fmt.Sprintf("do not support '%s'", kind))
 		return fmt.Errorf("do not support '%s'", kind)
 	}
 
