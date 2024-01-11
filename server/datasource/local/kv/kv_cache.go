@@ -21,16 +21,17 @@ import (
 	"context"
 	"encoding/json"
 	"fmt"
+	"regexp"
+	"strings"
+	"sync"
+	"time"
+
 	"github.com/apache/servicecomb-kie/pkg/model"
 	"github.com/apache/servicecomb-kie/pkg/stringutil"
 	"github.com/apache/servicecomb-kie/server/datasource"
 	"github.com/go-chassis/openlog"
 	goCache "github.com/patrickmn/go-cache"
 	"go.etcd.io/etcd/api/v3/mvccpb"
-	"regexp"
-	"strings"
-	"sync"
-	"time"
 )
 
 type IDSet map[string]struct{}
@@ -94,7 +95,6 @@ func (kc *Cache) GetKvDoc(kv *mvccpb.KeyValue) (*model.KVDoc, error) {
 	}
 	return kvDoc, nil
 }
-
 
 func (kc *Cache) GetCacheKey(domain, project string, labels map[string]string) string {
 	labelFormat := stringutil.FormatMap(labels)
