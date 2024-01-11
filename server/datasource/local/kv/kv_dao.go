@@ -490,9 +490,6 @@ func pagingResult(result *model.KVResponse, opts datasource.FindOptions) *model.
 }
 
 func filterMatch(doc *model.KVDoc, opts datasource.FindOptions, regex *regexp.Regexp) bool {
-	if opts.Key != "" && doc.Key != opts.Key {
-		return false
-	}
 	if opts.Status != "" && doc.Status != opts.Status {
 		return false
 	}
