@@ -1,0 +1,24 @@
+name: Merge check for local
+on: [push, pull_request]
+jobs:
+  etcd-with-localstorage:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Set up Go
+        uses: actions/setup-go@v1
+        with:
+          go-version: 1.18
+        id: go
+      - name: Check out code into the Go module directory
+        uses: actions/checkout@v1
+      - name: UT for etcd with local storage
+        run: |
+          time docker run -d -p 2379:2379 --name etcd quay.io/coreos/etcd etcd -name etcd --advertise-client-urls http://0.0.0.0:2379 --listen-client-urls http://0.0.0.0:2379
+          while ! nc -z 127.0.0.1 2379; do
+            sleep 1
+          done
+          export TEST_DB_KIND=etcd_with_localstorage
+          export TEST_DB_URI=127.0.0.1:2379
+          export TEST_KVS_ROOT_PATH=/data/kvs
+          sudo rm -rf /data/kvs
+          sudo time go test $(go list ./... | grep -v mongo | grep -v third_party | grep -v examples)

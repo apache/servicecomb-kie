@@ -227,5 +227,4 @@ func TestExist(t *testing.T) {
 		assert.NoError(t, queryErr)
 		assert.Equal(t, false, exists)
 	})
-
 }

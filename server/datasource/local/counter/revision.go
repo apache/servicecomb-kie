@@ -19,11 +19,11 @@ package counter
 
 import (
 	"context"
-	"github.com/apache/servicecomb-kie/server/datasource/local/file"
 	"os"
 	"path"
 	"strconv"
 
+	"github.com/apache/servicecomb-kie/server/datasource/local/file"
 	"github.com/go-chassis/openlog"
 )
 

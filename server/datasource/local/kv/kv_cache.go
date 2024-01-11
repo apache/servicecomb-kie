@@ -21,15 +21,17 @@ import (
 	"context"
 	"encoding/json"
 	"fmt"
-	"github.com/apache/servicecomb-kie/pkg/model"
-	"github.com/apache/servicecomb-kie/server/datasource"
-	"github.com/go-chassis/openlog"
-	goCache "github.com/patrickmn/go-cache"
-	"go.etcd.io/etcd/api/v3/mvccpb"
 	"regexp"
 	"strings"
 	"sync"
 	"time"
+
+	"github.com/apache/servicecomb-kie/pkg/model"
+	"github.com/apache/servicecomb-kie/pkg/stringutil"
+	"github.com/apache/servicecomb-kie/server/datasource"
+	"github.com/go-chassis/openlog"
+	goCache "github.com/patrickmn/go-cache"
+	"go.etcd.io/etcd/api/v3/mvccpb"
 )
 
 type IDSet map[string]struct{}
@@ -94,11 +96,13 @@ func (kc *Cache) GetKvDoc(kv *mvccpb.KeyValue) (*model.KVDoc, error) {
 	return kvDoc, nil
 }
 
-func (kc *Cache) GetCacheKey(domain, project string) string {
+func (kc *Cache) GetCacheKey(domain, project string, labels map[string]string) string {
+	labelFormat := stringutil.FormatMap(labels)
 	inputKey := strings.Join([]string{
 		"",
 		domain,
 		project,
+		labelFormat,
 	}, "/")
 	return inputKey
 }
@@ -142,7 +146,7 @@ func (kc *Cache) LoadKvDoc(kvID string) (*model.KVDoc, bool) {
 func (kc *Cache) CachePut(kvs []*model.KVDoc) {
 	for _, kvDoc := range kvs {
 		kc.StoreKvDoc(kvDoc.ID, kvDoc)
-		cacheKey := kc.GetCacheKey(kvDoc.Domain, kvDoc.Project)
+		cacheKey := kc.GetCacheKey(kvDoc.Domain, kvDoc.Project, kvDoc.Labels)
 		m, ok := kc.LoadKvIDSet(cacheKey)
 		if !ok {
 			kc.StoreKvIDSet(cacheKey, IDSet{kvDoc.ID: struct{}{}})
@@ -156,7 +160,7 @@ func (kc *Cache) CachePut(kvs []*model.KVDoc) {
 func (kc *Cache) CacheDelete(kvs []*model.KVDoc) {
 	for _, kvDoc := range kvs {
 		kc.DeleteKvDoc(kvDoc.ID)
-		cacheKey := kc.GetCacheKey(kvDoc.Domain, kvDoc.Project)
+		cacheKey := kc.GetCacheKey(kvDoc.Domain, kvDoc.Project, kvDoc.Labels)
 		m, ok := kc.LoadKvIDSet(cacheKey)
 		if !ok {
 			openlog.Error("cacheKey " + cacheKey + "not exists")
@@ -175,7 +179,7 @@ func Search(req *CacheSearchReq) (*model.KVResponse, bool, []string) {
 	result := &model.KVResponse{
 		Data: []*model.KVDoc{},
 	}
-	cacheKey := kvCache.GetCacheKey(req.Domain, req.Project)
+	cacheKey := kvCache.GetCacheKey(req.Domain, req.Project, req.Opts.Labels)
 	kvIds, ok := kvCache.LoadKvIDSet(cacheKey)
 	if !ok {
 		kvCache.StoreKvIDSet(cacheKey, IDSet{})

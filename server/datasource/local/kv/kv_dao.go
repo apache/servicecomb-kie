@@ -20,7 +20,6 @@ package kv
 import (
 	"context"
 	"encoding/json"
-	"github.com/apache/servicecomb-kie/server/datasource/local/file"
 	"os"
 	"path"
 	"regexp"
@@ -31,6 +30,7 @@ import (
 	"github.com/apache/servicecomb-kie/pkg/util"
 	"github.com/apache/servicecomb-kie/server/datasource"
 	"github.com/apache/servicecomb-kie/server/datasource/auth"
+	"github.com/apache/servicecomb-kie/server/datasource/local/file"
 	"github.com/go-chassis/openlog"
 )
 
@@ -51,7 +51,7 @@ func (s *Dao) Create(ctx context.Context, kv *model.KVDoc, options ...datasource
 		}))
 		return nil, err
 	}
-
+	kvCache.CachePut([]*model.KVDoc{kv})
 	return kv, nil
 }
 
@@ -490,9 +490,6 @@ func pagingResult(result *model.KVResponse, opts datasource.FindOptions) *model.
 }
 
 func filterMatch(doc *model.KVDoc, opts datasource.FindOptions, regex *regexp.Regexp) bool {
-	if opts.Key != "" && doc.Key != opts.Key {
-		return false
-	}
 	if opts.Status != "" && doc.Status != opts.Status {
 		return false
 	}
