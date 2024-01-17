@@ -20,7 +20,6 @@ package kv
 import (
 	"context"
 	"encoding/json"
-	"github.com/apache/servicecomb-kie/server/datasource/local/file"
 	"os"
 	"path"
 	"regexp"
@@ -31,6 +30,7 @@ import (
 	"github.com/apache/servicecomb-kie/pkg/util"
 	"github.com/apache/servicecomb-kie/server/datasource"
 	"github.com/apache/servicecomb-kie/server/datasource/auth"
+	"github.com/apache/servicecomb-kie/server/datasource/local/file"
 	"github.com/go-chassis/openlog"
 )
 
@@ -51,7 +51,7 @@ func (s *Dao) Create(ctx context.Context, kv *model.KVDoc, options ...datasource
 		}))
 		return nil, err
 	}
-
+	kvCache.CachePut([]*model.KVDoc{kv})
 	return kv, nil
 }
 

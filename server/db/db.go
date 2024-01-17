@@ -20,11 +20,11 @@ package db
 import (
 	"crypto/tls"
 	"errors"
-	"github.com/apache/servicecomb-kie/server/datasource/local/file"
 	"time"
 
 	"github.com/apache/servicecomb-kie/server/config"
 	"github.com/apache/servicecomb-kie/server/config/tlsutil"
+	"github.com/apache/servicecomb-kie/server/datasource/local/file"
 	"github.com/go-chassis/cari/db"
 	dconfig "github.com/go-chassis/cari/db/config"
 	"github.com/go-chassis/openlog"

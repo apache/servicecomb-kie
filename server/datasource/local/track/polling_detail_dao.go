@@ -20,12 +20,13 @@ package track
 import (
 	"context"
 	"encoding/json"
+	"os"
+	"path"
+
 	"github.com/apache/servicecomb-kie/pkg/model"
 	"github.com/apache/servicecomb-kie/server/datasource"
 	"github.com/apache/servicecomb-kie/server/datasource/local/file"
 	"github.com/go-chassis/openlog"
-	"os"
-	"path"
 )
 
 // Dao is the implementation
