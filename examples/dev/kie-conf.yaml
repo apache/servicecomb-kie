@@ -1,6 +1,9 @@
 db:
   # kind can be mongo, etcd, embedded_etcd, embedded_etcd_with_localstorage, etcd_with_localstorage
   kind: embedded_etcd
+metricObject:
+  domain: default
+  project: default
 
 # localFilePath: is the root path to store local kv files
 #  uri: http://127.0.0.1:2379

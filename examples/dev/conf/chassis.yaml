@@ -6,6 +6,8 @@ servicecomb:
   protocols:
     rest:
       listenAddress: 127.0.0.1:30110
+  metrics:
+    enable: true
   match:
     rateLimitPolicy: |
       matches:

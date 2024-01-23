@@ -22,12 +22,18 @@ type Config struct {
 	DB   DB   `yaml:"db"`
 	RBAC RBAC `yaml:"rbac"`
 	Sync Sync `yaml:"sync"`
-	//config from cli
+	// config from cli
 	ConfigFile     string
 	NodeName       string
 	ListenPeerAddr string
 	PeerAddr       string
 	AdvertiseAddr  string
+	MetricObject   MetricObject `yaml:"metricObject"`
+}
+
+type MetricObject struct {
+	Domain  string `yaml:"domain"`
+	Project string `yaml:"project"`
 }
 
 type TLS struct {

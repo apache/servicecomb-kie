@@ -52,3 +52,7 @@ func GetRBAC() RBAC {
 func GetSync() Sync {
 	return Configurations.Sync
 }
+
+func GetMetric() MetricObject {
+	return Configurations.MetricObject
+}
