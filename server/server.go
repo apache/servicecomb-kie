@@ -18,16 +18,18 @@
 package server
 
 import (
+	"github.com/go-chassis/go-chassis/v2"
+	"github.com/go-chassis/go-chassis/v2/core/common"
+	"github.com/go-chassis/openlog"
+
 	"github.com/apache/servicecomb-kie/pkg/validator"
 	"github.com/apache/servicecomb-kie/server/config"
 	"github.com/apache/servicecomb-kie/server/datasource"
+	"github.com/apache/servicecomb-kie/server/datasource/metric"
 	"github.com/apache/servicecomb-kie/server/db"
 	"github.com/apache/servicecomb-kie/server/pubsub"
 	"github.com/apache/servicecomb-kie/server/rbac"
 	v1 "github.com/apache/servicecomb-kie/server/resource/v1"
-	"github.com/go-chassis/go-chassis/v2"
-	"github.com/go-chassis/go-chassis/v2/core/common"
-	"github.com/go-chassis/openlog"
 )
 
 func Run() {
@@ -44,6 +46,9 @@ func Run() {
 		openlog.Fatal(err.Error())
 	}
 	if err := datasource.Init(config.GetDB().Kind); err != nil {
+		openlog.Fatal(err.Error())
+	}
+	if err := metric.InitMetric(config.GetMetric()); err != nil {
 		openlog.Fatal(err.Error())
 	}
 	if err := validator.Init(); err != nil {
