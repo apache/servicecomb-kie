@@ -1,6 +1,9 @@
 db:
   # kind can be mongo, etcd, embedded_etcd
   kind: embedded_etcd
+
+# localFilePath: is the root path to store local kv files
+#  uri: http://127.0.0.1:2379
   # uri is the db endpoints list
   #   kind=mongo, then is the mongodb cluster's uri, e.g. mongodb://127.0.0.1:27017/kie
   #   kind=etcd, then is the  remote etcd server's advertise-client-urls, e.g. http://127.0.0.1:2379

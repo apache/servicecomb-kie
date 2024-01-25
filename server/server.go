@@ -26,6 +26,7 @@ import (
 	"github.com/apache/servicecomb-kie/server/config"
 	"github.com/apache/servicecomb-kie/server/datasource"
 	"github.com/apache/servicecomb-kie/server/db"
+	"github.com/apache/servicecomb-kie/server/metrics"
 	"github.com/apache/servicecomb-kie/server/pubsub"
 	"github.com/apache/servicecomb-kie/server/rbac"
 	v1 "github.com/apache/servicecomb-kie/server/resource/v1"
@@ -45,6 +46,9 @@ func Run() {
 		openlog.Fatal(err.Error())
 	}
 	if err := datasource.Init(config.GetDB().Kind); err != nil {
+		openlog.Fatal(err.Error())
+	}
+	if err := metrics.InitMetric(); err != nil {
 		openlog.Fatal(err.Error())
 	}
 	if err := validator.Init(); err != nil {
