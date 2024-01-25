@@ -524,14 +524,17 @@ func (s *Dao) listData(ctx context.Context, project, domain string, options ...d
 	}
 
 	if Enabled() {
-		result, useCache := Search(ctx, &CacheSearchReq{
+		result, useCache, err := Search(ctx, &CacheSearchReq{
 			Domain:  domain,
 			Project: project,
 			Opts:    &opts,
 			Regex:   regex,
 		})
-		if useCache {
+		if useCache && err == nil {
 			return result, opts, nil
+		}
+		if useCache && err != nil {
+			openlog.Error("using cache to search kv failed: " + err.Error())
 		}
 	}
 
