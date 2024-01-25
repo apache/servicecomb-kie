@@ -22,7 +22,7 @@ type Config struct {
 	DB   DB   `yaml:"db"`
 	RBAC RBAC `yaml:"rbac"`
 	Sync Sync `yaml:"sync"`
-	//config from cli
+	// config from cli
 	ConfigFile     string
 	NodeName       string
 	ListenPeerAddr string
