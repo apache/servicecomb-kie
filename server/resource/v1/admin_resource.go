@@ -22,13 +22,15 @@ import (
 	"strconv"
 	"time"
 
-	"github.com/apache/servicecomb-kie/pkg/model"
-	"github.com/apache/servicecomb-kie/server/datasource"
 	goRestful "github.com/emicklei/go-restful"
 	"github.com/go-chassis/cari/config"
 	"github.com/go-chassis/go-chassis/v2/pkg/runtime"
 	"github.com/go-chassis/go-chassis/v2/server/restful"
 	"github.com/go-chassis/openlog"
+
+	"github.com/apache/servicecomb-kie/pkg/common"
+	"github.com/apache/servicecomb-kie/pkg/model"
+	"github.com/apache/servicecomb-kie/server/datasource"
 )
 
 type AdminResource struct {
@@ -57,6 +59,10 @@ func (r *AdminResource) URLPatterns() []restful.Route {
 
 // HealthCheck provider version info and time info
 func (r *AdminResource) HealthCheck(context *restful.Context) {
+	healthCheckMode := context.ReadQueryParameter(common.QueryParamMode)
+	if healthCheckMode == "liveness" {
+		return
+	}
 	domain := ReadDomain(context.Ctx)
 	resp := &model.DocHealthCheck{}
 	latest, err := datasource.GetBroker().GetRevisionDao().GetRevision(context.Ctx, domain)
