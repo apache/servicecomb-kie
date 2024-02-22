@@ -41,11 +41,12 @@ type TLS struct {
 
 // DB is yaml file struct to set persistent config
 type DB struct {
-	TLS      `yaml:",inline" json:",inline"`
-	URI      string `yaml:"uri" json:"uri,omitempty"`
-	Kind     string `yaml:"kind" json:"kind,omitempty"`
-	PoolSize int    `yaml:"poolSize" json:"pool_size,omitempty"`
-	Timeout  string `yaml:"timeout" json:"timeout,omitempty"`
+	TLS           `yaml:",inline" json:",inline"`
+	URI           string `yaml:"uri" json:"uri,omitempty"`
+	Kind          string `yaml:"kind" json:"kind,omitempty"`
+	LocalFilePath string `yaml:"localFilePath" json:"local_file_path,omitempty"`
+	PoolSize      int    `yaml:"poolSize" json:"pool_size,omitempty"`
+	Timeout       string `yaml:"timeout" json:"timeout,omitempty"`
 }
 
 // RBAC is rbac config

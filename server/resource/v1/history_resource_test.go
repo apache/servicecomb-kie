@@ -88,7 +88,7 @@ func TestHistoryResource_GetRevisions(t *testing.T) {
 		body, err := ioutil.ReadAll(resp.Body)
 		assert.NoError(t, err)
 		var data model.KVResponse
-		err = json.Unmarshal(body, &data)
+		_ = json.Unmarshal(body, &data)
 		assert.Equal(t, before+1, len(data.Data))
 	})
 }

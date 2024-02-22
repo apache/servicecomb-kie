@@ -23,10 +23,9 @@ import (
 	"errors"
 	"fmt"
 
+	"github.com/apache/servicecomb-kie/pkg/model"
 	"github.com/apache/servicecomb-kie/server/datasource/rbac"
 	"github.com/go-chassis/openlog"
-
-	"github.com/apache/servicecomb-kie/pkg/model"
 )
 
 var (
@@ -120,9 +119,12 @@ type ViewDao interface {
 func Init(kind string) error {
 	var err error
 	f, ok := plugins[kind]
+
 	if !ok {
+		openlog.Info(fmt.Sprintf("do not support '%s'", kind))
 		return fmt.Errorf("do not support '%s'", kind)
 	}
+
 	dbc := &Config{}
 	if b, err = f(dbc); err != nil {
 		return err
