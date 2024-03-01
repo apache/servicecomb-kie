@@ -25,6 +25,7 @@ import (
 	_ "github.com/go-chassis/cari/db/bootstrap"
 
 	_ "github.com/apache/servicecomb-kie/server/datasource/etcd"
+	_ "github.com/apache/servicecomb-kie/server/datasource/local"
 	_ "github.com/apache/servicecomb-kie/server/datasource/mongo"
 	_ "github.com/apache/servicecomb-kie/server/plugin/qms"
 	_ "github.com/apache/servicecomb-kie/server/pubsub/notifier"
@@ -42,8 +43,9 @@ import (
 )
 
 var (
-	uri  string
-	kind string
+	uri           string
+	kind          string
+	localFilePath string
 )
 
 func init() {
@@ -54,6 +56,8 @@ func init() {
 	}
 	kind = archaius.GetString("TEST_DB_KIND", "etcd")
 	uri = archaius.GetString("TEST_DB_URI", "http://127.0.0.1:2379")
+	localFilePath = archaius.GetString("TEST_KVS_ROOT_PATH", "")
+
 	err = archaius.Init(archaius.WithMemorySource())
 	if err != nil {
 		panic(err)
@@ -71,9 +75,10 @@ func init() {
 		panic(err)
 	}
 	err = db.Init(config.DB{
-		URI:     uri,
-		Timeout: "10s",
-		Kind:    kind,
+		URI:           uri,
+		Timeout:       "10s",
+		Kind:          kind,
+		LocalFilePath: localFilePath,
 	})
 	if err != nil {
 		panic(err)
@@ -82,7 +87,15 @@ func init() {
 	if err != nil {
 		panic(err)
 	}
-	err = edatasource.Init(kind)
+
+	edatasourceKind := kind
+	if kind == "etcd_with_localstorage" {
+		edatasourceKind = "etcd"
+	}
+	if kind == "embedded_etcd_with_localstorage" {
+		edatasourceKind = "embedded_etcd"
+	}
+	err = edatasource.Init(edatasourceKind)
 	if err != nil {
 		panic(err)
 	}
@@ -115,5 +128,5 @@ func randomListenAddress() string {
 }
 
 func IsEmbeddedetcdMode() bool {
-	return kind == "embedded_etcd"
+	return kind == "embedded_etcd" || kind == "embedded_etcd_with_localstorage"
 }

@@ -1,5 +1,5 @@
 db:
-  # kind can be mongo, etcd, embedded_etcd
+  # kind can be mongo, etcd, embedded_etcd, embedded_etcd_with_localstorage, etcd_with_localstorage
   kind: embedded_etcd
 
 # localFilePath: is the root path to store local kv files
