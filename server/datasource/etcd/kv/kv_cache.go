@@ -9,9 +9,9 @@ import (
 	"sync"
 	"time"
 
+	"github.com/go-chassis/etcdadpt"
 	"github.com/go-chassis/foundation/backoff"
 	"github.com/go-chassis/openlog"
-	"github.com/little-cui/etcdadpt"
 	goCache "github.com/patrickmn/go-cache"
 	"go.etcd.io/etcd/api/v3/mvccpb"
 

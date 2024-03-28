@@ -24,8 +24,8 @@ import (
 	"strings"
 
 	"github.com/go-chassis/cari/sync"
+	"github.com/go-chassis/etcdadpt"
 	"github.com/go-chassis/openlog"
-	"github.com/little-cui/etcdadpt"
 
 	"github.com/apache/servicecomb-kie/pkg/model"
 	"github.com/apache/servicecomb-kie/pkg/util"

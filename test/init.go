@@ -21,25 +21,28 @@ import (
 	"fmt"
 	"math/rand"
 
-	"github.com/apache/servicecomb-kie/server/db"
 	_ "github.com/go-chassis/cari/db/bootstrap"
+
+	"github.com/apache/servicecomb-kie/server/db"
+
+	_ "github.com/apache/servicecomb-service-center/eventbase/bootstrap"
+	_ "github.com/go-chassis/go-chassis/v2/security/cipher/plugins/plain"
 
 	_ "github.com/apache/servicecomb-kie/server/datasource/etcd"
 	_ "github.com/apache/servicecomb-kie/server/datasource/local"
 	_ "github.com/apache/servicecomb-kie/server/datasource/mongo"
 	_ "github.com/apache/servicecomb-kie/server/plugin/qms"
 	_ "github.com/apache/servicecomb-kie/server/pubsub/notifier"
-	_ "github.com/apache/servicecomb-service-center/eventbase/bootstrap"
-	_ "github.com/go-chassis/go-chassis/v2/security/cipher/plugins/plain"
+
+	edatasource "github.com/apache/servicecomb-service-center/eventbase/datasource"
+	"github.com/go-chassis/go-archaius"
+	"github.com/go-chassis/go-chassis/v2/pkg/backends/quota"
+	"github.com/go-chassis/go-chassis/v2/security/cipher"
 
 	"github.com/apache/servicecomb-kie/pkg/validator"
 	"github.com/apache/servicecomb-kie/server/config"
 	"github.com/apache/servicecomb-kie/server/datasource"
 	"github.com/apache/servicecomb-kie/server/pubsub"
-	edatasource "github.com/apache/servicecomb-service-center/eventbase/datasource"
-	"github.com/go-chassis/go-archaius"
-	"github.com/go-chassis/go-chassis/v2/pkg/backends/quota"
-	"github.com/go-chassis/go-chassis/v2/security/cipher"
 )
 
 var (
@@ -95,12 +98,12 @@ func init() {
 	if kind == "embedded_etcd_with_localstorage" {
 		edatasourceKind = "embedded_etcd"
 	}
-	err = edatasource.Init(edatasourceKind)
+	err = edatasource.Init(&edatasource.Config{Kind: edatasourceKind})
 	if err != nil {
 		panic(err)
 	}
 
-	//for UT
+	// for UT
 	addr := randomListenAddress()
 	config.Configurations = &config.Config{
 		DB:             config.DB{},
