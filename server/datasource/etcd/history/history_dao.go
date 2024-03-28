@@ -21,8 +21,8 @@ import (
 	"context"
 	"encoding/json"
 
+	"github.com/go-chassis/etcdadpt"
 	"github.com/go-chassis/openlog"
-	"github.com/little-cui/etcdadpt"
 
 	"github.com/apache/servicecomb-kie/server/datasource/auth"
 

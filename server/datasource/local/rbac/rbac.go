@@ -23,8 +23,8 @@ import (
 	"errors"
 
 	crbac "github.com/go-chassis/cari/rbac"
+	"github.com/go-chassis/etcdadpt"
 	"github.com/go-chassis/openlog"
-	"github.com/little-cui/etcdadpt"
 )
 
 func generateRBACRoleKey(name string) string {

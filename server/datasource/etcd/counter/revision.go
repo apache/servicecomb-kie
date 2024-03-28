@@ -20,11 +20,12 @@ package counter
 import (
 	"context"
 
+	"github.com/go-chassis/cari/config"
+	"github.com/go-chassis/etcdadpt"
+	"github.com/go-chassis/openlog"
+
 	"github.com/apache/servicecomb-kie/server/datasource"
 	"github.com/apache/servicecomb-kie/server/datasource/etcd/key"
-	"github.com/go-chassis/cari/config"
-	"github.com/go-chassis/openlog"
-	"github.com/little-cui/etcdadpt"
 )
 
 const revision = "revision_counter"
