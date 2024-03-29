@@ -40,6 +40,7 @@ const (
 	QueryParamURLPath      = "urlPath"
 	QueryParamUserAgent    = "userAgent"
 	QueryParamOverride     = "override"
+	QueryParamMode         = "mode"
 )
 
 // http headers
