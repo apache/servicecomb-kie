@@ -175,6 +175,7 @@ func (r *KVResource) List(rctx *restful.Context) {
 		Project: rctx.ReadPathParameter(common.PathParameterProject),
 		Domain:  ReadDomain(rctx.Ctx),
 		Key:     rctx.ReadQueryParameter(common.QueryParamKey),
+		Value:   rctx.ReadQueryParameter(common.QueryParamValue),
 		Status:  rctx.ReadQueryParameter(common.QueryParamStatus),
 		Match:   getMatchPattern(rctx),
 	}

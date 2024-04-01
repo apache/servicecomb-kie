@@ -96,6 +96,7 @@ type ListKVRequest struct {
 	Project string            `json:"project,omitempty" yaml:"project,omitempty" validate:"min=1,max=256,commonName"`
 	Domain  string            `json:"domain,omitempty" yaml:"domain,omitempty" validate:"min=1,max=256,commonName"` //redundant
 	Key     string            `json:"key" yaml:"key" validate:"max=128,getKey"`
+	Value   string            `json:"value" yaml:"value" validate:"max=128"`
 	Labels  map[string]string `json:"labels,omitempty" yaml:"labels,omitempty" validate:"max=8,dive,keys,labelK,endkeys,labelV"` //redundant
 	Offset  int64             `validate:"min=0"`
 	Limit   int64             `validate:"min=0,max=100"`

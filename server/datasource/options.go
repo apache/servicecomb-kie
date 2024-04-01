@@ -63,6 +63,7 @@ type FindOptions struct {
 	Depth       int
 	ID          string
 	Key         string
+	Value       string
 	Labels      map[string]string
 	LabelFormat string
 	ClearLabel  bool
@@ -112,6 +113,13 @@ func WithID(id string) FindOption {
 func WithKey(key string) FindOption {
 	return func(o *FindOptions) {
 		o.Key = key
+	}
+}
+
+// WithValue find by value
+func WithValue(value string) FindOption {
+	return func(o *FindOptions) {
+		o.Value = value
 	}
 }
 

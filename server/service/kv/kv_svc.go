@@ -20,6 +20,7 @@ package kv
 import (
 	"context"
 	"crypto/sha256"
+	"errors"
 	"fmt"
 	"strings"
 	"time"
@@ -45,6 +46,7 @@ var listSema = concurrency.NewSemaphore(concurrency.DefaultConcurrency)
 func ListKV(ctx context.Context, request *model.ListKVRequest) (int64, *model.KVResponse, *errsvc.Error) {
 	opts := []datasource.FindOption{
 		datasource.WithKey(request.Key),
+		datasource.WithValue(request.Value),
 		datasource.WithLabels(request.Labels),
 		datasource.WithOffset(request.Offset),
 		datasource.WithLimit(request.Limit),
@@ -126,6 +128,9 @@ func Create(ctx context.Context, kv *model.KVDoc) (*model.KVDoc, *errsvc.Error) 
 	kv, err = datasource.GetBroker().GetKVDao().Create(ctx, kv, datasource.WithSync(sync.FromContext(ctx)))
 	if err != nil {
 		openlog.Error(fmt.Sprintf("post err:%s", err.Error()))
+		if errors.Is(err, datasource.ErrKVAlreadyExists) {
+			err = config.NewError(config.ErrRecordAlreadyExists, datasource.ErrKVAlreadyExists.Error())
+		}
 		return nil, util.SvcErr(err)
 	}
 	err = datasource.GetBroker().GetHistoryDao().AddHistory(ctx, kv)

@@ -18,6 +18,10 @@
 package server
 
 import (
+	chassis "github.com/go-chassis/go-chassis/v2"
+	"github.com/go-chassis/go-chassis/v2/core/common"
+	"github.com/go-chassis/openlog"
+
 	"github.com/apache/servicecomb-kie/pkg/validator"
 	"github.com/apache/servicecomb-kie/server/config"
 	"github.com/apache/servicecomb-kie/server/datasource"
@@ -25,9 +29,6 @@ import (
 	"github.com/apache/servicecomb-kie/server/pubsub"
 	"github.com/apache/servicecomb-kie/server/rbac"
 	v1 "github.com/apache/servicecomb-kie/server/resource/v1"
-	"github.com/go-chassis/go-chassis/v2"
-	"github.com/go-chassis/go-chassis/v2/core/common"
-	"github.com/go-chassis/openlog"
 )
 
 func Run() {

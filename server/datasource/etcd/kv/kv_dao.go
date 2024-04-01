@@ -646,5 +646,8 @@ func filterMatch(doc *model.KVDoc, opts datasource.FindOptions, regex *regexp.Re
 	if opts.LabelFormat != "" && doc.LabelFormat != opts.LabelFormat {
 		return false
 	}
+	if opts.Value != "" && !strings.Contains(doc.Value, opts.Value) {
+		return false
+	}
 	return true
 }

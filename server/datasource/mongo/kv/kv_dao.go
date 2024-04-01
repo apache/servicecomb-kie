@@ -271,6 +271,9 @@ func findKV(ctx context.Context, domain string, project string, opts datasource.
 			filter["key"] = bson.M{"$regex": "^" + value + "$", "$options": "$i"}
 		}
 	}
+	if opts.Value != "" {
+		filter["value"] = bson.M{"$regex": opts.Value}
+	}
 	if len(opts.Labels) != 0 {
 		for k, v := range opts.Labels {
 			filter["labels."+k] = v

@@ -27,6 +27,7 @@ const (
 	QueryParamRev          = "revision"
 	QueryParamMatch        = "match"
 	QueryParamKey          = "key"
+	QueryParamValue        = "value"
 	QueryParamLabel        = "label"
 	QueryParamStatus       = "status"
 	QueryParamOffset       = "offset"
@@ -39,6 +40,7 @@ const (
 	QueryParamURLPath      = "urlPath"
 	QueryParamUserAgent    = "userAgent"
 	QueryParamOverride     = "override"
+	QueryParamMode         = "mode"
 )
 
 // http headers

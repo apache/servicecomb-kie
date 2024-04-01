@@ -27,10 +27,11 @@ import (
 
 	_ "github.com/apache/servicecomb-kie/test"
 
-	"github.com/apache/servicecomb-kie/pkg/model"
-	v1 "github.com/apache/servicecomb-kie/server/resource/v1"
 	"github.com/go-chassis/go-chassis/v2/server/restful/restfultest"
 	"github.com/stretchr/testify/assert"
+
+	"github.com/apache/servicecomb-kie/pkg/model"
+	v1 "github.com/apache/servicecomb-kie/server/resource/v1"
 )
 
 func Test_HeathCheck(t *testing.T) {
@@ -47,4 +48,17 @@ func Test_HeathCheck(t *testing.T) {
 	err = json.Unmarshal(body, &data)
 	assert.NoError(t, err)
 	assert.NotEmpty(t, data)
+}
+
+func Test_HeakthCheckLiveMode(t *testing.T) {
+	path := fmt.Sprintf("/v1/health?mode=liveness")
+	r, _ := http.NewRequest("GET", path, nil)
+
+	revision := &v1.AdminResource{}
+	c, err := restfultest.New(revision, nil)
+	assert.NoError(t, err)
+	resp := httptest.NewRecorder()
+	c.ServeHTTP(resp, r)
+	respcode := resp.Code
+	assert.NotEmpty(t, respcode)
 }
