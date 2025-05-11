@@ -53,6 +53,8 @@ const (
 	AttributeDomainKey = "domain"
 
 	FmtReadRequestError = "decode request body failed: %v"
+
+	maxTimeoutProtectionIntervalWhenWait = 2 * time.Second
 )
 
 func NewObserver() (*pubsub.Observer, error) {
@@ -210,29 +212,64 @@ func getMatchPattern(rctx *restful.Context) string {
 	}
 	return m
 }
-func eventHappened(waitStr string, topic *pubsub.Topic, ctx context.Context) (bool, string, error) {
+func eventHappened(ctx context.Context, waitStr string, topic *pubsub.Topic) (happened bool, topicName string, err error) {
 	d, err := time.ParseDuration(waitStr)
 	if err != nil || d > common.MaxWait {
 		return false, "", errors.New(common.MsgInvalidWait)
 	}
-	happened := true
+
 	o, err := NewObserver()
 	if err != nil {
 		openlog.Error(err.Error())
 		return false, "", err
 	}
-	topicName, err := pubsub.AddObserver(o, topic)
+	topicName, err = pubsub.AddObserver(o, topic)
 	if err != nil {
 		return false, "", errors.New("observe once failed: " + err.Error())
 	}
-	select {
-	case <-time.After(d):
-		happened = false
-		pubsub.RemoveObserver(o.UUID, topic)
-	case <-o.Event:
-		prepareCache(topicName, topic, ctx)
+	// 当事件发生于等待时间即将耗尽时（如仅剩余1ns），使用剩余的deadline查询后端，则大概率超时，这是误报错。
+	// 将等待时间按先后划分为常规时间和超时保护时间，在超时保护时间段内，查询后端发生超时错误，屏蔽错误，视为数据未变化，降低误报错概率。
+	//
+	// 事件产生阶段           查询后端是否超时     response
+	// ---------------------------------------------------
+	// normal                  是                500
+	// normal                  否                200
+	// timeoutProtection       是                304
+	// timeoutProtection       否                200
+	normalInterval, timeoutProtectionInterval := splitWaitInterval(d)
+	// 常规时间段
+	if waitObserverEventHappened(o, normalInterval) {
+		prepareCache(ctx, topicName, topic, false)
+		return true, topicName, nil
 	}
-	return happened, topicName, nil
+	// 超时保护时间段
+	if waitObserverEventHappened(o, timeoutProtectionInterval) {
+		if prepareCache(ctx, topicName, topic, true) {
+			return true, topicName, nil
+		}
+		return false, topicName, nil
+	}
+
+	pubsub.RemoveObserver(o.UUID, topic)
+	return false, topicName, nil
+}
+
+func splitWaitInterval(d time.Duration) (normalInterval time.Duration, timeoutProtectionInterval time.Duration) {
+	timeoutProtectionInterval = d / 5 // 最后的20%时间
+	if timeoutProtectionInterval > maxTimeoutProtectionIntervalWhenWait {
+		timeoutProtectionInterval = maxTimeoutProtectionIntervalWhenWait
+	}
+	normalInterval = d - timeoutProtectionInterval
+	return normalInterval, timeoutProtectionInterval
+}
+
+func waitObserverEventHappened(o *pubsub.Observer, interval time.Duration) bool {
+	select {
+	case <-time.After(interval):
+		return false
+	case <-o.Event:
+		return true
+	}
 }
 
 // size from 1 to start
@@ -309,7 +346,7 @@ func queryAndResponse(rctx *restful.Context, request *model.ListKVRequest) {
 	}
 }
 
-func prepareCache(topicName string, topic *pubsub.Topic, ctx context.Context) {
+func prepareCache(ctx context.Context, topicName string, topic *pubsub.Topic, ignoreDeadlineExceededErr bool) (prepared bool) {
 	rev, kvs, err := kvsvc.ListKV(ctx, &model.ListKVRequest{
 		Domain:  topic.DomainID,
 		Project: topic.Project,
@@ -318,10 +355,20 @@ func prepareCache(topicName string, topic *pubsub.Topic, ctx context.Context) {
 	})
 	if err != nil {
 		openlog.Error("can not query kvs:" + err.Error())
+		if isDeadlineExceededErr(err) && ignoreDeadlineExceededErr {
+			openlog.Info("ignore DeadlineExceededErr, not prepare cache")
+			return false
+		}
 	}
+
 	cache.CachedKV().Write(topicName, &cache.DBResult{
 		KVs: kvs,
 		Rev: rev,
 		Err: err,
 	})
+	return true
+}
+
+func isDeadlineExceededErr(err error) bool {
+	return strings.Contains(err.Error(), context.DeadlineExceeded.Error())
 }
