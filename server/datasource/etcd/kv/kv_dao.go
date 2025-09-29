@@ -575,13 +575,15 @@ func listDataByCache(ctx context.Context, project string, domain string, opts da
 	} else {
 		cacheKey := kvCache.GetCacheKey(domain, project, opts.Labels)
 		kvIdSet, ok := kvCache.LoadKvIDSetByFuzzyCache(cacheKey)
+		var err error
 		if ok {
 			result, err := getKvDocsByIds(ctx, req, kvIdSet)
 			if err == nil {
 				return result, opts, nil
 			}
+			openlog.Warn("using fuzzy cache to search kv failed: " + err.Error())
 		}
-		openlog.Warn("using fuzzy cache to search kv failed: " + err.Error())
+		openlog.Info("using fuzzy cache to search kv not hit")
 	}
 
 	result, err := matchLabelsSearch(ctx, domain, project, regex, opts)
