@@ -86,16 +86,25 @@ type CacheSearchReq struct {
 func (kc *Cache) Refresh(ctx context.Context) {
 	openlog.Info("start to list and watch")
 	retries := 0
-	timer := time.NewTimer(backoff.GetBackoff().Delay(retries))
+
+	timer := time.NewTimer(backOffMinInterval)
 	defer timer.Stop()
 	for {
+		nextPeriod := backOffMinInterval
 		if err := kc.listWatch(ctx); err != nil {
 			retries++
+			nextPeriod = backoff.GetBackoff().Delay(retries)
 		} else {
 			retries = 0
 		}
-		<-timer.C
-		timer.Reset(backoff.GetBackoff().Delay(retries))
+
+		select {
+		case <-ctx.Done():
+			openlog.Info("stop to list and watch")
+			return
+		case <-timer.C:
+			timer.Reset(nextPeriod)
+		}
 	}
 }
 
