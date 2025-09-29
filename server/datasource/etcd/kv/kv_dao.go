@@ -580,8 +580,8 @@ func listDataByCache(ctx context.Context, project string, domain string, opts da
 			if err == nil {
 				return result, opts, nil
 			}
-			openlog.Warn("using fuzzy cache to search kv failed: " + err.Error())
 		}
+		openlog.Warn("using fuzzy cache to search kv failed: " + err.Error())
 	}
 
 	result, err := matchLabelsSearch(ctx, domain, project, regex, opts)
