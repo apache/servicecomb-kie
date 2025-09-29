@@ -575,7 +575,6 @@ func listDataByCache(ctx context.Context, project string, domain string, opts da
 	} else {
 		cacheKey := kvCache.GetCacheKey(domain, project, opts.Labels)
 		kvIdSet, ok := kvCache.LoadKvIDSetByFuzzyCache(cacheKey)
-		var err error
 		if ok {
 			result, err := getKvDocsByIds(ctx, req, kvIdSet)
 			if err == nil {
