@@ -4,12 +4,17 @@ import (
 	"testing"
 
 	"github.com/go-chassis/etcdadpt"
+	"github.com/go-chassis/go-archaius"
 	"github.com/stretchr/testify/assert"
 	"go.etcd.io/etcd/api/v3/mvccpb"
 )
 
 type args struct {
 	rsp *etcdadpt.Response
+}
+
+func init() {
+	archaius.Init()
 }
 
 func TestCachePut(t *testing.T) {

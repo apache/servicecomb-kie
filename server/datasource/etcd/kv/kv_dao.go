@@ -22,8 +22,9 @@ import (
 	"encoding/json"
 	"regexp"
 	"strings"
+	"sync"
 
-	"github.com/go-chassis/cari/sync"
+	pkgsync "github.com/go-chassis/cari/sync"
 	"github.com/go-chassis/etcdadpt"
 	"github.com/go-chassis/openlog"
 
@@ -68,6 +69,10 @@ func (s *Dao) Create(ctx context.Context, kv *model.KVDoc, options ...datasource
 		}))
 		return nil, datasource.ErrKVAlreadyExists
 	}
+	// 添加kv时，直接重建kvIdFuzzyCache
+	if cacheEnabled() {
+		kvCache.kvIDFuzzyCache.Clear()
+	}
 	return kv, nil
 }
 
@@ -86,7 +91,7 @@ func txnCreate(ctx context.Context, kv *model.KVDoc) (bool, error) {
 		openlog.Error("fail to marshal kv " + err.Error())
 		return false, err
 	}
-	task, err := sync.NewTask(kv.Domain, kv.Project, sync.CreateAction, datasource.ConfigResource, kv)
+	task, err := pkgsync.NewTask(kv.Domain, kv.Project, pkgsync.CreateAction, datasource.ConfigResource, kv)
 	if err != nil {
 		openlog.Error("fail to create task" + err.Error())
 		return false, err
@@ -156,7 +161,7 @@ func txnUpdate(ctx context.Context, kv *model.KVDoc) error {
 		openlog.Error(err.Error())
 		return err
 	}
-	task, err := sync.NewTask(kv.Domain, kv.Project, sync.UpdateAction, datasource.ConfigResource, kv)
+	task, err := pkgsync.NewTask(kv.Domain, kv.Project, pkgsync.UpdateAction, datasource.ConfigResource, kv)
 	if err != nil {
 		openlog.Error("fail to create task" + err.Error())
 		return err
@@ -269,6 +274,10 @@ func findOneAndDelete(ctx context.Context, kvID, project, domain string) (*model
 		openlog.Error("decode error: " + err.Error())
 		return nil, err
 	}
+	// 删除kv时，直接重建kvIdFuzzyCache
+	if cacheEnabled() {
+		kvCache.kvIDFuzzyCache.Clear()
+	}
 	return &kvDoc, nil
 }
 
@@ -280,7 +289,7 @@ func txnFindOneAndDelete(ctx context.Context, kvID, project, domain string) (*mo
 		openlog.Error(err.Error())
 		return nil, err
 	}
-	task, err := sync.NewTask(domain, project, sync.DeleteAction, datasource.ConfigResource, kvDoc)
+	task, err := pkgsync.NewTask(domain, project, pkgsync.DeleteAction, datasource.ConfigResource, kvDoc)
 	if err != nil {
 		openlog.Error("fail to create task" + err.Error())
 		return nil, err
@@ -290,7 +299,7 @@ func txnFindOneAndDelete(ctx context.Context, kvID, project, domain string) (*mo
 		openlog.Error("fail to marshal task" + err.Error())
 		return nil, err
 	}
-	tombstone := sync.NewTombstone(domain, project, datasource.ConfigResource, datasource.TombstoneID(kvDoc))
+	tombstone := pkgsync.NewTombstone(domain, project, datasource.ConfigResource, datasource.TombstoneID(kvDoc))
 	tombstoneBytes, err := json.Marshal(tombstone)
 	if err != nil {
 		openlog.Error("fail to marshal tombstone" + err.Error())
@@ -306,6 +315,10 @@ func txnFindOneAndDelete(ctx context.Context, kvID, project, domain string) (*mo
 			"err": err.Error(),
 		}))
 		return nil, err
+	}
+	// 删除kv时，直接重建kvIdFuzzyCache
+	if cacheEnabled() {
+		kvCache.kvIDFuzzyCache.Clear()
 	}
 	return kvDoc, nil
 }
@@ -376,6 +389,10 @@ func findManyAndDelete(ctx context.Context, kvIDs []string, project, domain stri
 		}
 		docs = append(docs, &doc)
 	}
+	// 删除kv时，直接重建kvIdFuzzyCache
+	if cacheEnabled() {
+		kvCache.kvIDFuzzyCache.Clear()
+	}
 	return docs, resp.Count, nil
 }
 
@@ -385,8 +402,8 @@ func txnFindManyAndDelete(ctx context.Context, kvIDs []string, project, domain s
 	var opOptions []etcdadpt.OpOptions
 	kvTotalNum := len(kvIDs)
 	docs = make([]*model.KVDoc, kvTotalNum)
-	tasks := make([]*sync.Task, kvTotalNum)
-	tombstones := make([]*sync.Tombstone, kvTotalNum)
+	tasks := make([]*pkgsync.Task, kvTotalNum)
+	tombstones := make([]*pkgsync.Tombstone, kvTotalNum)
 	successKVNum := 0
 	for i := 0; i < kvTotalNum; i++ {
 		kvDoc, err := getKVDoc(ctx, domain, project, kvIDs[i])
@@ -401,14 +418,14 @@ func txnFindManyAndDelete(ctx context.Context, kvIDs []string, project, domain s
 		if kvDoc == nil {
 			continue
 		}
-		task, err := sync.NewTask(domain, project, sync.DeleteAction, datasource.ConfigResource, kvDoc)
+		task, err := pkgsync.NewTask(domain, project, pkgsync.DeleteAction, datasource.ConfigResource, kvDoc)
 		if err != nil {
 			openlog.Error("fail to create task")
 			return nil, 0, err
 		}
 		docs[successKVNum] = kvDoc
 		tasks[successKVNum] = task
-		tombstones[successKVNum] = sync.NewTombstone(domain, project, datasource.ConfigResource,
+		tombstones[successKVNum] = pkgsync.NewTombstone(domain, project, datasource.ConfigResource,
 			datasource.TombstoneID(kvDoc))
 		successKVNum++
 	}
@@ -447,6 +464,10 @@ func txnFindManyAndDelete(ctx context.Context, kvIDs []string, project, domain s
 			"err": err.Error(),
 		}))
 		return nil, 0, err
+	}
+	// 删除kv时，直接重建kvIdFuzzyCache
+	if cacheEnabled() {
+		kvCache.kvIDFuzzyCache.Clear()
 	}
 	return docs, int64(successKVNum), nil
 }
@@ -525,19 +546,8 @@ func (s *Dao) listData(ctx context.Context, project, domain string, options ...d
 		return nil, opts, err
 	}
 
-	if Enabled() {
-		result, useCache, err := Search(ctx, &CacheSearchReq{
-			Domain:  domain,
-			Project: project,
-			Opts:    &opts,
-			Regex:   regex,
-		})
-		if useCache && err == nil {
-			return result, opts, nil
-		}
-		if useCache && err != nil {
-			openlog.Error("using cache to search kv failed: " + err.Error())
-		}
+	if cacheEnabled() {
+		return listDataByCache(ctx, project, domain, opts, regex)
 	}
 
 	result, err := matchLabelsSearch(ctx, domain, project, regex, opts)
@@ -546,6 +556,51 @@ func (s *Dao) listData(ctx context.Context, project, domain string, options ...d
 		return nil, opts, err
 	}
 
+	return result, opts, nil
+}
+
+func listDataByCache(ctx context.Context, project string, domain string, opts datasource.FindOptions, regex *regexp.Regexp) (*model.KVResponse, datasource.FindOptions, error) {
+	req := &CacheSearchReq{
+		Domain:  domain,
+		Project: project,
+		Opts:    &opts,
+		Regex:   regex,
+	}
+	if opts.ExactLabels {
+		result, err := Search(ctx, req)
+		if err == nil {
+			return result, opts, nil
+		}
+		openlog.Warn("using cache to search kv failed: " + err.Error())
+	} else {
+		cacheKey := kvCache.GetCacheKey(domain, project, opts.Labels)
+		kvIdSet, ok := kvCache.LoadKvIDSetByFuzzyCache(cacheKey)
+		if ok {
+			result, err := getKvDocsByIds(ctx, req, kvIdSet)
+			if err == nil {
+				return result, opts, nil
+			}
+			openlog.Warn("using fuzzy cache to search kv failed: " + err.Error())
+		}
+		openlog.Info("using fuzzy cache to search kv not hit")
+	}
+
+	result, err := matchLabelsSearch(ctx, domain, project, regex, opts)
+	if err != nil {
+		openlog.Error("list kv failed: " + err.Error())
+		return nil, opts, err
+	}
+
+	if opts.ExactLabels {
+		return result, opts, nil
+	}
+
+	kvIdSet := new(sync.Map)
+	for _, kv := range result.Data {
+		kvIdSet.Store(kv.ID, struct{}{})
+	}
+	cacheKey := kvCache.GetCacheKey(domain, project, opts.Labels)
+	kvCache.kvIDFuzzyCache.Set(cacheKey, kvIdSet, int64(result.Total))
 	return result, opts, nil
 }
 
@@ -573,9 +628,6 @@ func matchLabelsSearch(ctx context.Context, domain, project string, regex *regex
 		result.Data = append(result.Data, &doc)
 		result.Total++
 
-		if IsUniqueFind(opts) {
-			break
-		}
 	}
 
 	return result, nil

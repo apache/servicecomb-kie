@@ -2,6 +2,7 @@ module github.com/apache/servicecomb-kie
 
 require (
 	github.com/apache/servicecomb-service-center/eventbase v0.0.0-20240328150344-01abe81dc5d0
+	github.com/dgraph-io/ristretto v0.2.0
 	github.com/emicklei/go-restful v2.15.1-0.20220703112237-d9c71e118c95+incompatible
 	github.com/go-chassis/cari v0.9.1-0.20240328115504-88da93faaca7
 	github.com/go-chassis/etcdadpt v0.5.3-0.20240328092602-984e34b756fe
@@ -13,7 +14,7 @@ require (
 	github.com/gofrs/uuid v4.0.0+incompatible
 	github.com/hashicorp/serf v0.9.5
 	github.com/patrickmn/go-cache v2.1.0+incompatible
-	github.com/stretchr/testify v1.7.2
+	github.com/stretchr/testify v1.8.4
 	github.com/urfave/cli v1.22.4
 	go.etcd.io/etcd/api/v3 v3.5.4
 	go.mongodb.org/mongo-driver v1.5.1
@@ -35,7 +36,7 @@ require (
 	github.com/cpuguy83/go-md2man/v2 v2.0.0 // indirect
 	github.com/davecgh/go-spew v1.1.1 // indirect
 	github.com/deckarep/golang-set v1.7.1 // indirect
-	github.com/dustin/go-humanize v1.0.0 // indirect
+	github.com/dustin/go-humanize v1.0.1 // indirect
 	github.com/fatih/color v1.10.0 // indirect
 	github.com/form3tech-oss/jwt-go v3.2.3+incompatible // indirect
 	github.com/fsnotify/fsnotify v1.4.9 // indirect
@@ -125,7 +126,7 @@ require (
 	golang.org/x/crypto v0.0.0-20220131195533-30dcbda58838 // indirect
 	golang.org/x/net v0.7.0 // indirect
 	golang.org/x/sync v0.0.0-20210220032951-036812b2e83c // indirect
-	golang.org/x/sys v0.5.0 // indirect
+	golang.org/x/sys v0.11.0 // indirect
 	golang.org/x/text v0.7.0 // indirect
 	golang.org/x/time v0.0.0-20210220033141-f8bda1e9f3ba // indirect
 	google.golang.org/genproto v0.0.0-20210602131652-f16073e35f0c // indirect
