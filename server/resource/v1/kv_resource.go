@@ -325,7 +325,14 @@ func (r *KVResource) DeleteList(rctx *restful.Context) {
 		WriteErrResponse(rctx, config.ErrInvalidParams, fmt.Sprintf(FmtReadRequestError, err))
 		return
 	}
-	err := validateDeleteList(domain, project)
+
+	err := validator.Validate(b)
+	if err != nil {
+		WriteErrResponse(rctx, config.ErrInvalidParams, err.Error())
+		return
+	}
+	
+	err = validateDeleteList(domain, project)
 	if err != nil {
 		WriteErrResponse(rctx, config.ErrInvalidParams, err.Error())
 		return

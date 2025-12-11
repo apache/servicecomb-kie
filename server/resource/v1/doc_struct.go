@@ -202,7 +202,7 @@ type KVUpdateBody struct {
 
 // DeleteBody is the request body struct of delete multiple kvs interface
 type DeleteBody struct {
-	IDs []string `json:"ids"`
+	IDs []string `json:"ids" validate:"required,min=1,max=100,dive,required"`
 }
 
 // ErrorMsg is open api doc
