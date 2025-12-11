@@ -933,3 +933,56 @@ func TestKVResource_DeleteList(t *testing.T) {
 		assert.Equal(t, 0, len(result.Data))
 	})
 }
+
+func Test_ValidateDeleteBody(t *testing.T) {
+	tests := []struct {
+		name       string
+		deleteBody *v1.DeleteBody
+		wantError  assert.ErrorAssertionFunc
+	}{
+		{
+			name: "normal case",
+			deleteBody: &v1.DeleteBody{
+				IDs: []string{"a", "b"},
+			},
+			wantError: assert.NoError,
+		},
+		{
+			name: "empty string case",
+			deleteBody: &v1.DeleteBody{
+				IDs: []string{"a", ""},
+			},
+			wantError: assert.Error,
+		},
+		{
+			name: "empty slices case",
+			deleteBody: &v1.DeleteBody{
+				IDs: []string{},
+			},
+			wantError: assert.Error,
+		},
+		{
+			name: "nil case",
+			deleteBody: &v1.DeleteBody{
+				IDs: nil,
+			},
+			wantError: assert.Error,
+		},
+		{
+			name: "ids numbers exceeds 100 case",
+			deleteBody: &v1.DeleteBody{
+				IDs: []string{"", "", "", "", "", "", "", "", "", "", "", "", "", "", "", "", "", "", "", "", "", "", "", "", "", "", "", "", "", "", "", "", "", "", "", "", "", "", "", "", "", "", "", "", "", "", "", "", "", "", "", "", "", "", "", "", "", "", "", "", "", "", "", "", "", "", "", "", "", "", "", "", "", "", "", "", "", "", "", "", "", "", "", "", "", "", "", "", "", "", "", "", "", "", "", "", "", "", "", "", "", "", "", "", "", "", "", ""},
+			},
+			wantError: assert.Error,
+		},
+	}
+
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			gotErr := validator.Validate(tt.deleteBody)
+			if !tt.wantError(t, gotErr, fmt.Sprintf("validator.Validate(%v)", tt.deleteBody)) {
+				return
+			}
+		})
+	}
+}
