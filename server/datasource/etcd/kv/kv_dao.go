@@ -550,7 +550,7 @@ func (s *Dao) listData(ctx context.Context, project, domain string, options ...d
 		return listDataByCache(ctx, project, domain, opts, regex)
 	}
 
-	result, err := matchLabelsSearch(ctx, domain, project, regex, opts)
+	result, _, err := listDataByNoCache(ctx, domain, project, regex, opts)
 	if err != nil {
 		openlog.Error("list kv failed: " + err.Error())
 		return nil, opts, err
@@ -585,7 +585,7 @@ func listDataByCache(ctx context.Context, project string, domain string, opts da
 		openlog.Info("using fuzzy cache to search kv not hit")
 	}
 
-	result, err := matchLabelsSearch(ctx, domain, project, regex, opts)
+	result, onlyLabelFilteredResult, err := listDataByNoCache(ctx, domain, project, regex, opts)
 	if err != nil {
 		openlog.Error("list kv failed: " + err.Error())
 		return nil, opts, err
@@ -596,23 +596,30 @@ func listDataByCache(ctx context.Context, project string, domain string, opts da
 	}
 
 	kvIdSet := new(sync.Map)
-	for _, kv := range result.Data {
+	for _, kv := range onlyLabelFilteredResult.Data {
 		kvIdSet.Store(kv.ID, struct{}{})
 	}
 	cacheKey := kvCache.GetCacheKey(domain, project, opts.Labels)
-	kvCache.kvIDFuzzyCache.Set(cacheKey, kvIdSet, int64(result.Total))
+	kvCache.kvIDFuzzyCache.Set(cacheKey, kvIdSet, int64(onlyLabelFilteredResult.Total))
 	return result, opts, nil
 }
 
-func matchLabelsSearch(ctx context.Context, domain, project string, regex *regexp.Regexp, opts datasource.FindOptions) (*model.KVResponse, error) {
+// 返回值 onlyLabelFilteredResult 用于调用者设置缓存
+func listDataByNoCache(ctx context.Context, domain, project string, regex *regexp.Regexp,
+	opts datasource.FindOptions) (result, onlyLabelFilteredResult *model.KVResponse, err error) {
 	openlog.Debug("using labels to search kv")
 	kvs, _, err := etcdadpt.List(ctx, key.KVList(domain, project))
 	if err != nil {
-		return nil, err
+		return nil, nil, err
 	}
-	result := &model.KVResponse{
+
+	result = &model.KVResponse{
 		Data: []*model.KVDoc{},
 	}
+	onlyLabelFilteredResult = &model.KVResponse{
+		Data: []*model.KVDoc{},
+	}
+
 	for _, kv := range kvs {
 		var doc model.KVDoc
 		err := json.Unmarshal(kv.Value, &doc)
@@ -620,17 +627,21 @@ func matchLabelsSearch(ctx context.Context, domain, project string, regex *regex
 			openlog.Error("decode to KVList error: " + err.Error())
 			continue
 		}
-		if !filterMatch(&doc, opts, regex) {
+		if !matchLabels(&doc, opts) {
 			continue
 		}
-
 		datasource.ClearPart(&doc)
+		onlyLabelFilteredResult.Data = append(onlyLabelFilteredResult.Data, &doc)
+		onlyLabelFilteredResult.Total++
+
+		if !matchConditions(&doc, opts, regex) {
+			continue
+		}
 		result.Data = append(result.Data, &doc)
 		result.Total++
-
 	}
 
-	return result, nil
+	return result, onlyLabelFilteredResult, nil
 }
 
 func IsUniqueFind(opts datasource.FindOptions) bool {
@@ -682,13 +693,7 @@ func pagingResult(result *model.KVResponse, opts datasource.FindOptions) *model.
 	return result
 }
 
-func filterMatch(doc *model.KVDoc, opts datasource.FindOptions, regex *regexp.Regexp) bool {
-	if opts.Status != "" && doc.Status != opts.Status {
-		return false
-	}
-	if regex != nil && !regex.MatchString(doc.Key) {
-		return false
-	}
+func matchLabels(doc *model.KVDoc, opts datasource.FindOptions) bool {
 	if len(opts.Labels) != 0 {
 		if opts.ExactLabels && !util.IsEquivalentLabel(opts.Labels, doc.Labels) {
 			return false
@@ -697,6 +702,18 @@ func filterMatch(doc *model.KVDoc, opts datasource.FindOptions, regex *regexp.Re
 			return false
 		}
 	}
+
+	return true
+}
+
+func matchConditions(doc *model.KVDoc, opts datasource.FindOptions, regex *regexp.Regexp) bool {
+	if opts.Status != "" && doc.Status != opts.Status {
+		return false
+	}
+	if regex != nil && !regex.MatchString(doc.Key) {
+		return false
+	}
+
 	if opts.LabelFormat != "" && doc.LabelFormat != opts.LabelFormat {
 		return false
 	}
