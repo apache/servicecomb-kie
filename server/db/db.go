@@ -24,6 +24,7 @@ import (
 
 	"github.com/apache/servicecomb-kie/server/config"
 	"github.com/apache/servicecomb-kie/server/config/tlsutil"
+	"github.com/apache/servicecomb-kie/server/datasource/local/file"
 	"github.com/go-chassis/cari/db"
 	dconfig "github.com/go-chassis/cari/db/config"
 	"github.com/go-chassis/openlog"
@@ -57,6 +58,18 @@ func Init(c config.DB) error {
 		if err != nil {
 			openlog.Fatal(err.Error())
 			return errors.New("tls setting invalid:" + err.Error())
+		}
+	}
+
+	if c.Kind == "etcd_with_localstorage" || c.Kind == "embedded_etcd_with_localstorage" {
+		if c.Kind == "embedded_etcd_with_localstorage" {
+			c.Kind = "embedded_etcd"
+		}
+		if c.Kind == "etcd_with_localstorage" {
+			c.Kind = "etcd"
+		}
+		if c.LocalFilePath != "" {
+			file.FileRootPath = c.LocalFilePath
 		}
 	}
 	return db.Init(&dconfig.Config{

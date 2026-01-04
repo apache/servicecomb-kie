@@ -19,7 +19,6 @@ package v1_test
 
 import (
 	"encoding/json"
-	"fmt"
 	"io/ioutil"
 	"net/http"
 	"net/http/httptest"
@@ -35,7 +34,7 @@ import (
 )
 
 func Test_HeathCheck(t *testing.T) {
-	path := fmt.Sprintf("/v1/health")
+	path := "/v1/health"
 	r, _ := http.NewRequest("GET", path, nil)
 	revision := &v1.AdminResource{}
 	c, err := restfultest.New(revision, nil)

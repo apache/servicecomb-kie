@@ -73,6 +73,7 @@ EOM
 db:
   kind: ${db_type}
   uri: ${uri}
+  localFilePath: ${KVS_ROOT_PATH}
 EOM
 }
 
