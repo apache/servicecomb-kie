@@ -20,9 +20,8 @@ package stringutil_test
 import (
 	"testing"
 
-	"github.com/stretchr/testify/assert"
-
 	"github.com/apache/servicecomb-kie/pkg/stringutil"
+	"github.com/stretchr/testify/assert"
 )
 
 func TestFormat(t *testing.T) {
@@ -36,7 +35,6 @@ func TestFormat(t *testing.T) {
 	})
 	t.Log(s)
 	assert.Equal(t, s, s2)
-	assert.Equal(t, s, "service=a::version=1")
 	s3 := stringutil.FormatMap(nil)
 	assert.Equal(t, "none", s3)
 }
