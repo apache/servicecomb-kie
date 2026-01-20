@@ -28,6 +28,7 @@ services:
       - ../db.js:/docker-entrypoint-initdb.d/db.js:ro
   mongo-express:
     image: mongo-express
+    restart: always
     ports:
       - 8081:8081
     environment:
